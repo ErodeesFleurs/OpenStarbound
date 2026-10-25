@@ -25,9 +25,10 @@ public:
   MainMixer(Root& root, unsigned sampleRate, unsigned channels);
 
   void setUniverseClient(std::shared_ptr<UniverseClient> universeClient);
-  void setWorldPainter(std::shared_ptr<WorldPainter> worldPainter);
+  // ClientApplication clears this borrow before releasing its painter.
+  void setWorldPainter(std::optional<std::reference_wrapper<WorldPainter>> worldPainter);
   // Borrows the client voice service; bind after construction and clear before it is destroyed.
-  void setVoice(Voice* voice);
+  void setVoice(std::optional<std::reference_wrapper<Voice>> voice);
 
   [[nodiscard]] std::expected<void, StarException> update(float dt, bool muteSfx = false, bool muteMusic = false);
 
@@ -35,13 +36,13 @@ public:
 
   void setSpeed(float speed);
   void setVolume(float volume, float rampTime = 0.0f);
-  [[nodiscard]] std::expected<void, StarException> read(std::int16_t* sampleData, std::size_t frameCount, Mixer::ExtraMixFunction = {});
+  [[nodiscard]] std::expected<void, StarException> read(std::span<std::int16_t> sampleData, std::size_t frameCount, Mixer::ExtraMixFunction = {});
 
 private:
-  Root* m_root;
-  Voice* m_voice = nullptr;
+  std::reference_wrapper<Root> m_root;
+  std::optional<std::reference_wrapper<Voice>> m_voice;
   std::shared_ptr<UniverseClient> m_universeClient;
-  std::shared_ptr<WorldPainter> m_worldPainter;
+  std::optional<std::reference_wrapper<WorldPainter>> m_worldPainter;
   std::shared_ptr<Mixer> m_mixer;
   Set<MixerGroup> m_mutedGroups;
   Map<MixerGroup, float> m_groupVolumes;

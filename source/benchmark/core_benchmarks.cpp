@@ -71,7 +71,7 @@ bool validatePerlin(benchmark::State& state, EnumMap<PerlinType> const& dynamic,
     auto fixedChecked = Star::enumName<FixedPerlinNames>(value);
     auto fixedOptional = arrayPerlinName(value);
     if (!dynamicOptional || !dynamicChecked || !fixedChecked || !fixedOptional
-        || dynamicOptional->utf8() != spelling || (*dynamicChecked)->utf8() != spelling
+        || dynamicOptional->utf8() != spelling || dynamicChecked->get().utf8() != spelling
         || *fixedChecked != spelling || *fixedOptional != spelling) {
       state.SkipWithError("Perlin forward candidates disagree");
       return false;
@@ -146,7 +146,7 @@ void BM_PerlinForwardCheckedHit(benchmark::State& state) {
   if (!validatePerlin(state, dynamic, queries))
     return;
   state.SetLabel(Fixed ? "checked borrowed string_view; enumName helper"
-                       : "checked borrowed String pointer; EnumMap::getRight");
+                       : "checked borrowed String reference; EnumMap::getRight");
   for (auto _ : state) {
     (void)_;
     for (auto value : queries.hits) {
@@ -164,7 +164,7 @@ void BM_PerlinForwardCheckedHit(benchmark::State& state) {
           state.SkipWithError("EnumMap::getRight failed for a validated hit");
           return;
         }
-        benchmark::DoNotOptimize((*result)->utf8());
+        benchmark::DoNotOptimize(result->get().utf8());
       }
     }
   }

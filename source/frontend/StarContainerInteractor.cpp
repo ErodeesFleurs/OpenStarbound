@@ -34,8 +34,6 @@ import star.root;
 import star.algorithm;
 namespace Star {
 
-ContainerInteractor::ContainerInteractor(Root& root) : m_root(&root) {}
-
 std::expected<void, StarException> ContainerInteractor::openContainer(std::shared_ptr<ContainerEntity> containerEntity) {
   if (m_openContainer && m_openContainer->inWorld()) {
     auto closed = m_openContainer->containerClose();

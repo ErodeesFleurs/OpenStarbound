@@ -90,7 +90,7 @@ auto Random2dPointGenerator<PointData, DataType>::generate(Poly const& area, Poi
         });
       if (!points)
         return std::unexpected(std::move(points.error()));
-      finalResult.appendAll(**points);
+      finalResult.appendAll(points->get());
     }
   }
 

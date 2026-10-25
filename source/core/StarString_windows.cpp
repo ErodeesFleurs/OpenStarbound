@@ -6,27 +6,17 @@ import star.format;
 
 namespace Star {
 
-std::size_t wcharLen(WCHAR const* s) {
-  std::size_t size = 0;
-  while (*s) {
-    ++size;
-    ++s;
-  }
-  return size;
-}
-
-std::expected<String, StarException> utf16ToString(WCHAR const* s) {
-  if (!s) return String();
-  auto length = wcharLen(s);
+std::expected<String, StarException> utf16ToString(std::wstring_view s) {
+  auto length = s.size();
   if (length == 0) return String();
   if (length > static_cast<std::size_t>(std::numeric_limits<int>::max()))
     return std::unexpected(StringException("UTF-16 string exceeds Windows conversion limit"));
   auto count = static_cast<int>(length);
-  int utf8Length = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, s, count, nullptr, 0, nullptr, nullptr);
+  int utf8Length = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, s.data(), count, nullptr, 0, nullptr, nullptr);
   if (utf8Length == 0)
     return std::unexpected(StringException::format("UTF-16 conversion failed: Windows error {}", GetLastError()));
   std::string bytes(static_cast<std::size_t>(utf8Length), '\0');
-  if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, s, count, bytes.data(), utf8Length, nullptr, nullptr) == 0)
+  if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, s.data(), count, bytes.data(), utf8Length, nullptr, nullptr) == 0)
     return std::unexpected(StringException::format("UTF-16 conversion failed: Windows error {}", GetLastError()));
   return String(std::move(bytes));
 }

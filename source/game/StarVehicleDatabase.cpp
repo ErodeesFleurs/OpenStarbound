@@ -96,9 +96,9 @@ std::expected<std::shared_ptr<VehicleDatabase>, StarException> VehicleDatabase::
   auto files = (*assets)->scanExtension("vehicle");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  if (auto queued = (*assets)->queueJsons(**files); !queued)
+  if (auto queued = (*assets)->queueJsons(files->get()); !queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& scannedFile : **files) {
+  for (auto const& scannedFile : files->get()) {
     String file = scannedFile.string();
     auto load = [&]() -> std::expected<void, StarException> {
       auto config = (*assets)->json(file);
@@ -121,10 +121,10 @@ std::expected<std::shared_ptr<VehicleDatabase>, StarException> VehicleDatabase::
 }
 
 std::expected<std::shared_ptr<Vehicle>, StarException> VehicleDatabase::create(String const& vehicleName, Json const& extraConfig) const {
-  auto configPair = m_vehicles.ptr(vehicleName);
+  auto configPair = m_vehicles.maybeRef(vehicleName);
   if (!configPair)
     return std::unexpected(VehicleDatabaseException::format("No such vehicle named '{}'", vehicleName));
-  return Vehicle::create(m_root, configPair->second, configPair->first, extraConfig);
+  return Vehicle::create(m_root, configPair->get().second, configPair->get().first, extraConfig);
 }
 
 std::expected<ByteArray, StarException> VehicleDatabase::netStore(std::shared_ptr<Vehicle> const& vehicle, NetCompatibilityRules rules) const {
@@ -168,14 +168,14 @@ std::expected<Json, StarException> VehicleDatabase::diskStore(std::shared_ptr<Ve
 
 std::expected<std::shared_ptr<Vehicle>, StarException> VehicleDatabase::diskLoad(Json const& diskStore) const {
   std::shared_ptr<Vehicle> vehicle;
-  auto load = [&](Json const& store) -> std::expected<void, StarException> {
+  auto load = [&, self = std::cref(*this)](Json const& store) -> std::expected<void, StarException> {
     auto name = store.getString("name");
     if (!name)
       return std::unexpected(std::move(name.error()));
     auto config = store.get("dynamicConfig");
     if (!config)
       return std::unexpected(std::move(config.error()));
-    auto candidate = create(*name, *config);
+    auto candidate = self.get().create(*name, *config);
     if (!candidate)
       return std::unexpected(std::move(candidate.error()));
     auto state = store.get("state");

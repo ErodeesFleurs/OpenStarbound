@@ -10,7 +10,7 @@ class Assets;
 class Codex;
 
 struct CodexDatabaseExceptionTag {
-  static constexpr char const* name() { return "CodexDatabaseException"; }
+  static constexpr std::string_view name() { return "CodexDatabaseException"; }
 };
 using CodexDatabaseException = StarError<CodexDatabaseExceptionTag, StarException>;
 

@@ -16,29 +16,29 @@ import star.songbook;
 export module star.songbook_lua_bindings;
 
 export namespace Star::LuaBindings {
-  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeSongbookCallbacks(Songbook* songbook);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeSongbookCallbacks(Songbook& songbook);
 }
 
 namespace Star {
 
-std::expected<LuaCallbacks, StarException> LuaBindings::makeSongbookCallbacks(Songbook* songbook) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeSongbookCallbacks(Songbook& songbook) {
   LuaCallbacks callbacks;
 
-  if (auto registration = callbacks.registerCallbackWithSignature<void, Json, String>("play", std::bind(std::mem_fn(&Songbook::play), songbook, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<void, Json, String>("play", std::bind(std::mem_fn(&Songbook::play), std::ref(songbook), std::placeholders::_1, std::placeholders::_2)); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<void, String, Vec2F>("keepAlive", std::bind(std::mem_fn(&Songbook::keepAlive), songbook, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<void, String, Vec2F>("keepAlive", std::bind(std::mem_fn(&Songbook::keepAlive), std::ref(songbook), std::placeholders::_1, std::placeholders::_2)); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<void>("stop", std::bind(std::mem_fn(&Songbook::stop), songbook)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<void>("stop", std::bind(std::mem_fn(&Songbook::stop), std::ref(songbook))); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<bool>("active", std::bind(std::mem_fn(&Songbook::active), songbook)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("active", std::bind(std::mem_fn(&Songbook::active), std::ref(songbook))); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::optional<String>>("band", std::bind(std::mem_fn(&Songbook::timeSource), songbook)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::optional<String>>("band", std::bind(std::mem_fn(&Songbook::timeSource), std::ref(songbook))); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::optional<String>>("instrument", std::bind(std::mem_fn(&Songbook::instrument), songbook)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::optional<String>>("instrument", std::bind(std::mem_fn(&Songbook::instrument), std::ref(songbook))); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<bool>("instrumentPlaying", std::bind(std::mem_fn(&Songbook::instrumentPlaying), songbook)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("instrumentPlaying", std::bind(std::mem_fn(&Songbook::instrumentPlaying), std::ref(songbook))); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<Json>("song", std::bind(std::mem_fn(&Songbook::song), songbook)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<Json>("song", std::bind(std::mem_fn(&Songbook::song), std::ref(songbook))); !registration)
     return std::unexpected(std::move(registration.error()));
 
   return callbacks;

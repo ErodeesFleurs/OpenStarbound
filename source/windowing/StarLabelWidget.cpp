@@ -150,17 +150,17 @@ RectI LabelWidget::getScissorRect() const {
 }
 
 std::expected<void, StarException> LabelWidget::renderImpl() {
-  auto style = context()->setTextStyle(m_style);
+  auto style = context().setTextStyle(m_style);
   if (!style) return std::unexpected(std::move(style.error()));
-  auto result = context()->renderInterfaceText(m_text, {Vec2F(screenPosition()), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
+  auto result = context().renderInterfaceText(m_text, {Vec2F(screenPosition()), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
   if (!result) return std::unexpected(std::move(result.error()));
   return {};
 }
 
 std::expected<void, StarException> LabelWidget::updateTextRegion() {
-  auto style = context()->setTextStyle(m_style);
+  auto style = context().setTextStyle(m_style);
   if (!style) return std::unexpected(std::move(style.error()));
-  auto region = context()->determineInterfaceTextSize(m_text, {Vec2F(), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
+  auto region = context().determineInterfaceTextSize(m_text, {Vec2F(), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
   if (!region) return std::unexpected(std::move(region.error()));
   m_textRegion = RectI(*region);
   setSize(m_textRegion.size());

@@ -35,7 +35,7 @@ public:
   // NetElementVersion.  When elements are updated, they will mark the version
   // number at the time they are updated so that a delta can be constructed
   // that contains only changes since any past version.
-  virtual void initNetVersion(NetElementVersion const* version = nullptr) = 0;
+  virtual void initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version = std::nullopt) = 0;
 
   // Full store / load of the entire element.
   [[nodiscard]] virtual std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules) const = 0;

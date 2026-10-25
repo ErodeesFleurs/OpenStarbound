@@ -17,7 +17,7 @@ import star.rect;
 namespace Star {
 
 struct RendererExceptionTag {
-  static constexpr char const* name() { return "RendererException"; }
+  static constexpr std::string_view name() { return "RendererException"; }
 };
 using RendererException = StarError<RendererExceptionTag, StarException>;
 

@@ -8,6 +8,12 @@ import star.key_bindings;
 import star.list;
 import star.rect;
 import star.set;
+import star.root;
+import star.configuration;
+import star.gui_context;
+import star.widget;
+import star.button_widget;
+import star.button_group;
 
 #include "gtest/gtest.h"
 
@@ -92,6 +98,61 @@ const GameTestRegistration keybindingSpecificity("KeyBindings", "MostSpecificMod
   ASSERT_TRUE(tied) << tied.error().what();
   EXPECT_EQ(tied->actions(KeyChord{Key::A, both}),
       (Set<InterfaceAction>{InterfaceAction::PlayerRight, InterfaceAction::PlayerUp}));
+});
+
+const GameTestRegistration widgetParentLifetime("WidgetBorrow", "ReparentAndDestructionDetachEscapedChild", [](GameTest& fixture) {
+  auto configuration = fixture.root().configuration();
+  ASSERT_TRUE(configuration);
+  ASSERT_TRUE((*configuration)->set("bindings", JsonObject{}));
+  auto context = GuiContext::create(fixture.root(), {}, {});
+  ASSERT_TRUE(context) << context.error().what();
+
+  auto first = std::make_shared<Widget>(**context);
+  auto second = std::make_shared<Widget>(**context);
+  auto child = std::make_shared<Widget>(**context);
+  ASSERT_TRUE(first->addChild("old", child));
+  ASSERT_TRUE(second->addChild("new", child));
+  auto oldName = first->containsChild("old");
+  ASSERT_TRUE(oldName);
+  EXPECT_FALSE(*oldName);
+  EXPECT_EQ(second->childPtr(*child), child);
+  ASSERT_TRUE(child->parent());
+  EXPECT_EQ(child->parent()->get().childPtr(*child), child);
+
+  first.reset();
+  EXPECT_TRUE(child->parent());
+  second.reset();
+  EXPECT_FALSE(child->parent());
+  EXPECT_FALSE(child->window());
+});
+
+const GameTestRegistration buttonGroupLifetime("WidgetBorrow", "ButtonDestructionRemovesWeakGroupEntries", [](GameTest& fixture) {
+  auto configuration = fixture.root().configuration();
+  ASSERT_TRUE(configuration);
+  ASSERT_TRUE((*configuration)->set("bindings", JsonObject{}));
+  auto context = GuiContext::create(fixture.root(), {}, {});
+  ASSERT_TRUE(context) << context.error().what();
+  auto first = ButtonWidget::create(**context);
+  auto second = ButtonWidget::create(**context);
+  ASSERT_TRUE(first) << first.error().what();
+  ASSERT_TRUE(second) << second.error().what();
+  auto group = std::make_shared<ButtonGroup>();
+  (*first)->setButtonGroup(group, 10);
+  (*second)->setButtonGroup(group, 20);
+  ASSERT_TRUE(group->select(10));
+  EXPECT_TRUE((*first)->isChecked());
+  EXPECT_FALSE((*second)->isChecked());
+
+  first->reset();
+  EXPECT_FALSE(group->button(10));
+  EXPECT_EQ(1u, group->buttonCount());
+  EXPECT_EQ(group->checkedId(), ButtonGroup::NoButton);
+  ASSERT_TRUE(group->select(20));
+  EXPECT_TRUE((*second)->isChecked());
+  second->reset();
+  EXPECT_TRUE(group->buttons().empty());
+  EXPECT_EQ(0u, group->buttonCount());
+  EXPECT_EQ(group->checkedId(), ButtonGroup::NoButton);
 });
 
 }

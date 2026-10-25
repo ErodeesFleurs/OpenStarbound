@@ -45,8 +45,18 @@ public:
 
   bool contains(Key const& key) const;
 
-  [[nodiscard]] std::expected<Value const*, StarException> get(Key const& key) const;
-  [[nodiscard]] std::expected<Value*, StarException> get(Key const& key);
+  [[nodiscard]] std::expected<std::reference_wrapper<Value const>, StarException> get(Key const& key) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Value>, StarException> get(Key const& key);
+  std::optional<std::reference_wrapper<Value const>> maybeRef(Key const& key) const {
+    auto entry = m_entryMap.maybeRef(key);
+    if (entry) return std::reference_wrapper<Value const>(entry->get().value);
+    return std::nullopt;
+  }
+  std::optional<std::reference_wrapper<Value>> maybeRef(Key const& key) {
+    auto entry = m_entryMap.maybeRef(key);
+    if (entry) return std::reference_wrapper<Value>(entry->get().value);
+    return std::nullopt;
+  }
 
   // Returns default constructed value if key not found
   Value value(Key const& key) const;
@@ -84,16 +94,17 @@ public:
 private:
   typedef Vector<IntT, 2> Sector;
   typedef Box<IntT, 2> SectorRange;
+  // Stable entry addresses identify nodes in this secondary container index.
   typedef HashSet<Entry const*, hash<Entry const*>, std::equal_to<Entry const*>> SectorEntrySet;
   typedef HashMap<Sector, SectorEntrySet> SectorMap;
 
   SectorRange getSectors(Rect const& r) const;
 
-  void addSpatial(Entry const* entry);
-  void removeSpatial(Entry const* entry);
+  void addSpatial(Entry const& entry);
+  void removeSpatial(Entry const& entry);
 
   template <typename RectCollection>
-  void updateSpatial(Entry* entry, RectCollection const& rects);
+  void updateSpatial(Entry& entry, RectCollection const& rects);
 
   Scalar m_sectorSize;
   EntryMap m_entryMap;
@@ -140,20 +151,20 @@ bool SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::contains(Ke
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::get(
-    Key const& key) const -> std::expected<Value const*, StarException> {
+    Key const& key) const -> std::expected<std::reference_wrapper<Value const>, StarException> {
   auto entry = m_entryMap.get(key);
   if (!entry)
     return std::unexpected(std::move(entry.error()));
-  return &(*entry)->value;
+  return std::reference_wrapper<Value const>(entry->get().value);
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::get(
-    Key const& key) -> std::expected<Value*, StarException> {
+    Key const& key) -> std::expected<std::reference_wrapper<Value>, StarException> {
   auto entry = m_entryMap.get(key);
   if (!entry)
     return std::unexpected(std::move(entry.error()));
-  return &(*entry)->value;
+  return std::reference_wrapper<Value>(entry->get().value);
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
@@ -255,7 +266,7 @@ std::expected<void, StarException> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, Al
   auto entry = m_entryMap.get(key);
   if (!entry)
     return std::unexpected(std::move(entry.error()));
-  updateSpatial(*entry, rects);
+  updateSpatial(entry->get(), rects);
   return {};
 }
 
@@ -274,7 +285,7 @@ template <typename RectCollection>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, RectCollection const& rects, Value value) {
   Entry& entry = m_entryMap[key];
   entry.value = std::move(value);
-  updateSpatial(&entry, rects);
+  updateSpatial(entry, rects);
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
@@ -283,7 +294,7 @@ auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::remove(Key 
   if (iter == m_entryMap.end())
     return {};
 
-  removeSpatial(&iter->second);
+  removeSpatial(iter->second);
   std::optional<Value> val(std::in_place, std::move(iter->second.value));
   m_entryMap.erase(iter);
   return val;
@@ -294,7 +305,7 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::setSectorSi
   m_sectorSize = sectorSize;
   m_sectorMap.clear();
   for (auto const& pair : m_entryMap)
-    addSpatial(&pair.second);
+    addSpatial(pair.second);
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
@@ -307,23 +318,23 @@ typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::SectorR
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
-void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::addSpatial(Entry const* entry) {
-  for (Rect const& rect : entry->rects) {
+void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::addSpatial(Entry const& entry) {
+  for (Rect const& rect : entry.rects) {
     if (rect.isNull())
       continue;
 
     auto sectorResult = getSectors(rect);
     for (IntT x = sectorResult.xMin(); x < sectorResult.xMax(); ++x) {
       for (IntT y = sectorResult.yMin(); y < sectorResult.yMax(); ++y) {
-        m_sectorMap[Sector{x, y}].add(entry);
+        m_sectorMap[Sector{x, y}].add(&entry);
       }
     }
   }
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
-void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::removeSpatial(Entry const* entry) {
-  for (Rect const& rect : entry->rects) {
+void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::removeSpatial(Entry const& entry) {
+  for (Rect const& rect : entry.rects) {
     if (rect.isNull())
       continue;
 
@@ -332,7 +343,7 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::removeSpati
       for (IntT y = sectorResult.yMin(); y < sectorResult.yMax(); ++y) {
         auto i = m_sectorMap.find(Sector{x, y});
         if (i != m_sectorMap.end()) {
-          i->second.remove(entry);
+          i->second.remove(&entry);
           if (i->second.empty())
             m_sectorMap.erase(i);
         }
@@ -343,10 +354,10 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::removeSpati
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 template <typename RectCollection>
-void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::updateSpatial(Entry* entry, RectCollection const& rects) {
+void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::updateSpatial(Entry& entry, RectCollection const& rects) {
   removeSpatial(entry);
-  entry->rects.clear();
-  entry->rects.appendAll(rects);
+  entry.rects.clear();
+  entry.rects.appendAll(rects);
   addSpatial(entry);
 }
 

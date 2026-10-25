@@ -103,8 +103,8 @@ std::expected<Json, StarException> BiomePlaceables::toJson() const {
 std::optional<TreeVariant> BiomePlaceables::firstTreeType() const {
   for (auto const& itemDistribution : itemDistributions) {
     for (auto const& biomeItem : itemDistribution.allItems()) {
-      if (auto treePair = std::get_if<TreePair>(&biomeItem))
-        return treePair->first;
+      if (std::holds_alternative<TreePair>(biomeItem))
+        return std::get<TreePair>(biomeItem).first;
     }
   }
   return {};

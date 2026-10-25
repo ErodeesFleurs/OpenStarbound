@@ -42,7 +42,7 @@ namespace Star {
 class Root;
 
 struct NetworkedAnimatorExceptionTag {
-  static constexpr char const* name() { return "NetworkedAnimatorException"; }
+  static constexpr std::string_view name() { return "NetworkedAnimatorException"; }
 };
 using NetworkedAnimatorException = StarError<NetworkedAnimatorExceptionTag, StarException>;
 
@@ -163,7 +163,7 @@ public:
   // current state frame is (1 indexed, so the first frame is 1).
   void setGlobalTag(String tagName, std::optional<String> tagValue = {});
   void removeGlobalTag(String const& tagName);
-  String const* globalTagPtr(String const& tagName) const;
+  std::optional<std::reference_wrapper<String const>> globalTag(String const& tagName) const;
   void setPartTag(String const& partType, String tagName, std::optional<String> tagValue = {});
   void setLocalTag(String tagName, std::optional<String> tagValue = {});
 
@@ -259,7 +259,7 @@ public:
 
   // Dynamic target is optional, if not given, generated particles and sounds
   // will be discarded
-  [[nodiscard]] std::expected<void, StarException> update(float dt, DynamicTarget* dynamicTarget);
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::optional<std::reference_wrapper<DynamicTarget>> dynamicTarget);
 
   // Run through the current animations until the final frame, including any
   // transition animations.
@@ -395,7 +395,7 @@ private:
 
   [[nodiscard]] std::expected<Json, StarException> mergeIncludes(Root& root, Json config, Json includes, String relativePath);
 
-  Root* m_root;
+  std::reference_wrapper<Root> m_root;
   String m_relativePath;
   std::uint8_t m_animatorVersion;
 

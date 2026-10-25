@@ -121,16 +121,16 @@ auto assets = std::move(*result1);
 
   auto result2 = assets->scanExtension("monstertype");
 if (!result2) return std::unexpected(std::move(result2.error()));
-auto& monsterTypes = (**result2);
+auto& monsterTypes = result2->get();
   auto result3 = assets->scanExtension("monsterpart");
 if (!result3) return std::unexpected(std::move(result3.error()));
-auto& monsterParts = (**result3);
+auto& monsterParts = result3->get();
   auto result4 = assets->scanExtension("monsterskill");
 if (!result4) return std::unexpected(std::move(result4.error()));
-auto& monsterSkills = (**result4);
+auto& monsterSkills = result4->get();
   auto result5 = assets->scanExtension("monstercolors");
 if (!result5) return std::unexpected(std::move(result5.error()));
-auto& monsterColors = (**result5);
+auto& monsterColors = result5->get();
 
   auto result6 = assets->queueJsons(monsterTypes);
 if (!result6) return std::unexpected(std::move(result6.error()));
@@ -143,7 +143,7 @@ if (!result9) return std::unexpected(std::move(result9.error()));
 
   for (auto const& assetFile : monsterTypes) {
     auto const& file = assetFile.string();
-    auto loaded = [&]() -> std::expected<void, StarException> {
+    auto loaded = [&, self = std::ref(*this)]() -> std::expected<void, StarException> {
       auto result10 = assets->json(file);
 if (!result10) return std::unexpected(std::move(result10.error()));
 auto config = std::move(*result10);
@@ -151,10 +151,10 @@ auto config = std::move(*result10);
 if (!result11) return std::unexpected(std::move(result11.error()));
 String typeName = std::move(*result11);
 
-      if (m_monsterTypes.contains(typeName))
+      if (self.get().m_monsterTypes.contains(typeName))
         return std::unexpected(MonsterException(strf("Repeat monster type name '{}'", typeName)));
 
-      MonsterType& monsterType = m_monsterTypes[typeName];
+      MonsterType& monsterType = self.get().m_monsterTypes[typeName];
 
       monsterType.typeName = typeName;
       auto result12 = config.optString("shortdescription");
@@ -236,7 +236,7 @@ monsterType.baseParameters = std::move(*result23);
 
   for (auto const& assetFile : monsterParts) {
     auto const& file = assetFile.string();
-    auto loaded = [&]() -> std::expected<void, StarException> {
+    auto loaded = [&, self = std::ref(*this)]() -> std::expected<void, StarException> {
       auto result30 = assets->json(file);
 if (!result30) return std::unexpected(std::move(result30.error()));
 auto config = std::move(*result30);
@@ -261,7 +261,7 @@ part.frames = std::move(*result34);
 if (!result35) return std::unexpected(std::move(result35.error()));
 part.partParameters = std::move(*result35);
 
-      auto& partMap = m_partDirectory[part.category][part.type];
+      auto& partMap = self.get().m_partDirectory[part.category][part.type];
 
       if (partMap.contains(part.name))
         return std::unexpected(MonsterException(strf("Repeat monster part name '{}' for category '{}'", part.name, part.category)));
@@ -275,7 +275,7 @@ part.partParameters = std::move(*result35);
 
   for (auto const& assetFile : monsterSkills) {
     auto const& file = assetFile.string();
-    auto loaded = [&]() -> std::expected<void, StarException> {
+    auto loaded = [&, self = std::ref(*this)]() -> std::expected<void, StarException> {
       auto result36 = assets->json(file);
 if (!result36) return std::unexpected(std::move(result36.error()));
 auto config = std::move(*result36);
@@ -303,10 +303,10 @@ skill.parameters = std::move(*result41);
 if (!result42) return std::unexpected(std::move(result42.error()));
 skill.animationParameters = std::move(*result42);
 
-      if (m_skills.contains(skill.name))
+      if (self.get().m_skills.contains(skill.name))
         return std::unexpected(MonsterException(strf("Repeat monster skill name '{}'", skill.name)));
       else
-        m_skills[skill.name] = skill;
+        self.get().m_skills[skill.name] = skill;
       return {};
     }();
     if (!loaded)
@@ -315,7 +315,7 @@ skill.animationParameters = std::move(*result42);
 
   for (auto const& assetFile : monsterColors) {
     auto const& file = assetFile.string();
-    auto loaded = [&]() -> std::expected<void, StarException> {
+    auto loaded = [&, self = std::ref(*this)]() -> std::expected<void, StarException> {
       auto result43 = assets->json(file);
 if (!result43) return std::unexpected(std::move(result43.error()));
 auto config = std::move(*result43);
@@ -325,7 +325,7 @@ auto config = std::move(*result43);
       auto result44 = config.getString("name");
 if (!result44) return std::unexpected(std::move(result44.error()));
 auto paletteName = std::move(*result44);
-      if (m_colorSwaps.contains(paletteName))
+      if (self.get().m_colorSwaps.contains(paletteName))
         return std::unexpected(MonsterException(strf("Duplicate monster colors name '{}'", paletteName)));
 
       ColorReplaceMap colorSwaps;
@@ -347,7 +347,7 @@ auto paletteName = std::move(*result44);
     colorSwaps[std::move(*result47).toRgba()] = std::move(*result49).toRgba();
             }
   }
-          m_colorSwaps[paletteName].append(colorSwaps);
+          self.get().m_colorSwaps[paletteName].append(colorSwaps);
         }
 }
       return {};
@@ -395,12 +395,12 @@ std::expected<MonsterVariant, StarException> MonsterDatabase::randomMonster(Stri
 std::expected<MonsterVariant, StarException> MonsterDatabase::monsterVariant(String const& typeName, std::uint64_t seed, Json const& uniqueParameters) const {
   std::lock_guard locker(m_cacheMutex);
   auto variant = m_monsterCache.get(std::make_tuple(typeName, seed, uniqueParameters),
-      [this](std::tuple<String, std::uint64_t, Json> const& key) {
-        return produceMonster(std::get<0>(key), std::get<1>(key), std::get<2>(key));
+      [self = std::cref(*this)](std::tuple<String, std::uint64_t, Json> const& key) {
+        return self.get().produceMonster(std::get<0>(key), std::get<1>(key), std::get<2>(key));
       });
   if (!variant)
     return std::unexpected(std::move(variant.error()));
-  return **variant;
+  return variant->get();
 }
 
 std::expected<ByteArray, StarException> MonsterDatabase::writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules) const {
@@ -468,8 +468,8 @@ if (!result67) return std::unexpected(std::move(result67.error()));
 }
 
 std::expected<std::shared_ptr<Monster>, StarException> MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
-  auto attempt = [&](Json const& store) -> std::expected<std::shared_ptr<Monster>, StarException> {
-    return Monster::create(m_root, store);
+  auto attempt = [root = std::ref(m_root)](Json const& store) -> std::expected<std::shared_ptr<Monster>, StarException> {
+    return Monster::create(root.get(), store);
   };
   auto monster = attempt(diskStore);
   if (monster)
@@ -522,10 +522,10 @@ std::expected<std::pair<String, String>, StarException> MonsterDatabase::skillIn
   if (m_skills.contains(skillName)) {
     auto result73 = m_skills.get(skillName);
 if (!result73) return std::unexpected(std::move(result73.error()));
-auto& skill = (**result73);
+auto& skill = result73->get();
     return std::make_pair(skill.label, skill.image);
   } else {
-    return std::make_pair("", "");
+    return std::pair<String, String>{};
   }
 }
 
@@ -533,7 +533,7 @@ std::expected<Json, StarException> MonsterDatabase::skillConfigParameter(String 
   if (m_skills.contains(skillName)) {
     auto result74 = m_skills.get(skillName);
 if (!result74) return std::unexpected(std::move(result74.error()));
-auto& skill = (**result74);
+auto& skill = result74->get();
     return skill.config.get(configParameterName, Json());
   } else {
     return Json();
@@ -545,25 +545,25 @@ std::expected<ColorReplaceMap, StarException> MonsterDatabase::colorSwap(String 
     {
   auto result75 = m_colorSwaps.get(setName);
   if (!result75) return std::unexpected(std::move(result75.error()));
-  auto result76 = staticRandomFrom((**result75), seed);
+  auto result76 = staticRandomFrom(result75->get(), seed);
   if (!result76) return std::unexpected(std::move(result76.error()));
-  return (**result76);
+  return result76->get();
 }
   else {
     auto result77 = m_root.logger().error("Monster colors '{}' not found!", setName);
 if (!result77) return std::unexpected(std::move(result77.error()));
     auto result78 = m_colorSwaps.get("default");
 if (!result78) return std::unexpected(std::move(result78.error()));
-auto result79 = staticRandomFrom((**result78), seed);
+auto result79 = staticRandomFrom(result78->get(), seed);
 if (!result79) return std::unexpected(std::move(result79.error()));
-return (**result79);
+return result79->get();
   }
 }
 
 std::expected<Json, StarException> MonsterDatabase::monsterConfig(String const& typeName) const {
   auto result80 = m_monsterTypes.get(typeName);
 if (!result80) return std::unexpected(std::move(result80.error()));
-return (**result80).toJson();
+return result80->get().toJson();
 }
 
 std::expected<Json, StarException> MonsterDatabase::mergePartParameters(Json const& partParameterDescription, JsonArray const& parameters) {
@@ -594,7 +594,7 @@ std::expected<Json, StarException> MonsterDatabase::mergePartParameters(Json con
   String mergeMethod = std::move(*result85);
         auto result86 = mergedParameters.get(pair.first);
   if (!result86) return std::unexpected(std::move(result86.error()));
-  Json value = (**result86);
+  Json value = result86->get();
 
         {
     auto result87 = mergeMethod.equalsIgnoreCase("add");
@@ -788,7 +788,7 @@ if (!result130) return std::unexpected(std::move(result130.error()));
 if (!ClientEntityModeNames) return std::unexpected(ClientEntityModeNames.error());
 auto result131 = ClientEntityModeNames->getLeft(std::move(*result130));
 if (!result131) return std::unexpected(std::move(result131.error()));
-variant.clientEntityMode = (**result131);
+variant.clientEntityMode = result131->get();
   auto result132 = variant.parameters.getBool("persistent", false);
 if (!result132) return std::unexpected(std::move(result132.error()));
 variant.persistent = std::move(*result132);
@@ -797,7 +797,7 @@ if (!result133) return std::unexpected(std::move(result133.error()));
 if (!TeamTypeNames) return std::unexpected(TeamTypeNames.error());
 auto result134 = TeamTypeNames->getLeft(std::move(*result133));
 if (!result134) return std::unexpected(std::move(result134.error()));
-variant.damageTeamType = (**result134);
+variant.damageTeamType = result134->get();
   auto result135 = variant.parameters.getUInt("damageTeam", 2);
 if (!result135) return std::unexpected(std::move(result135.error()));
 variant.damageTeam = std::move(*result135);
@@ -860,7 +860,7 @@ std::expected<MonsterVariant, StarException> MonsterDatabase::produceMonster(Str
 
   auto result144 = m_monsterTypes.get(typeName);
 if (!result144) return std::unexpected(std::move(result144.error()));
-auto const& monsterType = (**result144);
+auto const& monsterType = result144->get();
 
   MonsterVariant monsterVariant;
   monsterVariant.type = typeName;
@@ -880,16 +880,16 @@ monsterVariant.animatorConfig = std::move(*result146);
   List<MonsterPart> monsterParts;
   auto result147 = rand.randFrom(monsterType.categories);
 if (!result147) return std::unexpected(std::move(result147.error()));
-auto categoryName = (**result147);
+auto const& categoryName = result147->get();
 
   for (auto const& partTypeName : monsterType.partTypes) {
     auto result148 = m_partDirectory.get(categoryName);
 if (!result148) return std::unexpected(std::move(result148.error()));
-auto result149 = (**result148).get(partTypeName);
+auto result149 = result148->get().get(partTypeName);
 if (!result149) return std::unexpected(std::move(result149.error()));
-auto result150 = rand.randFrom((**result149));
+auto result150 = rand.randFrom(result149->get());
 if (!result150) return std::unexpected(std::move(result150.error()));
-auto randPart = (**result150).second;
+auto const& randPart = result150->get().second;
     auto result151 = uniqueParameters.get("selectedParts", JsonObject());
 if (!result151) return std::unexpected(std::move(result151.error()));
 auto result152 = std::move(*result151).optString(partTypeName);
@@ -899,11 +899,11 @@ auto selectedPart = std::move(*result152);
       {
   auto result153 = m_partDirectory.get(categoryName);
   if (!result153) return std::unexpected(std::move(result153.error()));
-  auto result154 = (**result153).get(partTypeName);
+  auto result154 = result153->get().get(partTypeName);
   if (!result154) return std::unexpected(std::move(result154.error()));
-  auto result155 = (**result154).get(*selectedPart);
+  auto result155 = result154->get().get(*selectedPart);
   if (!result155) return std::unexpected(std::move(result155.error()));
-  monsterParts.append((**result155));
+  monsterParts.append(result155->get());
 }
     else
       monsterParts.append(randPart);
@@ -1019,7 +1019,7 @@ std::expected<std::pair<Json, Json>, StarException> MonsterDatabase::chooseSkill
         if (m_skills.contains(skillName)) {
           auto result177 = m_skills.get(skillName);
   if (!result177) return std::unexpected(std::move(result177.error()));
-  auto const& skill = (**result177);
+  auto const& skill = result177->get();
           allParameters.append(skill.parameters);
           finalAnimatorConfig = jsonMerge(finalAnimatorConfig, skill.animationParameters);
         }
@@ -1060,7 +1060,7 @@ std::expected<std::pair<Json, Json>, StarException> MonsterDatabase::chooseSkill
           if (m_skills.contains(skillName)) {
             auto result186 = m_skills.get(skillName);
     if (!result186) return std::unexpected(std::move(result186.error()));
-    auto const& skill = (**result186);
+    auto const& skill = result186->get();
             allParameters.append(skill.parameters);
             finalAnimatorConfig = jsonMerge(finalAnimatorConfig, skill.animationParameters);
           }

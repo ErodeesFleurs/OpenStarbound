@@ -193,7 +193,9 @@ public:
   std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
   [[nodiscard]]
-  std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  std::expected<void, StarException> init(ToolUserEntity& owner, ToolHand hand) override;
+  [[nodiscard]]
+  std::expected<void, StarException> uninit() override;
   [[nodiscard]]
   std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
@@ -211,7 +213,7 @@ public:
   [[nodiscard]]
   std::expected<float, StarException> getAngle(float aimAngle) override;
 
-  void setConnector(WireConnector* connector);
+  void setConnector(std::optional<std::reference_wrapper<WireConnector>> connector);
 
 private:
   explicit WireTool(Root& root) : Item(root), BeamItem(root) {}
@@ -221,7 +223,7 @@ private:
   StringList m_strikeSounds;
   float m_toolVolume;
 
-  WireConnector* m_wireConnector;
+  std::optional<std::reference_wrapper<WireConnector>> m_wireConnector;
 };
 
 class BeamMiningTool : public Item, public FireableItem, public PreviewTileTool, public PointableItem, public BeamItem {
@@ -254,7 +256,7 @@ public:
   std::expected<float, StarException> getAngle(float angle) override;
 
   [[nodiscard]]
-  std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  std::expected<void, StarException> init(ToolUserEntity& owner, ToolHand hand) override;
   [[nodiscard]]
   std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
@@ -307,7 +309,7 @@ public:
   [[nodiscard]]
   std::expected<List<PreviewTile>, StarException> previewTiles(bool shifting) const override;
   [[nodiscard]]
-  std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  std::expected<void, StarException> init(ToolUserEntity& owner, ToolHand hand) override;
   [[nodiscard]]
   std::expected<List<Drawable>, StarException> nonRotatedDrawables() const override;
   [[nodiscard]]

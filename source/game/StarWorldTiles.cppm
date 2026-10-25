@@ -145,8 +145,8 @@ typedef TileSectorArray<ClientTile, WorldSectorSize> ClientTileSectorArray;
 
 // Tile structure to transfer all data from client to server
 struct NetTile {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, NetTile& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, NetTile const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, NetTile& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, NetTile const& value);
   NetTile();
 
   MaterialId background;
@@ -166,9 +166,9 @@ struct NetTile {
   DungeonId dungeonId;
 };
 [[nodiscard]]
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, NetTile& tile);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, NetTile& tile);
 [[nodiscard]]
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, NetTile const& tile);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, NetTile const& tile);
 
 // For storing predicted tile state.
 struct PredictedTile {
@@ -205,8 +205,8 @@ struct PredictedTile {
 // out specifically to avoid padding bytes so that a fast path can be taken
 // when hashing for chunk render caching.
 struct RenderTile {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, RenderTile& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, RenderTile const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RenderTile& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RenderTile const& value);
   MaterialId foreground;
   ModId foregroundMod;
 
@@ -235,9 +235,9 @@ struct RenderTile {
   void hashPushLiquid(Hasher& hasher) const;
 };
 [[nodiscard]]
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, RenderTile& tile);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RenderTile& tile);
 [[nodiscard]]
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, RenderTile const& tile);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RenderTile const& tile);
 
 typedef MultiArray<RenderTile, 2> RenderTileArray;
 
@@ -373,35 +373,35 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
 #endif
 
   if (FastHash) {
-    hasher.push((char const*)this, TerrainEndOffset);
+    hasher.push(std::span(reinterpret_cast<char const*>(this), TerrainEndOffset));
   } else {
     char buffer[TotalTerrainSize];
     std::size_t bufferSize = 0;
 
-    auto hashTilePart = [&](void const* data, std::size_t size) {
-      std::memcpy(buffer + bufferSize, data, size);
-      bufferSize += size;
+    auto hashTilePart = [&]<typename T>(T const& value) {
+      std::memcpy(buffer + bufferSize, std::addressof(value), sizeof(value));
+      bufferSize += sizeof(value);
     };
 
-    hashTilePart(&foreground, sizeof(foreground));
-    hashTilePart(&foregroundMod, sizeof(foregroundMod));
+    hashTilePart(foreground);
+    hashTilePart(foregroundMod);
 
-    hashTilePart(&background, sizeof(background));
-    hashTilePart(&backgroundMod, sizeof(backgroundMod));
+    hashTilePart(background);
+    hashTilePart(backgroundMod);
 
-    hashTilePart(&foregroundHueShift, sizeof(foregroundHueShift));
-    hashTilePart(&foregroundModHueShift, sizeof(foregroundModHueShift));
-    hashTilePart(&foregroundColorVariant, sizeof(foregroundColorVariant));
-    hashTilePart(&foregroundDamageType, sizeof(foregroundDamageType));
-    hashTilePart(&foregroundDamageLevel, sizeof(foregroundDamageLevel));
+    hashTilePart(foregroundHueShift);
+    hashTilePart(foregroundModHueShift);
+    hashTilePart(foregroundColorVariant);
+    hashTilePart(foregroundDamageType);
+    hashTilePart(foregroundDamageLevel);
 
-    hashTilePart(&backgroundHueShift, sizeof(backgroundHueShift));
-    hashTilePart(&backgroundModHueShift, sizeof(backgroundModHueShift));
-    hashTilePart(&backgroundColorVariant, sizeof(backgroundColorVariant));
-    hashTilePart(&backgroundDamageType, sizeof(backgroundDamageType));
-    hashTilePart(&backgroundDamageLevel, sizeof(backgroundDamageLevel));
+    hashTilePart(backgroundHueShift);
+    hashTilePart(backgroundModHueShift);
+    hashTilePart(backgroundColorVariant);
+    hashTilePart(backgroundDamageType);
+    hashTilePart(backgroundDamageLevel);
 
-    hasher.push(buffer, TotalTerrainSize);
+    hasher.push(std::span<char const>(buffer));
   }
 }
 
@@ -412,7 +412,7 @@ inline void RenderTile::hashPushLiquid(Hasher& hasher) const {
   std::memcpy(buffer, &liquidLevel, sizeof(liquidLevel));
   std::memcpy(buffer + sizeof(liquidLevel), &liquidId, sizeof(liquidId));
 
-  hasher.push(buffer, sizeof(liquidLevel) + sizeof(liquidId));
+  hasher.push(std::span<char const>(buffer));
 }
 
 }

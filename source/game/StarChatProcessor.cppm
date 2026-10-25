@@ -22,7 +22,7 @@ class RandomService;
 // Thread safe.
 class ChatProcessor {
 public:
-  static char const* const ServerNick;
+  static std::string_view const ServerNick;
 
   explicit ChatProcessor(RandomService& random);
 

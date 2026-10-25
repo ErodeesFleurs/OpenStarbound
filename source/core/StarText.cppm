@@ -30,7 +30,7 @@ struct TextStyle {
 
   TextStyle() = default;
   [[nodiscard]] static std::expected<TextStyle, StarException> create(Json const& config);
-  [[nodiscard]] std::expected<TextStyle*, StarException> loadJson(Json const& config);
+  [[nodiscard]] std::expected<std::reference_wrapper<TextStyle>, StarException> loadJson(Json const& config);
 };
 
 namespace Text {

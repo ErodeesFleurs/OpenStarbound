@@ -130,8 +130,8 @@ import star.algorithm;
 namespace Star {
 
 ToolUser::ToolUser(Root& root)
-  : m_root(&root), m_beamGunRadius(), m_beamGunGlowBorder(), m_objectPreviewInnerAlpha(), m_objectPreviewOuterAlpha(),
-    m_user(nullptr), m_primaryHandItem(root), m_altHandItem(root),
+  : m_root(root), m_beamGunRadius(), m_beamGunGlowBorder(), m_objectPreviewInnerAlpha(), m_objectPreviewOuterAlpha(),
+    m_user(), m_primaryHandItem(root), m_altHandItem(root),
     m_fireMain(), m_fireAlt(), m_edgeTriggeredMain(), m_edgeTriggeredAlt(), m_edgeSuppressedMain(), m_edgeSuppressedAlt(),
     m_suppress() {
   // Resource loading is performed by initialize(), after non-failing state setup.
@@ -164,14 +164,14 @@ ToolUser::ToolUser(Root& root)
 }
 
 [[nodiscard]] std::expected<void, StarException> ToolUser::initialize() {
-  for (NetElement* element : {static_cast<NetElement*>(&m_primaryHandItem), static_cast<NetElement*>(&m_altHandItem),
-      static_cast<NetElement*>(&m_primaryFireTimerNetState), static_cast<NetElement*>(&m_altFireTimerNetState),
-      static_cast<NetElement*>(&m_primaryTimeFiringNetState), static_cast<NetElement*>(&m_altTimeFiringNetState),
-      static_cast<NetElement*>(&m_primaryItemActiveNetState), static_cast<NetElement*>(&m_altItemActiveNetState)}) {
+  for (auto element : std::initializer_list<std::reference_wrapper<NetElement>>{
+      m_primaryHandItem, m_altHandItem, m_primaryFireTimerNetState, m_altFireTimerNetState,
+      m_primaryTimeFiringNetState, m_altTimeFiringNetState,
+      m_primaryItemActiveNetState, m_altItemActiveNetState}) {
     auto added = addNetElement(element);
     if (!added) return std::unexpected(std::move(added.error()));
   }
-  auto assets = m_root->assets();
+  auto assets = m_root.get().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto config = (*assets)->json("/player.config");
   if (!config) return std::unexpected(std::move(config.error()));
@@ -192,9 +192,9 @@ ToolUser::ToolUser(Root& root)
 
 [[nodiscard]] std::expected<Json, StarException> ToolUser::diskStore() const {
   JsonObject data;
-  auto versioning = m_root->versioningDatabase();
+  auto versioning = m_root.get().versioningDatabase();
   if (!versioning) return std::unexpected(std::move(versioning.error()));
-  for (auto const& entry : {std::pair{"primaryHandItem", m_primaryHandItem.get()}, {"altHandItem", m_altHandItem.get()}}) {
+  for (auto const& entry : {std::pair{std::string_view("primaryHandItem"), m_primaryHandItem.get()}, {"altHandItem", m_altHandItem.get()}}) {
     if (entry.second) {
       auto stored = entry.second->descriptor().diskStore(**versioning);
       if (!stored) return std::unexpected(std::move(stored.error()));
@@ -205,7 +205,7 @@ ToolUser::ToolUser(Root& root)
 }
 
 [[nodiscard]] std::expected<void, StarException> ToolUser::diskLoad(Json const& store) {
-  auto database = m_root->itemDatabase();
+  auto database = m_root.get().itemDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto primaryJson = store.get("primaryHandItem", {});
   if (!primaryJson) return std::unexpected(std::move(primaryJson.error()));
@@ -240,8 +240,8 @@ ItemDescriptor ToolUser::altHandItemDescriptor() const {
   return {};
 }
 
-[[nodiscard]] std::expected<void, StarException> ToolUser::init(ToolUserEntity* user) {
-  m_user = user;
+[[nodiscard]] std::expected<void, StarException> ToolUser::init(ToolUserEntity& user) {
+  m_user = std::ref(user);
   auto primary = initPrimaryHandItem();
   if (!primary) return std::unexpected(std::move(primary.error()));
   if (!itemSafeTwoHanded(m_primaryHandItem.get())) return initAltHandItem();
@@ -249,7 +249,7 @@ ItemDescriptor ToolUser::altHandItemDescriptor() const {
 }
 
 [[nodiscard]] std::expected<void, StarException> ToolUser::uninit() {
-  m_user = nullptr;
+  m_user.reset();
   auto primary = uninitItem(m_primaryHandItem.get());
   if (!primary) return std::unexpected(std::move(primary.error()));
   return uninitItem(m_altHandItem.get());
@@ -285,7 +285,7 @@ ItemDescriptor ToolUser::altHandItemDescriptor() const {
   if (m_suppress.get())
     return {};
 
-  for (auto const& entry : {std::pair{"primary", m_primaryHandItem.get()}, {"alt", m_altHandItem.get()}}) {
+  for (auto const& entry : {std::pair{std::string_view("primary"), m_primaryHandItem.get()}, {"alt", m_altHandItem.get()}}) {
     if (auto item = as<EffectSourceItem>(entry.second)) {
       auto sources = item->effectSources();
       if (!sources) return std::unexpected(std::move(sources.error()));
@@ -330,15 +330,15 @@ ItemDescriptor ToolUser::altHandItemDescriptor() const {
     if ((aimPos == m_cachedObjectPreviewPosition) && (item == m_cachedObjectItem))
       return m_cachedObjectPreview;
 
-    auto objectDatabase = m_root->objectDatabase();
+    auto objectDatabase = m_root.get().objectDatabase();
     if (!objectDatabase) return std::unexpected(std::move(objectDatabase.error()));
-    auto world = m_user->world();
+    auto world = m_user->get().world();
     if (!world) return std::unexpected(std::move(world.error()));
     auto objectName = item->objectName();
     if (!objectName) return std::unexpected(std::move(objectName.error()));
     auto objectParameters = item->objectParameters();
     if (!objectParameters) return std::unexpected(std::move(objectParameters.error()));
-    auto drawablesResult = (*objectDatabase)->cursorHintDrawables(*world, *objectName,
+    auto drawablesResult = (*objectDatabase)->cursorHintDrawables(world->get(), *objectName,
         aimPos, walkingDirection, std::move(*objectParameters));
     if (!drawablesResult) return std::unexpected(std::move(drawablesResult.error()));
     auto drawables = std::move(*drawablesResult);
@@ -352,7 +352,7 @@ ItemDescriptor ToolUser::altHandItemDescriptor() const {
     else {
       auto placementObjectName = item->objectName();
       if (!placementObjectName) return std::unexpected(std::move(placementObjectName.error()));
-      auto canPlace = (*objectDatabase)->canPlaceObject(*world, aimPos, *placementObjectName);
+      auto canPlace = (*objectDatabase)->canPlaceObject(world->get(), aimPos, *placementObjectName);
       if (!canPlace) return std::unexpected(std::move(canPlace.error()));
       if (!*canPlace) favoriteColorTrans.setHue(favoriteColor.hue() + 120);
     }
@@ -364,7 +364,7 @@ ItemDescriptor ToolUser::altHandItemDescriptor() const {
     nearWhite.setAlphaF(m_objectPreviewInnerAlpha);
     ImageOperation op = BorderImageOperation{m_beamGunGlowBorder, nearWhite.toRgba(), favoriteColorTrans.toRgba(), false, false};
 
-    auto imageMetadata = m_root->imageMetadataDatabase();
+    auto imageMetadata = m_root.get().imageMetadataDatabase();
     if (!imageMetadata) return std::unexpected(std::move(imageMetadata.error()));
     auto operation = imageOperationToString(op);
     for (Drawable& drawable : drawables) {
@@ -406,9 +406,9 @@ ItemDescriptor ToolUser::altHandItemDescriptor() const {
 
     std::shared_ptr<Item> handItem = primary ? m_primaryHandItem.get() : m_altHandItem.get();
 
-    auto world = m_user->world();
+    auto world = m_user->get().world();
     if (!world) return std::unexpected(std::move(world.error()));
-    auto angleSide = getAngleSide((*world)->geometry().diff(aimPosition, position).angle());
+    auto angleSide = getAngleSide(world->get().geometry().diff(aimPosition, position).angle());
 
     if (auto swingItem = as<SwingableItem>(handItem)) {
       auto angle = swingItem->getAngleDir(angleSide.first, angleSide.second);
@@ -562,10 +562,10 @@ ItemDescriptor ToolUser::altHandItemDescriptor() const {
       auto polygons = tool->shieldPolys();
       if (!polygons) return std::unexpected(std::move(polygons.error()));
       for (auto poly : *polygons) {
-        poly.translate(m_user->position());
-        auto world = m_user->world();
+        poly.translate(m_user->get().position());
+        auto world = m_user->get().world();
         if (!world) return std::unexpected(std::move(world.error()));
-        auto hit = source.intersectsWithPoly((*world)->geometry(), poly);
+        auto hit = source.intersectsWithPoly(world->get().geometry(), poly);
         if (!hit) return std::unexpected(std::move(hit.error()));
         if (*hit) return true;
       }
@@ -758,7 +758,7 @@ bool ToolUser::firingAlt() const {
   return ds;
 }
 
-[[nodiscard]] std::expected<void, StarException> ToolUser::render(RenderCallback* renderCallback, bool, bool shifting, EntityRenderLayer renderLayer) {
+[[nodiscard]] std::expected<void, StarException> ToolUser::render(RenderCallback& renderCallback, bool, bool shifting, EntityRenderLayer renderLayer) {
   if (m_suppress.get()) {
     for (auto const& item : {m_primaryHandItem.get(), m_altHandItem.get()}) {
       if (auto active = as<ActiveItem>(item)) {
@@ -775,7 +775,7 @@ bool ToolUser::firingAlt() const {
   if (preview) {
     auto tiles = preview->previewTiles(shifting);
     if (!tiles) return std::unexpected(std::move(tiles.error()));
-    auto added = renderCallback->addTilePreviews(*tiles);
+    auto added = renderCallback.addTilePreviews(*tiles);
     if (!added) return std::unexpected(std::move(added.error()));
   }
   for (auto const& item : {m_primaryHandItem.get(), m_altHandItem.get()}) {
@@ -789,16 +789,16 @@ bool ToolUser::firingAlt() const {
       auto drawables = active->entityDrawables();
       if (!drawables) return std::unexpected(std::move(drawables.error()));
       for (auto const& drawable : *drawables) {
-        auto added = renderCallback->addDrawable(drawable.first, drawable.second.value_or(renderLayer));
+        auto added = renderCallback.addDrawable(drawable.first, drawable.second.value_or(renderLayer));
         if (!added) return std::unexpected(std::move(added.error()));
       }
       auto audio = active->pullNewAudios();
       if (!audio) return std::unexpected(std::move(audio.error()));
-      auto audioAdded = renderCallback->addAudios(*audio);
+      auto audioAdded = renderCallback.addAudios(*audio);
       if (!audioAdded) return std::unexpected(std::move(audioAdded.error()));
       auto particles = active->pullNewParticles();
       if (!particles) return std::unexpected(std::move(particles.error()));
-      auto particlesAdded = renderCallback->addParticles(*particles);
+      auto particlesAdded = renderCallback.addParticles(*particles);
       if (!particlesAdded) return std::unexpected(std::move(particlesAdded.error()));
     }
   }
@@ -861,26 +861,26 @@ void ToolUser::suppressItems(bool suppress) {
 }
 
 [[nodiscard]] std::expected<float, StarException> ToolUser::beamGunRadius() const {
-  auto bonus = m_user->statusController()->statusProperty("bonusBeamGunRadius", 0).toFloat();
+  auto bonus = m_user->get().statusController().statusProperty("bonusBeamGunRadius", 0).toFloat();
   if (!bonus) return std::unexpected(std::move(bonus.error()));
   return m_beamGunRadius + *bonus;
 }
 
-ToolUser::NetItem::NetItem(Root& root) : m_root(&root) {}
+ToolUser::NetItem::NetItem(Root& root) : m_root(root) {}
 
-void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
+void ToolUser::NetItem::initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version) {
   m_netVersion = version;
   m_itemDescriptor.initNetVersion(m_netVersion);
-  if (auto netItem = as<NetElement>(m_item.get()))
-    netItem->initNetVersion(m_netVersion);
+  if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt)
+    netItem->get().initNetVersion(m_netVersion);
 }
 
 [[nodiscard]] std::expected<void, StarException> ToolUser::NetItem::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return {};
-  const_cast<NetItem*>(this)->updateItemDescriptor();
+  const_cast<NetItem&>(*this).updateItemDescriptor();
   auto descriptor = m_itemDescriptor.netStore(ds, rules);
   if (!descriptor) return std::unexpected(std::move(descriptor.error()));
-  if (auto netItem = as<NetElement>(m_item.get())) return netItem->netStore(ds, rules);
+  if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt) return netItem->get().netStore(ds, rules);
   return {};
 }
 
@@ -888,48 +888,48 @@ void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
   if (!checkWithRules(rules)) return {};
   auto descriptor = m_itemDescriptor.netLoad(ds, rules);
   if (!descriptor) return std::unexpected(std::move(descriptor.error()));
-  auto database = m_root->itemDatabase();
+  auto database = m_root.get().itemDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto loaded = (*database)->loadItem(m_itemDescriptor.get(), m_item);
   if (!loaded) return std::unexpected(std::move(loaded.error()));
   if (*loaded) {
     m_newItem = true;
-    if (auto netItem = as<NetElement>(m_item.get())) {
-      netItem->initNetVersion(m_netVersion);
+    if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt) {
+      netItem->get().initNetVersion(m_netVersion);
       if (m_netInterpolationEnabled) {
-        auto enabled = netItem->enableNetInterpolation(m_netExtrapolationHint);
+        auto enabled = netItem->get().enableNetInterpolation(m_netExtrapolationHint);
         if (!enabled) return std::unexpected(std::move(enabled.error()));
       }
     }
   }
-  if (auto netItem = as<NetElement>(m_item.get())) return netItem->netLoad(ds, rules);
+  if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt) return netItem->get().netLoad(ds, rules);
   return {};
 }
 
 [[nodiscard]] std::expected<void, StarException> ToolUser::NetItem::enableNetInterpolation(float hint) {
   m_netInterpolationEnabled = true;
   m_netExtrapolationHint = hint;
-  if (auto netItem = as<NetElement>(m_item.get())) return netItem->enableNetInterpolation(hint);
+  if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt) return netItem->get().enableNetInterpolation(hint);
   return {};
 }
 
 [[nodiscard]] std::expected<void, StarException> ToolUser::NetItem::disableNetInterpolation() {
   m_netInterpolationEnabled = false;
   m_netExtrapolationHint = 0;
-  if (auto netItem = as<NetElement>(m_item.get())) return netItem->disableNetInterpolation();
+  if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt) return netItem->get().disableNetInterpolation();
   return {};
 }
 
 [[nodiscard]] std::expected<void, StarException> ToolUser::NetItem::tickNetInterpolation(float dt) {
   if (m_netInterpolationEnabled)
-    if (auto netItem = as<NetElement>(m_item.get())) return netItem->tickNetInterpolation(dt);
+    if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt) return netItem->get().tickNetInterpolation(dt);
   return {};
 }
 
 [[nodiscard]] std::expected<bool, StarException> ToolUser::NetItem::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
   bool deltaWritten = false;
-  const_cast<NetItem*>(this)->updateItemDescriptor();
+  const_cast<NetItem&>(*this).updateItemDescriptor();
   m_buffer.clear();
   auto descriptor = m_itemDescriptor.writeNetDelta(m_buffer, fromVersion, rules);
   if (!descriptor) return std::unexpected(std::move(descriptor.error()));
@@ -939,16 +939,16 @@ void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
     if (!code) return std::unexpected(std::move(code.error()));
     auto bytes = ds.writeBytes(m_buffer.data());
     if (!bytes) return std::unexpected(std::move(bytes.error()));
-    if (auto netItem = as<NetElement>(m_item.get())) {
+    if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt) {
       auto code = ds.write<std::uint8_t>(2);
       if (!code) return std::unexpected(std::move(code.error()));
-      auto stored = netItem->netStore(ds, rules);
+      auto stored = netItem->get().netStore(ds, rules);
       if (!stored) return std::unexpected(std::move(stored.error()));
     }
   }
-  if (auto netItem = as<NetElement>(m_item.get())) {
+  if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt) {
     m_buffer.clear();
-    auto delta = netItem->writeNetDelta(m_buffer, fromVersion, rules);
+    auto delta = netItem->get().writeNetDelta(m_buffer, fromVersion, rules);
     if (!delta) return std::unexpected(std::move(delta.error()));
     if (*delta) {
       deltaWritten = true;
@@ -975,25 +975,25 @@ void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
       auto descriptor = m_itemDescriptor.readNetDelta(ds, 0.0f, rules);
       if (!descriptor) return std::unexpected(std::move(descriptor.error()));
       if (!m_item || !m_item->matches(m_itemDescriptor.get(), true)) {
-        auto database = m_root->itemDatabase();
+        auto database = m_root.get().itemDatabase();
         if (!database) return std::unexpected(std::move(database.error()));
         auto loaded = (*database)->loadItem(m_itemDescriptor.get(), m_item);
         if (!loaded) return std::unexpected(std::move(loaded.error()));
         if (*loaded) {
           m_newItem = true;
-          if (auto netItem = as<NetElement>(m_item.get())) {
-            netItem->initNetVersion(m_netVersion);
+          if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt) {
+            netItem->get().initNetVersion(m_netVersion);
             if (m_netInterpolationEnabled) {
-              auto enabled = netItem->enableNetInterpolation(m_netExtrapolationHint);
+              auto enabled = netItem->get().enableNetInterpolation(m_netExtrapolationHint);
               if (!enabled) return std::unexpected(std::move(enabled.error()));
             }
           }
         }
       }
     } else if (*code == 2 || *code == 3) {
-      auto netItem = as<NetElement>(m_item.get());
+      auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt;
       if (!netItem) return std::unexpected(IOException("Server/Client disagreement about whether an Item is a NetElement in NetItem::readNetDelta"));
-      auto loaded = *code == 2 ? netItem->netLoad(ds, rules) : netItem->readNetDelta(ds, interpolationTime, rules);
+      auto loaded = *code == 2 ? netItem->get().netLoad(ds, rules) : netItem->get().readNetDelta(ds, interpolationTime, rules);
       if (!loaded) return std::unexpected(std::move(loaded.error()));
     } else return std::unexpected(IOException("Improper code received in NetItem::readDelta"));
   }
@@ -1002,7 +1002,7 @@ void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
 
 [[nodiscard]] std::expected<void, StarException> ToolUser::NetItem::blankNetDelta(float time) {
   if (m_netInterpolationEnabled)
-    if (auto netItem = as<NetElement>(m_item.get())) return netItem->blankNetDelta(time);
+    if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt) return netItem->get().blankNetDelta(time);
   return {};
 }
 
@@ -1014,9 +1014,9 @@ std::shared_ptr<Item> const& ToolUser::NetItem::get() const {
   if (m_item != item) {
     m_item = std::move(item);
     m_newItem = true;
-    if (auto netItem = as<NetElement>(m_item.get())) {
-      netItem->initNetVersion(m_netVersion);
-      auto interpolation = m_netInterpolationEnabled ? netItem->enableNetInterpolation(m_netExtrapolationHint) : netItem->disableNetInterpolation();
+    if (auto netItem = m_item ? asRef<NetElement>(*m_item) : std::nullopt) {
+      netItem->get().initNetVersion(m_netVersion);
+      auto interpolation = m_netInterpolationEnabled ? netItem->get().enableNetInterpolation(m_netExtrapolationHint) : netItem->get().disableNetInterpolation();
       if (!interpolation) return std::unexpected(std::move(interpolation.error()));
     }
     updateItemDescriptor();
@@ -1038,7 +1038,7 @@ void ToolUser::NetItem::updateItemDescriptor() {
 [[nodiscard]] std::expected<void, StarException> ToolUser::initPrimaryHandItem() {
   if (m_user && m_primaryHandItem.get()) {
     if (auto tool = as<ToolUserItem>(m_primaryHandItem.get())) {
-      auto initialized = tool->init(m_user, ToolHand::Primary);
+      auto initialized = tool->init(m_user->get(), ToolHand::Primary);
       if (!initialized) return std::unexpected(std::move(initialized.error()));
     }
     if (auto fireable = as<FireableItem>(m_primaryHandItem.get())) return fireable->triggerCooldown();
@@ -1053,7 +1053,7 @@ void ToolUser::NetItem::updateItemDescriptor() {
   }
   if (m_user && m_altHandItem.get()) {
     if (auto tool = as<ToolUserItem>(m_altHandItem.get())) {
-      auto initialized = tool->init(m_user, ToolHand::Alt);
+      auto initialized = tool->init(m_user->get(), ToolHand::Alt);
       if (!initialized) return std::unexpected(std::move(initialized.error()));
     }
     if (auto fireable = as<FireableItem>(m_altHandItem.get())) return fireable->triggerCooldown();

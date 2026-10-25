@@ -19,6 +19,7 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.ref_ptr;
+import star.optional;
 
 import star.image_lua_bindings;
 
@@ -58,15 +59,15 @@ std::expected<LuaMethods<Image>, StarException> LuaUserDataMethods<Image>::make(
 
   if (auto result = methods.registerMethod("process", [](Image& image, LuaEngine& engine, String const& directives) -> std::expected<Image, StarException> {
     List<std::shared_ptr<Image const>> resolvedImages;
-    return processImageOperations(parseImageOperations(directives), image, [&](String const& path) -> std::expected<Image const*, StarException> {
+    return processImageOperations(parseImageOperations(directives), image, [&](String const& path) -> std::expected<std::optional<std::reference_wrapper<Image const>>, StarException> {
       if (!engine.imageResolver())
-        return nullptr;
+        return std::nullopt;
       auto resolved = engine.imageResolver()(path);
       if (!resolved)
         return std::unexpected(std::move(resolved.error()));
-      auto ptr = resolved->get();
+      auto result = optionalRef(*resolved);
       resolvedImages.append(std::move(*resolved));
-      return ptr;
+      return result;
     });
   }); !result)
     return std::unexpected(std::move(result.error()));

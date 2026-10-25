@@ -34,9 +34,9 @@ import star.matrix3;
 import star.line;
 namespace Star {
 
-std::expected<Drawable::ImagePart*, StarException> Drawable::ImagePart::addDirectives(ImageMetadataDatabase const& imageMetadata, Directives const& directives, bool keepImageCenterPosition) {
+std::expected<std::reference_wrapper<Drawable::ImagePart>, StarException> Drawable::ImagePart::addDirectives(ImageMetadataDatabase const& imageMetadata, Directives const& directives, bool keepImageCenterPosition) {
   if (!directives)
-    return this;
+    return std::ref(*this);
   std::optional<Vec2F> oldSize;
   if (keepImageCenterPosition) {
     auto size = imageMetadata.imageSize(image);
@@ -51,12 +51,12 @@ std::expected<Drawable::ImagePart*, StarException> Drawable::ImagePart::addDirec
       return std::unexpected(std::move(size.error()));
     transformation *= Mat3F::translation((*oldSize - Vec2F(*size)) / 2);
   }
-  return this;
+  return std::ref(*this);
 }
 
-std::expected<Drawable::ImagePart*, StarException> Drawable::ImagePart::addDirectivesGroup(ImageMetadataDatabase const& imageMetadata, DirectivesGroup const& directivesGroup, bool keepImageCenterPosition) {
+std::expected<std::reference_wrapper<Drawable::ImagePart>, StarException> Drawable::ImagePart::addDirectivesGroup(ImageMetadataDatabase const& imageMetadata, DirectivesGroup const& directivesGroup, bool keepImageCenterPosition) {
   if (directivesGroup.empty())
-    return this;
+    return std::ref(*this);
   std::optional<Vec2F> oldSize;
   if (keepImageCenterPosition) {
     auto size = imageMetadata.imageSize(image);
@@ -72,10 +72,10 @@ std::expected<Drawable::ImagePart*, StarException> Drawable::ImagePart::addDirec
       return std::unexpected(std::move(size.error()));
     transformation *= Mat3F::translation((*oldSize - Vec2F(*size)) / 2);
   }
-  return this;
+  return std::ref(*this);
 }
 
-std::expected<Drawable::ImagePart*, StarException> Drawable::ImagePart::removeDirectives(ImageMetadataDatabase const& imageMetadata, bool keepImageCenterPosition) {
+std::expected<std::reference_wrapper<Drawable::ImagePart>, StarException> Drawable::ImagePart::removeDirectives(ImageMetadataDatabase const& imageMetadata, bool keepImageCenterPosition) {
   std::optional<Vec2F> oldSize;
   if (keepImageCenterPosition) {
     auto size = imageMetadata.imageSize(image);
@@ -90,7 +90,7 @@ std::expected<Drawable::ImagePart*, StarException> Drawable::ImagePart::removeDi
       return std::unexpected(std::move(size.error()));
     transformation *= Mat3F::translation((*oldSize - Vec2F(*size)) / 2);
   }
-  return this;
+  return std::ref(*this);
 }
 
 Drawable Drawable::makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position) {
@@ -231,14 +231,16 @@ std::expected<Drawable, StarException> Drawable::create(ImageMetadataDatabase co
 
 std::expected<Json, StarException> Drawable::toJson() const {
   JsonObject json;
-  if (auto line = std::get_if<LinePart>(&part)) {
-    json.set("line", jsonFromLine2F(line->line));
-    json.set("width", line->width);
-  } else if (auto poly = std::get_if<PolyPart>(&part)) {
-    json.set("poly", jsonFromPolyF(poly->poly));
-  } else if (auto image = std::get_if<ImagePart>(&part)) {
-    json.set("image", AssetPath::join(image->image));
-    json.set("transformation", jsonFromMat3F(image->transformation));
+  if (std::holds_alternative<LinePart>(part)) {
+    auto const& line = std::get<LinePart>(part);
+    json.set("line", jsonFromLine2F(line.line));
+    json.set("width", line.width);
+  } else if (std::holds_alternative<PolyPart>(part)) {
+    json.set("poly", jsonFromPolyF(std::get<PolyPart>(part).poly));
+  } else if (std::holds_alternative<ImagePart>(part)) {
+    auto const& image = std::get<ImagePart>(part);
+    json.set("image", AssetPath::join(image.image));
+    json.set("transformation", jsonFromMat3F(image.transformation));
   }
   json.set("position", jsonFromVec2F(position));
   json.set("color", jsonFromColor(color));
@@ -251,12 +253,12 @@ void Drawable::translate(Vec2F const& translation) {
 }
 
 void Drawable::rotate(float rotation, Vec2F const& rotationCenter) {
-  if (auto line = std::get_if<LinePart>(&part))
-    line->line.rotate(rotation);
-  else if (auto poly = std::get_if<PolyPart>(&part))
-    poly->poly.rotate(rotation);
-  else if (auto image = std::get_if<ImagePart>(&part))
-    image->transformation.rotate(rotation);
+  if (std::holds_alternative<LinePart>(part))
+    std::get<LinePart>(part).line.rotate(rotation);
+  else if (std::holds_alternative<PolyPart>(part))
+    std::get<PolyPart>(part).poly.rotate(rotation);
+  else if (std::holds_alternative<ImagePart>(part))
+    std::get<ImagePart>(part).transformation.rotate(rotation);
 
   position = (position - rotationCenter).rotate(rotation) + rotationCenter;
 }
@@ -266,12 +268,12 @@ void Drawable::scale(float scaling, Vec2F const& scaleCenter) {
 }
 
 void Drawable::scale(Vec2F const& scaling, Vec2F const& scaleCenter) {
-  if (auto line = std::get_if<LinePart>(&part))
-    line->line.scale(scaling);
-  else if (auto poly = std::get_if<PolyPart>(&part))
-    poly->poly.scale(scaling);
-  else if (auto image = std::get_if<ImagePart>(&part))
-    image->transformation.scale(scaling);
+  if (std::holds_alternative<LinePart>(part))
+    std::get<LinePart>(part).line.scale(scaling);
+  else if (std::holds_alternative<PolyPart>(part))
+    std::get<PolyPart>(part).poly.scale(scaling);
+  else if (std::holds_alternative<ImagePart>(part))
+    std::get<ImagePart>(part).transformation.scale(scaling);
 
   position = (position - scaleCenter).piecewiseMultiply(scaling) + scaleCenter;
 }
@@ -280,56 +282,60 @@ void Drawable::transform(Mat3F const& transformation) {
   Vec2F localTranslation = transformation.transformVec2(Vec2F());
   Mat3F localTransform = Mat3F::translation(-localTranslation) * transformation;
 
-  if (auto line = std::get_if<LinePart>(&part))
-    line->line.transform(localTransform);
-  else if (auto poly = std::get_if<PolyPart>(&part))
-    poly->poly.transform(localTransform);
-  else if (auto image = std::get_if<ImagePart>(&part))
-    image->transformation = localTransform * image->transformation;
+  if (std::holds_alternative<LinePart>(part))
+    std::get<LinePart>(part).line.transform(localTransform);
+  else if (std::holds_alternative<PolyPart>(part))
+    std::get<PolyPart>(part).poly.transform(localTransform);
+  else if (std::holds_alternative<ImagePart>(part)) {
+    auto& image = std::get<ImagePart>(part);
+    image.transformation = localTransform * image.transformation;
+  }
 
   position = transformation.transformVec2(position);
 }
 
 void Drawable::rebase(Vec2F const& newBase) {
-  if (auto line = std::get_if<LinePart>(&part))
-    line->line.translate(position - newBase);
-  else if (auto poly = std::get_if<PolyPart>(&part))
-    poly->poly.translate(position - newBase);
-  else if (auto image = std::get_if<ImagePart>(&part))
-    image->transformation.translate(position - newBase);
+  if (std::holds_alternative<LinePart>(part))
+    std::get<LinePart>(part).line.translate(position - newBase);
+  else if (std::holds_alternative<PolyPart>(part))
+    std::get<PolyPart>(part).poly.translate(position - newBase);
+  else if (std::holds_alternative<ImagePart>(part))
+    std::get<ImagePart>(part).transformation.translate(position - newBase);
 
   position = newBase;
 }
 
 std::expected<RectF, StarException> Drawable::boundBox(ImageMetadataDatabase const& imageMetadata, bool cropImages) const {
   RectF boundBox = RectF::null();
-  if (auto line = std::get_if<LinePart>(&part)) {
-    boundBox.combine(line->line.min());
-    boundBox.combine(line->line.max());
+  if (std::holds_alternative<LinePart>(part)) {
+    auto const& line = std::get<LinePart>(part).line;
+    boundBox.combine(line.min());
+    boundBox.combine(line.max());
 
-  } else if (auto poly = std::get_if<PolyPart>(&part)) {
-    boundBox.combine(poly->poly.boundBox());
+  } else if (std::holds_alternative<PolyPart>(part)) {
+    boundBox.combine(std::get<PolyPart>(part).poly.boundBox());
 
-  } else if (auto image = std::get_if<ImagePart>(&part)) {
+  } else if (std::holds_alternative<ImagePart>(part)) {
+    auto const& image = std::get<ImagePart>(part);
     RectF imageRegion = RectF::null();
     if (cropImages) {
-      auto nonEmptyRegion = imageMetadata.nonEmptyRegion(image->image);
+      auto nonEmptyRegion = imageMetadata.nonEmptyRegion(image.image);
       if (!nonEmptyRegion)
         return std::unexpected(std::move(nonEmptyRegion.error()));
       if (!nonEmptyRegion->isNull())
         imageRegion = RectF(*nonEmptyRegion);
     } else {
-      auto size = imageMetadata.imageSize(image->image);
+      auto size = imageMetadata.imageSize(image.image);
       if (!size)
         return std::unexpected(std::move(size.error()));
       imageRegion = RectF::withSize(Vec2F(), Vec2F(*size));
     }
 
     if (!imageRegion.isNull()) {
-      boundBox.combine(image->transformation.transformVec2(Vec2F(imageRegion.xMin(), imageRegion.yMin())));
-      boundBox.combine(image->transformation.transformVec2(Vec2F(imageRegion.xMax(), imageRegion.yMin())));
-      boundBox.combine(image->transformation.transformVec2(Vec2F(imageRegion.xMin(), imageRegion.yMax())));
-      boundBox.combine(image->transformation.transformVec2(Vec2F(imageRegion.xMax(), imageRegion.yMax())));
+      boundBox.combine(image.transformation.transformVec2(Vec2F(imageRegion.xMin(), imageRegion.yMin())));
+      boundBox.combine(image.transformation.transformVec2(Vec2F(imageRegion.xMax(), imageRegion.yMin())));
+      boundBox.combine(image.transformation.transformVec2(Vec2F(imageRegion.xMin(), imageRegion.yMax())));
+      boundBox.combine(image.transformation.transformVec2(Vec2F(imageRegion.xMax(), imageRegion.yMax())));
     }
   }
 
@@ -339,35 +345,35 @@ std::expected<RectF, StarException> Drawable::boundBox(ImageMetadataDatabase con
   return boundBox;
 }
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable::LinePart& line) {
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Drawable::LinePart& line) {
   return ds >> line.line >> line.width;
 }
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable::LinePart const& line) {
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Drawable::LinePart const& line) {
   return ds << line.line << line.width;
 }
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable::PolyPart& poly) {
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Drawable::PolyPart& poly) {
   return ds >> poly.poly;
 }
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable::PolyPart const& poly) {
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Drawable::PolyPart const& poly) {
   return ds << poly.poly;
 }
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable::ImagePart& image) {
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Drawable::ImagePart& image) {
   return ds >> image.image >> image.transformation;
 }
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable::ImagePart const& image) {
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Drawable::ImagePart const& image) {
   return ds << image.image << image.transformation;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable& drawable) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Drawable& drawable) {
   return ds >> drawable.part >> drawable.position >> drawable.color >> drawable.fullbright;
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable const& drawable) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Drawable const& drawable) {
   return ds << drawable.part << drawable.position << drawable.color << drawable.fullbright;
 }
 

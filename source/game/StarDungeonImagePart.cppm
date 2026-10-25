@@ -64,7 +64,7 @@ class ImageTileset {
 public:
   [[nodiscard]] static std::expected<std::shared_ptr<ImageTileset>, StarException> create(Root& root, Json const& tileset);
 
-  [[nodiscard]] std::expected<Tile const*, StarException> getTile(Vec4B color) const;
+  [[nodiscard]] std::expected<std::optional<std::reference_wrapper<Tile const>>, StarException> getTile(Vec4B color) const;
 
 private:
   ImageTileset() = default;
@@ -107,7 +107,7 @@ namespace Dungeon {
             return std::unexpected(StarException::format("Dungeon image {} uses unknown tile color: #{:02x}{:02x}{:02x}{:02x}",
                 entry.first, (*color)[0], (*color)[1], (*color)[2], (*color)[3]));
           if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
-          auto result = callback(Vec2I(x, y), **tile);
+          auto result = callback(Vec2I(x, y), (*tile)->get());
           if (!result) return std::unexpected(std::move(result.error()));
           if (*result) return {};
         }
@@ -126,7 +126,7 @@ namespace Dungeon {
         return std::unexpected(StarException::format("Dungeon image {} uses unknown tile color: #{:02x}{:02x}{:02x}{:02x}",
             entry.first, (*color)[0], (*color)[1], (*color)[2], (*color)[3]));
       if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
-      auto result = callback(pos, **tile);
+      auto result = callback(pos, (*tile)->get());
       if (!result) return std::unexpected(std::move(result.error()));
       if (*result) return {};
     }
@@ -162,7 +162,7 @@ namespace Dungeon {
         }
         auto value = tile.get("value");
         if (!value) return std::unexpected(std::move(value.error()));
-        Json connectorValue = **value;
+        Json connectorValue = value->get();
         if (auto customValue = tile.maybe("connector-value"))
           connectorValue = *customValue;
         if (connectorValue.isType(Json::Type::String)) {
@@ -180,7 +180,7 @@ namespace Dungeon {
           if (!DungeonDirectionNames) return std::unexpected(DungeonDirectionNames.error());
           auto parsed = DungeonDirectionNames->getLeft(*text);
           if (!parsed) return std::unexpected(std::move(parsed.error()));
-          connector.direction = **parsed;
+          connector.direction = parsed->get();
         }
         result.connector = std::move(connector);
       }
@@ -206,12 +206,14 @@ namespace Dungeon {
     return result;
   }
 
-  [[nodiscard]] std::expected<Tile const*, StarException> ImageTileset::getTile(Vec4B color) const {
+  [[nodiscard]] std::expected<std::optional<std::reference_wrapper<Tile const>>, StarException> ImageTileset::getTile(Vec4B color) const {
     if (color[3] == 0)
       color = Vec4B(255, 255, 255, 0);
     if (color[3] != 255)
-      return nullptr;
-    return m_tiles.get(colorAsInt(color));
+      return std::nullopt;
+    auto tile = m_tiles.get(colorAsInt(color));
+    if (!tile) return std::unexpected(std::move(tile.error()));
+    return std::optional{*tile};
   }
 
   unsigned ImageTileset::colorAsInt(Vec4B color) const {

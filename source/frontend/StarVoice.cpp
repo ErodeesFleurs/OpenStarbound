@@ -68,17 +68,17 @@ extern std::expected<EnumMap<VoiceChannelMode>, StarException> const VoiceChanne
   {VoiceChannelMode::Stereo, "Stereo"}
 });
 
-inline float getAudioChunkLoudness(std::int16_t* data, std::size_t samples, float volume) {
-  if (!samples)
+inline float getAudioChunkLoudness(std::span<std::int16_t const> data, float volume) {
+  if (data.empty())
     return 0.f;
 
   double rms = 0.;
-  for (std::size_t i = 0; i != samples; ++i) {
+  for (std::size_t i = 0; i != data.size(); ++i) {
     float sample = ((float)data[i] / 32767.f) * volume;
     rms += (double)(sample * sample);
   }
 
-  float fRms = std::sqrtf((float)(rms / samples));
+  float fRms = std::sqrtf((float)(rms / data.size()));
 
   if (fRms > 0)
     return std::clamp<float>(20.f * std::log10f(fRms), -127.f, 0.f);
@@ -86,12 +86,12 @@ inline float getAudioChunkLoudness(std::int16_t* data, std::size_t samples, floa
     return -127.f;
 }
 
-float getAudioLoudness(std::int16_t* data, std::size_t samples, float volume = 1.0f) {
+float getAudioLoudness(std::span<std::int16_t const> data, float volume = 1.0f) {
   constexpr std::size_t CHUNK_SIZE = 50;
 
   float highest = -127.f;
-  for (std::size_t i = 0; i < samples; i += CHUNK_SIZE) {
-    float level = getAudioChunkLoudness(data + i, std::min<std::size_t>(i + CHUNK_SIZE, samples) - i, volume);
+  for (std::size_t i = 0; i < data.size(); i += CHUNK_SIZE) {
+    float level = getAudioChunkLoudness(data.subspan(i, std::min(CHUNK_SIZE, data.size() - i)), volume);
     if (level > highest)
       highest = level;
   }
@@ -103,26 +103,22 @@ class VoiceAudioStream {
 public:
   // TODO: This should really be a ring buffer instead.
   std::queue<std::int16_t> samples;
-  SDL_AudioStream* sdlAudioStreamMono = nullptr;
-  SDL_AudioStream* sdlAudioStreamStereo = nullptr;
+  std::unique_ptr<SDL_AudioStream, decltype(&SDL_DestroyAudioStream)> sdlAudioStreamMono{nullptr, SDL_DestroyAudioStream};
+  std::unique_ptr<SDL_AudioStream, decltype(&SDL_DestroyAudioStream)> sdlAudioStreamStereo{nullptr, SDL_DestroyAudioStream};
   std::mutex mutex;
 
   [[nodiscard]] static std::expected<std::shared_ptr<VoiceAudioStream>, StarException> create() {
     auto audio = std::make_shared<VoiceAudioStream>();
     SDL_AudioSpec srcSpec = {SDL_AUDIO_S16LE, 1, 48000};
     SDL_AudioSpec dstSpec = {SDL_AUDIO_S16,   1, 44100};
-    audio->sdlAudioStreamMono = SDL_CreateAudioStream(&srcSpec, &dstSpec);
+    audio->sdlAudioStreamMono.reset(SDL_CreateAudioStream(&srcSpec, &dstSpec));
     if (!audio->sdlAudioStreamMono)
       return std::unexpected(VoiceException::format("Could not create mono audio stream: {}", SDL_GetError()));
     srcSpec.channels = dstSpec.channels = 2;
-    audio->sdlAudioStreamStereo = SDL_CreateAudioStream(&srcSpec, &dstSpec);
+    audio->sdlAudioStreamStereo.reset(SDL_CreateAudioStream(&srcSpec, &dstSpec));
     if (!audio->sdlAudioStreamStereo)
       return std::unexpected(VoiceException::format("Could not create stereo audio stream: {}", SDL_GetError()));
     return audio;
-  }
-  ~VoiceAudioStream() {
-    SDL_DestroyAudioStream(sdlAudioStreamMono);
-    SDL_DestroyAudioStream(sdlAudioStreamStereo);
   }
 
   inline std::int16_t take() {
@@ -134,16 +130,16 @@ public:
     return sample;
   }
 
-  [[nodiscard]] std::expected<void, StarException> resample(std::int16_t* in, std::size_t inSamples, std::vector<std::int16_t>& out, bool mono) {
-    SDL_AudioStream* stream = mono ? sdlAudioStreamMono : sdlAudioStreamStereo;
-    if (!SDL_PutAudioStreamData(stream, in, inSamples * sizeof(std::int16_t)))
+  [[nodiscard]] std::expected<void, StarException> resample(std::span<std::int16_t const> in, std::vector<std::int16_t>& out, bool mono) {
+    auto& stream = mono ? *sdlAudioStreamMono : *sdlAudioStreamStereo;
+    if (!SDL_PutAudioStreamData(&stream, in.data(), in.size_bytes()))
       return std::unexpected(VoiceException::format("Could not resample voice data: {}", SDL_GetError()));
-    int available = SDL_GetAudioStreamAvailable(stream);
+    int available = SDL_GetAudioStreamAvailable(&stream);
     if (available < 0)
       return std::unexpected(VoiceException::format("Could not inspect resampled voice data: {}", SDL_GetError()));
     out.resize(available / sizeof(std::int16_t));
     if (available) {
-      int received = SDL_GetAudioStreamData(stream, out.data(), available);
+      int received = SDL_GetAudioStreamData(&stream, out.data(), available);
       if (received < 0)
         return std::unexpected(VoiceException::format("Could not read resampled voice data: {}", SDL_GetError()));
       out.resize(received / sizeof(std::int16_t));
@@ -203,7 +199,7 @@ std::expected<std::shared_ptr<Voice>, StarException> Voice::create(Root& root, s
     return std::unexpected(std::move(speaker.error()));
   voice->m_clientSpeaker = std::move(*speaker);
   voice->m_stopThread = false;
-  auto thread = Thread::invoke("Voice::thread", std::mem_fn(&Voice::thread), voice.get());
+  auto thread = Thread::invoke("Voice::thread", std::mem_fn(&Voice::thread), std::ref(*voice));
   if (!thread)
     return std::unexpected(std::move(thread.error()));
   voice->m_thread = std::move(*thread);
@@ -275,14 +271,14 @@ std::expected<void, StarException> Voice::loadJson(Json const& config, bool skip
     if (!VoiceInputModeNames) return std::unexpected(VoiceInputModeNames.error());
     auto parsed = VoiceInputModeNames->getLeft(**inputModeName);
     if (!parsed) return std::unexpected(std::move(parsed.error()));
-    inputMode = **parsed;
+    inputMode = parsed->get();
   }
   auto channelMode = m_channelMode;
   if (*channelModeName) {
     if (!VoiceChannelModeNames) return std::unexpected(VoiceChannelModeNames.error());
     auto parsed = VoiceChannelModeNames->getLeft(**channelModeName);
     if (!parsed) return std::unexpected(std::move(parsed.error()));
-    channelMode = **parsed;
+    channelMode = parsed->get();
   }
   auto bitrate = config.opt("bitrate");
   if (!bitrate) return std::unexpected(std::move(bitrate.error()));
@@ -333,13 +329,13 @@ std::expected<void, StarException> Voice::loadJson(Json const& config, bool skip
 Json Voice::saveJson() const {
   return JsonObject{
     {"enabled",      m_enabled},
-    {"deviceName",  m_deviceName ? *m_deviceName : Json()},
+    {"deviceName",   m_deviceName ? Json(*m_deviceName) : Json()},
     {"inputEnabled", m_inputEnabled},
     {"threshold",    m_threshold},
     {"inputVolume",  m_inputVolume},
     {"outputVolume", m_outputVolume},
-    {"inputMode",    m_inputMode == VoiceInputMode::PushToTalk ? "PushToTalk" : "VoiceActivity"},
-    {"channelMode",  m_channelMode == VoiceChannelMode::Mono ? "Mono" : "Stereo"},
+    {"inputMode",    m_inputMode == VoiceInputMode::PushToTalk ? std::string_view("PushToTalk") : std::string_view("VoiceActivity")},
+    {"channelMode",  m_channelMode == VoiceChannelMode::Mono ? std::string_view("Mono") : std::string_view("Stereo")},
     {"loopback",     m_loopback},
     {"version",      1}
   };
@@ -372,8 +368,8 @@ std::shared_ptr<Voice::Speaker> Voice::localSpeaker() {
 std::expected<std::shared_ptr<Voice::Speaker>, StarException> Voice::speaker(SpeakerId speakerId) {
   if (m_speakerId == speakerId)
     return m_clientSpeaker;
-  if (auto ptr = m_speakers.ptr(speakerId))
-    return *ptr;
+  if (auto speaker = m_speakers.maybeRef(speakerId))
+    return speaker->get();
   auto created = Speaker::create(speakerId);
   if (!created)
     return std::unexpected(std::move(created.error()));
@@ -412,15 +408,17 @@ void Voice::clearSpeakers() {
   }
 }
 
-void Voice::readAudioData(std::uint8_t* stream, int len) {
+void Voice::readAudioData(std::span<std::uint8_t> stream) {
   auto now = Time::monotonicMilliseconds();
   bool active = m_encoder && m_encodedChunksLength < 2048
        && (m_inputMode == VoiceInputMode::VoiceActivity || now < m_lastInputTime);
 
-  std::size_t sampleCount = len / 2;
+  std::size_t sampleCount = stream.size() / sizeof(std::int16_t);
+  // The application capture boundary supplies native signed 16-bit samples.
+  std::span<std::int16_t const> samples(reinterpret_cast<std::int16_t const*>(stream.data()), sampleCount);
 
   if (active) {
-    float decibels = getAudioLoudness((std::int16_t*)stream, sampleCount);
+    float decibels = getAudioLoudness(samples);
 
     if (m_inputMode == VoiceInputMode::VoiceActivity) {
       if (decibels > m_threshold)
@@ -429,7 +427,7 @@ void Voice::readAudioData(std::uint8_t* stream, int len) {
     }
   }
 
-  m_clientSpeaker->decibelLevel = getAudioLoudness((std::int16_t*)stream, sampleCount, m_inputAmplitude);
+  m_clientSpeaker->decibelLevel = getAudioLoudness(samples, m_inputAmplitude);
 
   if (!m_loopback) {
     if (active && !m_clientSpeaker->playing)
@@ -441,7 +439,7 @@ void Voice::readAudioData(std::uint8_t* stream, int len) {
   std::lock_guard captureLock(m_captureMutex);
   if (active) {
     auto data = std::make_unique_for_overwrite<std::int16_t[]>(sampleCount);
-    std::memcpy(data.get(), stream, sampleCount * sizeof(std::int16_t));
+    std::memcpy(data.get(), stream.data(), sampleCount * sizeof(std::int16_t));
     m_capturedChunks.emplace(std::move(data), sampleCount);
     m_capturedChunksFrames += sampleCount / m_deviceChannels;
     m_threadCond.notify_one();
@@ -454,7 +452,7 @@ void Voice::readAudioData(std::uint8_t* stream, int len) {
   }
 }
 
-void Voice::mix(std::int16_t* buffer, std::size_t frameCount, unsigned channels) {
+void Voice::mix(std::span<std::int16_t> buffer, std::size_t frameCount, unsigned channels) {
   std::size_t samples = frameCount * channels;
   auto& finalBuffer = m_mixFinalBuffer;
   auto& speakerBuffer = m_mixSpeakerBuffer;
@@ -468,14 +466,14 @@ void Voice::mix(std::int16_t* buffer, std::size_t frameCount, unsigned channels)
     auto it = m_activeSpeakers.begin();
     while (it != m_activeSpeakers.end()) {
       std::shared_ptr<Speaker> const& speaker = *it;
-      VoiceAudioStream* audio = speaker->audioStream.get();
-      std::lock_guard audioLock(audio->mutex);
-      if (speaker->playing && !audio->samples.empty()) {
+      auto& audio = *speaker->audioStream;
+      std::lock_guard audioLock(audio.mutex);
+      if (speaker->playing && !audio.samples.empty()) {
         for (std::size_t i = 0; i != samples; ++i)
-          speakerBuffer[i] = audio->take();
+          speakerBuffer[i] = audio.take();
 
         if (speaker != m_clientSpeaker)
-          speaker->decibelLevel = getAudioLoudness(speakerBuffer.data(), samples);
+          speaker->decibelLevel = getAudioLoudness(speakerBuffer);
 
         if (!speaker->muted) {
           mix = true;
@@ -488,27 +486,6 @@ void Voice::mix(std::int16_t* buffer, std::size_t frameCount, unsigned channels)
           }
           for (std::size_t i = 0; i != samples; ++i)
             sharedBuffer[i] += (std::int32_t)(speakerBuffer[i]) * levels[i % 2] * volume;
-          //Blends the weaker channel into the stronger one,
-          /* unused, is a bit too strong on stereo music.
-          float maxLevel = max(levels[0], levels[1]);
-          float leftToRight = maxLevel != 0.0f ? 1.0f - (levels[0] / maxLevel) : 0.0f;
-          float rightToLeft = maxLevel != 0.0f ? 1.0f - (levels[1] / maxLevel) : 0.0f;
-
-          int16_t* speakerData = speakerBuffer.data();
-          int32_t* sharedData  = sharedBuffer.data();
-          for (size_t i = 0; i != frameCount; ++i) {
-            auto leftSample  = (float)*speakerData++;
-            auto rightSample = (float)*speakerData++;
-            
-            if (rightToLeft != 0.0f)
-              leftSample  = ( leftSample + rightSample * rightToLeft) / (1.0f + rightToLeft);
-            if (leftToRight != 0.0f)
-              rightSample = (rightSample +  leftSample * leftToRight) / (1.0f + leftToRight);
-
-            *sharedData++ += (int32_t)leftSample  * levels[0];
-            *sharedData++ += (int32_t)rightSample * levels[1];
-          }
-          //*/
         }
         ++it;
       }
@@ -528,7 +505,7 @@ void Voice::mix(std::int16_t* buffer, std::size_t frameCount, unsigned channels)
     for (std::size_t i = 0; i != sharedBuffer.size(); ++i)
       finalBuffer[i] = (std::int16_t)clamp<int>(sharedBuffer[i] * vol, INT16_MIN, INT16_MAX);
 
-    SDL_MixAudio((Uint8*)buffer, (Uint8*)finalBuffer.data(), SDL_AUDIO_S16LE, finalBuffer.size() * sizeof(std::int16_t), 1.0f);
+    SDL_MixAudio(reinterpret_cast<Uint8*>(buffer.data()), reinterpret_cast<Uint8 const*>(finalBuffer.data()), SDL_AUDIO_S16LE, finalBuffer.size() * sizeof(std::int16_t), 1.0f);
     std::memset(sharedBuffer.data(), 0, sharedBuffer.size() * sizeof(std::int32_t));
   }
 }
@@ -579,12 +556,12 @@ std::expected<void, StarException> Voice::setDeviceName(std::optional<String> de
 
 StringList Voice::availableDevices() {
   StringList list;
-  int i, num_devices;
-  if (SDL_AudioDeviceID* devices = SDL_GetAudioRecordingDevices(&num_devices)) {
-    list.reserve(num_devices);
-    for (i = 0; i < num_devices; ++i)
-      list.emplace_back(SDL_GetAudioDeviceName(devices[i]));
-    SDL_free(devices);
+  int numDevices;
+  std::unique_ptr<SDL_AudioDeviceID, decltype(&SDL_free)> devices(SDL_GetAudioRecordingDevices(&numDevices), SDL_free);
+  if (devices) {
+    list.reserve(numDevices);
+    for (auto device : std::span<SDL_AudioDeviceID const>(devices.get(), numDevices))
+      list.emplace_back(std::string(std::string_view(SDL_GetAudioDeviceName(device))));
   }
   list.sort();
   return list;
@@ -616,7 +593,7 @@ std::expected<int, StarException> Voice::send(DataStreamBuffer& out, std::size_t
 
   m_lastSentTime = Time::monotonicMilliseconds();
   if (m_loopback) {
-    auto received = receive(m_clientSpeaker, { out.ptr(), out.size() });
+    auto received = receive(m_clientSpeaker, std::string_view(out.span()));
     if (!received) return std::unexpected(std::move(received.error()));
   }
   return 1;
@@ -652,28 +629,28 @@ std::expected<bool, StarException> Voice::decode(std::shared_ptr<Speaker> const&
       if (!position) return std::unexpected(std::move(position.error()));
       if (*position > reader.size() || *opusLength > reader.size() - *position)
         return std::unexpected(VoiceException("Opus packet length goes past end of buffer", false));
-      auto opusData = reinterpret_cast<unsigned char const*>(reader.ptr()) + *position;
+      auto packet = reader.span().subspan(*position, *opusLength);
       if (auto result = reader.seek(*opusLength, IOSeek::Relative); !result)
         return std::unexpected(std::move(result.error()));
       if (!*opusLength)
         return std::unexpected(VoiceException("Empty Opus packet", false));
-      int channels = opus_packet_get_nb_channels(opusData);
+      int channels = opus_packet_get_nb_channels(reinterpret_cast<unsigned char const*>(packet.data()));
       if (channels == OPUS_INVALID_PACKET)
         continue;
       bool mono = channels == 1;
       OpusDecoder* decoder = mono ? speaker->decoderMono.get() : speaker->decoderStereo.get();
-      int samples = opus_decoder_get_nb_samples(decoder, opusData, *opusLength);
+      int samples = opus_decoder_get_nb_samples(decoder, reinterpret_cast<unsigned char const*>(packet.data()), packet.size());
       if (samples < 0)
         return std::unexpected(VoiceException::format("Decoder error: {}", opus_strerror(samples)));
 
       m_decodeBuffer.resize(samples * (std::size_t)channels);
 
-      int decodedSamples = opus_decode(decoder, opusData, *opusLength, m_decodeBuffer.data(), samples, 0);
+      int decodedSamples = opus_decode(decoder, reinterpret_cast<unsigned char const*>(packet.data()), packet.size(), m_decodeBuffer.data(), samples, 0);
       if (decodedSamples < 0)
         return std::unexpected(VoiceException::format("Decoder error: {}", opus_strerror(decodedSamples)));
       if (!decodedSamples)
         return true;
-      auto resampled = speaker->audioStream->resample(m_decodeBuffer.data(), (std::size_t)decodedSamples * channels, m_resampleBuffer, mono);
+      auto resampled = speaker->audioStream->resample(std::span<std::int16_t const>(m_decodeBuffer).first((std::size_t)decodedSamples * channels), m_resampleBuffer, mono);
       if (!resampled)
         return std::unexpected(std::move(resampled.error()));
 
@@ -760,23 +737,23 @@ std::expected<void, StarException> Voice::openDevice() {
 
   std::uint32_t deviceId = SDL_AUDIO_DEVICE_DEFAULT_RECORDING;
   if (m_deviceName) {
-    int i, num_devices;
-    if (SDL_AudioDeviceID* devices = SDL_GetAudioRecordingDevices(&num_devices)) {
-      for (i = 0; i < num_devices; ++i) {
-        if (*m_deviceName == SDL_GetAudioDeviceName(devices[i])) {
-          deviceId = devices[i];
+    int numDevices;
+    std::unique_ptr<SDL_AudioDeviceID, decltype(&SDL_free)> devices(SDL_GetAudioRecordingDevices(&numDevices), SDL_free);
+    if (devices) {
+      for (auto device : std::span<SDL_AudioDeviceID const>(devices.get(), numDevices)) {
+        if (*m_deviceName == std::string_view(SDL_GetAudioDeviceName(device))) {
+          deviceId = device;
           break;
         }
       }
-      SDL_free(devices);
     }
   }
   auto opened = m_applicationController->openAudioInputDevice(
     deviceId,
     VOICE_SAMPLE_RATE,
     m_deviceChannels = encoderChannels(),
-    [this](std::uint8_t* stream, int len) {
-      readAudioData(stream, len);
+    [this](std::span<std::uint8_t> stream) {
+      readAudioData(stream);
     }
   );
   if (!opened) return std::unexpected(std::move(opened.error()));
@@ -842,7 +819,7 @@ std::expected<void, StarException> Voice::thread() {
             samples[i] *= m_inputAmplitude;
         }
 
-        int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, (unsigned char*)encoded.ptr(), encoded.size());
+        int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, reinterpret_cast<unsigned char*>(encoded.span().data()), encoded.size());
         if (encodedSize > 0) {
           if (encodedSize == 1)
             continue;

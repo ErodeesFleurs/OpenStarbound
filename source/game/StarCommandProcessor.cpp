@@ -201,10 +201,10 @@ import star.celestial_database;
 import star.algorithm;
 namespace Star {
 
-CommandProcessor::CommandProcessor(Root& root, UniverseServer* universe)
+CommandProcessor::CommandProcessor(Root& root, UniverseServer& universe)
   : m_root(root), m_universe(universe), m_scriptComponent(root) {}
 
-std::expected<std::shared_ptr<CommandProcessor>, StarException> CommandProcessor::create(Root& root, UniverseServer* universe) {
+std::expected<std::shared_ptr<CommandProcessor>, StarException> CommandProcessor::create(Root& root, UniverseServer& universe) {
   auto processor = std::shared_ptr<CommandProcessor>(new CommandProcessor(root, universe));
   auto assets = root.assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
@@ -326,10 +326,10 @@ std::expected<String, StarException> CommandProcessor::admin(ConnectionId connec
     if (!*target) return strf("No user with specifier {} found.", (*arguments)[0]);
     targetClientId = **target;
   } else {
-    auto canBecome = m_universe->canBecomeAdmin(connectionId);
+    auto canBecome = m_universe.canBecomeAdmin(connectionId);
     if (!canBecome) return std::unexpected(std::move(canBecome.error()));
     if (!*canBecome) {
-      auto admin = m_universe->isAdmin(connectionId);
+      auto admin = m_universe.isAdmin(connectionId);
       if (!admin) return std::unexpected(std::move(admin.error()));
       if (!*admin) return "Insufficient privileges to make self admin.";
     }
@@ -340,11 +340,11 @@ std::expected<String, StarException> CommandProcessor::admin(ConnectionId connec
   auto allow = allowJson->toBool();
   if (!allow) return std::unexpected(std::move(allow.error()));
   if (!*allow) return "Admin commands disabled on this server.";
-  auto wasAdmin = m_universe->isAdmin(targetClientId);
+  auto wasAdmin = m_universe.isAdmin(targetClientId);
   if (!wasAdmin) return std::unexpected(std::move(wasAdmin.error()));
-  auto set = m_universe->setAdmin(targetClientId, !*wasAdmin);
+  auto set = m_universe.setAdmin(targetClientId, !*wasAdmin);
   if (!set) return std::unexpected(std::move(set.error()));
-  auto nick = m_universe->clientNick(targetClientId);
+  auto nick = m_universe.clientNick(targetClientId);
   if (!nick) return std::unexpected(std::move(nick.error()));
   if (!*wasAdmin) return strf("Admin privileges now given to {}", *nick);
   return strf("Admin privileges taken away from {}", *nick);
@@ -354,43 +354,43 @@ std::expected<String, StarException> CommandProcessor::serverDebug(ConnectionId 
   auto permission = adminCheck(connectionId, "debug server");
   if (!permission) return std::unexpected(std::move(permission.error()));
   if (*permission) return **permission;
-  auto local = m_universe->isLocal(connectionId);
+  auto local = m_universe.isLocal(connectionId);
   if (!local) return std::unexpected(std::move(local.error()));
   if (*local) return "Server is local, server debug already active";
-  auto version = m_universe->clientConnectionVersion(connectionId);
+  auto version = m_universe.clientConnectionVersion(connectionId);
   if (!version) return std::unexpected(std::move(version.error()));
   if (*version < 17) return "Client is not new enough to debug server";
-  auto enabled = m_universe->serverDebug(connectionId);
+  auto enabled = m_universe.serverDebug(connectionId);
   if (!enabled) return std::unexpected(std::move(enabled.error()));
-  auto set = m_universe->setServerDebug(connectionId, !*enabled);
+  auto set = m_universe.setServerDebug(connectionId, !*enabled);
   if (!set) return std::unexpected(std::move(set.error()));
-  return strf("Server debug {}", !*enabled ? "enabled" : "disabled");
+  return strf("Server debug {}", !*enabled ? std::string_view("enabled") : std::string_view("disabled"));
 }
 
 std::expected<String, StarException> CommandProcessor::pvp(ConnectionId connectionId, String const&) {
-  auto wasPvp = m_universe->isPvp(connectionId);
+  auto wasPvp = m_universe.isPvp(connectionId);
   if (!wasPvp) return std::unexpected(std::move(wasPvp.error()));
-  auto set = m_universe->setPvp(connectionId, !*wasPvp);
+  auto set = m_universe.setPvp(connectionId, !*wasPvp);
   if (!set) return std::unexpected(std::move(set.error()));
-  auto nowPvp = m_universe->isPvp(connectionId);
+  auto nowPvp = m_universe.isPvp(connectionId);
   if (!nowPvp) return std::unexpected(std::move(nowPvp.error()));
   if (*nowPvp != *wasPvp) {
-    auto nick = m_universe->clientNick(connectionId);
+    auto nick = m_universe.clientNick(connectionId);
     if (!nick) return std::unexpected(std::move(nick.error()));
-    auto sent = m_universe->adminBroadcast(*nowPvp ? strf("Player {} is now PVP", *nick) : strf("Player {} is a big wimp and is no longer PVP", *nick));
+    auto sent = m_universe.adminBroadcast(*nowPvp ? strf("Player {} is now PVP", *nick) : strf("Player {} is a big wimp and is no longer PVP", *nick));
     if (!sent) return std::unexpected(std::move(sent.error()));
   }
-  auto pvp = m_universe->isPvp(connectionId);
+  auto pvp = m_universe.isPvp(connectionId);
   if (!pvp) return std::unexpected(std::move(pvp.error()));
-  return *pvp ? "PVP active" : "PVP inactive";
+  return *pvp ? String("PVP active") : String("PVP inactive");
 }
 
 std::expected<String, StarException> CommandProcessor::whoami(ConnectionId connectionId, String const&) {
-  auto nick = m_universe->clientNick(connectionId);
+  auto nick = m_universe.clientNick(connectionId);
   if (!nick) return std::unexpected(std::move(nick.error()));
-  auto admin = m_universe->isAdmin(connectionId);
+  auto admin = m_universe.isAdmin(connectionId);
   if (!admin) return std::unexpected(std::move(admin.error()));
-  return strf("Server: You are {}. You are {}an Admin", *nick, *admin ? "" : "not ");
+  return strf("Server: You are {}. You are {}an Admin", *nick, *admin ? std::string_view() : std::string_view("not "));
 }
 
 std::expected<String, StarException> CommandProcessor::warp(ConnectionId connectionId, String const& argumentString) {
@@ -401,7 +401,7 @@ std::expected<String, StarException> CommandProcessor::warp(ConnectionId connect
   auto result = [&]() -> std::expected<String, StarException> {
     auto action = parseWarpAction(argumentString);
     if (!action) return std::unexpected(std::move(action.error()));
-    auto warped = m_universe->clientWarpPlayer(connectionId, *action);
+    auto warped = m_universe.clientWarpPlayer(connectionId, *action);
     if (!warped) return std::unexpected(std::move(warped.error()));
     return "Lets do the space warp again";
   
@@ -421,7 +421,7 @@ std::expected<String, StarException> CommandProcessor::warpRandom(ConnectionId c
   if (!permission) return std::unexpected(std::move(permission.error()));
   if (*permission) return **permission;
   Vec2I size = {2, 2};
-  auto celestialDatabase = m_universe->celestialDatabase();
+  auto celestialDatabase = m_universe.celestialDatabase();
   std::optional<CelestialCoordinate> target;
   auto validPlanet = [&](CelestialCoordinate const& planet) -> std::expected<bool, StarException> {
     auto parameters = celestialDatabase->parameters(planet);
@@ -464,7 +464,7 @@ std::expected<String, StarException> CommandProcessor::warpRandom(ConnectionId c
     if (size.magnitude() > 1024) return "could not find a matching world";
     size *= 2;
   }
-  auto warped = m_universe->clientWarpPlayer(connectionId, WarpToWorld(CelestialWorldId(*target)));
+  auto warped = m_universe.clientWarpPlayer(connectionId, WarpToWorld(CelestialWorldId(*target)));
   if (!warped) return std::unexpected(std::move(warped.error()));
   return strf("warping to {}", *target);
 }
@@ -489,8 +489,8 @@ std::expected<String, StarException> CommandProcessor::timewarp(ConnectionId con
     else if (time < 0.0 && (arguments.size() < 2 || arguments[1] != "please"))
       return "Great Scott! We can't go back in time!";
 
-    m_universe->universeClock()->adjustTime(time);
-    return time > 0.0 ? "It's just a jump to the left..." : "And then a step to the right...";
+    m_universe.universeClock()->adjustTime(time);
+    return time > 0.0 ? String("It's just a jump to the left...") : String("And then a step to the right...");
   
   }();
   if (result) return std::move(*result);
@@ -517,7 +517,7 @@ std::expected<String, StarException> CommandProcessor::timescale(ConnectionId co
   auto parsedScale = lexicalCast<float>(arguments[0]);
   if (!parsedScale) return std::unexpected(std::move(parsedScale.error()));
   float timescale = clamp(*parsedScale, 0.001f, 32.0f);
-  auto set = m_universe->setTimescale(timescale);
+  auto set = m_universe.setTimescale(timescale);
   if (!set) return std::unexpected(std::move(set.error()));
   return strf("Set timescale to {:6.6f}x", timescale);
 }
@@ -537,7 +537,7 @@ std::expected<String, StarException> CommandProcessor::tickrate(ConnectionId con
   auto parsedRate = lexicalCast<float>(arguments[0]);
   if (!parsedRate) return std::unexpected(std::move(parsedRate.error()));
   float tickRate = clamp(*parsedRate, 5.f, 500.f);
-  m_universe->setTickRate(tickRate);
+  m_universe.setTickRate(tickRate);
   return strf("Set tick rate to {:4.2f}Hz", tickRate);
 }
 
@@ -582,8 +582,8 @@ std::expected<String, StarException> CommandProcessor::setTileProtection(Connect
       }
     }
     std::size_t changed = 0;
-    auto executed = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const&) -> std::expected<void, StarException> {
-       auto count = world->setTileProtection(dungeonIds, isProtected);
+    auto executed = m_universe.executeForClient(connectionId, [&](WorldServer& world, std::shared_ptr<Player> const&) -> std::expected<void, StarException> {
+       auto count = world.setTileProtection(dungeonIds, isProtected);
        if (!count) return std::unexpected(std::move(count.error()));
        changed = *count;
        return {};
@@ -592,7 +592,7 @@ std::expected<String, StarException> CommandProcessor::setTileProtection(Connect
     if (!*executed) {
       return "Invalid client state";
     }
-    String output = strf("{} {} dungeon IDs", isProtected ? "Protected" : "Unprotected", changed);
+    String output = strf("{} {} dungeon IDs", isProtected ? std::string_view("Protected") : std::string_view("Unprotected"), changed);
     return changed < dungeonIds.size() ? strf("{} ({} unchanged)", output, dungeonIds.size() - changed) : output;
   
   }();
@@ -621,14 +621,14 @@ std::expected<String, StarException> CommandProcessor::setDungeonId(ConnectionId
     if (!dungeonIdResult) return std::unexpected(std::move(dungeonIdResult.error()));
     DungeonId dungeonId = *dungeonIdResult;
 
-    auto done = m_universe->executeForClient(connectionId, [dungeonId](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+    auto done = m_universe.executeForClient(connectionId, [dungeonId](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
         auto aimPosition = player->aimPosition();
         if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
-        return world->setDungeonId(RectI::withSize(Vec2I((*aimPosition)), Vec2I(1, 1)), dungeonId);
+        return world.setDungeonId(RectI::withSize(Vec2I((*aimPosition)), Vec2I(1, 1)), dungeonId);
       });
 
     if (!done) return std::unexpected(std::move(done.error()));
-    return *done ? "" : "Failed to set dungeon id.";
+    return *done ? String() : String("Failed to set dungeon id.");
   
   }();
   if (result) return std::move(*result);
@@ -645,10 +645,10 @@ std::expected<String, StarException> CommandProcessor::setPlayerStart(Connection
   if (!adminCheckError) return std::unexpected(std::move(adminCheckError.error()));
   if (*adminCheckError) return **adminCheckError;
 
-  auto executed = m_universe->executeForClient(connectionId, [](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+  auto executed = m_universe.executeForClient(connectionId, [](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
       auto feetOffset = player->feetOffset();
       if (!feetOffset) return std::unexpected(std::move(feetOffset.error()));
-      world->setPlayerStart(player->position() + *feetOffset);
+      world.setPlayerStart(player->position() + *feetOffset);
       return {};
     });
   if (!executed) return std::unexpected(std::move(executed.error()));
@@ -699,7 +699,7 @@ std::expected<String, StarException> CommandProcessor::spawnItem(ConnectionId co
       seed = *seedResult;
     }
 
-    auto done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+    auto done = m_universe.executeForClient(connectionId, [&](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
         auto itemDatabaseResult = m_root.itemDatabase();
         if (!itemDatabaseResult) return std::unexpected(std::move(itemDatabaseResult.error()));
         auto itemDatabase = std::move(*itemDatabaseResult);
@@ -711,11 +711,11 @@ std::expected<String, StarException> CommandProcessor::spawnItem(ConnectionId co
         if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
         auto drop = ItemDrop::createRandomizedDrop(m_root, *item, (*aimPosition));
         if (!drop) return std::unexpected(std::move(drop.error()));
-        return world->addEntity(*drop);
+        return world.addEntity(*drop);
       });
 
     if (!done) return std::unexpected(std::move(done.error()));
-    return *done ? "" : "Invalid client state";
+    return *done ? String() : String("Invalid client state");
   
   }();
   if (result) return std::move(*result);
@@ -765,7 +765,7 @@ std::expected<String, StarException> CommandProcessor::spawnTreasure(ConnectionI
       level = *levelResult;
     }
 
-    auto done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+    auto done = m_universe.executeForClient(connectionId, [&](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
         auto treasureDatabaseResult = m_root.treasureDatabase();
         if (!treasureDatabaseResult) return std::unexpected(std::move(treasureDatabaseResult.error()));
         auto treasureDatabase = std::move(*treasureDatabaseResult);
@@ -776,14 +776,14 @@ std::expected<String, StarException> CommandProcessor::spawnTreasure(ConnectionI
           if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
           auto drop = ItemDrop::createRandomizedDrop(m_root, treasureItem, (*aimPosition));
           if (!drop) return std::unexpected(std::move(drop.error()));
-          auto added = world->addEntity(*drop);
+          auto added = world.addEntity(*drop);
           if (!added) return std::unexpected(std::move(added.error()));
         }
         return {};
       });
 
     if (!done) return std::unexpected(std::move(done.error()));
-    return *done ? "" : "Invalid client state";
+    return *done ? String() : String("Invalid client state");
   
   }();
   if (result) return std::move(*result);
@@ -853,16 +853,16 @@ std::expected<String, StarException> CommandProcessor::spawnMonster(ConnectionId
     auto created = monsterDatabase->createMonster(*variant, level);
     if (!created) return std::unexpected(std::move(created.error()));
     monster = std::move(*created);
-    auto done = m_universe->executeForClient(connectionId,
-        [&](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+    auto done = m_universe.executeForClient(connectionId,
+        [&](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
           auto aimPosition = player->aimPosition();
           if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
           monster->setPosition((*aimPosition));
-          return world->addEntity(monster);
+          return world.addEntity(monster);
         });
 
     if (!done) return std::unexpected(std::move(done.error()));
-    return *done ? "" : "Invalid client state";
+    return *done ? String() : String("Invalid client state");
   
   }();
   if (result) return std::move(*result);
@@ -918,15 +918,15 @@ std::expected<String, StarException> CommandProcessor::spawnNpc(ConnectionId con
     auto npcResult = npcDatabase->createNpc(*variant);
     if (!npcResult) return std::unexpected(std::move(npcResult.error()));
     auto npc = std::move(*npcResult);
-    auto done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+    auto done = m_universe.executeForClient(connectionId, [&](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
         auto aimPosition = player->aimPosition();
         if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
         npc->setPosition((*aimPosition));
-        return world->addEntity(npc);
+        return world.addEntity(npc);
       });
 
     if (!done) return std::unexpected(std::move(done.error()));
-    return *done ? "" : "Invalid client state";
+    return *done ? String() : String("Invalid client state");
   
   }();
   if (result) return std::move(*result);
@@ -970,16 +970,16 @@ std::expected<String, StarException> CommandProcessor::spawnVehicle(ConnectionId
     auto created = vehicleDatabase->create(name, parameters);
     if (!created) return std::unexpected(std::move(created.error()));
     vehicle = std::move(*created);
-    auto done = m_universe->executeForClient(connectionId,
-        [&](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+    auto done = m_universe.executeForClient(connectionId,
+        [&](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
           auto aimPosition = player->aimPosition();
           if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
           vehicle->setPosition((*aimPosition));
-          return world->addEntity(std::move(vehicle));
+          return world.addEntity(std::move(vehicle));
         });
 
     if (!done) return std::unexpected(std::move(done.error()));
-    return *done ? "" : "Invalid client state";
+    return *done ? String() : String("Invalid client state");
   
   }();
   if (result) return std::move(*result);
@@ -1020,15 +1020,15 @@ std::expected<String, StarException> CommandProcessor::spawnStagehand(Connection
     auto created = stagehandDatabase->createStagehand(arguments[0], parameters);
     if (!created) return std::unexpected(std::move(created.error()));
     auto stagehand = std::move(*created);
-    auto done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> player) -> std::expected<void, StarException> {
+    auto done = m_universe.executeForClient(connectionId, [&](WorldServer& world, std::shared_ptr<Player> player) -> std::expected<void, StarException> {
         auto aimPosition = player->aimPosition();
         if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
         stagehand->setPosition((*aimPosition));
-        return world->addEntity(stagehand);
+        return world.addEntity(stagehand);
       });
 
     if (!done) return std::unexpected(std::move(done.error()));
-    return *done ? "" : "Invalid client state";
+    return *done ? String() : String("Invalid client state");
   
   }();
   if (result) return std::move(*result);
@@ -1047,22 +1047,22 @@ std::expected<String, StarException> CommandProcessor::clearStagehand(Connection
   if (*adminCheckError) return **adminCheckError;
 
   unsigned removed = 0;
-  auto done = m_universe->executeForClient(connectionId,
-      [&](WorldServer* world, std::shared_ptr<Player> player) -> std::expected<void, StarException> {
+  auto done = m_universe.executeForClient(connectionId,
+      [&](WorldServer& world, std::shared_ptr<Player> player) -> std::expected<void, StarException> {
         auto aimPosition = player->aimPosition();
         if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
         auto queryRect = RectF::withCenter((*aimPosition), Vec2F{2, 2});
-        auto stagehands = world->query<Stagehand>(queryRect);
+        auto stagehands = world.query<Stagehand>(queryRect);
         if (!stagehands) return std::unexpected(std::move(stagehands.error()));
         for (auto stagehand : *stagehands) {
-          auto removedEntity = world->removeEntity(stagehand->entityId(), true);
+          auto removedEntity = world.removeEntity(stagehand->entityId(), true);
           if (!removedEntity) return std::unexpected(std::move(removedEntity.error()));
           ++removed;
         }
         return {};
       });
   if (!done) return std::unexpected(std::move(done.error()));
-  return *done ? strf("Removed {} stagehands", removed) : "Invalid client state";
+  return *done ? strf("Removed {} stagehands", removed) : String("Invalid client state");
 }
 
 std::expected<String, StarException> CommandProcessor::spawnLiquid(ConnectionId connectionId, String const& argumentString) {
@@ -1096,15 +1096,15 @@ std::expected<String, StarException> CommandProcessor::spawnLiquid(ConnectionId 
         return strf("Could not parse quantity value '{}'", arguments[1]);
     }
 
-    auto done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+    auto done = m_universe.executeForClient(connectionId, [&](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
         auto aimPosition = player->aimPosition();
         if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
-        auto modified = world->modifyTile(Vec2I((*aimPosition).floor()), PlaceLiquid{liquid, quantity}, true);
+        auto modified = world.modifyTile(Vec2I((*aimPosition).floor()), PlaceLiquid{liquid, quantity}, true);
         if (!modified) return std::unexpected(std::move(modified.error()));
         return {};
       });
     if (!done) return std::unexpected(std::move(done.error()));
-    return *done ? "" : "Invalid client state";
+    return *done ? String() : String("Invalid client state");
 
   
   }();
@@ -1139,12 +1139,12 @@ std::expected<String, StarException> CommandProcessor::kick(ConnectionId connect
 
   // Like IRC, if only the nick is passed then the nick is used as the reason
   if (arguments.size() == 1) {
-    auto nick = m_universe->clientNick(*toKick);
+    auto nick = m_universe.clientNick(*toKick);
     if (!nick) return std::unexpected(std::move(nick.error()));
     arguments.append(*nick);
   }
 
-  auto disconnected = m_universe->disconnectClient(*toKick, arguments[1]);
+  auto disconnected = m_universe.disconnectClient(*toKick, arguments[1]);
   if (!disconnected) return std::unexpected(std::move(disconnected.error()));
 
   return strf("Successfully kicked user with specifier {}. ConnectionId: {}. Reason given: {}",
@@ -1173,7 +1173,7 @@ std::expected<String, StarException> CommandProcessor::ban(ConnectionId connecti
 
   String reason = arguments[0];
   if (arguments.size() < 2) {
-    auto nick = m_universe->clientNick(*toKick);
+    auto nick = m_universe.clientNick(*toKick);
     if (!nick) return std::unexpected(std::move(nick.error()));
     reason = *nick;
   }
@@ -1204,7 +1204,7 @@ std::expected<String, StarException> CommandProcessor::ban(ConnectionId connecti
     banTime = *parsedTime;
   }
 
-  auto banned = m_universe->banUser(*toKick, reason, type, banTime);
+  auto banned = m_universe.banUser(*toKick, reason, type, banTime);
   if (!banned) return std::unexpected(std::move(banned.error()));
 
   return strf("Successfully kicked user with specifier {}. ConnectionId: {}. Reason given: {}",
@@ -1223,7 +1223,7 @@ std::expected<String, StarException> CommandProcessor::unbanIp(ConnectionId conn
   if (arguments.empty())
     return "No IP specified";
 
-  auto success = m_universe->unbanIp(arguments[0]);
+  auto success = m_universe.unbanIp(arguments[0]);
   if (!success) return std::unexpected(std::move(success.error()));
 
   if (*success)
@@ -1244,7 +1244,7 @@ std::expected<String, StarException> CommandProcessor::unbanUuid(ConnectionId co
   if (arguments.empty())
     return "No UUID specified";
 
-  auto success = m_universe->unbanUuid(arguments[0]);
+  auto success = m_universe.unbanUuid(arguments[0]);
   if (!success) return std::unexpected(std::move(success.error()));
 
   if (*success)
@@ -1263,10 +1263,10 @@ std::expected<String, StarException> CommandProcessor::list(ConnectionId connect
   auto assetsResult = m_root.assets();
   if (!assetsResult) return std::unexpected(std::move(assetsResult.error()));
   auto assets = std::move(*assetsResult);
-  for (auto cid : m_universe->clientIds()) {
-    auto nick = m_universe->clientNick(cid);
+  for (auto cid : m_universe.clientIds()) {
+    auto nick = m_universe.clientNick(cid);
     if (!nick) return std::unexpected(std::move(nick.error()));
-    res.append(strf("${} : {} : ${}", cid, *nick, m_universe->uuidForClient(cid)->hex()));
+    res.append(strf("${} : {} : ${}", cid, *nick, m_universe.uuidForClient(cid)->hex()));
   }
 
   return res.join("\n");
@@ -1293,7 +1293,7 @@ std::expected<String, StarException> CommandProcessor::clientCoordinate(Connecti
   }
 
   if (targetClientId) {
-    auto worldId = m_universe->clientWorld(targetClientId);
+    auto worldId = m_universe.clientWorld(targetClientId);
     if (!worldId) return std::unexpected(std::move(worldId.error()));
     auto world = printWorldId(*worldId);
     if (!world) return std::unexpected(std::move(world.error()));
@@ -1341,12 +1341,12 @@ std::expected<String, StarException> CommandProcessor::entityEval(ConnectionId c
   if (*adminCheckError) return **adminCheckError;
 
   String message;
-  auto done = m_universe->executeForClient(connectionId,
-      [&lua, &message](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+  auto done = m_universe.executeForClient(connectionId,
+      [&lua, &message](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
         auto aimPosition = player->aimPosition();
         if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
         auto queryRect = RectF::withCenter((*aimPosition), Vec2F{2, 2});
-        auto query = world->query<ScriptedEntity>(queryRect);
+        auto query = world.query<ScriptedEntity>(queryRect);
         if (!query) return std::unexpected(std::move(query.error()));
         auto entities = std::move(*query);
         if (entities.empty()) {
@@ -1375,7 +1375,7 @@ std::expected<String, StarException> CommandProcessor::entityEval(ConnectionId c
       });
 
   if (!done) return std::unexpected(std::move(done.error()));
-  return *done ? message : "failed to do entity eval";
+  return *done ? message : String("failed to do entity eval");
 }
 
 std::expected<String, StarException> CommandProcessor::enableSpawning(ConnectionId connectionId, String const&) {
@@ -1383,10 +1383,10 @@ std::expected<String, StarException> CommandProcessor::enableSpawning(Connection
   if (!adminCheckError) return std::unexpected(std::move(adminCheckError.error()));
   if (*adminCheckError) return **adminCheckError;
 
-  auto done = m_universe->executeForClient(
-      connectionId, [](WorldServer* world, std::shared_ptr<Player> const&) -> std::expected<void, StarException> { world->setSpawningEnabled(true); return {}; });
+  auto done = m_universe.executeForClient(
+      connectionId, [](WorldServer& world, std::shared_ptr<Player> const&) -> std::expected<void, StarException> { world.setSpawningEnabled(true); return {}; });
   if (!done) return std::unexpected(std::move(done.error()));
-  return *done ? "enabled monster spawning" : "enabling monster spawning failed";
+  return *done ? String("enabled monster spawning") : String("enabling monster spawning failed");
 }
 
 std::expected<String, StarException> CommandProcessor::disableSpawning(ConnectionId connectionId, String const&) {
@@ -1394,10 +1394,10 @@ std::expected<String, StarException> CommandProcessor::disableSpawning(Connectio
   if (!adminCheckError) return std::unexpected(std::move(adminCheckError.error()));
   if (*adminCheckError) return **adminCheckError;
 
-  auto done = m_universe->executeForClient(
-      connectionId, [](WorldServer* world, std::shared_ptr<Player> const&) -> std::expected<void, StarException> { world->setSpawningEnabled(false); return {}; });
+  auto done = m_universe.executeForClient(
+      connectionId, [](WorldServer& world, std::shared_ptr<Player> const&) -> std::expected<void, StarException> { world.setSpawningEnabled(false); return {}; });
   if (!done) return std::unexpected(std::move(done.error()));
-  return *done ? "disabled monster spawning" : "disabling monster spawning failed";
+  return *done ? String("disabled monster spawning") : String("disabling monster spawning failed");
 }
 
 std::expected<String, StarException> CommandProcessor::placeDungeon(ConnectionId connectionId, String const& argumentString) {
@@ -1420,24 +1420,24 @@ std::expected<String, StarException> CommandProcessor::placeDungeon(ConnectionId
     if (!xText) return std::unexpected(std::move(xText.error()));
     auto yText = pos->at(1);
     if (!yText) return std::unexpected(std::move(yText.error()));
-    auto x = lexicalCast<int>(**xText);
+    auto x = lexicalCast<int>(xText->get());
     if (!x) return std::unexpected(std::move(x.error()));
-    auto y = lexicalCast<int>(**yText);
+    auto y = lexicalCast<int>(yText->get());
     if (!y) return std::unexpected(std::move(y.error()));
     targetPosition = Vec2I(*x, *y);
   }
 
-  auto done = m_universe->executeForClient(connectionId,
-      [dungeonName, targetPosition](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+  auto done = m_universe.executeForClient(connectionId,
+      [dungeonName, targetPosition](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
         auto aimPosition = player->aimPosition();
         if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
-        auto placed = world->placeDungeon(dungeonName, targetPosition.value_or(Vec2I::floor((*aimPosition))), true);
+        auto placed = world.placeDungeon(dungeonName, targetPosition.value_or(Vec2I::floor((*aimPosition))), true);
         if (!placed) return std::unexpected(std::move(placed.error()));
         return {};
       });
 
   if (!done) return std::unexpected(std::move(done.error()));
-  return *done ? "" : "Unable to place dungeon " + dungeonName;
+  return *done ? String() : "Unable to place dungeon " + dungeonName;
 }
 
 std::expected<String, StarException> CommandProcessor::setUniverseFlag(ConnectionId connectionId, String const& argumentString) {
@@ -1451,7 +1451,7 @@ std::expected<String, StarException> CommandProcessor::setUniverseFlag(Connectio
   auto requiredArgument = arguments.at(0);
   if (!requiredArgument) return std::unexpected(std::move(requiredArgument.error()));
   String flag = arguments[0];
-  auto set = m_universe->universeSettings()->setFlag(flag);
+  auto set = m_universe.universeSettings()->setFlag(flag);
   if (!set) return std::unexpected(std::move(set.error()));
 
   return "set universe flag " + flag;
@@ -1462,7 +1462,7 @@ std::expected<String, StarException> CommandProcessor::resetUniverseFlags(Connec
   if (!adminCheckError) return std::unexpected(std::move(adminCheckError.error()));
   if (*adminCheckError) return **adminCheckError;
 
-  m_universe->universeSettings()->resetFlags();
+  m_universe.universeSettings()->resetFlags();
   return "universe flags reset!";
 }
 
@@ -1486,15 +1486,15 @@ std::expected<String, StarException> CommandProcessor::addBiomeRegion(Connection
   if (arguments.size() > 2)
     subBlockSelector = arguments[2];
 
-  auto done = m_universe->executeForClient(connectionId,
-      [biomeName, width, subBlockSelector](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+  auto done = m_universe.executeForClient(connectionId,
+      [biomeName, width, subBlockSelector](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
         auto aimPosition = player->aimPosition();
         if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
-        return world->addBiomeRegion(Vec2I::floor((*aimPosition)), biomeName, subBlockSelector, width);
+        return world.addBiomeRegion(Vec2I::floor((*aimPosition)), biomeName, subBlockSelector, width);
       });
 
   if (!done) return std::unexpected(std::move(done.error()));
-  return *done ? strf("added region of biome {} with width {}", biomeName, width) : "failed to add biome region";
+  return *done ? strf("added region of biome {} with width {}", biomeName, width) : String("failed to add biome region");
 }
 
 std::expected<String, StarException> CommandProcessor::expandBiomeRegion(ConnectionId connectionId, String const& argumentString) {
@@ -1512,15 +1512,15 @@ std::expected<String, StarException> CommandProcessor::expandBiomeRegion(Connect
   if (!newWidthResult) return std::unexpected(std::move(newWidthResult.error()));
   int newWidth = *newWidthResult;
 
-  auto done = m_universe->executeForClient(connectionId,
-      [newWidth](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+  auto done = m_universe.executeForClient(connectionId,
+      [newWidth](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
         auto aimPosition = player->aimPosition();
         if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
-        return world->expandBiomeRegion(Vec2I::floor((*aimPosition)), newWidth);
+        return world.expandBiomeRegion(Vec2I::floor((*aimPosition)), newWidth);
       });
 
   if (!done) return std::unexpected(std::move(done.error()));
-  return *done ? strf("expanded region to width {}", newWidth) : "failed to expand biome region";
+  return *done ? strf("expanded region to width {}", newWidth) : String("failed to expand biome region");
 }
 
 std::expected<String, StarException> CommandProcessor::updatePlanetType(ConnectionId connectionId, String const& argumentString) {
@@ -1540,10 +1540,10 @@ std::expected<String, StarException> CommandProcessor::updatePlanetType(Connecti
   auto newType = arguments[1];
   auto weatherBiome = arguments[2];
 
-  auto done = m_universe->updatePlanetType(coordinate, newType, weatherBiome);
+  auto done = m_universe.updatePlanetType(coordinate, newType, weatherBiome);
 
   if (!done) return std::unexpected(std::move(done.error()));
-  return *done ? strf("set planet at {} to type {} weatherBiome {}", coordinate, newType, weatherBiome) : "failed to update planet type";
+  return *done ? strf("set planet at {} to type {} weatherBiome {}", coordinate, newType, weatherBiome) : String("failed to update planet type");
 }
 
 std::expected<String, StarException> CommandProcessor::setWeather(ConnectionId connectionId, String const& argumentString) {
@@ -1555,14 +1555,14 @@ std::expected<String, StarException> CommandProcessor::setWeather(ConnectionId c
   auto arguments = std::move(*parsed);
   if (arguments.empty()) {
     StringList list;
-    auto done = m_universe->executeForClient(connectionId, [&list](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
-      auto weather = world->weatherList(player->position());
+    auto done = m_universe.executeForClient(connectionId, [&list](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+      auto weather = world.weatherList(player->position());
       if (!weather) return std::unexpected(std::move(weather.error()));
       list = std::move(*weather);
       return {};
     });
     if (!done) return std::unexpected(std::move(done.error()));
-    return *done ? strf("weathers: {}", list.join(", ")) : "failed to query weather";
+    return *done ? strf("weathers: {}", list.join(", ")) : String("failed to query weather");
   }
   String weatherName = arguments[0];
   bool force = false;
@@ -1583,12 +1583,12 @@ std::expected<String, StarException> CommandProcessor::setWeather(ConnectionId c
   }
   std::expected<bool, StarException> done;
   if (coordinate.isNull()) {
-    done = m_universe->executeForClient(connectionId, [weatherName, force](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> { return world->setWeather(player->position(), weatherName, force); });
+    done = m_universe.executeForClient(connectionId, [weatherName, force](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> { return world.setWeather(player->position(), weatherName, force); });
   } else {
-    done = m_universe->setWeather(coordinate, weatherName, force);
+    done = m_universe.setWeather(coordinate, weatherName, force);
   }
   if (!done) return std::unexpected(std::move(done.error()));
-  return *done ? (coordinate.isNull() ? strf("set weather to {}{}", weatherName, force ? " (forced)" : "") : strf("set weather for {} to {}{}", coordinate, weatherName, force ? " (forced)" : "")) : "failed to set weather";
+  return *done ? (coordinate.isNull() ? strf("set weather to {}{}", weatherName, force ? std::string_view(" (forced)") : std::string_view()) : strf("set weather for {} to {}{}", coordinate, weatherName, force ? std::string_view(" (forced)") : std::string_view())) : String("failed to set weather");
 }
 
 
@@ -1597,53 +1597,53 @@ std::expected<String, StarException> CommandProcessor::setEnvironmentBiome(Conne
   if (!adminCheckError) return std::unexpected(std::move(adminCheckError.error()));
   if (*adminCheckError) return **adminCheckError;
 
-  auto done = m_universe->executeForClient(connectionId,
-      [](WorldServer* world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
+  auto done = m_universe.executeForClient(connectionId,
+      [](WorldServer& world, std::shared_ptr<Player> const& player) -> std::expected<void, StarException> {
         auto aimPosition = player->aimPosition();
         if (!aimPosition) return std::unexpected(std::move(aimPosition.error()));
-        return world->setLayerEnvironmentBiome(Vec2I::floor((*aimPosition)));
+        return world.setLayerEnvironmentBiome(Vec2I::floor((*aimPosition)));
       });
 
   if (!done) return std::unexpected(std::move(done.error()));
-  return *done ? "set environment biome for world layer" : "failed to set environment biome";
+  return *done ? String("set environment biome for world layer") : String("failed to set environment biome");
 }
 
-std::expected<std::optional<ConnectionId>, StarException> CommandProcessor::playerCidFromCommand(String const& player, UniverseServer* universe) {
-  char const* const UsernamePrefix = "@";
-  char const* const CidPrefix = "$";
-  char const* const UUIDPrefix = "$$";
+std::expected<std::optional<ConnectionId>, StarException> CommandProcessor::playerCidFromCommand(String const& player, UniverseServer& universe) {
+  constexpr std::string_view UsernamePrefix = "@";
+  constexpr std::string_view CidPrefix = "$";
+  constexpr std::string_view UUIDPrefix = "$$";
   auto username = player.beginsWith(UsernamePrefix);
   if (!username) return std::unexpected(std::move(username.error()));
   if (*username) {
-    auto name = player.substr(std::strlen(UsernamePrefix));
+    auto name = player.substr(UsernamePrefix.size());
     if (!name) return std::unexpected(std::move(name.error()));
-    return universe->findNick(*name);
+    return universe.findNick(*name);
   }
   auto uuidPrefix = player.beginsWith(UUIDPrefix);
   if (!uuidPrefix) return std::unexpected(std::move(uuidPrefix.error()));
   if (*uuidPrefix) {
-    auto text = player.substr(std::strlen(UUIDPrefix));
+    auto text = player.substr(UUIDPrefix.size());
     if (!text) return std::unexpected(std::move(text.error()));
     auto uuid = Uuid::create(*text);
-    if (uuid) return universe->clientForUuid(*uuid);
+    if (uuid) return universe.clientForUuid(*uuid);
     if (!uuid.error().is<UuidException>()) return std::unexpected(std::move(uuid.error()));
   } else {
     auto cidPrefix = player.beginsWith(CidPrefix);
     if (!cidPrefix) return std::unexpected(std::move(cidPrefix.error()));
     if (*cidPrefix) {
-      auto text = player.substr(std::strlen(CidPrefix));
+      auto text = player.substr(CidPrefix.size());
       if (!text) return std::unexpected(std::move(text.error()));
       auto cid = maybeLexicalCast<ConnectionId>(*text).value_or(ServerConnectionId);
-      if (universe->isConnectedClient(cid)) return std::optional<ConnectionId>(cid);
+      if (universe.isConnectedClient(cid)) return std::optional<ConnectionId>(cid);
     }
   }
-  return universe->findNick(player);
+  return universe.findNick(player);
 }
 
 std::expected<CaseInsensitiveStringMap<CommandProcessor::Command>, StarException> CommandProcessor::makeCommandMap() {
   CaseInsensitiveStringMap<Command> map;
 
-  auto add = [&map](char const* cmd, Command func) -> std::expected<void, StarException> {
+  auto add = [&map](std::string_view cmd, Command func) -> std::expected<void, StarException> {
     auto key = CaseInsensitiveString::create(String(cmd));
     if (!key) return std::unexpected(std::move(key.error()));
     map[*key] = func;
@@ -1704,7 +1704,7 @@ std::expected<ServerCommandResult, StarException> CommandProcessor::handleComman
   if (!key) return std::unexpected(std::move(key.error()));
   auto it = s_commandMap->find(*key);
   if (it != s_commandMap->end()) {
-    auto response = (this->*it->second)(connectionId, argumentString);
+    auto response = ((*this).*it->second)(connectionId, argumentString);
     if (!response) return std::unexpected(std::move(response.error()));
     return ServerCommandResult(std::move(*response));
   }
@@ -1714,8 +1714,9 @@ std::expected<ServerCommandResult, StarException> CommandProcessor::handleComman
   if (!invoked) return std::unexpected(std::move(invoked.error()));
   if (*invoked) {
     auto& result = **invoked;
-    if (auto promise = std::get_if<RpcPromise<Json>>(&result)) {
-      auto wrapped = promise->wrap([](Json res) -> std::expected<String, StarException> {
+    if (std::holds_alternative<RpcPromise<Json>>(result)) {
+      auto& promise = std::get<RpcPromise<Json>>(result);
+      auto wrapped = promise.wrap([](Json res) -> std::expected<String, StarException> {
         if (res.isType(Json::Type::String)) {
           auto text = res.stringPtr();
           if (!text) return std::unexpected(std::move(text.error()));
@@ -1749,7 +1750,7 @@ std::expected<std::optional<String>, StarException> CommandProcessor::adminCheck
   auto anyone = anyoneJson->toBool();
   if (!anyone) return std::unexpected(std::move(anyone.error()));
   if (!*anyone) {
-    auto admin = m_universe->isAdmin(connectionId);
+    auto admin = m_universe.isAdmin(connectionId);
     if (!admin) return std::unexpected(std::move(admin.error()));
     if (!*admin) return std::optional<String>(strf("Insufficient privileges to {}.", commandDescription));
   }
@@ -1758,7 +1759,7 @@ std::expected<std::optional<String>, StarException> CommandProcessor::adminCheck
 
 std::expected<std::optional<String>, StarException> CommandProcessor::localCheck(ConnectionId connectionId, String const& commandDescription) const {
   if (connectionId == ServerConnectionId) return std::optional<String>{};
-  auto local = m_universe->isLocal(connectionId);
+  auto local = m_universe.isLocal(connectionId);
   if (!local) return std::unexpected(std::move(local.error()));
   if (!*local) return std::optional<String>(strf("The {} command can only be used locally.", commandDescription));
   return std::optional<String>{};
@@ -1766,7 +1767,7 @@ std::expected<std::optional<String>, StarException> CommandProcessor::localCheck
 
 std::expected<LuaCallbacks, StarException> CommandProcessor::makeCommandCallbacks() {
   LuaCallbacks callbacks;
-  auto registered = callbacks.registerCallbackWithSignature<std::expected<std::optional<String>, StarException>, ConnectionId, String>("adminCheck", std::bind(&CommandProcessor::adminCheck, this, std::placeholders::_1, std::placeholders::_2));
+  auto registered = callbacks.registerCallbackWithSignature<std::expected<std::optional<String>, StarException>, ConnectionId, String>("adminCheck", std::bind(&CommandProcessor::adminCheck, std::ref(*this), std::placeholders::_1, std::placeholders::_2));
   if (!registered) return std::unexpected(std::move(registered.error()));
   return callbacks;
 }

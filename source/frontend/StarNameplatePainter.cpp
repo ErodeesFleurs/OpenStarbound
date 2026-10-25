@@ -169,17 +169,17 @@ import star.mixer;
 import star.gui_context;
 
 namespace Star {
-NameplatePainter::NameplatePainter(GuiContext& context) : m_guiContext(&context) {}
+NameplatePainter::NameplatePainter(GuiContext& context) : m_guiContext(context) {}
 
-std::expected<std::shared_ptr<NameplatePainter>, StarException> NameplatePainter::create(GuiContext& context) {
-  auto painter = std::shared_ptr<NameplatePainter>(new NameplatePainter(context));
+std::expected<std::unique_ptr<NameplatePainter>, StarException> NameplatePainter::create(GuiContext& context) {
+  auto painter = std::unique_ptr<NameplatePainter>(new NameplatePainter(context));
   auto initialized = painter->initialize();
   if (!initialized) return std::unexpected(std::move(initialized.error()));
   return painter;
 }
 
 std::expected<void, StarException> NameplatePainter::initialize() {
-  auto assets = m_guiContext->root().assets();
+  auto assets = m_guiContext.get().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto config = (*assets)->json("/interface.config:nametag");
   if (!config) return std::unexpected(std::move(config.error()));
@@ -267,20 +267,20 @@ std::expected<void, StarException> NameplatePainter::update(float dt, std::share
 }
 
 std::expected<void, StarException> NameplatePainter::render() {
-  auto& context = *m_guiContext;
+  auto& context = m_guiContext.get();
   return m_nametags.forEach([&context, this](BubbleState<Nametag> const& bubble, Nametag const& nametag) -> std::expected<void, StarException> {
     if (nametag.opacity == 0.0f) return {};
     auto style = context.setTextStyle(m_textStyle);
     if (!style) return std::unexpected(std::move(style.error()));
     auto color = Color::rgb(nametag.color);
     color.setAlphaF(nametag.opacity);
-    (*style)->color = color.toRgba();
+    style->get().color = color.toRgba();
     auto name = context.renderText(nametag.name, namePosition(bubble.currentPosition));
     if (!name) return std::unexpected(std::move(name.error()));
     if (nametag.statusText) {
       auto status = context.setTextStyle(m_statusTextStyle);
       if (!status) return std::unexpected(std::move(status.error()));
-      (*status)->color[3] *= nametag.opacity;
+      status->get().color[3] *= nametag.opacity;
       auto drawn = context.renderText(*nametag.statusText, statusPosition(bubble.currentPosition));
       if (!drawn) return std::unexpected(std::move(drawn.error()));
     }
@@ -293,11 +293,11 @@ TextPositioning NameplatePainter::namePosition(Vec2F position) const {
 }
 
 TextPositioning NameplatePainter::statusPosition(Vec2F position) const {
-  return TextPositioning(position + m_statusOffset * m_guiContext->interfaceScale(), HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor);
+  return TextPositioning(position + m_statusOffset * m_guiContext.get().interfaceScale(), HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor);
 }
 
 std::expected<RectF, StarException> NameplatePainter::determineBoundBox(Vec2F position, Nametag const& nametag) const {
-  auto& context = *m_guiContext;
+  auto& context = m_guiContext.get();
   auto style = context.setTextStyle(m_textStyle);
   if (!style) return std::unexpected(std::move(style.error()));
   auto bounds = context.determineTextSize(nametag.name, namePosition(position));

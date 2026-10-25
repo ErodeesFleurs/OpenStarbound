@@ -248,7 +248,7 @@ std::expected<std::shared_ptr<QuestLogInterface>, StarException> QuestLogInterfa
 }
 
 std::expected<void, StarException> QuestLogInterface::initialize() {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto config = (*assets)->json("/interface/windowconfig/questlog.config");
   if (!config) return std::unexpected(std::move(config.error()));
@@ -258,32 +258,32 @@ std::expected<void, StarException> QuestLogInterface::initialize() {
   auto untrackLabel = config->getString("untrackLabel");
   if (!untrackLabel) return std::unexpected(std::move(untrackLabel.error()));
   m_untrackLabel = std::move(*untrackLabel);
-  GuiReader reader(*context());
-  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { dismiss(); return {}; });
-  reader.registerCallback("btnToggleTracking", [this](Widget*) { return toggleTracking(); });
-  reader.registerCallback("btnAbandon", [this](Widget*) { return abandon(); });
-  reader.registerCallback("filter", [this](Widget*) { return fetchData(); });
+  GuiReader reader(context());
+  reader.registerCallback("close", [this](Widget&) -> std::expected<void, StarException> { dismiss(); return {}; });
+  reader.registerCallback("btnToggleTracking", [this](Widget&) { return toggleTracking(); });
+  reader.registerCallback("btnAbandon", [this](Widget&) { return abandon(); });
+  reader.registerCallback("filter", [this](Widget&) { return fetchData(); });
   auto layout = config->get("paneLayout");
   if (!layout) return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, this);
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed) return std::unexpected(std::move(constructed.error()));
   auto mainQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.mainQuestList");
   if (!mainQuestList) return std::unexpected(std::move(mainQuestList.error()));
   auto sideQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.sideQuestList");
   if (!sideQuestList) return std::unexpected(std::move(sideQuestList.error()));
-  (*mainQuestList)->setCallback([sideQuestList = sideQuestList->get()](Widget* widget) -> std::expected<void, StarException> {
-    auto listWidget = as<ListWidget>(widget);
-    if (listWidget->selectedItem() != NPos) return sideQuestList->clearSelected();
+  (*mainQuestList)->setCallback([sideQuestList = std::weak_ptr<ListWidget>(*sideQuestList)](Widget& widget) -> std::expected<void, StarException> {
+    auto& listWidget = static_cast<ListWidget&>(widget);
+    if (auto other = sideQuestList.lock(); other && listWidget.selectedItem() != NPos) return other->clearSelected();
     return {};
   });
-  (*sideQuestList)->setCallback([mainQuestList = mainQuestList->get()](Widget* widget) -> std::expected<void, StarException> {
-    auto listWidget = as<ListWidget>(widget);
-    if (listWidget->selectedItem() != NPos) return mainQuestList->clearSelected();
+  (*sideQuestList)->setCallback([mainQuestList = std::weak_ptr<ListWidget>(*mainQuestList)](Widget& widget) -> std::expected<void, StarException> {
+    auto& listWidget = static_cast<ListWidget&>(widget);
+    if (auto other = mainQuestList.lock(); other && listWidget.selectedItem() != NPos) return other->clearSelected();
     return {};
   });
   (*mainQuestList)->disableScissoring();
   (*sideQuestList)->disableScissoring();
-  m_rewardItems = std::make_shared<ItemBag>(context()->root(), 5);
+  m_rewardItems = std::make_shared<ItemBag>(context().root(), 5);
   auto rewards = questChildAction<ItemGridWidget>(*this, "rewardItems", [&](ItemGridWidget& widget) { return widget.setItemBag(m_rewardItems); });
   if (!rewards) return std::unexpected(std::move(rewards.error()));
   m_refreshRate = 30;
@@ -291,22 +291,22 @@ std::expected<void, StarException> QuestLogInterface::initialize() {
   return {};
 }
 
-std::expected<void, StarException> QuestLogInterface::pollDialog(PaneManager* paneManager) {
-  if (paneManager->topPane({PaneLayer::ModalWindow})) return {};
+std::expected<void, StarException> QuestLogInterface::pollDialog(PaneManager& paneManager) {
+  if (paneManager.topPane({PaneLayer::ModalWindow})) return {};
   if (auto failableQuest = m_manager->getFirstFailableQuest()) {
-    auto pane = QuestFailedInterface::create(*context(), *failableQuest, m_player);
+    auto pane = QuestFailedInterface::create(context(), *failableQuest, m_player);
     if (!pane) return std::unexpected(std::move(pane.error()));
     (*failableQuest)->setDialogShown();
-    return paneManager->displayPane(PaneLayer::ModalWindow, *pane);
+    return paneManager.displayPane(PaneLayer::ModalWindow, *pane);
   } else if (auto completableQuest = m_manager->getFirstCompletableQuest()) {
-    auto pane = QuestCompleteInterface::create(*context(), *completableQuest, m_player, m_cinematic);
+    auto pane = QuestCompleteInterface::create(context(), *completableQuest, m_player, m_cinematic);
     if (!pane) return std::unexpected(std::move(pane.error()));
     (*completableQuest)->setDialogShown();
-    return paneManager->displayPane(PaneLayer::ModalWindow, *pane);
+    return paneManager.displayPane(PaneLayer::ModalWindow, *pane);
   } else if (auto newQuest = m_manager->getFirstNewQuest()) {
-    auto pane = NewQuestInterface::create(*context(), m_manager, *newQuest, m_player);
+    auto pane = NewQuestInterface::create(context(), m_manager, *newQuest, m_player);
     if (!pane) return std::unexpected(std::move(pane.error()));
-    return paneManager->displayPane(PaneLayer::ModalWindow, *pane);
+    return paneManager.displayPane(PaneLayer::ModalWindow, *pane);
   }
   return {};
 }
@@ -365,13 +365,13 @@ std::expected<void, StarException> QuestLogInterface::tick(float dt) {
   if (imagePortrait) Drawable::scaleAll(*imagePortrait, Vec2F(-1, 1));
   auto portrait = questPortrait(*this, "imgPortrait", imagePortrait ? std::move(*imagePortrait) : List<Drawable>{});
   if (!portrait) return std::unexpected(std::move(portrait.error()));
-  for (auto name : {"imgPolaroid", "imgPolaroidBack"}) {
+  for (auto const& name : {String("imgPolaroid"), String("imgPolaroidBack")}) {
     auto visibility = questVisibility(*this, name, imagePortrait.has_value());
     if (!visibility) return std::unexpected(std::move(visibility.error()));
   }
   m_rewardItems->clearItems();
   bool rewardsVisible = quest && !quest->rewards().empty();
-  for (auto name : {"lblRewards", "rewardItems"}) {
+  for (auto const& name : {String("lblRewards"), String("rewardItems")}) {
     auto visibility = questVisibility(*this, name, rewardsVisible);
     if (!visibility) return std::unexpected(std::move(visibility.error()));
   }
@@ -404,7 +404,7 @@ std::expected<std::shared_ptr<Pane>, StarException> QuestLogInterface::createToo
     }
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
+    return ItemTooltipBuilder::buildItemTooltip(context(), item, m_player);
   return std::shared_ptr<Pane>{};
 }
 
@@ -456,7 +456,7 @@ std::expected<void, StarException> QuestLogInterface::abandon() {
 std::expected<void, StarException> QuestLogInterface::fetchData() {
   auto filterWidget = fetchChild<ButtonGroupWidget>("filter");
   if (!filterWidget) return std::unexpected(std::move(filterWidget.error()));
-  auto filter = (*filterWidget)->checkedButton()->data().toString();
+  auto filter = (*filterWidget)->checkedButton()->get().data().toString();
   if (!filter) return std::unexpected(std::move(filter.error()));
   auto inProgress = filter->equalsIgnoreCase("inProgress");
   if (!inProgress) return std::unexpected(std::move(inProgress.error()));
@@ -494,7 +494,7 @@ std::expected<void, StarException> QuestLogInterface::showQuests(List<std::share
     bool main = quest->mainQuest();
     auto entry = (main ? *mainQuestList : *sideQuestList)->addItem();
     if (!entry) return std::unexpected(std::move(entry.error()));
-    auto header = questVisibility(*this, main ? "scrollArea.verticalLayout.mainQuestHeader" : "scrollArea.verticalLayout.sideQuestHeader", true);
+    auto header = questVisibility(*this, main ? String("scrollArea.verticalLayout.mainQuestHeader") : String("scrollArea.verticalLayout.sideQuestHeader"), true);
     if (!header) return std::unexpected(std::move(header.error()));
     (*entry)->setData(quest->questId());
     auto title = questLabel(**entry, "lblQuestEntry", quest->title());
@@ -522,13 +522,13 @@ std::expected<void, StarException> QuestLogInterface::showQuests(List<std::share
 QuestPane::QuestPane(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player) : Pane(guiContext), m_quest(quest), m_player(std::move(player)) {}
 
 std::expected<void, StarException> QuestPane::commonSetup(Json config, String bodyText, String const& portraitName) {
-  GuiReader reader(*context());
-  reader.registerCallback("close", [this](Widget*) { return close(); });
-  reader.registerCallback("btnDecline", [this](Widget*) { return decline(); });
-  reader.registerCallback("btnAccept", [this](Widget*) { return accept(); });
+  GuiReader reader(context());
+  reader.registerCallback("close", [this](Widget&) { return close(); });
+  reader.registerCallback("btnDecline", [this](Widget&) { return decline(); });
+  reader.registerCallback("btnAccept", [this](Widget&) { return accept(); });
   auto layout = config.get("paneLayout");
   if (!layout) return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, this);
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed) return std::unexpected(std::move(constructed.error()));
   auto title = questLabel(*this, "lblQuestTitle", m_quest->title(), true);
   if (!title) return std::unexpected(std::move(title.error()));
@@ -541,7 +541,7 @@ std::expected<void, StarException> QuestPane::commonSetup(Json config, String bo
   auto rewardItemsWidget = fetchChild<ItemGridWidget>("rewardItems");
   if (!rewardItemsWidget) return std::unexpected(std::move(rewardItemsWidget.error()));
   if (*rewardItemsWidget) {
-    auto rewardItems = std::make_shared<ItemBag>(context()->root(), 5);
+    auto rewardItems = std::make_shared<ItemBag>(context().root(), 5);
     for (auto const& reward : m_quest->rewards()) {
       auto clone = reward->clone();
       if (!clone) return std::unexpected(std::move(clone.error()));
@@ -555,10 +555,10 @@ std::expected<void, StarException> QuestPane::commonSetup(Json config, String bo
   if (!soundJson) return std::unexpected(std::move(soundJson.error()));
   auto sounds = soundJson->toArray();
   if (!sounds) return std::unexpected(std::move(sounds.error()));
-  auto sound = context()->root().random().randValueFrom(*sounds, "").toString();
+  auto sound = context().root().random().randValueFrom(*sounds, "").toString();
   if (!sound) return std::unexpected(std::move(sound.error()));
   if (!sound->empty()) {
-    auto played = context()->playAudio(*sound);
+    auto played = context().playAudio(*sound);
     if (!played) return std::unexpected(std::move(played.error()));
   }
   return {};
@@ -589,7 +589,7 @@ std::expected<std::shared_ptr<Pane>, StarException> QuestPane::createTooltip(Vec
     }
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
+    return ItemTooltipBuilder::buildItemTooltip(context(), item, m_player);
   return std::shared_ptr<Pane>{};
 }
 
@@ -606,13 +606,13 @@ std::expected<std::shared_ptr<NewQuestInterface>, StarException> NewQuestInterfa
 }
 
 std::expected<void, StarException> NewQuestInterface::initialize() {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   List<Drawable> objectivePortrait = m_quest->portrait("Objective").value_or(List<Drawable>{});
   bool shortDialog = objectivePortrait.empty();
   auto questTemplate = m_quest->getTemplate();
   if (!questTemplate) return std::unexpected(std::move(questTemplate.error()));
-  auto defaultConfig = (*assets)->json(shortDialog ? "/quests/quests.config:defaultGuiConfigs.newQuest" : "/quests/quests.config:defaultGuiConfigs.newQuestPortrait");
+  auto defaultConfig = (*assets)->json(shortDialog ? String("/quests/quests.config:defaultGuiConfigs.newQuest") : String("/quests/quests.config:defaultGuiConfigs.newQuestPortrait"));
   if (!defaultConfig) return std::unexpected(std::move(defaultConfig.error()));
   auto defaultPath = defaultConfig->toString();
   if (!defaultPath) return std::unexpected(std::move(defaultPath.error()));
@@ -636,13 +636,13 @@ std::expected<void, StarException> NewQuestInterface::initialize() {
       if (!portrait) return std::unexpected(std::move(portrait.error()));
       auto title = questLabel(*this, "objectivePortraitTitle", m_quest->portraitTitle("Objective").value_or(""));
       if (!title) return std::unexpected(std::move(title.error()));
-      for (auto name : {"objectivePortraitTitle", "imgPolaroid", "imgPolaroidBack"}) {
+      for (auto const& name : {String("objectivePortraitTitle"), String("imgPolaroid"), String("imgPolaroidBack")}) {
         auto visibility = questVisibility(*this, name, visible);
         if (!visibility) return std::unexpected(std::move(visibility.error()));
       }
     }
   }
-  for (auto name : {"rewardItems", "lblRewards"}) {
+  for (auto const& name : {String("rewardItems"), String("lblRewards")}) {
     auto visibility = questVisibility(*this, name, !m_quest->rewards().empty(), true);
     if (!visibility) return std::unexpected(std::move(visibility.error()));
   }
@@ -695,7 +695,7 @@ std::expected<std::shared_ptr<QuestCompleteInterface>, StarException> QuestCompl
 }
 
 std::expected<void, StarException> QuestCompleteInterface::initialize() {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto questTemplate = m_quest->getTemplate();
   if (!questTemplate) return std::unexpected(std::move(questTemplate.error()));
@@ -714,7 +714,7 @@ std::expected<void, StarException> QuestCompleteInterface::initialize() {
 }
 
 std::expected<void, StarException> QuestCompleteInterface::close() {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto completionCinema = m_quest->completionCinema();
   if (!completionCinema) return std::unexpected(std::move(completionCinema.error()));
@@ -722,7 +722,7 @@ std::expected<void, StarException> QuestCompleteInterface::close() {
     if (!GenderNames) return std::unexpected(GenderNames.error());
     auto gender = GenderNames->getRight(m_player->gender());
     if (!gender) return std::unexpected(std::move(gender.error()));
-    auto cinema = (**completionCinema).replaceTags(StringMap<String>{{"species", m_player->species()}, {"gender", **gender}});
+    auto cinema = (**completionCinema).replaceTags(StringMap<String>{{"species", m_player->species()}, {"gender", gender->get()}});
     auto config = (*assets)->fetchJson(cinema);
     if (!config) return std::unexpected(std::move(config.error()));
     auto loaded = m_cinematic->load(*config);

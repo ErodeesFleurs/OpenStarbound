@@ -13,7 +13,7 @@ import star.bi_map;
 namespace Star {
 
 struct SkyExceptionTag {
-  static constexpr char const* name() { return "SkyException"; }
+  static constexpr std::string_view name() { return "SkyException"; }
 };
 using SkyException = StarError<SkyExceptionTag, StarException>;
 
@@ -43,8 +43,8 @@ enum class WarpPhase : std::int8_t {
 extern std::expected<EnumMap<WarpPhase>, StarException> const WarpPhaseNames;
 
 struct SkyColoring {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyColoring& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyColoring const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, SkyColoring& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, SkyColoring const& value);
   SkyColoring();
   [[nodiscard]] static std::expected<SkyColoring, StarException> create(Json const& variant);
 
@@ -63,8 +63,8 @@ struct SkyColoring {
   Color nightLightColor;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyColoring& skyColoring);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyColoring const& skyColoring);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, SkyColoring& skyColoring);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, SkyColoring const& skyColoring);
 
 enum class SkyOrbiterType { Sun, Moon, HorizonCloud, SpaceDebris };
 

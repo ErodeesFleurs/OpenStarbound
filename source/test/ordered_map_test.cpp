@@ -52,11 +52,11 @@ TEST(OrderedMap, Getters) {
   ASSERT_TRUE(first);
   ASSERT_TRUE(second);
   ASSERT_TRUE(third);
-  EXPECT_EQ(**first, 1);
-  EXPECT_EQ(**second, 2);
-  EXPECT_EQ(**third, 3);
+  EXPECT_EQ(first->get(), 1);
+  EXPECT_EQ(second->get(), 2);
+  EXPECT_EQ(third->get(), 3);
 
-  EXPECT_EQ(map.ptr(3), *third);
+  EXPECT_EQ(std::addressof(map.maybeRef(3)->get()), std::addressof(third->get()));
 }
 
 TEST(OrderedMap, ConstGetters) {
@@ -72,11 +72,11 @@ TEST(OrderedMap, ConstGetters) {
   ASSERT_TRUE(first);
   ASSERT_TRUE(second);
   ASSERT_TRUE(third);
-  EXPECT_EQ(**first, 1);
-  EXPECT_EQ(**second, 2);
-  EXPECT_EQ(**third, 3);
+  EXPECT_EQ(first->get(), 1);
+  EXPECT_EQ(second->get(), 2);
+  EXPECT_EQ(third->get(), 3);
 
-  EXPECT_EQ(map.ptr(3), *third);
+  EXPECT_EQ(std::addressof(map.maybeRef(3)->get()), std::addressof(third->get()));
 
   EXPECT_EQ(map.value(4, 4), 4);
   EXPECT_EQ(map.maybe(5), std::optional<int>());
@@ -90,11 +90,11 @@ TEST(OrderedMap, MalformedDiagnosticPreservesFailureAndLookupState) {
   auto rejected = map.get(malformed);
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().is<UnicodeException>());
-  EXPECT_EQ(map.ptr(malformed), nullptr);
+  EXPECT_FALSE(map.maybeRef(malformed));
 
   auto recovered = map.get(Json(7));
   ASSERT_TRUE(recovered);
-  EXPECT_EQ(**recovered, 42);
+  EXPECT_EQ(recovered->get(), 42);
 }
 
 TEST(OrderedMap, Sorting) {
@@ -133,16 +133,16 @@ TEST(LruCache, HitsRetainEntriesAndDoNotProduce) {
   auto produce = [&](int const& key) { ++calls; return key * 10; };
   auto first = cache.get(7, produce);
   ASSERT_TRUE(first);
-  EXPECT_EQ(**first, 70);
+  EXPECT_EQ(first->get(), 70);
   auto hit = cache.get(7, produce);
   ASSERT_TRUE(hit);
-  EXPECT_EQ(**hit, 70);
+  EXPECT_EQ(hit->get(), 70);
   EXPECT_EQ(calls, 1u);
   cache.setMaxSize(2);
   cache.set(8, 80);
   auto second = cache.get(8, produce);
   ASSERT_TRUE(second);
-  EXPECT_EQ(**second, 80);
+  EXPECT_EQ(second->get(), 80);
   EXPECT_EQ(cache.currentSize(), 2u);
   EXPECT_EQ(cache.keys(), (List<int>{7, 8}));
 }
@@ -153,10 +153,10 @@ TEST(LruCache, MissEvictsLeastRecentAndPreservesFailureOrdering) {
   cache.set(2, 20);
   auto hit = cache.get(1, [](int const&) { return -1; });
   ASSERT_TRUE(hit);
-  EXPECT_EQ(**hit, 10);
+  EXPECT_EQ(hit->get(), 10);
   auto miss = cache.get(3, [](int const& key) { return key * 10; });
   ASSERT_TRUE(miss);
-  EXPECT_EQ(**miss, 30);
+  EXPECT_EQ(miss->get(), 30);
   EXPECT_EQ(cache.keys(), (List<int>{1, 3}));
   auto failure = cache.get(4, [](int const&) -> std::expected<int, StarException> {
     return std::unexpected(StarException("producer"));
@@ -179,10 +179,10 @@ TEST(LruCache, BorrowsMutableNoncopyableCallbacks) {
   HashLruCache<int, int> cache(2);
   auto first = cache.get(1, producer);
   ASSERT_TRUE(first);
-  EXPECT_EQ(**first, 10);
+  EXPECT_EQ(first->get(), 10);
   auto hit = cache.get(1, producer);
   ASSERT_TRUE(hit);
-  EXPECT_EQ(**hit, 10);
+  EXPECT_EQ(hit->get(), 10);
   EXPECT_EQ(*producer.calls, 1);
   cache.set(2, 20);
   auto filter = [state = std::make_unique<int>(0)](int const& key, int& value) mutable {
@@ -191,8 +191,8 @@ TEST(LruCache, BorrowsMutableNoncopyableCallbacks) {
     return key == 1;
   };
   cache.removeWhere(filter);
-  ASSERT_NE(cache.ptr(2), nullptr);
-  EXPECT_EQ(*cache.ptr(2), 21);
+  ASSERT_TRUE(cache.maybeRef(2));
+  EXPECT_EQ(cache.maybeRef(2)->get(), 21);
   EXPECT_EQ(cache.keys(), (List<int>{2}));
 }
 
@@ -203,16 +203,16 @@ TEST(TtlCache, MoveOnlyProducerAndOptionalRefreshFilters) {
   HashTtlCache<int, int> cache(random, -1, 0, 4, false);
   auto produced = cache.get(1, [value = std::make_unique<int>(42)](int const&) mutable { return *value; });
   ASSERT_TRUE(produced);
-  EXPECT_EQ(**produced, 42);
+  EXPECT_EQ(produced->get(), 42);
   struct Refresh {
     explicit operator bool() const { return false; }
     bool operator()(int const&, int const&) { return true; }
   } refresh;
   cache.cleanup(refresh);
-  auto retained = cache.ptr(1);
+  auto retained = cache.maybeRef(1);
   ASSERT_TRUE(retained);
-  ASSERT_NE(*retained, nullptr);
-  EXPECT_EQ(**retained, 42);
+  ASSERT_TRUE(*retained);
+  EXPECT_EQ((*retained)->get(), 42);
   std::function<bool(int const&, int const&)> empty;
   cache.cleanup(empty);
   EXPECT_TRUE(cache.keys().empty());

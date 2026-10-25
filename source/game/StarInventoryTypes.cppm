@@ -72,7 +72,7 @@ template <typename BaseType> struct TrashSlotWrapper;
       BaseType::operator=(std::forward<Arg>(other));
       return *this;
     }
-    friend std::expected<std::ostream*, StarException> operator<<(std::ostream& ostream,
+    friend std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& ostream,
         std::variant<EquipmentSlot, BagSlot, SwapSlotWrapper<Empty>, TrashSlotWrapper<Empty>> const& slot);
   };
   typedef SwapSlotWrapper<Empty> SwapSlot;
@@ -119,7 +119,7 @@ typedef std::variant<EquipmentSlot, BagSlot, SwapSlot, TrashSlot> InventorySlot;
 [[nodiscard]] std::expected<InventorySlot, StarException> jsonToInventorySlot(Json const& json);
 [[nodiscard]] std::expected<Json, StarException> jsonFromInventorySlot(InventorySlot const& slot);
 
-[[nodiscard]] std::expected<std::ostream*, StarException> operator<<(std::ostream& ostream, InventorySlot const& slot);
+[[nodiscard]] std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& ostream, InventorySlot const& slot);
 
 // Special items in the player inventory that are not generally manageable
 enum class EssentialItem : std::uint8_t {

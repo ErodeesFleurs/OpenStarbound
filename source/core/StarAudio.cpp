@@ -40,34 +40,46 @@ float amplitudeToPerceptual(float amp, float normalizedMax, float range, float b
 
 namespace {
   struct WaveData {
-    std::shared_ptr<IODevice> device;
+#ifdef STAR_STREAM_AUDIO
+    std::shared_ptr<IODevice> stream;
+#else
+    mutable ExternalBuffer memory;
+#endif
     std::shared_ptr<ByteArray const> bytes;
     unsigned channels;
     unsigned sampleRate;
     std::size_t dataSize;
     StreamOffset dataStart;
+
+    IODevice& device() const {
+#ifdef STAR_STREAM_AUDIO
+      return *stream;
+#else
+      return memory;
+#endif
+    }
   };
 
   template <typename T>
-  [[nodiscard]] std::expected<T, StarException> readLEType(std::shared_ptr<IODevice> const& device) {
+  [[nodiscard]] std::expected<T, StarException> readLEType(IODevice& device) {
     T value;
-    auto read = device->readFull({reinterpret_cast<char*>(&value), sizeof(value)});
+    auto read = device.readFull({reinterpret_cast<char*>(&value), sizeof(value)});
     if (!read)
       return std::unexpected(std::move(read.error()));
     fromByteOrder(ByteOrder::LittleEndian, reinterpret_cast<char*>(&value), sizeof(value));
     return value;
   }
 
-  [[nodiscard]] std::expected<bool, StarException> isUncompressed(std::shared_ptr<IODevice> const& device) {
+  [[nodiscard]] std::expected<bool, StarException> isUncompressed(IODevice& device) {
     std::array<char, 12> signature{};
-    auto previous = device->pos();
+    auto previous = device.pos();
     if (!previous)
       return std::unexpected(std::move(previous.error()));
-    auto seek = device->seek(0);
+    auto seek = device.seek(0);
     if (!seek)
       return std::unexpected(std::move(seek.error()));
-    auto read = device->readFull(signature);
-    auto restore = device->seek(*previous);
+    auto read = device.readFull(signature);
+    auto restore = device.seek(*previous);
     if (!read)
       return std::unexpected(std::move(read.error()));
     if (!restore)
@@ -86,7 +98,7 @@ namespace {
       return std::unexpected(std::move(read.error()));
     if (std::memcmp(signature.data(), "RIFF", 4) != 0)
       return std::unexpected(AudioException("Wav file has invalid RIFF magic bytes"));
-    auto fileSize = readLEType<std::uint32_t>(device);
+    auto fileSize = readLEType<std::uint32_t>(*device);
     if (!fileSize)
       return std::unexpected(std::move(fileSize.error()));
     auto actualSize = device->size();
@@ -104,29 +116,29 @@ namespace {
       return std::unexpected(std::move(read.error()));
     if (std::memcmp(signature.data(), "fmt ", 4) != 0)
       return std::unexpected(AudioException("Wav file fmt subchunk has invalid magic bytes"));
-    auto fmtSize = readLEType<std::uint32_t>(device);
+    auto fmtSize = readLEType<std::uint32_t>(*device);
     if (!fmtSize)
       return std::unexpected(std::move(fmtSize.error()));
     if (*fmtSize < 16)
       return std::unexpected(AudioException::format("fmt subchunk is sized wrong, expected at least 16 got {}", *fmtSize));
-    auto audioFormat = readLEType<std::uint16_t>(device);
+    auto audioFormat = readLEType<std::uint16_t>(*device);
     if (!audioFormat)
       return std::unexpected(std::move(audioFormat.error()));
     if (*audioFormat != 1)
       return std::unexpected(AudioException("Only PCM wav format is supported"));
-    auto channels = readLEType<std::uint16_t>(device);
+    auto channels = readLEType<std::uint16_t>(*device);
     if (!channels)
       return std::unexpected(std::move(channels.error()));
-    auto rate = readLEType<std::uint32_t>(device);
+    auto rate = readLEType<std::uint32_t>(*device);
     if (!rate)
       return std::unexpected(std::move(rate.error()));
-    auto byteRate = readLEType<std::uint32_t>(device);
+    auto byteRate = readLEType<std::uint32_t>(*device);
     if (!byteRate)
       return std::unexpected(std::move(byteRate.error()));
-    auto alignment = readLEType<std::uint16_t>(device);
+    auto alignment = readLEType<std::uint16_t>(*device);
     if (!alignment)
       return std::unexpected(std::move(alignment.error()));
-    auto bits = readLEType<std::uint16_t>(device);
+    auto bits = readLEType<std::uint16_t>(*device);
     if (!bits)
       return std::unexpected(std::move(bits.error()));
     if (*bits != 16)
@@ -145,7 +157,7 @@ namespace {
       return std::unexpected(std::move(read.error()));
     if (std::memcmp(signature.data(), "data", 4) != 0)
       return std::unexpected(AudioException("Wav file data subchunk has invalid magic bytes"));
-    auto dataSize = readLEType<std::uint32_t>(device);
+    auto dataSize = readLEType<std::uint32_t>(*device);
     if (!dataSize)
       return std::unexpected(std::move(dataSize.error()));
     auto dataStart = device->pos();
@@ -162,9 +174,9 @@ namespace {
     if (!bytes)
       return std::unexpected(std::move(bytes.error()));
     for (std::size_t i = 0; i < bytes->size() / 2; ++i)
-      fromByteOrder(ByteOrder::LittleEndian, bytes->ptr() + i * 2, 2);
+      fromByteOrder(ByteOrder::LittleEndian, bytes->span().data() + i * 2, 2);
     auto shared = std::make_shared<ByteArray>(std::move(*bytes));
-    auto memory = std::make_shared<ExternalBuffer>(std::span<char const>(shared->ptr(), shared->size()));
+    ExternalBuffer memory(shared->span());
     return WaveData{std::move(memory), std::move(shared), *channels, *rate, *dataSize, 0};
 #endif
   }
@@ -172,10 +184,10 @@ namespace {
 
 class CompressedAudioImpl {
 public:
-  [[nodiscard]] static std::expected<std::shared_ptr<CompressedAudioImpl>, StarException> create(std::shared_ptr<IODevice> device) {
-    auto impl = std::shared_ptr<CompressedAudioImpl>(new CompressedAudioImpl);
+  [[nodiscard]] static std::expected<std::unique_ptr<CompressedAudioImpl>, StarException> create(IODevice& device) {
+    auto impl = std::unique_ptr<CompressedAudioImpl>(new CompressedAudioImpl);
 #ifdef STAR_STREAM_AUDIO
-    auto cloned = device->clone();
+    auto cloned = device.clone();
     if (!cloned)
       return std::unexpected(std::move(cloned.error()));
     impl->m_device = std::move(*cloned);
@@ -183,19 +195,19 @@ public:
     if (!open)
       return std::unexpected(std::move(open.error()));
 #else
-    auto seek = device->seek(0);
+    auto seek = device.seek(0);
     if (!seek)
       return std::unexpected(std::move(seek.error()));
-    auto size = device->size();
+    auto size = device.size();
     if (!size)
       return std::unexpected(std::move(size.error()));
     if (*size < 0 || std::uint64_t(*size) > std::numeric_limits<std::size_t>::max())
       return std::unexpected(AudioException("Audio device size is out of range"));
-    auto bytes = device->readBytes(static_cast<std::size_t>(*size));
+    auto bytes = device.readBytes(static_cast<std::size_t>(*size));
     if (!bytes)
       return std::unexpected(std::move(bytes.error()));
     impl->m_bytes = std::make_shared<ByteArray>(std::move(*bytes));
-    impl->m_device = std::make_shared<ExternalBuffer>(std::span<char const>(impl->m_bytes->ptr(), impl->m_bytes->size()));
+    impl->m_device.reset(impl->m_bytes->span());
 #endif
     auto opened = impl->open();
     if (!opened)
@@ -203,8 +215,8 @@ public:
     return impl;
   }
 
-  [[nodiscard]] std::expected<std::shared_ptr<CompressedAudioImpl>, StarException> clone() const {
-    auto impl = std::shared_ptr<CompressedAudioImpl>(new CompressedAudioImpl);
+  [[nodiscard]] std::expected<std::unique_ptr<CompressedAudioImpl>, StarException> clone() const {
+    auto impl = std::unique_ptr<CompressedAudioImpl>(new CompressedAudioImpl);
 #ifdef STAR_STREAM_AUDIO
     auto device = m_device->clone();
     if (!device)
@@ -212,7 +224,7 @@ public:
     impl->m_device = std::move(*device);
 #else
     impl->m_bytes = m_bytes;
-    impl->m_device = std::make_shared<ExternalBuffer>(std::span<char const>(m_bytes->ptr(), m_bytes->size()));
+    impl->m_device.reset(m_bytes->span());
 #endif
     auto opened = impl->open();
     if (!opened)
@@ -276,12 +288,12 @@ public:
     return static_cast<std::uint64_t>(sample);
   }
 
-  [[nodiscard]] std::expected<std::size_t, StarException> readPartial(std::int16_t* buffer, std::size_t size) {
+  [[nodiscard]] std::expected<std::size_t, StarException> readPartial(std::span<std::int16_t> buffer) {
     int bitstream;
     long count;
-    int bytes = static_cast<int>(std::min(size, std::size_t(std::numeric_limits<int>::max() / 2)) * 2);
+    int bytes = static_cast<int>(std::min(buffer.size(), std::size_t(std::numeric_limits<int>::max() / 2)) * 2);
     do {
-      count = ov_read(&m_file, reinterpret_cast<char*>(buffer), bytes,
+      count = ov_read(&m_file, reinterpret_cast<char*>(buffer.data()), bytes,
           std::endian::native == std::endian::big, 2, 1, &bitstream);
       if (auto error = m_callbacks->takeError())
         return std::unexpected(std::move(*error));
@@ -294,11 +306,19 @@ public:
 private:
   CompressedAudioImpl() = default;
 
+  IODevice& device() const {
+#ifdef STAR_STREAM_AUDIO
+    return *m_device;
+#else
+    return m_device;
+#endif
+  }
+
   [[nodiscard]] std::expected<void, StarException> open() {
-    auto seek = m_device->seek(0);
+    auto seek = device().seek(0);
     if (!seek)
       return std::unexpected(std::move(seek.error()));
-    auto adapter = IODeviceCallbacks::create(m_device);
+    auto adapter = IODeviceCallbacks::create(device());
     if (!adapter)
       return std::unexpected(std::move(adapter.error()));
     m_callbacks.emplace(std::move(*adapter));
@@ -330,7 +350,11 @@ private:
     return {};
   }
 
+#ifdef STAR_STREAM_AUDIO
   std::shared_ptr<IODevice> m_device;
+#else
+  mutable ExternalBuffer m_device;
+#endif
   std::shared_ptr<ByteArray const> m_bytes;
   mutable std::optional<IODeviceCallbacks> m_callbacks;
   mutable OggVorbis_File m_file{};
@@ -346,37 +370,45 @@ public:
   explicit UncompressedAudioImpl(WaveData data)
     : m_data(std::move(data)) {}
 
-  [[nodiscard]] static std::expected<std::shared_ptr<UncompressedAudioImpl>, StarException> create(CompressedAudioImpl& compressed) {
+  [[nodiscard]] static std::expected<std::unique_ptr<UncompressedAudioImpl>, StarException> create(CompressedAudioImpl& compressed) {
     ByteArray bytes;
     std::int16_t buffer[1024];
     while (true) {
-      auto count = compressed.readPartial(buffer, 1024);
+      auto count = compressed.readPartial(buffer);
       if (!count)
         return std::unexpected(std::move(count.error()));
       if (*count == 0)
         break;
-      bytes.append(reinterpret_cast<char const*>(buffer), *count * sizeof(std::int16_t));
+      bytes.append({reinterpret_cast<char const*>(buffer), *count * sizeof(std::int16_t)});
     }
     auto shared = std::make_shared<ByteArray>(std::move(bytes));
-    auto memory = std::make_shared<ExternalBuffer>(std::span<char const>(shared->ptr(), shared->size()));
+#ifdef STAR_STREAM_AUDIO
+    auto memory = std::make_shared<ExternalBuffer>(shared->span());
+#else
+    ExternalBuffer memory(shared->span());
+#endif
     auto size = shared->size();
-    return std::make_shared<UncompressedAudioImpl>(WaveData{
+    return std::make_unique<UncompressedAudioImpl>(WaveData{
         std::move(memory), std::move(shared), compressed.channels(), compressed.sampleRate(), size, 0});
   }
 
-  [[nodiscard]] std::expected<std::shared_ptr<UncompressedAudioImpl>, StarException> clone() const {
-    auto device = m_data.device->clone();
+  [[nodiscard]] std::expected<std::unique_ptr<UncompressedAudioImpl>, StarException> clone() const {
+#ifndef STAR_STREAM_AUDIO
+    // Copy the borrowed view and cursor, retaining the same immutable byte owner.
+    return std::make_unique<UncompressedAudioImpl>(m_data);
+#else
+    auto device = m_data.stream->clone();
     if (!device)
       return std::unexpected(std::move(device.error()));
-    auto position = m_data.device->pos();
+    auto position = m_data.stream->pos();
     if (!position)
       return std::unexpected(std::move(position.error()));
     auto seek = (*device)->seek(*position);
     if (!seek)
       return std::unexpected(std::move(seek.error()));
-    auto data = m_data;
-    data.device = std::move(*device);
-    return std::make_shared<UncompressedAudioImpl>(std::move(data));
+    return std::make_unique<UncompressedAudioImpl>(WaveData{
+        std::move(*device), m_data.bytes, m_data.channels, m_data.sampleRate, m_data.dataSize, m_data.dataStart});
+#endif
   }
 
   unsigned channels() const { return m_data.channels; }
@@ -396,11 +428,11 @@ public:
   [[nodiscard]] std::expected<void, StarException> seekSample(std::uint64_t sample) {
     if (sample > totalSamples())
       return std::unexpected(AudioException("Cannot seek PCM audio past end of stream"));
-    return m_data.device->seek(m_data.dataStart + static_cast<StreamOffset>(sample * 2 * channels()));
+    return m_data.device().seek(m_data.dataStart + static_cast<StreamOffset>(sample * 2 * channels()));
   }
 
   [[nodiscard]] std::expected<std::uint64_t, StarException> currentSample() const {
-    auto position = m_data.device->pos();
+    auto position = m_data.device().pos();
     if (!position)
       return std::unexpected(std::move(position.error()));
     if (*position < m_data.dataStart || std::uint64_t(*position - m_data.dataStart) > m_data.dataSize)
@@ -415,30 +447,30 @@ public:
     return static_cast<double>(*sample) / sampleRate();
   }
 
-  [[nodiscard]] std::expected<std::size_t, StarException> readPartial(std::int16_t* buffer, std::size_t size) {
-    auto position = m_data.device->pos();
+  [[nodiscard]] std::expected<std::size_t, StarException> readPartial(std::span<std::int16_t> buffer) {
+    auto position = m_data.device().pos();
     if (!position)
       return std::unexpected(std::move(position.error()));
     if (*position < m_data.dataStart || std::uint64_t(*position - m_data.dataStart) > m_data.dataSize)
       return std::unexpected(AudioException("PCM audio device position is outside the data chunk"));
     std::size_t remaining = m_data.dataSize - static_cast<std::size_t>(*position - m_data.dataStart);
-    std::size_t requested = std::min(size, remaining / 2) * 2;
+    std::size_t requested = std::min(buffer.size(), remaining / 2) * 2;
     if (requested == 0)
       return 0;
-    auto read = m_data.device->read({reinterpret_cast<char*>(buffer), requested});
+    auto read = m_data.device().read({reinterpret_cast<char*>(buffer.data()), requested});
     if (!read)
       return std::unexpected(std::move(read.error()));
     if (*read == 0)
       return std::unexpected(AudioException("PCM audio data is truncated"));
     if (*read % 2 != 0) {
-      auto tail = m_data.device->readFull({reinterpret_cast<char*>(buffer) + *read, 1});
+      auto tail = m_data.device().readFull({reinterpret_cast<char*>(buffer.data()) + *read, 1});
       if (!tail)
         return std::unexpected(std::move(tail.error()));
       ++*read;
     }
     if (!m_data.bytes) {
       for (std::size_t i = 0; i < *read / 2; ++i)
-        fromByteOrder(ByteOrder::LittleEndian, reinterpret_cast<char*>(buffer) + i * 2, 2);
+        fromByteOrder(ByteOrder::LittleEndian, reinterpret_cast<char*>(buffer.data()) + i * 2, 2);
     }
     return *read / 2;
   }
@@ -457,16 +489,16 @@ std::expected<Audio, StarException> Audio::create(std::shared_ptr<IODevice> devi
   }
   Audio audio;
   audio.m_name = std::move(name);
-  auto wav = isUncompressed(device);
+  auto wav = isUncompressed(*device);
   if (!wav)
     return std::unexpected(std::move(wav.error()));
   if (*wav) {
     auto data = parseWav(std::move(device));
     if (!data)
       return std::unexpected(std::move(data.error()));
-    audio.m_uncompressed = std::make_shared<UncompressedAudioImpl>(std::move(*data));
+    audio.m_uncompressed = std::make_unique<UncompressedAudioImpl>(std::move(*data));
   } else {
-    auto compressed = CompressedAudioImpl::create(std::move(device));
+    auto compressed = CompressedAudioImpl::create(*device);
     if (!compressed)
       return std::unexpected(std::move(compressed.error()));
     audio.m_compressed = std::move(*compressed);
@@ -474,6 +506,8 @@ std::expected<Audio, StarException> Audio::create(std::shared_ptr<IODevice> devi
   return audio;
 }
 
+Audio::Audio() = default;
+Audio::~Audio() = default;
 Audio::Audio(Audio&& audio) noexcept = default;
 Audio& Audio::operator=(Audio&& audio) noexcept = default;
 
@@ -544,18 +578,16 @@ std::expected<std::uint64_t, StarException> Audio::currentSample() const {
   return m_uncompressed ? m_uncompressed->currentSample() : m_compressed->currentSample();
 }
 
-std::expected<std::size_t, StarException> Audio::readPartial(std::int16_t* buffer, std::size_t size) {
-  if (size == 0)
+std::expected<std::size_t, StarException> Audio::readPartial(std::span<std::int16_t> buffer) {
+  if (buffer.empty())
     return 0;
-  if (!buffer)
-    return std::unexpected(AudioException("Cannot read audio into a null buffer"));
-  return m_uncompressed ? m_uncompressed->readPartial(buffer, size) : m_compressed->readPartial(buffer, size);
+  return m_uncompressed ? m_uncompressed->readPartial(buffer) : m_compressed->readPartial(buffer);
 }
 
-std::expected<std::size_t, StarException> Audio::read(std::int16_t* buffer, std::size_t size) {
+std::expected<std::size_t, StarException> Audio::read(std::span<std::int16_t> buffer) {
   std::size_t total = 0;
-  while (total < size) {
-    auto count = readPartial(buffer ? buffer + total : nullptr, size - total);
+  while (total < buffer.size()) {
+    auto count = readPartial(buffer.subspan(total));
     if (!count)
       return std::unexpected(std::move(count.error()));
     total += *count;
@@ -565,15 +597,13 @@ std::expected<std::size_t, StarException> Audio::read(std::int16_t* buffer, std:
   return total;
 }
 
-std::expected<std::size_t, StarException> Audio::resample(unsigned destinationChannels, unsigned destinationSampleRate, std::int16_t* destinationBuffer, std::size_t destinationBufferSize, double velocity) {
+std::expected<std::size_t, StarException> Audio::resample(unsigned destinationChannels, unsigned destinationSampleRate, std::span<std::int16_t> destinationBuffer, double velocity) {
   if (destinationChannels == 0 || destinationSampleRate == 0 || !std::isfinite(velocity) || velocity <= 0)
     return std::unexpected(AudioException("Invalid audio resampling channels, rate, or velocity"));
-  if (destinationBufferSize != 0 && !destinationBuffer)
-    return std::unexpected(AudioException("Cannot resample audio into a null buffer"));
-  if (destinationBufferSize > std::numeric_limits<unsigned>::max()
-      || destinationBufferSize / destinationChannels > std::numeric_limits<unsigned>::max() / 8)
+  if (destinationBuffer.size() > std::numeric_limits<unsigned>::max()
+      || destinationBuffer.size() / destinationChannels > std::numeric_limits<unsigned>::max() / 8)
     return std::unexpected(AudioException("Audio resampling buffer is too large"));
-  unsigned destinationSamples = static_cast<unsigned>(destinationBufferSize / destinationChannels);
+  unsigned destinationSamples = static_cast<unsigned>(destinationBuffer.size() / destinationChannels);
   if (destinationSamples == 0)
     return 0;
 
@@ -591,7 +621,7 @@ std::expected<std::size_t, StarException> Audio::resample(unsigned destinationCh
     // If the destination and source channel count and sample rate are the
     // same, this is the same as a read.
 
-    return read(destinationBuffer, destinationBufferSize);
+    return read(destinationBuffer);
 
   } else if (destinationSampleRate == sourceSampleRate) {
     // If the destination and source sample rate are the same, then we can skip
@@ -603,9 +633,9 @@ std::expected<std::size_t, StarException> Audio::resample(unsigned destinationCh
     unsigned sourceBufferSize = destinationSamples * sourceChannels;
 
     m_workingBuffer.resize(sourceBufferSize * sizeof(std::int16_t));
-    std::int16_t* sourceBuffer = (std::int16_t*)m_workingBuffer.ptr();
+    std::span<std::int16_t> sourceBuffer(reinterpret_cast<std::int16_t*>(m_workingBuffer.span().data()), sourceBufferSize);
 
-    auto count = read(sourceBuffer, sourceBufferSize);
+    auto count = read(sourceBuffer);
     if (!count)
       return std::unexpected(std::move(count.error()));
     unsigned readSamples = static_cast<unsigned>(*count / sourceChannels);
@@ -636,9 +666,9 @@ std::expected<std::size_t, StarException> Audio::resample(unsigned destinationCh
     unsigned sourceBufferSize = sourceSamples * sourceChannels;
 
     m_workingBuffer.resize(sourceBufferSize * sizeof(std::int16_t));
-    std::int16_t* sourceBuffer = (std::int16_t*)m_workingBuffer.ptr();
+    std::span<std::int16_t> sourceBuffer(reinterpret_cast<std::int16_t*>(m_workingBuffer.span().data()), sourceBufferSize);
 
-    auto count = read(sourceBuffer, sourceBufferSize);
+    auto count = read(sourceBuffer);
     if (!count)
       return std::unexpected(std::move(count.error()));
     unsigned readSamples = static_cast<unsigned>(*count / sourceChannels);

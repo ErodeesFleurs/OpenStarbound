@@ -32,12 +32,12 @@ struct LightSource {
 
   void translate(Vec2F const& pos);
 
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, LightSource const& lightSource);
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, LightSource& lightSource);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, LightSource const& lightSource);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, LightSource& lightSource);
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, LightSource const& lightSource);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, LightSource& lightSource);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, LightSource const& lightSource);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, LightSource& lightSource);
 }
 
 export module star.light_source;

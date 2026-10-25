@@ -28,69 +28,69 @@ std::expected<ByteArray, StarException> DataStream::readBytes(std::size_t len) {
     return std::unexpected(DataStreamException("Byte stream request exceeds addressable size"));
   ByteArray bytes;
   bytes.resize(len);
-  auto result = readData(bytes.ptr(), len);
+  auto result = readData(bytes.span());
   if (!result) return std::unexpected(std::move(result.error()));
   return bytes;
 }
 std::expected<void, StarException> DataStream::writeBytes(ByteArray const& bytes) {
-  return writeData(bytes.ptr(), bytes.size());
+  return writeData(bytes.span());
 }
 
 namespace {
 template <typename T>
-std::expected<DataStream*, StarException> writeNumber(DataStream& stream, T value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> writeNumber(DataStream& stream, T value) {
   if constexpr (sizeof(T) > 1) value = toByteOrder(stream.byteOrder(), value);
-  auto result = stream.writeData(reinterpret_cast<char const*>(&value), sizeof(value));
+  auto result = stream.writeData({reinterpret_cast<char const*>(&value), sizeof(value)});
   if (!result) return std::unexpected(std::move(result.error()));
-  return &stream;
+  return std::ref(stream);
 }
 template <typename T>
-std::expected<DataStream*, StarException> readNumber(DataStream& stream, T& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> readNumber(DataStream& stream, T& value) {
   T decoded;
-  auto result = stream.readData(reinterpret_cast<char*>(&decoded), sizeof(decoded));
+  auto result = stream.readData({reinterpret_cast<char*>(&decoded), sizeof(decoded)});
   if (!result) return std::unexpected(std::move(result.error()));
   if constexpr (sizeof(T) > 1) decoded = fromByteOrder(stream.byteOrder(), decoded);
   value = decoded;
-  return &stream;
+  return std::ref(stream);
 }
 }
 
-std::expected<DataStream*, StarException> DataStream::operator<<(bool value) { return writeNumber(*this, (std::uint8_t)value); }
-std::expected<DataStream*, StarException> DataStream::operator<<(char value) { return writeNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator<<(std::int8_t value) { return writeNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator<<(std::uint8_t value) { return writeNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator<<(std::int16_t value) { return writeNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator<<(std::uint16_t value) { return writeNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator<<(std::int32_t value) { return writeNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator<<(std::uint32_t value) { return writeNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator<<(std::int64_t value) { return writeNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator<<(std::uint64_t value) { return writeNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator<<(float value) { return writeNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator<<(double value) { return writeNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator>>(bool& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(bool value) { return writeNumber(*this, (std::uint8_t)value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(char value) { return writeNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(std::int8_t value) { return writeNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(std::uint8_t value) { return writeNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(std::int16_t value) { return writeNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(std::uint16_t value) { return writeNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(std::int32_t value) { return writeNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(std::uint32_t value) { return writeNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(std::int64_t value) { return writeNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(std::uint64_t value) { return writeNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(float value) { return writeNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(double value) { return writeNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(bool& value) {
   std::uint8_t byte;
   auto result = readNumber(*this, byte);
   if (!result) return std::unexpected(std::move(result.error()));
   // Arbitrary input bytes must not create invalid bool representations.
   value = byte != 0;
-  return this;
+  return std::ref(*this);
 }
-std::expected<DataStream*, StarException> DataStream::operator>>(char& value) { return readNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator>>(std::int8_t& value) { return readNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator>>(std::uint8_t& value) { return readNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator>>(std::int16_t& value) { return readNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator>>(std::uint16_t& value) { return readNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator>>(std::int32_t& value) { return readNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator>>(std::uint32_t& value) { return readNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator>>(std::int64_t& value) { return readNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator>>(std::uint64_t& value) { return readNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator>>(float& value) { return readNumber(*this, value); }
-std::expected<DataStream*, StarException> DataStream::operator>>(double& value) { return readNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(char& value) { return readNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(std::int8_t& value) { return readNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(std::uint8_t& value) { return readNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(std::int16_t& value) { return readNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(std::uint16_t& value) { return readNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(std::int32_t& value) { return readNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(std::uint32_t& value) { return readNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(std::int64_t& value) { return readNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(std::uint64_t& value) { return readNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(float& value) { return readNumber(*this, value); }
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(double& value) { return readNumber(*this, value); }
 
 std::expected<std::size_t, StarException> DataStream::writeVlqU(std::uint64_t value) {
   std::uint8_t bytes[10];
   auto count = Star::writeVlqU(value, bytes);
-  auto result = writeData(reinterpret_cast<char const*>(bytes), count);
+  auto result = writeData({reinterpret_cast<char const*>(bytes), count});
   if (!result) return std::unexpected(std::move(result.error()));
   return count;
 }
@@ -147,29 +147,29 @@ std::expected<std::size_t, StarException> DataStream::readVlqS() {
   return value;
 }
 
-std::expected<DataStream*, StarException> DataStream::operator<<(char const* value) {
-  auto result = writeStringData(value, std::strlen(value));
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(std::string_view value) {
+  auto result = writeStringData({value.data(), value.size()});
   if (!result) return std::unexpected(std::move(result.error()));
-  return this;
+  return std::ref(*this);
 }
-std::expected<DataStream*, StarException> DataStream::operator<<(std::string const& value) {
-  auto result = writeStringData(value.data(), value.size());
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(std::string const& value) {
+  auto result = writeStringData({value.data(), value.size()});
   if (!result) return std::unexpected(std::move(result.error()));
-  return this;
+  return std::ref(*this);
 }
-std::expected<DataStream*, StarException> DataStream::operator<<(ByteArray const& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(ByteArray const& value) {
   auto count = writeVlqU(value.size());
   if (!count) return std::unexpected(std::move(count.error()));
-  auto result = writeData(value.ptr(), value.size());
+  auto result = writeData(value.span());
   if (!result) return std::unexpected(std::move(result.error()));
-  return this;
+  return std::ref(*this);
 }
-std::expected<DataStream*, StarException> DataStream::operator<<(String const& value) {
-  auto result = writeStringData(value.utf8Ptr(), value.utf8Size());
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(String const& value) {
+  auto result = writeStringData(value.utf8());
   if (!result) return std::unexpected(std::move(result.error()));
-  return this;
+  return std::ref(*this);
 }
-std::expected<DataStream*, StarException> DataStream::operator>>(std::string& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(std::string& value) {
   std::string decoded;
   if (m_nullTerminatedStrings) {
     for (;;) {
@@ -184,13 +184,13 @@ std::expected<DataStream*, StarException> DataStream::operator>>(std::string& va
     if (*length > decoded.max_size())
       return std::unexpected(DataStreamException("Serialized string exceeds addressable size"));
     decoded.resize(std::size_t(*length));
-    auto result = readData(decoded.data(), decoded.size());
+    auto result = readData({decoded.data(), decoded.size()});
     if (!result) return std::unexpected(std::move(result.error()));
   }
   value = std::move(decoded);
-  return this;
+  return std::ref(*this);
 }
-std::expected<DataStream*, StarException> DataStream::operator>>(ByteArray& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(ByteArray& value) {
   auto length = readVlqU();
   if (!length) return std::unexpected(std::move(length.error()));
   if (*length > std::uint64_t(std::numeric_limits<std::ptrdiff_t>::max()))
@@ -198,23 +198,23 @@ std::expected<DataStream*, StarException> DataStream::operator>>(ByteArray& valu
   auto decoded = readBytes(std::size_t(*length));
   if (!decoded) return std::unexpected(std::move(decoded.error()));
   value = std::move(*decoded);
-  return this;
+  return std::ref(*this);
 }
-std::expected<DataStream*, StarException> DataStream::operator>>(String& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(String& value) {
   auto decoded = read<std::string>();
   if (!decoded) return std::unexpected(std::move(decoded.error()));
   value = std::move(*decoded);
-  return this;
+  return std::ref(*this);
 }
-std::expected<void, StarException> DataStream::writeStringData(char const* data, std::size_t len) {
+std::expected<void, StarException> DataStream::writeStringData(std::span<char const> data) {
   if (m_nullTerminatedStrings) {
-    auto result = writeData(data, len);
+    auto result = writeData(data);
     if (!result) return std::unexpected(std::move(result.error()));
     return write<std::uint8_t>(0);
   }
-  auto count = writeVlqU(len);
+  auto count = writeVlqU(data.size());
   if (!count) return std::unexpected(std::move(count.error()));
-  return writeData(data, len);
+  return writeData(data);
 }
 
 }

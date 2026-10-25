@@ -172,7 +172,7 @@ std::expected<ByteArray, StarException> File::readFile(String const& filename) {
     auto count = (*file)->read(buffer);
     if (!count)
       return std::unexpected(std::move(count.error()));
-    bytes.append(buffer, *count);
+    bytes.append(std::span{buffer, *count});
   }
   auto closed = (*file)->close();
   if (!closed)
@@ -216,30 +216,30 @@ std::expected<StreamOffset, StarException> File::fileSize(String const& filename
   return *result;
 }
 
-std::expected<void, StarException> File::writeFile(char const* data, std::size_t len, String const& filename) {
+std::expected<void, StarException> File::writeFile(std::span<char const> data, String const& filename) {
   auto file = File::open(filename, IOMode::Write | IOMode::Truncate);
   if (!file)
     return std::unexpected(std::move(file.error()));
-  auto written = (*file)->writeFull({data, len});
+  auto written = (*file)->writeFull(data);
   if (!written)
     return std::unexpected(std::move(written.error()));
   return (*file)->close();
 }
 
 std::expected<void, StarException> File::writeFile(ByteArray const& data, String const& filename) {
-  return writeFile(data.ptr(), data.size(), filename);
+  return writeFile(data.span(), filename);
 }
 
 std::expected<void, StarException> File::writeFile(String const& data, String const& filename) {
-  return writeFile(data.utf8Ptr(), data.utf8Size(), filename);
+  return writeFile(std::span<char const>(data.utf8()), filename);
 }
 
 std::expected<void, StarException> File::overwriteFileWithRename(ByteArray const& data, String const& filename, String const& newSuffix) {
-  return overwriteFileWithRename(data.ptr(), data.size(), filename, newSuffix);
+  return overwriteFileWithRename(data.span(), filename, newSuffix);
 }
 
 std::expected<void, StarException> File::overwriteFileWithRename(String const& data, String const& filename, String const& newSuffix) {
-  return overwriteFileWithRename(data.utf8Ptr(), data.utf8Size(), filename, newSuffix);
+  return overwriteFileWithRename(std::span<char const>(data.utf8()), filename, newSuffix);
 }
 
 std::expected<void, StarException> File::backupFileInSequence(String const& initialFile, String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix) {

@@ -20,17 +20,17 @@ import star.config_lua_bindings;
 
 namespace Star {
 
-ScriptableThread::ScriptableThread(Json parameters, String name, LuaBaseComponent* parent)
+ScriptableThread::ScriptableThread(Json parameters, String name, LuaBaseComponent& parent)
   : Thread("ScriptableThread: " + name), m_parameters(std::move(parameters)),
     m_name(std::move(name)), m_logMapped(true), m_timestep(1.0f / 60.0f),
     m_stop(false), m_pause(false), m_errorOccurred(false), m_shouldExpire(false), m_parent(parent) {}
 
-std::expected<std::shared_ptr<ScriptableThread>, StarException> ScriptableThread::create(Json parameters, LuaBaseComponent* parent) {
+std::expected<std::shared_ptr<ScriptableThread>, StarException> ScriptableThread::create(Json parameters, LuaBaseComponent& parent) {
   auto name = parameters.getString("name");
   if (!name)
     return std::unexpected(std::move(name.error()));
   auto thread = std::shared_ptr<ScriptableThread>(new ScriptableThread(std::move(parameters), std::move(*name), parent));
-  auto root = LuaRoot::create(parent->root());
+  auto root = LuaRoot::create(parent.root());
   if (!root)
     return std::unexpected(std::move(root.error()));
   thread->m_luaRoot = std::move(*root);
@@ -59,8 +59,8 @@ std::expected<std::shared_ptr<ScriptableThread>, StarException> ScriptableThread
   if (!callbacks)
     return std::unexpected(std::move(callbacks.error()));
   thread->m_luaRoot->addCallbacks("thread", *callbacks);
-  auto configCallbacks = LuaBindings::makeConfigCallbacks([owner = thread.get()](String const& name, Json const& def) {
-    return owner->configValue(name, def);
+  auto configCallbacks = LuaBindings::makeConfigCallbacks([owner = std::ref(*thread)](String const& name, Json const& def) {
+    return owner.get().configValue(name, def);
   });
   if (!configCallbacks)
     return std::unexpected(std::move(configCallbacks.error()));
@@ -103,7 +103,7 @@ std::expected<void, StarException> ScriptableThread::addCallbacks(String const& 
 }
 
 std::expected<void, StarException> ScriptableThread::removeCallbacks(String const& group) {
-  auto callbacks = m_threadCallbacks.ptr(group);
+  auto callbacks = m_threadCallbacks.maybeRef(group);
   if (!callbacks)
     return {};
   struct RemovedCallbacks {
@@ -115,11 +115,11 @@ std::expected<void, StarException> ScriptableThread::removeCallbacks(String cons
   auto rollback = [&](StarException error) -> std::expected<void, StarException> {
     for (auto const& removed : changed) {
       if (removed.callbacks) {
-        if (auto restored = removed.component->addCallbacks(group, *callbacks); !restored)
+        if (auto restored = removed.component->addCallbacks(group, callbacks->get()); !restored)
           error = restored.error().withContext(strf("Original script callback removal failure: {}", outputException(error, true)));
       }
       if (removed.threadCallbacks) {
-        if (auto restored = removed.component->addThreadCallbacks(group, *callbacks); !restored)
+        if (auto restored = removed.component->addThreadCallbacks(group, callbacks->get()); !restored)
           error = restored.error().withContext(strf("Original script callback removal failure: {}", outputException(error, true)));
       }
     }
@@ -306,8 +306,8 @@ std::expected<void, StarException> ScriptableThread::update() {
         error = std::move(response.error());
     } else if (!*response) {
       settled = message.promise.fail("Message not handled by thread");
-    } else if (auto promise = std::get_if<RpcPromise<Json>>(&**response)) {
-      settled = message.promise.chain(*promise);
+    } else if (std::holds_alternative<RpcPromise<Json>>(**response)) {
+      settled = message.promise.chain(std::get<RpcPromise<Json>>(**response));
     } else {
       settled = message.promise.fulfill(std::get<Json>(**response));
     }
@@ -327,13 +327,13 @@ std::expected<void, StarException> ScriptableThread::update() {
 
 std::expected<LuaCallbacks, StarException> ScriptableThread::makeThreadCallbacks() {
   LuaCallbacks callbacks;
-  if (auto result = callbacks.registerCallback("stop", [this]() {
-    m_stop = true;
-    m_shouldExpire = true;
+  if (auto result = callbacks.registerCallback("stop", [&self = *this]() {
+    self.m_stop = true;
+    self.m_shouldExpire = true;
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("sendParentMessage", [this](String const& message, LuaVariadic<Json> args) {
-    return m_parent->threadPassMessage(m_name, message, JsonArray::from(std::move(args)));
+  if (auto result = callbacks.registerCallback("sendParentMessage", [&self = *this](String const& message, LuaVariadic<Json> args) {
+    return self.m_parent.get().threadPassMessage(self.m_name, message, JsonArray::from(std::move(args)));
   }); !result)
     return std::unexpected(std::move(result.error()));
   return callbacks;

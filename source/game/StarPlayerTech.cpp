@@ -66,7 +66,7 @@ std::expected<std::shared_ptr<PlayerTech>, StarException> PlayerTech::create(Roo
       auto type = TechTypeNames->getLeft(entry.first);
       if (!type)
         return std::unexpected(std::move(type.error()));
-      playerTech->m_equippedTechs[**type] = std::move(*techName);
+      playerTech->m_equippedTechs[type->get()] = std::move(*techName);
     } else {
       auto logged = root.logger().warn("Unequipping unknown tech '{}' from slot '{}'", *techName, entry.first);
       if (!logged)
@@ -84,7 +84,7 @@ std::expected<Json, StarException> PlayerTech::toJson() const {
     auto type = TechTypeNames->getRight(entry.first);
     if (!type)
       return std::unexpected(std::move(type.error()));
-    equipped[**type] = entry.second;
+    equipped[type->get()] = entry.second;
   }
   return JsonObject{
       {"availableTechs", jsonFromStringSet(m_availableTechs)},

@@ -39,7 +39,7 @@ import star.root;
 
 namespace Star {
 
-Item::Item(Root& root) : m_root(&root), m_count(1), m_maxStack(0), m_rarity(), m_twoHanded(false), m_timeToLive(0), m_price(0) {}
+Item::Item(Root& root) : m_root(root), m_count(1), m_maxStack(0), m_rarity(), m_twoHanded(false), m_timeToLive(0), m_price(0) {}
 
 std::expected<void, StarException> Item::initialize(Json config, String directory, Json parameters) {
   m_config = std::move(config);
@@ -81,7 +81,7 @@ std::expected<void, StarException> Item::initialize(Json config, String director
   auto rarityValue = RarityNames->getLeft(*rarity);
   if (!rarityValue)
     return std::unexpected(std::move(rarityValue.error()));
-  m_rarity = **rarityValue;
+  m_rarity = rarityValue->get();
 
   auto metadata = root().imageMetadataDatabase();
   if (!metadata)
@@ -213,7 +213,7 @@ std::expected<void, StarException> Item::initialize(Json config, String director
 Item::~Item() {}
 
 Root& Item::root() const {
-  return *m_root;
+  return m_root.get();
 }
 
 String Item::name() const {
@@ -232,27 +232,27 @@ std::uint64_t Item::setCount(std::uint64_t count, bool overfill) {
   return count - m_count;
 }
 
-bool Item::stackableWith(std::shared_ptr<Item const> const& item) const {
-  return item && name() == item->name() && parameters() == item->parameters();
+bool Item::stackableWith(std::optional<std::reference_wrapper<Item const>> item) const {
+  return item && name() == item->get().name() && parameters() == item->get().parameters();
 }
 
 std::uint64_t Item::maxStack() const {
   return m_maxStack;
 }
 
-std::uint64_t Item::couldStack(std::shared_ptr<Item const> const& item) const {
+std::uint64_t Item::couldStack(std::optional<std::reference_wrapper<Item const>> item) const {
   if (stackableWith(item) && m_count < m_maxStack) {
     std::uint64_t take = m_maxStack - m_count;
-    return std::min(take, item->count());
+    return std::min(take, item->get().count());
   } else {
     return 0;
   }
 }
 
-bool Item::stackWith(std::shared_ptr<Item> const& item) {
+bool Item::stackWith(std::optional<std::reference_wrapper<Item>> item) {
   std::uint64_t take = couldStack(item);
 
-  if (take > 0 && item->consume(take)) {
+  if (take > 0 && item->get().consume(take)) {
     m_count += take;
     return true;
   } else {
@@ -264,8 +264,8 @@ bool Item::matches(ItemDescriptor const& descriptor, bool exactMatch) const {
   return descriptor.name() == m_name && (!exactMatch || descriptor.parameters() == m_parameters);
 }
 
-bool Item::matches(std::shared_ptr<Item const> const& other, bool exactMatch) const {
-  return other->name() == m_name && (!exactMatch || other->parameters() == m_parameters);
+bool Item::matches(Item const& other, bool exactMatch) const {
+  return other.name() == m_name && (!exactMatch || other.parameters() == m_parameters);
 }
 
 bool Item::consume(std::uint64_t count) {
@@ -327,7 +327,7 @@ bool Item::hasSecondaryDrawables() const {
   return m_secondaryIconDrawables.has_value();
 }
 
-std::expected<List<Drawable>, StarException> Item::dropDrawables(TileDrawer*) const {
+std::expected<List<Drawable>, StarException> Item::dropDrawables(std::optional<std::reference_wrapper<TileDrawer>>) const {
   auto drawables = iconDrawables();
   if (!drawables)
     return std::unexpected(std::move(drawables.error()));
@@ -363,7 +363,7 @@ std::expected<String, StarException> Item::pickupSound() const {
   auto sound = root().random().randFrom(m_pickupSounds);
   if (!sound)
     return std::unexpected(std::move(sound.error()));
-  return **sound;
+  return sound->get();
 }
 
 void Item::setMaxStack(std::uint64_t maxStack) {
@@ -528,11 +528,11 @@ std::expected<std::shared_ptr<Item>, StarException> GenericItem::clone() const {
   return std::make_shared<GenericItem>(*this);
 }
 
-bool Item::itemsEqual(std::shared_ptr<Item const> const& a, std::shared_ptr<Item const> const& b) {
+bool Item::itemsEqual(std::optional<std::reference_wrapper<Item const>> a, std::optional<std::reference_wrapper<Item const>> b) {
   if (!a && !b) // Both are null
     return true;
   if (a && b) // Both aren't null, compare
-    return a->stackableWith(b);
+    return a->get().stackableWith(b);
   else // One is null, so not equal
     return false;
 }

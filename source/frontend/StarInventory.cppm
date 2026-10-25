@@ -85,7 +85,10 @@ public:
     return Star::typeName<InventoryPane>();
   }
 
-  [[nodiscard]] static std::expected<std::shared_ptr<InventoryPane>, StarException> create(GuiContext& guiContext, MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
+  [[nodiscard]] static std::expected<std::shared_ptr<InventoryPane>, StarException> create(GuiContext& guiContext, MainInterface& parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
+
+  // Terminally sever the interface borrow when its owner is destroyed.
+  void detachInterface() noexcept { m_parent.reset(); }
 
   [[nodiscard]] std::expected<void, StarException> displayed() override;
   [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
@@ -105,9 +108,9 @@ protected:
   [[nodiscard]] std::expected<void, StarException> selectTab(String const& selected);
 
 private:
-  explicit InventoryPane(GuiContext& guiContext);
-  [[nodiscard]] std::expected<void, StarException> initialize(MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
-  MainInterface* m_parent;
+  InventoryPane(GuiContext& guiContext, MainInterface& parent);
+  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
+  std::optional<std::reference_wrapper<MainInterface>> m_parent;
   std::shared_ptr<Player> m_player;
   std::shared_ptr<ContainerInteractor> m_containerInteractor;
 

@@ -130,7 +130,7 @@ public:
   [[nodiscard]]
   std::expected<List<Drawable>, StarException> iconDrawables() const override;
   [[nodiscard]]
-  std::expected<List<Drawable>, StarException> dropDrawables(TileDrawer*) const override;
+  std::expected<List<Drawable>, StarException> dropDrawables(std::optional<std::reference_wrapper<TileDrawer>>) const override;
 
 private:
   explicit BlueprintItem(Root& root) : Item(root) {}
@@ -201,8 +201,8 @@ std::expected<void, StarException> BlueprintItem::fireTriggered() {
     auto itemOwner = owner();
     if (!itemOwner)
       return std::unexpected(std::move(itemOwner.error()));
-    if (auto player = as<Player>(*itemOwner)) {
-      auto learned = player->addBlueprint(m_recipe, true);
+    if (auto player = asRef<Player>(itemOwner->get())) {
+      auto learned = player->get().addBlueprint(m_recipe, true);
       if (!learned)
         return std::unexpected(std::move(learned.error()));
       if (*learned)
@@ -222,7 +222,7 @@ std::expected<List<Drawable>, StarException> BlueprintItem::iconDrawables() cons
   return result;
 }
 
-std::expected<List<Drawable>, StarException> BlueprintItem::dropDrawables(TileDrawer*) const {
+std::expected<List<Drawable>, StarException> BlueprintItem::dropDrawables(std::optional<std::reference_wrapper<TileDrawer>>) const {
   return m_inHandDrawable;
 }
 

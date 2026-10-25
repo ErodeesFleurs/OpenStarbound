@@ -8,31 +8,32 @@ import star.unicode;
 namespace Star {
 
 struct JsonStream {
+  // Each text range is borrowed only through its synchronous callback.
   virtual ~JsonStream() = default;
   virtual std::expected<void, StarException> beginObject() = 0;
-  virtual std::expected<void, StarException> objectKey(char32_t const*, std::size_t) = 0;
+  virtual std::expected<void, StarException> objectKey(std::span<char32_t const>) = 0;
   virtual std::expected<void, StarException> endObject() = 0;
   virtual std::expected<void, StarException> beginArray() = 0;
   virtual std::expected<void, StarException> endArray() = 0;
-  virtual std::expected<void, StarException> putString(char32_t const*, std::size_t) = 0;
+  virtual std::expected<void, StarException> putString(std::span<char32_t const>) = 0;
   // UTF-8 producers retain their borrowed storage through the synchronous call.
   // UTF-32 consumers (including the parser's builders) still receive a complete,
   // validated string before their callback is invoked.
   virtual std::expected<void, StarException> objectKeyUtf8(std::string_view bytes) {
     auto text = decodeUtf8(bytes);
     if (!text) return std::unexpected(std::move(text.error()));
-    return objectKey(text->data(), text->size());
+    return objectKey(*text);
   }
   virtual std::expected<void, StarException> putStringUtf8(std::string_view bytes) {
     auto text = decodeUtf8(bytes);
     if (!text) return std::unexpected(std::move(text.error()));
-    return putString(text->data(), text->size());
+    return putString(*text);
   }
-  virtual std::expected<void, StarException> putDouble(char32_t const*, std::size_t) = 0;
-  virtual std::expected<void, StarException> putInteger(char32_t const*, std::size_t) = 0;
+  virtual std::expected<void, StarException> putDouble(std::span<char32_t const>) = 0;
+  virtual std::expected<void, StarException> putInteger(std::span<char32_t const>) = 0;
   virtual std::expected<void, StarException> putBoolean(bool) = 0;
   virtual std::expected<void, StarException> putNull() = 0;
-  virtual std::expected<void, StarException> putWhitespace(char32_t const*, std::size_t) = 0;
+  virtual std::expected<void, StarException> putWhitespace(std::span<char32_t const>) = 0;
   virtual std::expected<void, StarException> putColon() = 0;
   virtual std::expected<void, StarException> putComma() = 0;
 private:
@@ -50,7 +51,7 @@ private:
 };
 
 struct JsonParserExceptionTag {
-  static constexpr char const* name() { return "JsonParserException"; }
+  static constexpr std::string_view name() { return "JsonParserException"; }
 };
 using JsonParserException = StarError<JsonParserExceptionTag, StarException>;
 
@@ -91,8 +92,8 @@ private:
     return std::unexpected(error.withContext(strf("Error parsing json at {}:{}", line(), column())));
   }
 
-  std::expected<void, StarException> error(char const* message) const {
-    return std::unexpected(JsonParserException(message));
+  std::expected<void, StarException> error(std::string_view message) const {
+    return std::unexpected(JsonParserException(std::string(message)));
   }
 
   std::expected<void, StarException> read() {
@@ -177,7 +178,7 @@ private:
       auto key = parseString();
       if (!key)
         return std::unexpected(std::move(key.error()));
-      auto written = m_stream.objectKey(key->data(), key->size());
+      auto written = m_stream.objectKey(*key);
       if (!written)
         return std::unexpected(std::move(written.error()));
       whitespace = white();
@@ -307,7 +308,7 @@ private:
             if (!advanced)
               return std::unexpected(std::move(advanced.error()));
           } while (m_char != 0 && !isSpace(m_char));
-          auto written = m_stream.putString(text.data(), text.size());
+          auto written = m_stream.putString(text);
           if (!written)
             return std::unexpected(std::move(written.error()));
         }
@@ -323,7 +324,7 @@ private:
     auto text = parseString();
     if (!text)
       return std::unexpected(std::move(text.error()));
-    return m_stream.putString(text->data(), text->size());
+    return m_stream.putString(*text);
   }
 
   std::expected<void, StarException> number(bool seq = false) {
@@ -382,8 +383,7 @@ private:
     }
     if (seq && m_char != 0 && !isSpace(m_char))
       return error("unexpected character after number");
-    return isDouble ? m_stream.putDouble(buffer.data(), buffer.size())
-                    : m_stream.putInteger(buffer.data(), buffer.size());
+    return isDouble ? m_stream.putDouble(buffer) : m_stream.putInteger(buffer);
   }
 
   std::expected<void, StarException> word(bool seq = false) {
@@ -551,7 +551,7 @@ private:
       }
     }
     if (!buffer.empty())
-      return m_stream.putWhitespace(buffer.data(), buffer.size());
+      return m_stream.putWhitespace(buffer);
     return {};
   }
 
@@ -578,13 +578,13 @@ public:
     m_state.push_back(Object);
     return write('{');
   }
-  std::expected<void, StarException> objectKey(char32_t const* s, std::size_t len) override {
+  std::expected<void, StarException> objectKey(std::span<char32_t const> s) override {
     if (state() != ObjectElement) m_state.push_back(ObjectElement);
     auto r = indent();
     if (!r) return std::unexpected(std::move(r.error()));
     r = write('"');
     if (!r) return std::unexpected(std::move(r.error()));
-    for (std::size_t i = 0; i < len && s[i]; ++i) {
+    for (std::size_t i = 0; i < s.size() && s[i]; ++i) {
       r = write(s[i]);
       if (!r) return std::unexpected(std::move(r.error()));
     }
@@ -625,10 +625,10 @@ public:
     return write('[');
   }
   std::expected<void, StarException> endArray() override { pop(Array); return write(']'); }
-  std::expected<void, StarException> putString(char32_t const* s, std::size_t len) override {
+  std::expected<void, StarException> putString(std::span<char32_t const> s) override {
     auto r = startValue();
     if (!r) return std::unexpected(std::move(r.error()));
-    return quoted(s, len);
+    return quoted(s);
   }
   std::expected<void, StarException> putStringUtf8(std::string_view bytes) override {
     // Preserve wideString's all-or-nothing validation before startValue or any
@@ -657,15 +657,17 @@ public:
     }
     return write('"');
   }
-  std::expected<void, StarException> putDouble(char32_t const* s, std::size_t len) override {
+  std::expected<void, StarException> putDouble(std::span<char32_t const> s) override {
     auto r = startValue();
     if (!r) return std::unexpected(std::move(r.error()));
-    return text(s, len);
+    return text(s);
   }
-  std::expected<void, StarException> putInteger(char32_t const* s, std::size_t len) override { return putDouble(s, len); }
-  std::expected<void, StarException> putBoolean(bool b) override { return b ? putDouble(U"true", 4) : putDouble(U"false", 5); }
-  std::expected<void, StarException> putNull() override { return putDouble(U"null", 4); }
-  std::expected<void, StarException> putWhitespace(char32_t const* s, std::size_t len) override { return text(s, len); }
+  std::expected<void, StarException> putInteger(std::span<char32_t const> s) override { return putDouble(s); }
+  std::expected<void, StarException> putBoolean(bool b) override {
+    return putDouble(b ? std::span<char32_t const>(U"true", 4) : std::span<char32_t const>(U"false", 5));
+  }
+  std::expected<void, StarException> putNull() override { return putDouble(std::span<char32_t const>(U"null", 4)); }
+  std::expected<void, StarException> putWhitespace(std::span<char32_t const> s) override { return text(s); }
   std::expected<void, StarException> putColon() override {
     auto r = write(':');
     if (!r) return std::unexpected(std::move(r.error()));
@@ -674,10 +676,10 @@ public:
   std::expected<void, StarException> putComma() override { return write(','); }
 private:
   enum State { Top, Object, ObjectElement, Array, ArrayElement };
-  std::expected<void, StarException> quoted(char32_t const* s, std::size_t len) {
+  std::expected<void, StarException> quoted(std::span<char32_t const> s) {
     auto r = write('"');
     if (!r) return std::unexpected(std::move(r.error()));
-    for (std::size_t i = 0; i < len; ++i) {
+    for (std::size_t i = 0; i < s.size(); ++i) {
       auto r = escaped(s[i]);
       if (!r) return std::unexpected(std::move(r.error()));
     }
@@ -696,11 +698,11 @@ private:
       default: break;
     }
     if (!escape.empty())
-      return text(escape.data(), escape.size());
+      return text(escape);
     if (c < 0x20) {
       constexpr char32_t digits[] = U"0123456789abcdef";
       char32_t encoded[] = {U'\\', U'u', U'0', U'0', digits[c >> 4], digits[c & 0xf]};
-      return text(encoded, std::size(encoded));
+      return text(encoded);
     }
     if (c > 0x10ffff) {
       auto hex = hexStringFromUtf32(c);
@@ -708,7 +710,7 @@ private:
       if (hex->size() != 4 && hex->size() != 8)
         return std::unexpected(UnicodeException("Internal Error: Received invalid unicode hex from hexStringFromUtf32."));
       for (std::size_t j = 0; j < hex->size(); j += 4) {
-        auto r = text(U"\\u", 2);
+        auto r = text(std::span<char32_t const>(U"\\u", 2));
         if (!r) return std::unexpected(std::move(r.error()));
         for (std::size_t k = j; k < j + 4; ++k) {
           r = write(static_cast<unsigned char>((*hex)[k]));
@@ -719,8 +721,8 @@ private:
     }
     return write(c);
   }
-  std::expected<void, StarException> text(char32_t const* s, std::size_t len) {
-    for (std::size_t i = 0; i < len; ++i) {
+  std::expected<void, StarException> text(std::span<char32_t const> s) {
+    for (std::size_t i = 0; i < s.size(); ++i) {
       auto r = write(s[i]);
       if (!r) return std::unexpected(std::move(r.error()));
     }

@@ -15,11 +15,11 @@ bool StatBaseMultiplier::operator==(StatBaseMultiplier const& rhs) const {
   return std::tie(statName, baseMultiplier) == std::tie(rhs.statName, rhs.baseMultiplier);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatBaseMultiplier& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, StatBaseMultiplier& value) {
   return ds >> value.statName >> value.baseMultiplier;
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatBaseMultiplier const& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, StatBaseMultiplier const& value) {
   return ds << value.statName << value.baseMultiplier;
 }
 
@@ -27,11 +27,11 @@ bool StatValueModifier::operator==(StatValueModifier const& rhs) const {
   return std::tie(statName, value) == std::tie(rhs.statName, rhs.value);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatValueModifier& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, StatValueModifier& value) {
   return ds >> value.statName >> value.value;
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatValueModifier const& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, StatValueModifier const& value) {
   return ds << value.statName << value.value;
 }
 
@@ -39,11 +39,11 @@ bool StatEffectiveMultiplier::operator==(StatEffectiveMultiplier const& rhs) con
   return std::tie(statName, effectiveMultiplier) == std::tie(rhs.statName, rhs.effectiveMultiplier);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatEffectiveMultiplier& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, StatEffectiveMultiplier& value) {
   return ds >> value.statName >> value.effectiveMultiplier;
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatEffectiveMultiplier const& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, StatEffectiveMultiplier const& value) {
   return ds << value.statName << value.effectiveMultiplier;
 }
 
@@ -66,12 +66,18 @@ std::expected<StatModifier, StarException> jsonToStatModifier(Json const& config
 }
 
 std::expected<Json, StarException> jsonFromStatModifier(StatModifier const& modifier) {
-  if (auto value = std::get_if<StatBaseMultiplier>(&modifier))
-    return JsonObject{{"stat", value->statName}, {"baseMultiplier", value->baseMultiplier}};
-  if (auto value = std::get_if<StatValueModifier>(&modifier))
-    return JsonObject{{"stat", value->statName}, {"amount", value->value}};
-  if (auto value = std::get_if<StatEffectiveMultiplier>(&modifier))
-    return JsonObject{{"stat", value->statName}, {"effectiveMultiplier", value->effectiveMultiplier}};
+  if (std::holds_alternative<StatBaseMultiplier>(modifier)) {
+    auto const& value = std::get<StatBaseMultiplier>(modifier);
+    return JsonObject{{"stat", value.statName}, {"baseMultiplier", value.baseMultiplier}};
+  }
+  if (std::holds_alternative<StatValueModifier>(modifier)) {
+    auto const& value = std::get<StatValueModifier>(modifier);
+    return JsonObject{{"stat", value.statName}, {"amount", value.value}};
+  }
+  if (std::holds_alternative<StatEffectiveMultiplier>(modifier)) {
+    auto const& value = std::get<StatEffectiveMultiplier>(modifier);
+    return JsonObject{{"stat", value.statName}, {"effectiveMultiplier", value.effectiveMultiplier}};
+  }
   return std::unexpected(JsonException("No 'baseMultiplier', 'amount', or 'effectiveMultiplier' member found in json"));
 }
 
@@ -90,10 +96,10 @@ std::expected<PersistentStatusEffect, StarException> jsonToPersistentStatusEffec
 }
 
 std::expected<Json, StarException> jsonFromPersistentStatusEffect(PersistentStatusEffect const& effect) {
-  if (auto uniqueStatusEffect = std::get_if<UniqueStatusEffect>(&effect))
-    return Json(*uniqueStatusEffect);
-  if (auto statModifier = std::get_if<StatModifier>(&effect))
-    return jsonFromStatModifier(*statModifier);
+  if (std::holds_alternative<UniqueStatusEffect>(effect))
+    return Json(std::get<UniqueStatusEffect>(effect));
+  if (std::holds_alternative<StatModifier>(effect))
+    return jsonFromStatModifier(std::get<StatModifier>(effect));
   return Json();
 }
 
@@ -101,11 +107,11 @@ bool EphemeralStatusEffect::operator==(EphemeralStatusEffect const& rhs) const {
   return std::tie(uniqueEffect, duration) == std::tie(rhs.uniqueEffect, rhs.duration);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, EphemeralStatusEffect& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EphemeralStatusEffect& value) {
   return ds >> value.uniqueEffect >> value.duration;
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, EphemeralStatusEffect const& value) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EphemeralStatusEffect const& value) {
   return ds << value.uniqueEffect << value.duration;
 }
 

@@ -33,7 +33,7 @@ import star.data_stream_extra;
 import star.byte_array;
 namespace Star {
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialPlanet& planet) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, CelestialPlanet& planet) {
   CelestialPlanet decoded;
   auto bytes = ds.read<ByteArray>();
   if (!bytes)
@@ -59,10 +59,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialPl
   if (!satellites)
     return std::unexpected(std::move(satellites.error()));
   planet = std::move(decoded);
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialPlanet const& planet) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, CelestialPlanet const& planet) {
   auto bytes = planet.planetParameters.netStore();
   if (!bytes)
     return std::unexpected(std::move(bytes.error()));
@@ -81,19 +81,19 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialPl
       });
   if (!satellites)
     return std::unexpected(std::move(satellites.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialSystemObjects& systemObjects) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, CelestialSystemObjects& systemObjects) {
   CelestialSystemObjects decoded;
   auto fields = ds >> decoded.systemLocation >> decoded.planets;
   if (!fields)
     return std::unexpected(std::move(fields.error()));
   systemObjects = std::move(decoded);
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialSystemObjects const& systemObjects) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, CelestialSystemObjects const& systemObjects) {
   return ds << systemObjects.systemLocation << systemObjects.planets;
 }
 
@@ -247,7 +247,7 @@ std::expected<Json, StarException> CelestialChunk::toJson() const {
       {"systemObjects", std::move(systemObjectsStore)}};
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialChunk& chunk) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, CelestialChunk& chunk) {
   CelestialChunk decoded;
   decoded.persistent = chunk.persistent;
   auto prefix = ds >> decoded.chunkIndex >> decoded.constellations;
@@ -273,10 +273,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialCh
   if (!objects)
     return std::unexpected(std::move(objects.error()));
   chunk = std::move(decoded);
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialChunk const& chunk) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, CelestialChunk const& chunk) {
   auto prefix = ds << chunk.chunkIndex << chunk.constellations;
   if (!prefix)
     return std::unexpected(std::move(prefix.error()));
@@ -295,7 +295,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialCh
   return ds << chunk.systemObjects;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation) {
   CelestialBaseInformation decoded{};
   auto fields = ds >> decoded.planetOrbitalLevels >> decoded.satelliteOrbitalLevels
       >> decoded.chunkSize >> decoded.xyCoordRange >> decoded.zCoordRange;
@@ -306,10 +306,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialBa
   celestialInformation.chunkSize = decoded.chunkSize;
   celestialInformation.xyCoordRange = decoded.xyCoordRange;
   celestialInformation.zCoordRange = decoded.zCoordRange;
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation) {
   return ds << celestialInformation.planetOrbitalLevels << celestialInformation.satelliteOrbitalLevels
       << celestialInformation.chunkSize << celestialInformation.xyCoordRange << celestialInformation.zCoordRange;
 }

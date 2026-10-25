@@ -66,7 +66,7 @@ bool ItemRecipe::operator!=(ItemRecipe const& rhs) const {
   return std::tie(currencyInputs, inputs, output) != std::tie(rhs.currencyInputs, rhs.inputs, rhs.output);
 }
 
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemRecipe const& recipe) {
+std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, ItemRecipe const& recipe) {
   os << "CurrencyInputs: " << recipe.currencyInputs << "Inputs: [";
   bool first = true;
   for (auto const& input : recipe.inputs) {
@@ -82,7 +82,7 @@ std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemRec
   if (!output)
     return std::unexpected(std::move(output.error()));
   os << "\nDuration: " << recipe.duration << "\nGroups: " << recipe.groups;
-  return &os;
+  return std::ref(os);
 }
 
 std::size_t hash<ItemRecipe>::operator()(ItemRecipe const& v) const {

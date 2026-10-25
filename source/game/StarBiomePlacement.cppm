@@ -47,7 +47,7 @@ class Root;
 class Assets;
 
 struct BiomeExceptionTag {
-  static constexpr char const* name() { return "BiomeException"; }
+  static constexpr std::string_view name() { return "BiomeException"; }
 };
 using BiomeException = StarError<BiomeExceptionTag, StarException>;
 

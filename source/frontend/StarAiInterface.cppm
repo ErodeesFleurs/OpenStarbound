@@ -68,9 +68,6 @@ import star.gui_context;
 import star.widget;
 import star.pane;
 import star.game_timers;
-import star.pane_manager;
-import star.registered_pane_manager;
-import star.main_interface_types;
 import star.animation;
 import star.tech_database;
 
@@ -78,7 +75,7 @@ namespace Star {
 
 
 struct AiInterfaceExceptionTag {
-  static constexpr char const* name() { return "AiInterfaceException"; }
+  static constexpr std::string_view name() { return "AiInterfaceException"; }
 };
 using AiInterfaceException = StarError<AiInterfaceExceptionTag, StarException>;
 
@@ -91,7 +88,7 @@ public:
     return Star::typeName<AiInterface>();
   }
 
-  [[nodiscard]] static std::expected<std::shared_ptr<AiInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager);
+  [[nodiscard]] static std::expected<std::shared_ptr<AiInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic);
 
   [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
@@ -101,7 +98,7 @@ public:
   void setSourceEntityId(EntityId sourceEntityId);
 
 private:
-  AiInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager, Animation staticAnimation, Animation scanlineAnimation, Animation faceAnimation);
+  AiInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, Animation staticAnimation, Animation scanlineAnimation, Animation faceAnimation);
   [[nodiscard]] std::expected<void, StarException> initialize();
 
   enum class AiPages : std::uint8_t {
@@ -134,7 +131,6 @@ private:
 
   std::shared_ptr<UniverseClient> m_client;
   std::shared_ptr<Cinematic> m_cinematic;
-  MainInterfacePaneManager* m_paneManager;
   std::shared_ptr<QuestManager> m_questManager;
 
   EntityId m_sourceEntityId;

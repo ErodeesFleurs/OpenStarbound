@@ -16,7 +16,7 @@ void expectVariantWire(T const& value, std::array<unsigned char, N> const& expec
   ASSERT_TRUE(written);
   ASSERT_EQ(stream.size(), expected.size());
   for (std::size_t i = 0; i < expected.size(); ++i)
-    EXPECT_EQ(static_cast<unsigned char>(stream.ptr()[i]), expected[i]);
+    EXPECT_EQ(static_cast<unsigned char>(stream.span()[i]), expected[i]);
 
   auto sought = stream.seek(0);
   ASSERT_TRUE(sought);

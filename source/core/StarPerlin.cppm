@@ -13,7 +13,7 @@ import star.math_common;
 namespace Star {
 
 struct PerlinExceptionTag {
-  static constexpr char const* name() { return "PerlinException"; }
+  static constexpr std::string_view name() { return "PerlinException"; }
 };
 using PerlinException = StarError<PerlinExceptionTag, StarException>;
 
@@ -69,15 +69,15 @@ private:
   static Float s_curve(Float t);
   static void setup(Float v, int& b0, int& b1, Float& r0, Float& r1);
 
-  static Float at2(Float* q, Float rx, Float ry);
-  static Float at3(Float* q, Float rx, Float ry, Float rz);
+  static Float at2(std::span<Float const, 2> q, Float rx, Float ry);
+  static Float at3(std::span<Float const, 3> q, Float rx, Float ry, Float rz);
 
   Float noise1(Float arg) const;
-  Float noise2(Float vec[2]) const;
-  Float noise3(Float vec[3]) const;
+  Float noise2(std::span<Float const, 2> vec) const;
+  Float noise3(std::span<Float const, 3> vec) const;
 
-  void normalize2(Float v[2]) const;
-  void normalize3(Float v[3]) const;
+  void normalize2(std::span<Float, 2> v) const;
+  void normalize3(std::span<Float, 3> v) const;
 
   void init(std::uint64_t seed);
 
@@ -133,12 +133,12 @@ void Perlin<Float>::setup(Float v, int& b0, int& b1, Float& r0, Float& r1) {
 }
 
 template <typename Float>
-Float Perlin<Float>::at2(Float* q, Float rx, Float ry) {
+Float Perlin<Float>::at2(std::span<Float const, 2> q, Float rx, Float ry) {
   return rx * q[0] + ry * q[1];
 }
 
 template <typename Float>
-Float Perlin<Float>::at3(Float* q, Float rx, Float ry, Float rz) {
+Float Perlin<Float>::at3(std::span<Float const, 3> q, Float rx, Float ry, Float rz) {
   return rx * q[0] + ry * q[1] + rz * q[2];
 }
 
@@ -417,7 +417,7 @@ inline Float Perlin<Float>::noise1(Float arg) const {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::noise2(Float vec[2]) const {
+inline Float Perlin<Float>::noise2(std::span<Float const, 2> vec) const {
   int bx0, bx1, by0, by1, b00, b10, b01, b11;
   Float rx0, rx1, ry0, ry1, sx, sy, a, b, u, v;
   int i, j;
@@ -448,7 +448,7 @@ inline Float Perlin<Float>::noise2(Float vec[2]) const {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::noise3(Float vec[3]) const {
+inline Float Perlin<Float>::noise3(std::span<Float const, 3> vec) const {
   int bx0, bx1, by0, by1, bz0, bz1, b00, b10, b01, b11;
   Float rx0, rx1, ry0, ry1, rz0, rz1, sx, sy, sz, a, b, c, d, u, v;
   int i, j;
@@ -493,7 +493,7 @@ inline Float Perlin<Float>::noise3(Float vec[3]) const {
 }
 
 template <typename Float>
-void Perlin<Float>::normalize2(Float v[2]) const {
+void Perlin<Float>::normalize2(std::span<Float, 2> v) const {
   Float s;
 
   s = std::sqrt(v[0] * v[0] + v[1] * v[1]);
@@ -507,7 +507,7 @@ void Perlin<Float>::normalize2(Float v[2]) const {
 }
 
 template <typename Float>
-void Perlin<Float>::normalize3(Float v[3]) const {
+void Perlin<Float>::normalize3(std::span<Float, 3> v) const {
   Float s;
 
   s = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);

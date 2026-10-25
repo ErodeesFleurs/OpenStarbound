@@ -62,9 +62,7 @@ import star.flow_layout;
 import star.algorithm;
 namespace Star {
 
-Widget::Widget(GuiContext& context) {
-  m_parent = nullptr;
-  m_context = &context;
+Widget::Widget(GuiContext& context) : m_context(context) {
   m_visible = true;
   m_focus = false;
   m_doScissor = true;
@@ -85,7 +83,7 @@ std::expected<void, StarException> Widget::update(float dt) {
   return {};
 }
 
-GuiContext* Widget::context() const {
+GuiContext& Widget::context() const {
   return m_context;
 }
 
@@ -135,7 +133,7 @@ std::expected<bool, StarException> Widget::setupDrawRegion(RectI const& region) 
   if (m_drawingArea.isEmpty())
     return false;
 
-  auto scissor = m_context->setInterfaceScissorRect(m_drawingArea);
+  auto scissor = m_context.setInterfaceScissorRect(m_drawingArea);
   if (!scissor)
     return std::unexpected(std::move(scissor.error()));
   return true;
@@ -236,7 +234,7 @@ Json const& Widget::data() {
 
 Vec2I Widget::screenPosition() const {
   if (m_parent) {
-    return m_parent->screenPosition() + position();
+    return m_parent->get().screenPosition() + position();
   } else {
     return position();
   }
@@ -292,11 +290,11 @@ bool Widget::mouseTransparent() {
   return m_mouseTransparent;
 }
 
-Widget* Widget::parent() const {
+std::optional<std::reference_wrapper<Widget>> Widget::parent() const {
   return m_parent;
 }
 
-void Widget::setParent(Widget* parent) {
+void Widget::setParent(std::optional<std::reference_wrapper<Widget>> parent) {
   m_parent = parent;
 }
 
@@ -337,7 +335,7 @@ std::expected<bool, StarException> Widget::hasFocus() const {
 
 std::expected<void, StarException> Widget::focus() {
   if (auto w = window()) {
-    auto result = w->setFocus(this);
+    auto result = w->get().setFocus(*this);
     if (!result)
       return std::unexpected(std::move(result.error()));
   }
@@ -347,62 +345,75 @@ std::expected<void, StarException> Widget::focus() {
 
 std::expected<void, StarException> Widget::blur() {
   m_focus = false;
-  if (window())
-    window()->removeFocus(this);
+  if (auto w = window())
+    w->get().removeFocus(*this);
   return {};
 }
 
 std::expected<unsigned, StarException> Widget::windowHeight() const {
-  return context()->windowHeight();
+  return context().windowHeight();
 }
 
 std::expected<unsigned, StarException> Widget::windowWidth() const {
-  return context()->windowWidth();
+  return context().windowWidth();
 }
 
 std::expected<Vec2I, StarException> Widget::windowSize() const {
-  auto size = context()->windowSize();
+  auto size = context().windowSize();
   if (!size)
     return std::unexpected(std::move(size.error()));
   return Vec2I(*size);
 }
 
-Pane* Widget::window() {
+std::optional<std::reference_wrapper<Pane>> Widget::window() {
   if (m_parent)
-    return m_parent->window();
-  return nullptr;
+    return m_parent->get().window();
+  return std::nullopt;
 }
 
-Pane const* Widget::window() const {
+std::optional<std::reference_wrapper<Pane const>> Widget::window() const {
   if (m_parent)
-    return m_parent->window();
-  return nullptr;
+    return std::as_const(m_parent->get()).window();
+  return std::nullopt;
 }
 
 std::expected<void, StarException> Widget::addChild(String const& name, std::shared_ptr<Widget> member) {
+  if (auto previous = member->parent())
+    previous->get().removeChild(*member);
   member->setName(name);
   m_members.push_back(member);
   m_memberHash[member->name()] = member;
-  member->setParent(this);
+  member->setParent(std::ref(*this));
   return {};
 }
 
 std::expected<void, StarException> Widget::addChildAt(String const& name, std::shared_ptr<Widget> member, std::size_t at) {
   if (at > m_members.size())
     return std::unexpected(GuiException("Attempted to insert item after the end of the list."));
+  if (auto previous = member->parent()) {
+    if (std::addressof(previous->get()) == this) {
+      for (std::size_t i = 0; i < at; ++i) {
+        if (m_members[i] == member) {
+          --at;
+          break;
+        }
+      }
+    }
+    previous->get().removeChild(*member);
+  }
 
   m_members.insert(m_members.begin() + at, member);
   m_memberHash[name] = member;
   member->setName(name);
-  member->setParent(this);
+  member->setParent(std::ref(*this));
   return {};
 }
 
-bool Widget::removeChild(Widget* member) {
-  m_memberHash.erase(member->name());
+bool Widget::removeChild(Widget& member) {
   for (auto child = m_members.begin(); child != m_members.end(); ++child) {
-    if (child->get() == member) {
-      (*child)->setParent(nullptr);
+    if (std::addressof(**child) == std::addressof(member)) {
+      m_memberHash.erase(member.name());
+      (*child)->setParent(std::nullopt);
       m_members.erase(child);
       return true;
     } else {
@@ -420,7 +431,7 @@ bool Widget::removeChild(String const& name) {
     auto ptr = *child;
     if (ptr->name() == name) {
       m_members.erase(child);
-      ptr->setParent(nullptr);
+      ptr->setParent(std::nullopt);
       return true;
     }
   }
@@ -434,14 +445,14 @@ bool Widget::removeChildAt(std::size_t at) {
 
   m_memberHash.erase(m_members[at]->name());
 
-  m_members[at]->setParent(nullptr);
+  m_members[at]->setParent(std::nullopt);
   m_members.erase(m_members.begin() + at);
   return true;
 }
 
 void Widget::removeAllChildren() {
   for (auto child : m_members)
-    child->setParent(nullptr);
+    child->setParent(std::nullopt);
 
   m_members.clear();
   m_memberHash.clear();
@@ -487,9 +498,9 @@ std::expected<std::shared_ptr<Widget>, StarException> Widget::findChild(String c
   return std::shared_ptr<Widget>{};
 }
 
-std::shared_ptr<Widget> Widget::childPtr(Widget const* child) const {
+std::shared_ptr<Widget> Widget::childPtr(Widget const& child) const {
   for (auto const& m : m_members) {
-    if (m.get() == child)
+    if (std::addressof(*m) == std::addressof(child))
       return m;
     if (auto c = m->childPtr(child))
       return c;
@@ -531,7 +542,7 @@ void Widget::setName(String const& name) {
 
 String Widget::fullName() const {
   if (m_parent) {
-    return m_parent->fullName() + "." + name();
+    return m_parent->get().fullName() + "." + name();
   }
 
   return name();
@@ -556,7 +567,7 @@ String Widget::toStringImpl(int indentLevel) const {
       leader,
       m_name,
       leader,
-      (void*)this,
+      static_cast<void const*>(this),
       leader,
       m_visible ? "true" : "false",
       leader,

@@ -10,7 +10,7 @@ import star.map;
 namespace Star {
 
 struct FontExceptionTag {
-  static constexpr char const* name() { return "FontException"; }
+  static constexpr std::string_view name() { return "FontException"; }
 };
 using FontException = StarError<FontExceptionTag, StarException>;
 

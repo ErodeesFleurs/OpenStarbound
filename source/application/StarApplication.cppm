@@ -13,7 +13,7 @@ class ApplicationController;
 class Renderer;
 
 struct ApplicationExceptionTag {
-  static constexpr char const* name() { return "ApplicationException"; }
+  static constexpr std::string_view name() { return "ApplicationException"; }
 };
 using ApplicationException = StarError<ApplicationExceptionTag, StarException>;
 
@@ -61,7 +61,7 @@ public:
 
   // Will be called *from a different thread* to retrieve audio data (if audio
   // is playing). Default implementation simply fills the buffer with silence.
-  [[nodiscard]] virtual std::expected<void, StarException> getAudioData(std::int16_t* sampleData, std::size_t frameCount);
+  [[nodiscard]] virtual std::expected<void, StarException> getAudioData(std::span<std::int16_t> sampleData, std::size_t frameCount);
 
   // Will be called once on application shutdown, including when shutting down
   // due to an Application exception.

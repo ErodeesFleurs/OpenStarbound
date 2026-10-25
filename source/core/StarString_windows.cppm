@@ -8,7 +8,7 @@ import star.string;
 
 namespace Star {
 
-[[nodiscard]] std::expected<String, StarException> utf16ToString(WCHAR const* s);
+[[nodiscard]] std::expected<String, StarException> utf16ToString(std::wstring_view s);
 [[nodiscard]] std::expected<std::unique_ptr<WCHAR[]>, StarException> stringToUtf16(String const& s);
 
 }

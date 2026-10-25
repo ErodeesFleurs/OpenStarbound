@@ -81,11 +81,10 @@ namespace PlatformerAStar {
       CollisionKind::Slippery,
       CollisionKind::Block};
 
-  PathFinder::PathFinder(World* world, Vec2F searchFrom, Vec2F searchTo, ActorMovementParameters movementParameters, Parameters searchParameters)
+  PathFinder::PathFinder(World& world, Vec2F searchFrom, Vec2F searchTo, ActorMovementParameters movementParameters, Parameters searchParameters)
     : m_world(world), m_searchFrom(searchFrom), m_searchTo(searchTo), m_movementParams(std::move(movementParameters)), m_searchParams(std::move(searchParameters)) {}
 
-  std::expected<std::shared_ptr<PathFinder>, StarException> PathFinder::create(World* world, Vec2F searchFrom, Vec2F searchTo, ActorMovementParameters movementParameters, Parameters searchParameters) {
-    if (!world) return std::unexpected(MovementControllerException("PathFinder requires a world"));
+  std::expected<std::shared_ptr<PathFinder>, StarException> PathFinder::create(World& world, Vec2F searchFrom, Vec2F searchTo, ActorMovementParameters movementParameters, Parameters searchParameters) {
     auto finder = std::shared_ptr<PathFinder>(new PathFinder(world, searchFrom, searchTo, std::move(movementParameters), std::move(searchParameters)));
     auto initialized = finder->initAStar();
     if (!initialized) return std::unexpected(std::move(initialized.error()));
@@ -101,28 +100,28 @@ namespace PlatformerAStar {
   }
 
   std::expected<void, StarException> PathFinder::initAStar() {
-    auto heuristicCostFn = [this](Node const& fromNode, Node const& toNode) -> std::expected<double, StarException> {
-      return heuristicCost(fromNode.position, toNode.position);
+    auto heuristicCostFn = [&self = *this](Node const& fromNode, Node const& toNode) -> std::expected<double, StarException> {
+      return self.heuristicCost(fromNode.position, toNode.position);
     };
-    auto goalReachedFn = [this](Node const& node) -> std::expected<bool, StarException> {
-      if (m_searchParams.mustEndOnGround) {
-        auto grounded = onGround(node.position);
+    auto goalReachedFn = [&self = *this](Node const& node) -> std::expected<bool, StarException> {
+      if (self.m_searchParams.mustEndOnGround) {
+        auto grounded = self.onGround(node.position);
         if (!grounded) return std::unexpected(std::move(grounded.error()));
         if (!*grounded || node.velocity.has_value()) return false;
       }
-      return distance(node.position, m_searchTo) < NodeGranularity;
+      return self.distance(node.position, self.m_searchTo) < NodeGranularity;
     };
-    auto neighborsFn = [this](Node const& node, List<Edge>& result) -> std::expected<void, StarException> {
-      auto generated = neighbors(node, result);
+    auto neighborsFn = [&self = *this](Node const& node, List<Edge>& result) -> std::expected<void, StarException> {
+      auto generated = self.neighbors(node, result);
       if (!generated) return std::unexpected(std::move(generated.error()));
-      result.filter([this](Edge const& edge) {
-        return distance(edge.source.position, m_searchFrom) <= m_searchParams.maxDistance.value_or(DefaultMaxDistance);
+      result.filter([&self](Edge const& edge) {
+        return self.distance(edge.source.position, self.m_searchFrom) <= self.m_searchParams.maxDistance.value_or(DefaultMaxDistance);
       });
       return {};
     };
-    auto validateEndFn = [this](Edge const& edge) -> std::expected<bool, StarException> {
-      if (!m_searchParams.mustEndOnGround) return true;
-      auto grounded = onGround(edge.target.position);
+    auto validateEndFn = [&self = *this](Edge const& edge) -> std::expected<bool, StarException> {
+      if (!self.m_searchParams.mustEndOnGround) return true;
+      auto grounded = self.onGround(edge.target.position);
       if (!grounded) return std::unexpected(std::move(grounded.error()));
       return *grounded && edge.action != Action::Jump;
     };
@@ -141,7 +140,7 @@ namespace PlatformerAStar {
     // more quickly when there is a route to the target.
     // We don't really care all that much about getting the optimal path as long
     // as we get one that looks feasible, so we deliberately overestimate here.
-    Vec2F diff = m_world->geometry().diff(fromPosition, toPosition);
+    Vec2F diff = m_world.get().geometry().diff(fromPosition, toPosition);
     // Manhattan distance * 2:
     return 2.0f * (std::abs(diff[0]) + std::abs(diff[1]));
   }
@@ -189,8 +188,8 @@ namespace PlatformerAStar {
   }
 
   std::expected<void, StarException> PathFinder::getWalkingNeighborsInDirection(Node const& node, List<Edge>& neighbors, float direction) const {
-    auto addNode = [this, &node, &neighbors](Node const& target) {
-      neighbors.append(defaultCostEdge(Action::Walk, node, target));
+    auto addNode = [&self = *this, &node, &neighbors](Node const& target) {
+      neighbors.append(self.defaultCostEdge(Action::Walk, node, target));
     };
 
     Vec2F forward = node.position + Vec2F(direction, 0);
@@ -207,7 +206,7 @@ namespace PlatformerAStar {
     Vec2F backGroundPos = direction < 0 ? Vec2F(bounds.xMax(), bounds.yMin()) : Vec2F(bounds.xMin(), bounds.yMin());
     auto groundRect = groundCollisionRect(node.position, BoundBoxKind::Full);
     if (!groundRect) return std::unexpected(std::move(groundRect.error()));
-    auto collisionScan = m_world->forEachCollisionBlock(groundRect->padded(1), [&](CollisionBlock const& block) -> std::expected<void, StarException> {
+    auto collisionScan = m_world.get().forEachCollisionBlock(groundRect->padded(1), [&, &world = m_world.get()](CollisionBlock const& block) -> std::expected<void, StarException> {
       if (slopeUp || slopeDown) return {};
       for (std::size_t i = 0; i < block.poly.sides(); ++i) {
         auto side = block.poly.side(i);
@@ -217,9 +216,9 @@ namespace PlatformerAStar {
         auto upper = side.min()[1] > side.max()[1] ? side.min() : side.max();
         if (sideDir[0] != 0 && sideDir[1] != 0 && (lower[1] == std::round(forwardGroundPos[1]) || upper[1] == std::round(forwardGroundPos[1]))) {
           float yDir = (sideDir[1] / sideDir[0]) * direction;
-          if (std::abs(m_world->geometry().diff(forwardGroundPos, lower)[0]) < 0.5 && yDir > 0)
+          if (std::abs(world.geometry().diff(forwardGroundPos, lower)[0]) < 0.5 && yDir > 0)
             slopeUp = true;
-          else if (std::abs(m_world->geometry().diff(backGroundPos, upper)[0]) < 0.5 && yDir < 0)
+          else if (std::abs(world.geometry().diff(backGroundPos, upper)[0]) < 0.5 && yDir < 0)
             slopeDown = true;
 
           if (slopeUp || slopeDown) break;
@@ -282,9 +281,9 @@ namespace PlatformerAStar {
   }
 
   std::expected<void, StarException> PathFinder::getFallingNeighbors(Node const& node, List<Edge>& neighbors) const {
-    return forEachArcNeighbor(node, 0.0f, [this, &node, &neighbors](Node const& target, bool landed) -> std::expected<void, StarException> {
-      neighbors.append(defaultCostEdge(Action::Arc, node, target));
-      if (landed) neighbors.append(defaultCostEdge(Action::Land, target, Node{target.position, {}}));
+    return forEachArcNeighbor(node, 0.0f, [&self = *this, &node, &neighbors](Node const& target, bool landed) -> std::expected<void, StarException> {
+      neighbors.append(self.defaultCostEdge(Action::Arc, node, target));
+      if (landed) neighbors.append(self.defaultCostEdge(Action::Land, target, Node{target.position, {}}));
       return {};
     });
   }
@@ -315,7 +314,7 @@ namespace PlatformerAStar {
     auto acc = acceleration(node.position);
     if (!acc) return std::unexpected(std::move(acc.error()));
     if ((*acc)[1] != 0.0f) {
-      auto liquid = m_world->liquidLevel(*bounds);
+      auto liquid = m_world.get().liquidLevel(*bounds);
       if (!liquid) return std::unexpected(std::move(liquid.error()));
       if (liquid->level < 1.0f) {
         auto jumping = getJumpingNeighbors(node, neighbors);
@@ -351,9 +350,9 @@ namespace PlatformerAStar {
   }
 
   std::expected<void, StarException> PathFinder::getArcNeighbors(Node const& node, List<Edge>& neighbors) const {
-    return simulateArc(node, [this, &node, &neighbors](Node const& target, bool landed) -> std::expected<void, StarException> {
-      neighbors.append(defaultCostEdge(Action::Arc, node, target));
-      if (landed) neighbors.append(defaultCostEdge(Action::Land, target, Node{target.position, {}}));
+    return simulateArc(node, [&self = *this, &node, &neighbors](Node const& target, bool landed) -> std::expected<void, StarException> {
+      neighbors.append(self.defaultCostEdge(Action::Arc, node, target));
+      if (landed) neighbors.append(self.defaultCostEdge(Action::Land, target, Node{target.position, {}}));
       return {};
     });
   }
@@ -381,14 +380,14 @@ namespace PlatformerAStar {
   std::expected<void, StarException> PathFinder::forEachArcNeighbor(Node const& node, float yVelocity, std::function<std::expected<void, StarException>(Node, bool)> func) const {
     auto position = roundToNode(node.position);
     if (!position) return std::unexpected(std::move(position.error()));
-    return forEachArcVelocity(yVelocity, [this, &position, &func](Vec2F const& vel) -> std::expected<void, StarException> {
-      return simulateArc(Node{*position, vel}, func);
+    return forEachArcVelocity(yVelocity, [&self = *this, &position, &func](Vec2F const& vel) -> std::expected<void, StarException> {
+      return self.simulateArc(Node{*position, vel}, func);
     });
   }
 
   std::expected<Vec2F, StarException> PathFinder::acceleration(Vec2F pos) const {
     auto const& parameters = m_movementParams;
-    auto worldGravity = m_world->gravity(pos);
+    auto worldGravity = m_world.get().gravity(pos);
     if (!worldGravity) return std::unexpected(std::move(worldGravity.error()));
     float gravity = *worldGravity * parameters.gravityMultiplier.value_or(1.0f);
     if (!parameters.gravityEnabled.value_or(true) || parameters.mass.value_or(0.0f) == 0.0f) gravity = 0.0f;
@@ -538,7 +537,7 @@ namespace PlatformerAStar {
   std::expected<bool, StarException> PathFinder::validPosition(Vec2F pos, BoundBoxKind boundKind) const {
     auto bounds = boundBox(pos, boundKind);
     if (!bounds) return std::unexpected(std::move(bounds.error()));
-    auto collision = m_world->rectTileCollision(RectI::integral(*bounds), CollisionSolid);
+    auto collision = m_world.get().rectTileCollision(RectI::integral(*bounds), CollisionSolid);
     if (!collision) return std::unexpected(std::move(collision.error()));
     return !*collision;
   }
@@ -548,25 +547,25 @@ namespace PlatformerAStar {
     if (!groundRect) return std::unexpected(std::move(groundRect.error()));
     auto bounds = boundBox(pos, boundKind);
     if (!bounds) return std::unexpected(std::move(bounds.error()));
-    auto insideObject = m_world->rectTileCollision(RectI::integral(*bounds), CollisionDynamic);
+    auto insideObject = m_world.get().rectTileCollision(RectI::integral(*bounds), CollisionDynamic);
     if (!insideObject) return std::unexpected(std::move(insideObject.error()));
-    if (*insideObject) return m_world->rectTileCollision(*groundRect, CollisionFloorOnly);
-    auto grounded = m_world->rectTileCollision(*groundRect, CollisionAny);
+    if (*insideObject) return m_world.get().rectTileCollision(*groundRect, CollisionFloorOnly);
+    auto grounded = m_world.get().rectTileCollision(*groundRect, CollisionAny);
     if (!grounded) return std::unexpected(std::move(grounded.error()));
     if (*grounded) return true;
-    return m_world->rectTileCollision(groundRect->translated(Vec2I(0, 1)), CollisionSolid);
+    return m_world.get().rectTileCollision(groundRect->translated(Vec2I(0, 1)), CollisionSolid);
   }
 
   std::expected<bool, StarException> PathFinder::onSolidGround(Vec2F pos) const {
     auto groundRect = groundCollisionRect(pos, BoundBoxKind::Drop);
     if (!groundRect) return std::unexpected(std::move(groundRect.error()));
-    return m_world->rectTileCollision(*groundRect, CollisionSolid);
+    return m_world.get().rectTileCollision(*groundRect, CollisionSolid);
   }
 
   std::expected<bool, StarException> PathFinder::inLiquid(Vec2F pos) const {
     auto bounds = boundBox(pos);
     if (!bounds) return std::unexpected(std::move(bounds.error()));
-    auto liquid = m_world->liquidLevel(*bounds);
+    auto liquid = m_world.get().liquidLevel(*bounds);
     if (!liquid) return std::unexpected(std::move(liquid.error()));
     return liquid->level >= m_movementParams.minimumLiquidPercentage.value_or(0.5f);
   }
@@ -616,7 +615,7 @@ namespace PlatformerAStar {
   }
 
   float PathFinder::distance(Vec2F a, Vec2F b) const {
-    return m_world->geometry().diff(a, b).magnitude();
+    return m_world.get().geometry().diff(a, b).magnitude();
   }
 }
 

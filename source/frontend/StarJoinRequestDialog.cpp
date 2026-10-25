@@ -80,15 +80,15 @@ std::expected<std::shared_ptr<JoinRequestDialog>, StarException> JoinRequestDial
 std::expected<void, StarException> JoinRequestDialog::displayRequest(String const& userName, std::function<std::expected<void, StarException>(P2PJoinRequestReply)> callback) {
   if (!callback)
     return std::unexpected(StarException("Join request has no reply callback"));
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   removeAllChildren();
-  GuiReader reader(*context());
+  GuiReader reader(context());
   m_callback = std::move(callback);
-  reader.registerCallback("yes", [this](Widget*) { return reply(P2PJoinRequestReply::Yes); });
-  reader.registerCallback("no", [this](Widget*) { return reply(P2PJoinRequestReply::No); });
-  reader.registerCallback("ignore", [this](Widget*) { return reply(P2PJoinRequestReply::Ignore); });
+  reader.registerCallback("yes", [this](Widget&) { return reply(P2PJoinRequestReply::Yes); });
+  reader.registerCallback("no", [this](Widget&) { return reply(P2PJoinRequestReply::No); });
+  reader.registerCallback("ignore", [this](Widget&) { return reply(P2PJoinRequestReply::Ignore); });
   m_confirmed = false;
   auto config = (*assets)->json("/interface/windowconfig/joinrequest.config");
   if (!config)
@@ -96,7 +96,7 @@ std::expected<void, StarException> JoinRequestDialog::displayRequest(String cons
   auto layout = config->get("paneLayout");
   if (!layout)
     return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, this);
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed)
     return std::unexpected(std::move(constructed.error()));
   auto message = config->getString("joinMessage");

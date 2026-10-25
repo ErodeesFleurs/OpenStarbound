@@ -235,7 +235,7 @@ std::expected<Json, StarException> MovementParameters::toJson() const {
   };
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, MovementParameters& movementParameters) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, MovementParameters& movementParameters) {
   if (auto result = ds.read(movementParameters.mass); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementParameters.gravityMultiplier); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementParameters.liquidBuoyancy); !result) return std::unexpected(std::move(result.error()));
@@ -262,10 +262,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, MovementPar
   if (auto result = ds.read(movementParameters.physicsEffectCategories); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementParameters.restDuration); !result) return std::unexpected(std::move(result.error()));
 
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, MovementParameters const& movementParameters) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, MovementParameters const& movementParameters) {
   if (auto result = ds.write(movementParameters.mass); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementParameters.gravityMultiplier); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementParameters.liquidBuoyancy); !result) return std::unexpected(std::move(result.error()));
@@ -292,7 +292,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, MovementPar
   if (auto result = ds.write(movementParameters.physicsEffectCategories); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementParameters.restDuration); !result) return std::unexpected(std::move(result.error()));
 
-  return &ds;
+  return std::ref(ds);
 }
 
 MovementController::MovementController(Root& root) : m_root(root) {
@@ -317,7 +317,7 @@ MovementController::MovementController(Root& root) : m_root(root) {
   m_xRelativeSurfaceMovingCollisionPosition.setInterpolator(lerp<float, float>);
   m_yRelativeSurfaceMovingCollisionPosition.setInterpolator(lerp<float, float>);
 
-  m_world = nullptr;
+  m_world.reset();
 }
 
 std::expected<std::shared_ptr<MovementController>, StarException> MovementController::create(Root& root, MovementParameters const& parameters) {
@@ -328,23 +328,23 @@ std::expected<std::shared_ptr<MovementController>, StarException> MovementContro
 }
 
 std::expected<void, StarException> MovementController::initialize(MovementParameters const& parameters) {
-  if (auto result = addNetElement(&m_collisionPoly); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_mass); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_xPosition); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_yPosition); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_xVelocity); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_yVelocity); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_rotation); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_colliding); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_collisionStuck); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_nullColliding); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_stickingDirection); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_onGround); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_zeroG); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_collisionPoly); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_mass); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_xPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_yPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_xVelocity); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_yVelocity); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_rotation); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_colliding); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_collisionStuck); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_nullColliding); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_stickingDirection); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_onGround); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_zeroG); !result) return std::unexpected(std::move(result.error()));
 
-  if (auto result = addNetElement(&m_surfaceMovingCollision); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_xRelativeSurfaceMovingCollisionPosition); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = addNetElement(&m_yRelativeSurfaceMovingCollisionPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_surfaceMovingCollision); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_xRelativeSurfaceMovingCollisionPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = addNetElement(m_yRelativeSurfaceMovingCollisionPosition); !result) return std::unexpected(std::move(result.error()));
 
   return resetParameters(parameters);
 }
@@ -485,9 +485,9 @@ bool MovementController::atWorldLimit(bool bottomOnly) const {
   if (m_world) {
     if (!collisionPoly().isNull()) {
       auto bounds = collisionBoundBox();
-      return bounds.yMin() <= 0 || (!bottomOnly && bounds.yMax() >= m_world->geometry().height());
+      return bounds.yMin() <= 0 || (!bottomOnly && bounds.yMax() >= m_world->get().geometry().height());
     } else {
-      return yPosition() <= 0 || (!bottomOnly && yPosition() >= m_world->geometry().height());
+      return yPosition() <= 0 || (!bottomOnly && yPosition() >= m_world->get().geometry().height());
     }
   }
   return false;
@@ -495,7 +495,7 @@ bool MovementController::atWorldLimit(bool bottomOnly) const {
 
 void MovementController::setPosition(Vec2F position) {
   if (m_world)
-    position = m_world->geometry().limit(position);
+    position = m_world->get().geometry().limit(position);
 
   if (position[0] != m_xPosition.get() || position[1] != m_yPosition.get())
     m_resting = false;
@@ -613,14 +613,14 @@ void MovementController::approachYVelocity(float targetYVelocity, float maxContr
   approachVelocityAlongAngle(std::numbers::pi / 2, targetYVelocity, maxControlForce, false);
 }
 
-void MovementController::init(World* world) {
-  m_world = world;
+void MovementController::init(World& world) {
+  m_world = std::ref(world);
   setPosition(position());
   updatePositionInterpolators();
 }
 
 void MovementController::uninit() {
-  m_world = nullptr;
+  m_world.reset();
   updatePositionInterpolators();
 }
 
@@ -631,13 +631,13 @@ void MovementController::setTimestep(float dt) {
 std::expected<void, StarException> MovementController::tickMaster(float dt) {
   auto activeWorld = world();
   if (!activeWorld) return std::unexpected(std::move(activeWorld.error()));
-  World* worldPtr = *activeWorld;
+  World& worldRef = activeWorld->get();
   setTimestep(dt);
-  auto geometry = worldPtr->geometry();
+  auto geometry = worldRef.geometry();
 
   bool zeroGravity = !(*m_parameters.gravityEnabled) || (*m_parameters.gravityMultiplier) == 0;
   if (!zeroGravity) {
-    auto gravityValue = worldPtr->gravity(position());
+    auto gravityValue = worldRef.gravity(position());
     if (!gravityValue) return std::unexpected(std::move(gravityValue.error()));
     zeroGravity = *gravityValue == 0;
   }
@@ -645,7 +645,7 @@ std::expected<void, StarException> MovementController::tickMaster(float dt) {
 
   std::optional<PhysicsMovingCollision> surfaceCollision;
   if (auto movingCollisionId = m_surfaceMovingCollision.get()) {
-    if (auto physicsEntity = worldPtr->get<PhysicsEntity>(movingCollisionId->physicsEntityId))
+    if (auto physicsEntity = worldRef.get<PhysicsEntity>(movingCollisionId->physicsEntityId))
       {
       auto collision = physicsEntity->movingCollision(movingCollisionId->collisionIndex);
       if (!collision) return std::unexpected(std::move(collision.error()));
@@ -799,7 +799,7 @@ std::expected<void, StarException> MovementController::tickMaster(float dt) {
   if (auto result = updateLiquidPercentage(); !result) return std::unexpected(std::move(result.error()));
 
   if (auto movingCollisionId = m_surfaceMovingCollision.get()) {
-    if (auto physicsEntity = worldPtr->get<PhysicsEntity>(movingCollisionId->physicsEntityId))
+    if (auto physicsEntity = worldRef.get<PhysicsEntity>(movingCollisionId->physicsEntityId))
       {
       auto collision = physicsEntity->movingCollision(movingCollisionId->collisionIndex);
       if (!collision) return std::unexpected(std::move(collision.error()));
@@ -822,7 +822,7 @@ std::expected<void, StarException> MovementController::tickMaster(float dt) {
   // in the correct controlled movement.
   if (!zeroG() && !stickingDirection()) {
     float buoyancy = (*m_parameters.liquidBuoyancy) * m_liquidPercentage + (*m_parameters.airBuoyancy) * (1.0f - liquidPercentage());
-    auto gravityValue = worldPtr->gravity(position());
+    auto gravityValue = worldRef.gravity(position());
     if (!gravityValue) return std::unexpected(std::move(gravityValue.error()));
     float gravity = *gravityValue * (*m_parameters.gravityMultiplier) * (1.0f - buoyancy);
     Vec2F environmentVelocity;
@@ -872,10 +872,10 @@ std::expected<void, StarException> MovementController::tickMaster(float dt) {
 std::expected<void, StarException> MovementController::tickSlave(float dt) {
   auto activeWorld = world();
   if (!activeWorld) return std::unexpected(std::move(activeWorld.error()));
-  World* worldPtr = *activeWorld;
+  World& worldRef = activeWorld->get();
   setTimestep(dt);
   if (auto movingCollisionId = m_surfaceMovingCollision.get()) {
-    if (auto physicsEntity = worldPtr->get<PhysicsEntity>(movingCollisionId->physicsEntityId)) {
+    if (auto physicsEntity = worldRef.get<PhysicsEntity>(movingCollisionId->physicsEntityId)) {
       auto collisionResult = physicsEntity->movingCollision(movingCollisionId->collisionIndex);
       if (!collisionResult) return std::unexpected(std::move(collisionResult.error()));
       if (auto collision = *collisionResult) {
@@ -885,7 +885,7 @@ std::expected<void, StarException> MovementController::tickSlave(float dt) {
     }
   }
 
-  auto liquid = worldPtr->liquidLevel(collisionBody().boundBox());
+  auto liquid = worldRef.liquidLevel(collisionBody().boundBox());
   if (!liquid) return std::unexpected(std::move(liquid.error()));
   LiquidLevel cll = *liquid;
   m_liquidPercentage = clamp(cll.level, 0.0f, 1.0f);
@@ -900,9 +900,9 @@ void MovementController::setIgnorePhysicsEntities(Set<EntityId> ignorePhysicsEnt
 std::expected<void, StarException> MovementController::forEachMovingCollision(RectF const& region, std::function<std::expected<bool, StarException>(MovingCollisionId id, PhysicsMovingCollision, PolyF, RectF)> callback) {
   auto activeWorld = world();
   if (!activeWorld) return std::unexpected(std::move(activeWorld.error()));
-  World* worldPtr = *activeWorld;
-  auto geometry = worldPtr->geometry();
-  auto physicsEntities = worldPtr->query<PhysicsEntity>(region);
+  World& worldRef = activeWorld->get();
+  auto geometry = worldRef.geometry();
+  auto physicsEntities = worldRef.query<PhysicsEntity>(region);
   if (!physicsEntities) return std::unexpected(std::move(physicsEntities.error()));
   for (auto& physicsEntity : *physicsEntities) {
     if (m_ignorePhysicsEntities.contains(physicsEntity->entityId()))
@@ -932,70 +932,73 @@ std::expected<void, StarException> MovementController::forEachMovingCollision(Re
 std::expected<void, StarException> MovementController::updateForceRegions(float) {
   auto activeWorld = world();
   if (!activeWorld) return std::unexpected(std::move(activeWorld.error()));
-  World* worldPtr = *activeWorld;
-  auto geometry = worldPtr->geometry();
+  World& worldRef = activeWorld->get();
+  auto geometry = worldRef.geometry();
   auto pos = position();
   auto body = collisionBody();
   RectF boundBox = body.boundBox();
 
   m_appliedForceRegion = false;
-  auto handleForceRegions = [&](List<PhysicsForceRegion> const& forces) -> std::expected<void, StarException> {
+  auto handleForceRegions = [&, &controller = *this](List<PhysicsForceRegion> const& forces) -> std::expected<void, StarException> {
       for (auto const& force : forces) {
-        bool categoryCheck = std::visit([myCategories = m_parameters.physicsEffectCategories.value_or(StringSet{})](auto& fr) {
+        bool categoryCheck = std::visit([myCategories = controller.m_parameters.physicsEffectCategories.value_or(StringSet{})](auto& fr) {
             return fr.categoryFilter.check(myCategories);
           }, force);
         if (!categoryCheck)
           continue;
 
-        auto boundsCheck = std::visit([geometry, myBounds = collisionBoundBox()](auto& fr) {
+        auto boundsCheck = std::visit([geometry, myBounds = controller.collisionBoundBox()](auto& fr) {
             return geometry.rectIntersectsRect(myBounds, fr.boundBox());
           }, force);
         if (!boundsCheck) return std::unexpected(std::move(boundsCheck.error()));
         if (!*boundsCheck)
           continue;
 
-        m_appliedForceRegion = true;
-        if (auto directionalForceRegion = std::get_if<DirectionalForceRegion>(&force)) {
-          auto overlap = geometry.polyOverlapArea(directionalForceRegion->region, body);
+        controller.m_appliedForceRegion = true;
+        if (std::holds_alternative<DirectionalForceRegion>(force)) {
+          auto const& directionalForceRegion = std::get<DirectionalForceRegion>(force);
+          auto overlap = geometry.polyOverlapArea(directionalForceRegion.region, body);
           if (!overlap) return std::unexpected(std::move(overlap.error()));
           float forceEffect = *overlap / body.convexArea();
-          if (directionalForceRegion->xTargetVelocity)
-            approachXVelocity(*directionalForceRegion->xTargetVelocity, directionalForceRegion->controlForce * forceEffect);
-          if (directionalForceRegion->yTargetVelocity)
-            approachYVelocity(*directionalForceRegion->yTargetVelocity, directionalForceRegion->controlForce * forceEffect);
+          if (directionalForceRegion.xTargetVelocity)
+            controller.approachXVelocity(*directionalForceRegion.xTargetVelocity, directionalForceRegion.controlForce * forceEffect);
+          if (directionalForceRegion.yTargetVelocity)
+            controller.approachYVelocity(*directionalForceRegion.yTargetVelocity, directionalForceRegion.controlForce * forceEffect);
 
-        } else if (auto radialForceRegion = std::get_if<RadialForceRegion>(&force)) {
-          Vec2F direction = geometry.diff(pos, radialForceRegion->center);
+        } else if (std::holds_alternative<RadialForceRegion>(force)) {
+          auto const& radialForceRegion = std::get<RadialForceRegion>(force);
+          Vec2F direction = geometry.diff(pos, radialForceRegion.center);
           float distance = vmag(direction);
-          if (distance > 0 && distance < radialForceRegion->outerRadius) {
-            float incidence = std::min(1.0f - (distance - radialForceRegion->innerRadius) / (radialForceRegion->outerRadius - radialForceRegion->innerRadius), distance / radialForceRegion->innerRadius);
-            if (radialForceRegion->targetRadialVelocity < 0)
+          if (distance > 0 && distance < radialForceRegion.outerRadius) {
+            float incidence = std::min(1.0f - (distance - radialForceRegion.innerRadius) / (radialForceRegion.outerRadius - radialForceRegion.innerRadius), distance / radialForceRegion.innerRadius);
+            if (radialForceRegion.targetRadialVelocity < 0)
               direction = -direction;
-            approachVelocityAlongAngle(direction.angle(),
-                std::abs(radialForceRegion->targetRadialVelocity),
-                radialForceRegion->controlForce * incidence,
+            controller.approachVelocityAlongAngle(direction.angle(),
+                std::abs(radialForceRegion.targetRadialVelocity),
+                radialForceRegion.controlForce * incidence,
                 true);
           }
-        } else if (auto gradientForceRegion = std::get_if<GradientForceRegion>(&force)) {
-          auto overlap = geometry.polyOverlapArea(gradientForceRegion->region, body);
+        } else if (std::holds_alternative<GradientForceRegion>(force)) {
+          auto const& gradientForceRegion = std::get<GradientForceRegion>(force);
+          auto overlap = geometry.polyOverlapArea(gradientForceRegion.region, body);
           if (!overlap) return std::unexpected(std::move(overlap.error()));
           float overlapFactor = *overlap / body.convexArea();
 
-          Vec2F gNorm = gradientForceRegion->gradient.direction();
-          Vec2F pDiff = geometry.diff(pos, gradientForceRegion->gradient.min());
+          Vec2F gNorm = gradientForceRegion.gradient.direction();
+          Vec2F pDiff = geometry.diff(pos, gradientForceRegion.gradient.min());
           float projected = pDiff[0] * gNorm[0] + pDiff[1] * gNorm[1];
-          float gradientFactor = 1.0 - clamp(projected / gradientForceRegion->gradient.length(), -1.0f, 1.0f);
+          float gradientFactor = 1.0 - clamp(projected / gradientForceRegion.gradient.length(), -1.0f, 1.0f);
 
-          approachVelocityAlongAngle(gradientForceRegion->gradient.angle(),
-              gradientForceRegion->baseTargetVelocity * overlapFactor * gradientFactor,
-              gradientForceRegion->baseControlForce * overlapFactor * gradientFactor,
+          controller.approachVelocityAlongAngle(gradientForceRegion.gradient.angle(),
+              gradientForceRegion.baseTargetVelocity * overlapFactor * gradientFactor,
+              gradientForceRegion.baseControlForce * overlapFactor * gradientFactor,
               true);
         }
       }
       return {};
     };
 
-  auto physicsEntities = worldPtr->query<PhysicsEntity>(boundBox);
+  auto physicsEntities = worldRef.query<PhysicsEntity>(boundBox);
   if (!physicsEntities) return std::unexpected(std::move(physicsEntities.error()));
   for (auto& physicsEntity : *physicsEntities) {
     if (m_ignorePhysicsEntities.contains(physicsEntity->entityId()))
@@ -1006,7 +1009,7 @@ std::expected<void, StarException> MovementController::updateForceRegions(float)
     if (auto result = handleForceRegions(*forces); !result) return std::unexpected(std::move(result.error()));
   }
 
-  auto forces = worldPtr->forceRegions();
+  auto forces = worldRef.forceRegions();
   if (!forces) return std::unexpected(std::move(forces.error()));
   if (auto result = handleForceRegions(*forces); !result) return std::unexpected(std::move(result.error()));
   return {};
@@ -1015,16 +1018,16 @@ std::expected<void, StarException> MovementController::updateForceRegions(float)
 std::expected<void, StarException> MovementController::updateLiquidPercentage() {
   auto activeWorld = world();
   if (!activeWorld) return std::unexpected(std::move(activeWorld.error()));
-  World* worldPtr = *activeWorld;
+  World& worldRef = activeWorld->get();
   auto pos = position();
   auto body = collisionBody();
   RectF boundBox = body.boundBox();
 
   LiquidLevel cll;
   if (boundBox.isEmpty())
-    cll = worldPtr->liquidLevel(Vec2I::floor(pos));
+    cll = worldRef.liquidLevel(Vec2I::floor(pos));
   else {
-    auto liquid = worldPtr->liquidLevel(boundBox);
+    auto liquid = worldRef.liquidLevel(boundBox);
     if (!liquid) return std::unexpected(std::move(liquid.error()));
     cll = *liquid;
   }
@@ -1054,10 +1057,10 @@ Vec2F MovementController::surfaceVelocity() const {
   return m_surfaceVelocity;
 }
 
-std::expected<World*, StarException> MovementController::world() {
+std::expected<std::reference_wrapper<World>, StarException> MovementController::world() {
   if (!m_world)
     return std::unexpected(MovementControllerException("MovementController not initialized!"));
-  return m_world;
+  return *m_world;
 }
 
 CollisionKind MovementController::maxOrNullCollision(CollisionKind a, CollisionKind b) {
@@ -1302,7 +1305,7 @@ std::expected<void, StarException> MovementController::updateParameters(Movement
 
 void MovementController::updatePositionInterpolators() {
   if (m_world)
-    m_xPosition.setInterpolator(m_world->geometry().xLerpFunction(m_parameters.discontinuityThreshold));
+    m_xPosition.setInterpolator(m_world->get().geometry().xLerpFunction(m_parameters.discontinuityThreshold));
   else
     m_xPosition.setInterpolator(std::bind(lerpWithLimit<float, float>, m_parameters.discontinuityThreshold, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   m_yPosition.setInterpolator(std::bind(lerpWithLimit<float, float>, m_parameters.discontinuityThreshold, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -1311,25 +1314,25 @@ void MovementController::updatePositionInterpolators() {
 std::expected<void, StarException> MovementController::queryCollisions(RectF const& region) {
   auto activeWorld = world();
   if (!activeWorld) return std::unexpected(std::move(activeWorld.error()));
-  World* worldPtr = *activeWorld;
+  World& worldRef = activeWorld->get();
   while (!m_workingCollisions.empty()) {
     m_collisionBuffers.append(std::move(m_workingCollisions.back().poly));
     m_workingCollisions.pop_back();
   }
 
-  auto newCollisionPoly = [this]() -> CollisionPoly& {
-    if (!m_collisionBuffers.empty()) {
-      auto poly = std::move(m_collisionBuffers.back());
-      m_collisionBuffers.pop_back();
-      return m_workingCollisions.emplaceAppend(CollisionPoly{std::move(poly), {}, {}, {}, {}, {}});
+  auto newCollisionPoly = [&collisionBuffers = m_collisionBuffers, &workingCollisions = m_workingCollisions]() -> CollisionPoly& {
+    if (!collisionBuffers.empty()) {
+      auto poly = std::move(collisionBuffers.back());
+      collisionBuffers.pop_back();
+      return workingCollisions.emplaceAppend(CollisionPoly{std::move(poly), {}, {}, {}, {}, {}});
     }
     else
-      return m_workingCollisions.emplaceAppend(CollisionPoly{});
+      return workingCollisions.emplaceAppend(CollisionPoly{});
   };
 
-  auto geometry = worldPtr->geometry();
+  auto geometry = worldRef.geometry();
 
-  auto blocks = worldPtr->forEachCollisionBlock(RectI::integral(region.padded(1)), [&](CollisionBlock const& block) -> std::expected<void, StarException> {
+  auto blocks = worldRef.forEachCollisionBlock(RectI::integral(region.padded(1)), [&](CollisionBlock const& block) -> std::expected<void, StarException> {
       if (block.kind != CollisionKind::None && !block.poly.isNull()) {
         RectF polyBounds = block.polyBounds;
         Vec2F basePosition = block.poly.vertex(0);
@@ -1366,9 +1369,9 @@ std::expected<void, StarException> MovementController::queryCollisions(RectF con
 std::expected<float, StarException> MovementController::gravity() {
   auto activeWorld = world();
   if (!activeWorld) return std::unexpected(std::move(activeWorld.error()));
-  World* worldPtr = *activeWorld;
+  World& worldRef = activeWorld->get();
   float buoyancy = (*m_parameters.liquidBuoyancy) * m_liquidPercentage + (*m_parameters.airBuoyancy) * (1.0f - liquidPercentage());
-  auto gravityValue = worldPtr->gravity(position());
+  auto gravityValue = worldRef.gravity(position());
   if (!gravityValue) return std::unexpected(std::move(gravityValue.error()));
   return *gravityValue * (*m_parameters.gravityMultiplier) * (1.0f - buoyancy);
 }

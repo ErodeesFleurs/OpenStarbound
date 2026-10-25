@@ -33,16 +33,16 @@ std::expected<PlayerLog, StarException> PlayerLog::create(Json const& json) {
     return std::unexpected(std::move(introComplete.error()));
   log.m_introComplete = *introComplete;
   for (auto const& field : {
-      std::pair{"scannedObjects", &log.m_scannedObjects},
-      std::pair{"radioMessages", &log.m_radioMessages},
-      std::pair{"cinematics", &log.m_cinematics}}) {
+      std::pair{std::string_view{"scannedObjects"}, std::ref(log.m_scannedObjects)},
+      std::pair{std::string_view{"radioMessages"}, std::ref(log.m_radioMessages)},
+      std::pair{std::string_view{"cinematics"}, std::ref(log.m_cinematics)}}) {
     auto value = json.get(field.first);
     if (!value)
       return std::unexpected(std::move(value.error()));
     auto strings = jsonToStringSet(*value);
     if (!strings)
       return std::unexpected(std::move(strings.error()));
-    *field.second = std::move(*strings);
+    field.second.get() = std::move(*strings);
   }
   auto collections = json.getObject("collections");
   if (!collections)
@@ -139,8 +139,8 @@ StringList PlayerLog::collections() const {
 }
 
 StringSet PlayerLog::collectables(String const& collection) const {
-  if (auto collectables = m_collections.ptr(collection))
-    return *collectables;
+  if (auto collectables = m_collections.maybeRef(collection))
+    return collectables->get();
   return {};
 }
 

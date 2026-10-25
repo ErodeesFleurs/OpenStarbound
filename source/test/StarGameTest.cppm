@@ -37,13 +37,13 @@ private:
 // its environment owner to each gtest factory before running any tests.
 class GameTestRegistration {
 public:
-  GameTestRegistration(char const* suite, char const* name, GameTest::Body body,
+  GameTestRegistration(std::string_view suite, std::string_view name, GameTest::Body body,
       std::source_location location = std::source_location::current());
   void bind(GameTestEnvironment& environment) const;
 
 private:
-  char const* m_suite;
-  char const* m_name;
+  std::string_view m_suite;
+  std::string_view m_name;
   GameTest::Body m_body;
   std::source_location m_location;
 };

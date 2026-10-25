@@ -12,14 +12,14 @@ namespace {
 class ErrorLogSink : public LogSink {
 public:
   ErrorLogSink() { setLevel(LogLevel::Error); }
-  [[nodiscard]] std::expected<void, StarException> log(char const* message, LogLevel) override {
+  [[nodiscard]] std::expected<void, StarException> log(std::string_view message, LogLevel) override {
     ADD_FAILURE() << "Error was logged: " << message;
     return {};
   }
 };
 
-std::vector<GameTestRegistration const*>& gameTestRegistrations() {
-  static std::vector<GameTestRegistration const*> registrations;
+std::vector<std::reference_wrapper<GameTestRegistration const>>& gameTestRegistrations() {
+  static std::vector<std::reference_wrapper<GameTestRegistration const>> registrations;
   return registrations;
 }
 
@@ -64,22 +64,22 @@ void GameTest::TestBody() {
   m_body(*this);
 }
 
-GameTestRegistration::GameTestRegistration(char const* suite, char const* name,
+GameTestRegistration::GameTestRegistration(std::string_view suite, std::string_view name,
     GameTest::Body body, std::source_location location)
   : m_suite(suite), m_name(name), m_body(body), m_location(location) {
-  gameTestRegistrations().push_back(this);
+  gameTestRegistrations().push_back(std::cref(*this));
 }
 
 void GameTestRegistration::bind(GameTestEnvironment& environment) const {
-  testing::RegisterTest(m_suite, m_name, nullptr, nullptr, m_location.file_name(),
+  testing::RegisterTest(m_suite.data(), m_name.data(), nullptr, nullptr, m_location.file_name(),
       static_cast<int>(m_location.line()), [&environment, body = m_body]() {
         return new GameTest(environment, body);
       });
 }
 
 void registerGameTests(GameTestEnvironment& environment) {
-  for (auto const* registration : gameTestRegistrations())
-    registration->bind(environment);
+  for (auto const& registration : gameTestRegistrations())
+    registration.get().bind(environment);
 }
 
 }

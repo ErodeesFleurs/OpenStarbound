@@ -117,10 +117,10 @@ public:
     RpcPromiseKeeper<Json> promise;
   };
 
-  typedef std::function<std::expected<void, StarException>(WorldClientThread*, WorldClient*)> WorldClientAction;
+  typedef std::function<std::expected<void, StarException>(WorldClientThread&, WorldClient&)> WorldClientAction;
 
   [[nodiscard]]
-  static std::expected<std::shared_ptr<WorldClientThread>, StarException> create(Root& root, ClientSubWorldId subWorldId, UniverseClient* universe);
+  static std::expected<std::shared_ptr<WorldClientThread>, StarException> create(Root& root, ClientSubWorldId subWorldId, UniverseClient& universe);
   ~WorldClientThread();
 
   ClientSubWorldId subWorldId() const;

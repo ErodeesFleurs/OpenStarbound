@@ -57,11 +57,11 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeClipboardCallbacks(I
     if (!appController->isFocused()) return false;
     StringMap<ByteArray> clipboardData;
     auto iteration = data.iterate([&](LuaValue const& key, LuaValue const& value) -> std::expected<void, StarException> {
-      auto stringKey = std::get_if<LuaString>(&key);
-      auto stringValue = std::get_if<LuaString>(&value);
-      if (!stringKey || !stringValue)
+      if (!std::holds_alternative<LuaString>(key) || !std::holds_alternative<LuaString>(value))
         return std::unexpected(LuaException("Clipboard data keys and values must be strings"));
-      clipboardData[stringKey->toString()] = ByteArray(stringValue->ptr(), stringValue->length());
+      auto const& stringKey = std::get<LuaString>(key);
+      auto const& stringValue = std::get<LuaString>(value);
+      clipboardData[stringKey.toString()] = ByteArray(std::span<char const>(stringValue.view().utf8()));
       return {};
     });
     if (!iteration) return std::unexpected(std::move(iteration.error()));
@@ -70,28 +70,29 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeClipboardCallbacks(I
   if (auto r = callbacks.registerCallback("setImage", [appController, &root, &logger](LuaValue const& imgOrPath) -> std::expected<bool, StarException> {
     if (!appController->isFocused()) return false;
     auto buffer = std::make_shared<Buffer>();
-    Image const* image;
+    std::optional<std::reference_wrapper<Image const>> image;
     std::shared_ptr<Image const> ownedImage;
-    if (auto userdata = std::get_if<LuaUserData>(&imgOrPath)) {
-      auto isImage = userdata->is<Image>();
+    if (std::holds_alternative<LuaUserData>(imgOrPath)) {
+      auto const& userdata = std::get<LuaUserData>(imgOrPath);
+      auto isImage = userdata.is<Image>();
       if (!isImage) return std::unexpected(std::move(isImage.error()));
       if (!*isImage) return std::unexpected(LuaException("Expected an Image or image asset path"));
-      auto value = userdata->get<Image>();
+      auto value = userdata.get<Image>();
       if (!value) return std::unexpected(std::move(value.error()));
-      image = *value;
+      image = std::cref(value->get());
     } else {
-      auto path = std::get_if<LuaString>(&imgOrPath);
-      if (!path) return std::unexpected(LuaException("Expected an Image or image asset path"));
+      if (!std::holds_alternative<LuaString>(imgOrPath)) return std::unexpected(LuaException("Expected an Image or image asset path"));
+      auto const& path = std::get<LuaString>(imgOrPath);
       auto assets = root.assets();
       if (!assets) return std::unexpected(std::move(assets.error()));
-      auto loaded = (*assets)->image(path->toString());
+      auto loaded = (*assets)->image(path.toString());
       if (!loaded) return std::unexpected(std::move(loaded.error()));
       ownedImage = std::move(*loaded);
-      image = ownedImage.get();
+      image = std::cref(*ownedImage);
     }
-    if (auto written = image->writePng(logger, buffer); !written)
+    if (auto written = image->get().writePng(logger, buffer); !written)
       return std::unexpected(std::move(written.error()));
-    return appController->setClipboardImage(*image, &buffer->data());
+    return appController->setClipboardImage(image->get(), std::ref(buffer->data()));
   }); !r) return std::unexpected(std::move(r.error()));
   return callbacks;
 }

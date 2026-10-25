@@ -44,7 +44,7 @@ import star.key_bindings;
 namespace Star {
 
 struct GuiContextExceptionTag {
-  static constexpr char const* name() { return "GuiContextException"; }
+  static constexpr std::string_view name() { return "GuiContextException"; }
 };
 using GuiContextException = StarError<GuiContextExceptionTag, StarException>;
 
@@ -55,11 +55,11 @@ public:
 
   Root& root() const;
   void bindInput(Input& input);
-  [[nodiscard]] std::expected<Input*, StarException> input() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Input>, StarException> input() const;
   void bindVoice(Voice& voice);
-  [[nodiscard]] std::expected<Voice*, StarException> voice() const;
-  void setTileDrawer(TileDrawer* tileDrawer);
-  TileDrawer* tileDrawer() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Voice>, StarException> voice() const;
+  void setTileDrawer(std::optional<std::reference_wrapper<TileDrawer>> tileDrawer);
+  std::optional<std::reference_wrapper<TileDrawer>> tileDrawer() const;
 
   GuiContext(GuiContext const&) = delete;
   GuiContext& operator=(GuiContext const&) = delete;
@@ -67,9 +67,9 @@ public:
   [[nodiscard]] std::expected<void, StarException> renderInit(std::shared_ptr<Renderer> renderer);
   std::shared_ptr<Mixer> const& mixer() const;
   std::shared_ptr<ApplicationController> const& applicationController() const;
-  [[nodiscard]] std::expected<Renderer*, StarException> renderer() const;
-  [[nodiscard]] std::expected<AssetTextureGroup*, StarException> assetTextureGroup() const;
-  [[nodiscard]] std::expected<TextPainter*, StarException> textPainter() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Renderer>, StarException> renderer() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<AssetTextureGroup>, StarException> assetTextureGroup() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<TextPainter>, StarException> textPainter() const;
 
   [[nodiscard]] std::expected<unsigned, StarException> windowWidth() const;
   [[nodiscard]] std::expected<unsigned, StarException> windowHeight() const;
@@ -115,8 +115,8 @@ public:
   [[nodiscard]] std::expected<void, StarException> setFontProcessingDirectives(String const& directives);
   [[nodiscard]] std::expected<void, StarException> setFont(String const& font);
   [[nodiscard]] std::expected<void, StarException> setDefaultFont();
-  [[nodiscard]] std::expected<TextStyle*, StarException> setTextStyle(TextStyle const& textStyle, float pixelRatio);
-  [[nodiscard]] std::expected<TextStyle*, StarException> setTextStyle(TextStyle const& textStyle);
+  [[nodiscard]] std::expected<std::reference_wrapper<TextStyle>, StarException> setTextStyle(TextStyle const& textStyle, float pixelRatio);
+  [[nodiscard]] std::expected<std::reference_wrapper<TextStyle>, StarException> setTextStyle(TextStyle const& textStyle);
   [[nodiscard]] std::expected<void, StarException> clearTextStyle();
   [[nodiscard]] std::expected<void, StarException> setLineSpacing(float lineSpacing);
   [[nodiscard]] std::expected<void, StarException> setDefaultLineSpacing();
@@ -131,7 +131,7 @@ public:
   String getClipboard() const;
   bool setClipboard(String text);
   bool setClipboardData(StringMap<ByteArray> data);
-  [[nodiscard]] std::expected<bool, StarException> setClipboardImage(Image const& image, ByteArray* png, String const* path = nullptr);
+  [[nodiscard]] std::expected<bool, StarException> setClipboardImage(Image const& image, std::optional<std::reference_wrapper<ByteArray>> png, std::optional<std::reference_wrapper<String const>> path = std::nullopt);
   [[nodiscard]] std::expected<bool, StarException> setClipboardFile(String const& path);
   float getDisplayScale() const;
   [[nodiscard]] std::expected<void, StarException> cleanup();
@@ -139,9 +139,9 @@ public:
 private:
   GuiContext(Root& root, std::shared_ptr<Mixer> mixer, std::shared_ptr<ApplicationController> appController);
   Root& m_root;
-  Input* m_input = nullptr;
-  Voice* m_voice = nullptr;
-  TileDrawer* m_tileDrawer = nullptr;
+  std::optional<std::reference_wrapper<Input>> m_input;
+  std::optional<std::reference_wrapper<Voice>> m_voice;
+  std::optional<std::reference_wrapper<TileDrawer>> m_tileDrawer;
 
   std::shared_ptr<Mixer> m_mixer;
   std::shared_ptr<ApplicationController> m_applicationController;

@@ -15,23 +15,23 @@ namespace Star {
 class FormattedJsonBuilderStream : public JsonStream {
 public:
   std::expected<void, StarException> beginObject() override;
-  std::expected<void, StarException> objectKey(String::Char const* s, std::size_t len) override;
+  std::expected<void, StarException> objectKey(std::span<String::Char const> s) override;
   std::expected<void, StarException> endObject() override;
   std::expected<void, StarException> beginArray() override;
   std::expected<void, StarException> endArray() override;
-  std::expected<void, StarException> putString(String::Char const* s, std::size_t len) override;
-  std::expected<void, StarException> putDouble(String::Char const* s, std::size_t len) override;
-  std::expected<void, StarException> putInteger(String::Char const* s, std::size_t len) override;
+  std::expected<void, StarException> putString(std::span<String::Char const> s) override;
+  std::expected<void, StarException> putDouble(std::span<String::Char const> s) override;
+  std::expected<void, StarException> putInteger(std::span<String::Char const> s) override;
   std::expected<void, StarException> putBoolean(bool b) override;
   std::expected<void, StarException> putNull() override;
-  std::expected<void, StarException> putWhitespace(String::Char const* s, std::size_t len) override;
+  std::expected<void, StarException> putWhitespace(std::span<String::Char const> s) override;
   std::expected<void, StarException> putComma() override;
   std::expected<void, StarException> putColon() override;
   std::expected<FormattedJson, StarException> takeTop();
 private:
   void push(FormattedJson const& v);
   std::expected<FormattedJson, StarException> pop();
-  std::expected<FormattedJson*, StarException> current();
+  std::expected<std::reference_wrapper<FormattedJson>, StarException> current();
   std::expected<void, StarException> putValue(Json const& value, std::optional<String> formatting = {});
   std::optional<FormattedJson> m_root;
   List<FormattedJson> m_stack;
@@ -66,13 +66,15 @@ bool CommaElement::operator==(CommaElement const&) const {
 }
 
 std::expected<FormattedJson, StarException> FormattedJson::parse(String const& string) {
-  return inputUtf8Json<char const*, FormattedJsonBuilderStream, FormattedJson>(
-      string.utf8Ptr(), string.utf8Ptr() + string.utf8Size(), JsonParseType::Value);
+  auto const& bytes = string.utf8();
+  return inputUtf8Json<std::string::const_iterator, FormattedJsonBuilderStream, FormattedJson>(
+      bytes.begin(), bytes.end(), JsonParseType::Value);
 }
 
 std::expected<FormattedJson, StarException> FormattedJson::parseJson(String const& string) {
-  return inputUtf8Json<char const*, FormattedJsonBuilderStream, FormattedJson>(
-      string.utf8Ptr(), string.utf8Ptr() + string.utf8Size(), JsonParseType::Top);
+  auto const& bytes = string.utf8();
+  return inputUtf8Json<std::string::const_iterator, FormattedJsonBuilderStream, FormattedJson>(
+      bytes.begin(), bytes.end(), JsonParseType::Top);
 }
 
 FormattedJson FormattedJson::ofType(Json::Type type) {
@@ -139,7 +141,7 @@ std::expected<FormattedJson, StarException> FormattedJson::get(String const& key
   auto value = getFormattedJson(entry->second);
   if (!value)
     return std::unexpected(std::move(value.error()));
-  return **value;
+  return value->get();
 }
 
 std::expected<FormattedJson, StarException> FormattedJson::get(std::size_t index) const {
@@ -150,7 +152,7 @@ std::expected<FormattedJson, StarException> FormattedJson::get(std::size_t index
   auto value = getFormattedJson(m_arrayElementLocations[index]);
   if (!value)
     return std::unexpected(std::move(value.error()));
-  return **value;
+  return value->get();
 }
 
 struct WhitespaceStyle {
@@ -300,17 +302,17 @@ std::expected<FormattedJson, StarException> FormattedJson::prepend(String const&
 }
 
 std::expected<FormattedJson, StarException> FormattedJson::insertBefore(String const& key, FormattedJson const& value, String const& beforeKey) const {
-  auto entry = m_objectEntryLocations.ptr(beforeKey);
+  auto entry = m_objectEntryLocations.maybeRef(beforeKey);
   if (!entry)
     return std::unexpected(JsonException::format("Cannot insert before key \"{}\", which does not exist", beforeKey));
-  return objectInsert(key, value, entry->first);
+  return objectInsert(key, value, entry->get().first);
 }
 
 std::expected<FormattedJson, StarException> FormattedJson::insertAfter(String const& key, FormattedJson const& value, String const& afterKey) const {
-  auto entry = m_objectEntryLocations.ptr(afterKey);
+  auto entry = m_objectEntryLocations.maybeRef(afterKey);
   if (!entry)
     return std::unexpected(JsonException::format("Cannot insert after key \"{}\", which does not exist", afterKey));
-  return objectInsert(key, value, entry->second + 1);
+  return objectInsert(key, value, entry->get().second + 1);
 }
 
 std::expected<FormattedJson, StarException> FormattedJson::append(String const& key, FormattedJson const& value) const {
@@ -500,29 +502,30 @@ std::expected<FormattedJson, StarException> FormattedJson::objectInsert(String c
 
 std::expected<void, StarException> FormattedJson::appendElement(JsonElement const& elem) {
   ElementLocation loc = m_elements.size();
-  if (auto key = std::get_if<ObjectKeyElement>(&elem)) {
+  if (std::holds_alternative<ObjectKeyElement>(elem)) {
     if (!isType(Json::Type::Object))
       return std::unexpected(JsonException("Invalid FormattedJson object key outside object"));
     m_lastKey = loc;
-  } else if (auto value = std::get_if<ValueElement>(&elem)) {
-    if (!value->value)
+  } else if (std::holds_alternative<ValueElement>(elem)) {
+    auto const& value = std::get<ValueElement>(elem);
+    if (!value.value)
       return std::unexpected(JsonException("Invalid empty FormattedJson value element"));
     if (m_lastKey) {
       if (!isType(Json::Type::Object) || *m_lastKey >= m_elements.size())
         return std::unexpected(JsonException("Invalid FormattedJson object entry"));
-      auto key = std::get_if<ObjectKeyElement>(&m_elements[*m_lastKey]);
-      if (!key)
+      if (!std::holds_alternative<ObjectKeyElement>(m_elements[*m_lastKey]))
         return std::unexpected(JsonException("Invalid FormattedJson object key element"));
-      auto updated = m_jsonValue.set(key->key, value->value->toJson());
+      auto const& key = std::get<ObjectKeyElement>(m_elements[*m_lastKey]);
+      auto updated = m_jsonValue.set(key.key, value.value->toJson());
       if (!updated)
         return std::unexpected(std::move(updated.error()));
       m_jsonValue = std::move(*updated);
-      m_objectEntryLocations[key->key] = std::make_pair(*m_lastKey, loc);
+      m_objectEntryLocations[key.key] = std::make_pair(*m_lastKey, loc);
       m_lastKey.reset();
     } else {
       if (!isType(Json::Type::Array))
         return std::unexpected(JsonException("Invalid FormattedJson array entry"));
-      auto updated = m_jsonValue.append(value->value->toJson());
+      auto updated = m_jsonValue.append(value.value->toJson());
       if (!updated)
         return std::unexpected(std::move(updated.error()));
       m_jsonValue = std::move(*updated);
@@ -534,13 +537,15 @@ std::expected<void, StarException> FormattedJson::appendElement(JsonElement cons
   return {};
 }
 
-std::expected<FormattedJson const*, StarException> FormattedJson::getFormattedJson(ElementLocation loc) const {
+std::expected<std::reference_wrapper<FormattedJson const>, StarException> FormattedJson::getFormattedJson(ElementLocation loc) const {
   if (loc >= m_elements.size())
     return std::unexpected(JsonException("FormattedJson element location out of range"));
-  auto value = std::get_if<ValueElement>(&m_elements[loc]);
-  if (!value || !value->value)
+  if (!std::holds_alternative<ValueElement>(m_elements[loc]))
     return std::unexpected(JsonException("Invalid FormattedJson value element"));
-  return value->value.get();
+  auto const& value = std::get<ValueElement>(m_elements[loc]).value;
+  if (!value)
+    return std::unexpected(JsonException("Invalid FormattedJson value element"));
+  return std::cref(*value);
 }
 
 std::expected<FormattedJson, StarException> FormattedJson::formattedAs(String const& formatting) const {
@@ -560,14 +565,14 @@ std::expected<void, StarException> FormattedJsonBuilderStream::beginObject() {
   return {};
 }
 
-std::expected<void, StarException> FormattedJsonBuilderStream::objectKey(String::Char const* s, std::size_t len) {
-  auto key = String::create(s, len);
+std::expected<void, StarException> FormattedJsonBuilderStream::objectKey(std::span<String::Char const> s) {
+  auto key = String::create(std::u32string_view(s.data(), s.size()));
   if (!key)
     return std::unexpected(std::move(key.error()));
   auto container = current();
   if (!container)
     return std::unexpected(std::move(container.error()));
-  return (*container)->appendElement(ObjectKeyElement{std::move(*key)});
+  return container->get().appendElement(ObjectKeyElement{std::move(*key)});
 }
 
 std::expected<void, StarException> FormattedJsonBuilderStream::endObject() {
@@ -589,15 +594,15 @@ std::expected<void, StarException> FormattedJsonBuilderStream::endArray() {
   return endObject();
 }
 
-std::expected<void, StarException> FormattedJsonBuilderStream::putString(String::Char const* s, std::size_t len) {
-  auto text = String::create(s, len);
+std::expected<void, StarException> FormattedJsonBuilderStream::putString(std::span<String::Char const> s) {
+  auto text = String::create(std::u32string_view(s.data(), s.size()));
   if (!text)
     return std::unexpected(std::move(text.error()));
   return putValue(Json(std::move(*text)));
 }
 
-std::expected<void, StarException> FormattedJsonBuilderStream::putDouble(String::Char const* s, std::size_t len) {
-  auto text = String::create(s, len);
+std::expected<void, StarException> FormattedJsonBuilderStream::putDouble(std::span<String::Char const> s) {
+  auto text = String::create(std::u32string_view(s.data(), s.size()));
   if (!text)
     return std::unexpected(std::move(text.error()));
   auto number = lexicalCast<double>(*text);
@@ -606,8 +611,8 @@ std::expected<void, StarException> FormattedJsonBuilderStream::putDouble(String:
   return putValue(Json(*number), std::move(*text));
 }
 
-std::expected<void, StarException> FormattedJsonBuilderStream::putInteger(String::Char const* s, std::size_t len) {
-  auto text = String::create(s, len);
+std::expected<void, StarException> FormattedJsonBuilderStream::putInteger(std::span<String::Char const> s) {
+  auto text = String::create(std::u32string_view(s.data(), s.size()));
   if (!text)
     return std::unexpected(std::move(text.error()));
   auto number = lexicalCast<long long>(*text);
@@ -624,10 +629,10 @@ std::expected<void, StarException> FormattedJsonBuilderStream::putNull() {
   return putValue(Json());
 }
 
-std::expected<void, StarException> FormattedJsonBuilderStream::putWhitespace(String::Char const* s, std::size_t len) {
+std::expected<void, StarException> FormattedJsonBuilderStream::putWhitespace(std::span<String::Char const> s) {
   if (m_stack.empty())
     return {};
-  auto whitespace = String::create(s, len);
+  auto whitespace = String::create(std::u32string_view(s.data(), s.size()));
   if (!whitespace)
     return std::unexpected(std::move(whitespace.error()));
   return m_stack.back().appendElement(WhitespaceElement{std::move(*whitespace)});
@@ -637,14 +642,14 @@ std::expected<void, StarException> FormattedJsonBuilderStream::putColon() {
   auto container = current();
   if (!container)
     return std::unexpected(std::move(container.error()));
-  return (*container)->appendElement(ColonElement{});
+  return container->get().appendElement(ColonElement{});
 }
 
 std::expected<void, StarException> FormattedJsonBuilderStream::putComma() {
   auto container = current();
   if (!container)
     return std::unexpected(std::move(container.error()));
-  return (*container)->appendElement(CommaElement{});
+  return container->get().appendElement(CommaElement{});
 }
 
 std::expected<FormattedJson, StarException> FormattedJsonBuilderStream::takeTop() {
@@ -667,10 +672,10 @@ std::expected<FormattedJson, StarException> FormattedJsonBuilderStream::pop() {
   return result;
 }
 
-std::expected<FormattedJson*, StarException> FormattedJsonBuilderStream::current() {
+std::expected<std::reference_wrapper<FormattedJson>, StarException> FormattedJsonBuilderStream::current() {
   if (m_stack.empty())
     return std::unexpected(JsonParsingException("Missing formatted JSON builder container"));
-  return &m_stack.back();
+  return std::ref(m_stack.back());
 }
 
 std::expected<void, StarException> FormattedJsonBuilderStream::putValue(Json const& value, std::optional<String> formatting) {
@@ -700,8 +705,7 @@ std::expected<void, StarException> JsonStreamer<FormattedJson>::toJsonStream(For
       auto text = formatted->wideString();
       if (!text)
         return std::unexpected(std::move(text.error()));
-      return val.isType(Json::Type::Float) ? stream.putDouble(text->data(), text->size())
-                                         : stream.putInteger(text->data(), text->size());
+      return val.isType(Json::Type::Float) ? stream.putDouble(*text) : stream.putInteger(*text);
     }
     return JsonStreamer<Json>::toJsonStream(val.toJson(), stream, sort);
   }
@@ -710,16 +714,16 @@ std::expected<void, StarException> JsonStreamer<FormattedJson>::toJsonStream(For
     return std::unexpected(std::move(begun.error()));
   for (auto const& elem : val.elements()) {
     std::expected<void, StarException> written;
-    if (auto key = std::get_if<ObjectKeyElement>(&elem)) {
-      auto text = key->key.wideString();
+    if (std::holds_alternative<ObjectKeyElement>(elem)) {
+      auto text = std::get<ObjectKeyElement>(elem).key.wideString();
       if (!text)
         return std::unexpected(std::move(text.error()));
-      written = stream.objectKey(text->data(), text->size());
-    } else if (auto whitespace = std::get_if<WhitespaceElement>(&elem)) {
-      auto text = whitespace->whitespace.wideString();
+      written = stream.objectKey(*text);
+    } else if (std::holds_alternative<WhitespaceElement>(elem)) {
+      auto text = std::get<WhitespaceElement>(elem).whitespace.wideString();
       if (!text)
         return std::unexpected(std::move(text.error()));
-      written = stream.putWhitespace(text->data(), text->size());
+      written = stream.putWhitespace(*text);
     } else if (std::holds_alternative<ColonElement>(elem)) {
       written = stream.putColon();
     } else if (std::holds_alternative<CommaElement>(elem)) {
@@ -736,30 +740,30 @@ std::expected<void, StarException> JsonStreamer<FormattedJson>::toJsonStream(For
   return object ? stream.endObject() : stream.endArray();
 }
 
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, JsonElement const& elem) {
-  if (auto value = std::get_if<ValueElement>(&elem))
-    os << "ValueElement{" << value->value << "}";
-  else if (auto key = std::get_if<ObjectKeyElement>(&elem))
-    os << "ObjectKeyElement{" << key->key << "}";
-  else if (auto whitespace = std::get_if<WhitespaceElement>(&elem))
-    os << "WhitespaceElement{" << whitespace->whitespace << "}";
+std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, JsonElement const& elem) {
+  if (std::holds_alternative<ValueElement>(elem))
+    os << "ValueElement{" << std::get<ValueElement>(elem).value << "}";
+  else if (std::holds_alternative<ObjectKeyElement>(elem))
+    os << "ObjectKeyElement{" << std::get<ObjectKeyElement>(elem).key << "}";
+  else if (std::holds_alternative<WhitespaceElement>(elem))
+    os << "WhitespaceElement{" << std::get<WhitespaceElement>(elem).whitespace << "}";
   else if (std::holds_alternative<ColonElement>(elem))
     os << "ColonElement{}";
   else
     os << "CommaElement{}";
   if (!os)
     return std::unexpected(JsonException("Error writing formatted JSON element"));
-  return &os;
+  return std::ref(os);
 }
 
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, FormattedJson const& json) {
+std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, FormattedJson const& json) {
   auto text = json.repr();
   if (!text)
     return std::unexpected(std::move(text.error()));
   os << *text;
   if (!os)
     return std::unexpected(JsonException("Error writing formatted JSON"));
-  return &os;
+  return std::ref(os);
 }
 
 }

@@ -97,16 +97,16 @@ std::expected<std::shared_ptr<EditBookmarkDialog>, StarException> EditBookmarkDi
 }
 
 std::expected<void, StarException> EditBookmarkDialog::initialize() {
-  GuiReader reader(*context());
-  auto assets = context()->root().assets();
+  GuiReader reader(context());
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
-  reader.registerCallback("ok", [this](Widget*) { return ok(); });
-  reader.registerCallback("remove", [this](Widget*) { return remove(); });
-  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { close(); return {}; });
-  reader.registerCallback("name", [](Widget*) -> std::expected<void, StarException> { return {}; });
+  reader.registerCallback("ok", [this](Widget&) { return ok(); });
+  reader.registerCallback("remove", [this](Widget&) { return remove(); });
+  reader.registerCallback("close", [this](Widget&) -> std::expected<void, StarException> { close(); return {}; });
+  reader.registerCallback("name", [](Widget&) -> std::expected<void, StarException> { return {}; });
   auto layout = (*assets)->json("/interface/windowconfig/editbookmark.config:paneLayout");
   if (!layout) return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, this);
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed) return std::unexpected(std::move(constructed.error()));
   dismiss();
   return {};
@@ -132,7 +132,7 @@ std::expected<void, StarException> EditBookmarkDialog::show() {
 
   auto titleWidget = fetchChild<LabelWidget>("lblTitle");
   if (!titleWidget) return std::unexpected(std::move(titleWidget.error()));
-  auto title = (*titleWidget)->setText(m_isNew ? "NEW BOOKMARK" : "EDIT BOOKMARK");
+  auto title = (*titleWidget)->setText(m_isNew ? String("NEW BOOKMARK") : String("EDIT BOOKMARK"));
   if (!title) return std::unexpected(std::move(title.error()));
   auto removeWidget = fetchChild<ButtonWidget>("remove");
   if (!removeWidget) return std::unexpected(std::move(removeWidget.error()));

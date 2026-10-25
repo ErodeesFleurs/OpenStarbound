@@ -129,7 +129,7 @@ TEST(OptionParser, ConsumesParameterValueBeforeRecognizingFlags) {
   EXPECT_TRUE(errors.empty());
   auto result14 = options.parameters.get("value");
   ASSERT_TRUE(result14);
-  EXPECT_EQ((**result14), (Star::StringList{"--"}));
+  EXPECT_EQ(result14->get(), (Star::StringList{"--"}));
   EXPECT_TRUE(options.switches.contains("quiet"));
   EXPECT_EQ(options.arguments, (Star::StringList{"-quiet", "tail"}));
 }
@@ -151,7 +151,7 @@ TEST(OptionParser, DuplicateParameterStillConsumesItsValue) {
       "Option '-value' must be followed by an argument"}));
   auto result18 = options.parameters.get("value");
   ASSERT_TRUE(result18);
-  EXPECT_EQ((**result18), (Star::StringList{"first"}));
+  EXPECT_EQ(result18->get(), (Star::StringList{"first"}));
   EXPECT_TRUE(options.switches.empty());
   EXPECT_EQ(options.arguments, (Star::StringList{"tail"}));
 }

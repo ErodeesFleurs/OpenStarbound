@@ -200,6 +200,7 @@ import star.status_controller_lua_bindings;
 
 import star.player_inventory;
 import star.item_bag;
+import star.optional;
 
 namespace Star {
 
@@ -241,12 +242,12 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
       return std::unexpected(std::move(jsonToStringListResult228.error()));
     auto scripts = std::move(*jsonToStringListResult228);
     if (!m_script) {
-      m_script.emplace(context()->root());
+      m_script.emplace(context().root());
       auto setScriptsResult229 = m_script->setScripts(scripts);
       if (!setScriptsResult229)
         return std::unexpected(std::move(setScriptsResult229.error()));
     }
-    auto makeWidgetCallbacksResult230 = LuaBindings::makeWidgetCallbacks(*context(), this);
+    auto makeWidgetCallbacksResult230 = LuaBindings::makeWidgetCallbacks(context(), *this);
     if (!makeWidgetCallbacksResult230)
       return std::unexpected(std::move(makeWidgetCallbacksResult230.error()));
     auto addCallbacksResult231 = m_script->addCallbacks("widget", std::move(*makeWidgetCallbacksResult230));
@@ -263,7 +264,7 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
     auto addCallbacksResult234 = m_script->addCallbacks("config", std::move(*makeConfigCallbacksResult233));
     if (!addCallbacksResult234)
       return std::unexpected(std::move(addCallbacksResult234.error()));
-    auto makePlayerCallbacksResult235 = LuaBindings::makePlayerCallbacks(context()->root(), m_player.get());
+    auto makePlayerCallbacksResult235 = LuaBindings::makePlayerCallbacks(context().root(), *m_player);
     if (!makePlayerCallbacksResult235)
       return std::unexpected(std::move(makePlayerCallbacksResult235.error()));
     auto addCallbacksResult236 = m_script->addCallbacks("player", std::move(*makePlayerCallbacksResult235));
@@ -307,7 +308,7 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
     auto callbackContainer = m_containerInteractor->openContainer();
 
     if (!callbackContainer) {
-      auto warnResult244 = context()->root().logger().warn("rightClickCallback failed in ContainerPane because we do not have an open container!");
+      auto warnResult244 = context().root().logger().warn("rightClickCallback failed in ContainerPane because we do not have an open container!");
       if (!warnResult244)
         return std::unexpected(std::move(warnResult244.error()));
       return {};
@@ -317,11 +318,11 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
       auto atResult245 = callbackContainer->itemBag()->at(index);
       if (!atResult245)
         return std::unexpected(std::move(atResult245.error()));
-      if (std::shared_ptr<Item> slotItem = *atResult245) {
+      if (std::shared_ptr<Item> slotItem = std::move(*atResult245)) {
         auto swapItem = m_player->inventory()->swapSlotItem();
-        if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
-          std::size_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
-          if (context()->shiftHeld())
+        if (!swapItem || swapItem->empty() || swapItem->couldStack(optionalRef(slotItem))) {
+          std::size_t count = swapItem ? swapItem->couldStack(optionalRef(slotItem)) : slotItem->maxStack();
+          if (context().shiftHeld())
             count = std::max<std::uint64_t>(1, std::min<std::uint64_t>(count, slotItem->count() / 2));
           else
             count = 1;
@@ -345,13 +346,13 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
   return {};
 };
 
-  m_reader.registerCallback("close", [this](Widget*)  -> std::expected<void, StarException> { dismiss(); 
+  m_reader.registerCallback("close", [this](Widget&)  -> std::expected<void, StarException> { dismiss();
   return {};
 });
-  m_reader.registerCallback("itemGrid", [this](Widget* paneObj)  -> std::expected<void, StarException> {
-      if (auto itemGrid = as<ItemGridWidget>(paneObj))
+  m_reader.registerCallback("itemGrid", [this](Widget& paneObj)  -> std::expected<void, StarException> {
+      if (auto itemGrid = asRef<ItemGridWidget>(paneObj))
         {
-          auto swapSlotResult249 = swapSlot(itemGrid);
+          auto swapSlotResult249 = swapSlot(itemGrid->get());
           if (!swapSlotResult249)
             return std::unexpected(std::move(swapSlotResult249.error()));
           
@@ -361,10 +362,10 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
     
   return {};
 });
-  m_reader.registerCallback("itemGrid.right", [rightClickCallback](Widget* paneObj)  -> std::expected<void, StarException> {
-      if (auto itemGrid = as<ItemGridWidget>(paneObj))
+  m_reader.registerCallback("itemGrid.right", [rightClickCallback](Widget& paneObj)  -> std::expected<void, StarException> {
+      if (auto itemGrid = asRef<ItemGridWidget>(paneObj))
         {
-          auto rightClickCallbackResult250 = rightClickCallback(itemGrid->selectedIndex());
+          auto rightClickCallbackResult250 = rightClickCallback(itemGrid->get().selectedIndex());
           if (!rightClickCallbackResult250)
             return std::unexpected(std::move(rightClickCallbackResult250.error()));
           
@@ -375,10 +376,10 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
   return {};
 });
 
-  m_reader.registerCallback("itemGrid2", [this](Widget* paneObj)  -> std::expected<void, StarException> {
-      if (auto itemGrid = as<ItemGridWidget>(paneObj))
+  m_reader.registerCallback("itemGrid2", [this](Widget& paneObj)  -> std::expected<void, StarException> {
+      if (auto itemGrid = asRef<ItemGridWidget>(paneObj))
         {
-          auto swapSlotResult251 = swapSlot(itemGrid);
+          auto swapSlotResult251 = swapSlot(itemGrid->get());
           if (!swapSlotResult251)
             return std::unexpected(std::move(swapSlotResult251.error()));
           
@@ -388,10 +389,10 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
     
   return {};
 });
-  m_reader.registerCallback("itemGrid2.right", [rightClickCallback](Widget* paneObj)  -> std::expected<void, StarException> {
-      if (auto itemGrid = as<ItemGridWidget>(paneObj))
+  m_reader.registerCallback("itemGrid2.right", [rightClickCallback](Widget& paneObj)  -> std::expected<void, StarException> {
+      if (auto itemGrid = asRef<ItemGridWidget>(paneObj))
         {
-          auto rightClickCallbackResult252 = rightClickCallback(itemGrid->selectedIndex());
+          auto rightClickCallbackResult252 = rightClickCallback(itemGrid->get().selectedIndex());
           if (!rightClickCallbackResult252)
             return std::unexpected(std::move(rightClickCallbackResult252.error()));
           
@@ -402,10 +403,10 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
   return {};
 });
 
-  m_reader.registerCallback("outputItemGrid", [this](Widget* paneObj)  -> std::expected<void, StarException> {
-      if (auto itemGrid = as<ItemGridWidget>(paneObj))
+  m_reader.registerCallback("outputItemGrid", [this](Widget& paneObj)  -> std::expected<void, StarException> {
+      if (auto itemGrid = asRef<ItemGridWidget>(paneObj))
         {
-          auto swapSlotResult253 = swapSlot(itemGrid);
+          auto swapSlotResult253 = swapSlot(itemGrid->get());
           if (!swapSlotResult253)
             return std::unexpected(std::move(swapSlotResult253.error()));
           
@@ -415,10 +416,10 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
     
   return {};
 });
-  m_reader.registerCallback("outputItemGrid.right", [rightClickCallback](Widget* paneObj)  -> std::expected<void, StarException> {
-      if (auto itemGrid = as<ItemGridWidget>(paneObj))
+  m_reader.registerCallback("outputItemGrid.right", [rightClickCallback](Widget& paneObj)  -> std::expected<void, StarException> {
+      if (auto itemGrid = asRef<ItemGridWidget>(paneObj))
         {
-          auto rightClickCallbackResult254 = rightClickCallback(itemGrid->selectedIndex());
+          auto rightClickCallbackResult254 = rightClickCallback(itemGrid->get().selectedIndex());
           if (!rightClickCallbackResult254)
             return std::unexpected(std::move(rightClickCallbackResult254.error()));
           
@@ -429,18 +430,18 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
   return {};
 });
 
-  m_reader.registerCallback("toggleCrafting", [this](Widget*)  -> std::expected<void, StarException> { auto toggleCraftingResult255 = toggleCrafting();
+  m_reader.registerCallback("toggleCrafting", [this](Widget&)  -> std::expected<void, StarException> { auto toggleCraftingResult255 = toggleCrafting();
                                                                 if (!toggleCraftingResult255)
                                                                   return std::unexpected(std::move(toggleCraftingResult255.error())); 
   return {};
 });
 
-  m_reader.registerCallback("clear", [this](Widget*)  -> std::expected<void, StarException> { auto clearResult256 = clear();
+  m_reader.registerCallback("clear", [this](Widget&)  -> std::expected<void, StarException> { auto clearResult256 = clear();
                                                        if (!clearResult256)
                                                          return std::unexpected(std::move(clearResult256.error())); 
   return {};
 });
-  m_reader.registerCallback("burn", [this](Widget*)  -> std::expected<void, StarException> { auto burnResult257 = burn();
+  m_reader.registerCallback("burn", [this](Widget&)  -> std::expected<void, StarException> { auto burnResult257 = burn();
                                                       if (!burnResult257)
                                                         return std::unexpected(std::move(burnResult257.error())); 
   return {};
@@ -454,8 +455,8 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
     if (!jsonToStringListResult259)
       return std::unexpected(std::move(jsonToStringListResult259.error()));
     for (auto const& callbackName : std::move(*jsonToStringListResult259)) {
-      m_reader.registerCallback(callbackName, [this, callbackName](Widget* widget)  -> std::expected<void, StarException> {
-        auto invokeResult260 = m_script->invoke(callbackName, widget->name(), widget->data());
+      m_reader.registerCallback(callbackName, [this, callbackName](Widget& widget)  -> std::expected<void, StarException> {
+        auto invokeResult260 = m_script->invoke(callbackName, widget.name(), widget.data());
         if (!invokeResult260)
           return std::unexpected(std::move(invokeResult260.error()));
       
@@ -467,7 +468,7 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
   auto getResult261 = guiConfig.get("gui");
   if (!getResult261)
     return std::unexpected(std::move(getResult261.error()));
-  auto constructResult262 = m_reader.construct(std::move(*getResult261), this);
+  auto constructResult262 = m_reader.construct(std::move(*getResult261), *this);
   if (!constructResult262)
     return std::unexpected(std::move(constructResult262.error()));
 
@@ -487,7 +488,7 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
       }
   }
 
-  m_itemBag = std::make_shared<ItemBag>(context()->root(), container->containerSize());
+  m_itemBag = std::make_shared<ItemBag>(context().root(), container->containerSize());
   auto items = container->containerItems();
 
   auto fetchChildResult266 = fetchChild<ItemGridWidget>("itemGrid");
@@ -532,7 +533,7 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
     if (!iconItemResult274)
       return std::unexpected(std::move(iconItemResult274.error()));
     if (std::move(*iconItemResult274)) {
-      auto itemDatabaseResult275 = context()->root().itemDatabase();
+      auto itemDatabaseResult275 = context().root().itemDatabase();
       if (!itemDatabaseResult275)
         return std::unexpected(std::move(itemDatabaseResult275.error()));
       auto itemDatabase = std::move(*itemDatabaseResult275);
@@ -543,7 +544,7 @@ std::expected<void, StarException> ContainerPane::initialize(std::shared_ptr<Wor
       if (!itemSharedResult277)
         return std::unexpected(std::move(itemSharedResult277.error()));
       auto iconItem = std::move(*itemSharedResult277);
-      auto createResult278 = ItemSlotWidget::create(*context(), iconItem, "/interface/inventory/portrait.png");
+      auto createResult278 = ItemSlotWidget::create(context(), iconItem, "/interface/inventory/portrait.png");
       if (!createResult278)
         return std::unexpected(std::move(createResult278.error()));
       auto icon = std::move(*createResult278);
@@ -596,7 +597,7 @@ std::expected<void, StarException> ContainerPane::displayed() {
   if (m_script) {
     if (m_worldClient && m_worldClient->inWorld())
       {
-        auto initResult287 = m_script->init(m_worldClient.get());
+        auto initResult287 = m_script->init(*m_worldClient);
         if (!initResult287)
           return std::unexpected(std::move(initResult287.error()));
         
@@ -644,7 +645,7 @@ std::expected<bool, StarException> ContainerPane::giveContainerResult(ContainerR
         return std::unexpected(std::move(setSwapSlotItemResult294.error()));
     } else if (m_expectingSwap == ExpectingSwap::SwapSlotStack) {
       auto swapItem = inv->swapSlotItem();
-      if (swapItem && swapItem->stackWith(item)) {
+      if (swapItem && swapItem->stackWith(optionalRef(item))) {
         continue;
       } else {
         auto clearSwapResult295 = inv->clearSwap();
@@ -683,7 +684,7 @@ std::expected<std::shared_ptr<Pane>, StarException> ContainerPane::createTooltip
   }
   if (item)
     {
-      auto buildItemTooltipResult300 = ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
+      auto buildItemTooltipResult300 = ItemTooltipBuilder::buildItemTooltip(context(), item, m_player);
       if (!buildItemTooltipResult300)
         return std::unexpected(std::move(buildItemTooltipResult300.error()));
       return std::move(*buildItemTooltipResult300);
@@ -691,10 +692,10 @@ std::expected<std::shared_ptr<Pane>, StarException> ContainerPane::createTooltip
   return {};
 }
 
-std::expected<void, StarException> ContainerPane::swapSlot(ItemGridWidget* grid) {
+std::expected<void, StarException> ContainerPane::swapSlot(ItemGridWidget& grid) {
   auto inv = m_player->inventory();
-  if (context()->shiftHeld()) {
-    auto selectedItemResult301 = grid->selectedItem();
+  if (context().shiftHeld()) {
+    auto selectedItemResult301 = grid.selectedItem();
     if (!selectedItemResult301)
       return std::unexpected(std::move(selectedItemResult301.error()));
     auto containerItem = std::move(*selectedItemResult301);
@@ -707,14 +708,14 @@ std::expected<void, StarException> ContainerPane::swapSlot(ItemGridWidget* grid)
         condition303 = static_cast<bool>(std::move(*itemsCanFitResult302) >= containerItem->count());
       }
       if (condition303) {
-        auto swapInContainerResult304 = m_containerInteractor->swapInContainer(grid->selectedIndex(), {});
+        auto swapInContainerResult304 = m_containerInteractor->swapInContainer(grid.selectedIndex(), {});
         if (!swapInContainerResult304)
           return std::unexpected(std::move(swapInContainerResult304.error()));
         m_expectingSwap = ExpectingSwap::Inventory;
       }
     }
   } else {
-    auto swapInContainerResult305 = m_containerInteractor->swapInContainer(grid->selectedIndex(), inv->swapSlotItem());
+    auto swapInContainerResult305 = m_containerInteractor->swapInContainer(grid.selectedIndex(), inv->swapSlotItem());
     if (!swapInContainerResult305)
       return std::unexpected(std::move(swapInContainerResult305.error()));
     auto setSwapSlotItemResult306 = inv->setSwapSlotItem({});
@@ -759,7 +760,7 @@ std::expected<void, StarException> ContainerPane::toggleCrafting() {
       }
   else
     {
-      auto warnResult311 = context()->root().logger().warn("ContainerPane::toggleCrafting failed because we don't have an open container!");
+      auto warnResult311 = context().root().logger().warn("ContainerPane::toggleCrafting failed because we don't have an open container!");
       if (!warnResult311)
         return std::unexpected(std::move(warnResult311.error()));
       
@@ -798,10 +799,10 @@ std::expected<void, StarException> ContainerPane::update(float dt) {
     }
 
   m_itemBag->clearItems();
-  auto inputResult316 = context()->input();
+  auto inputResult316 = context().input();
   if (!inputResult316)
     return std::unexpected(std::move(inputResult316.error()));
-  Input& input = (**inputResult316);
+  Input& input = inputResult316->get();
 
   if (!m_containerInteractor->containerOpen()) {
     dismiss();

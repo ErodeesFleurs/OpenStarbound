@@ -71,7 +71,7 @@ public:
 
   EntityType entityType() const override;
 
-  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> init(World& world, EntityId entityId, EntityMode mode) override;
   [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   [[nodiscard]] std::expected<String, StarException> description() const override;
@@ -86,7 +86,7 @@ public:
   RectF metaBoundBox() const override;
 
   [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
-  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) override;
 
   void setPosition();
   void setVelocity(Vec2F const& position);
@@ -95,9 +95,9 @@ public:
 
   [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback) override;
   
-  MovementController* movementController() override;
+  MovementController& movementController() override;
 
 private:
   PlantDrop(Root& rootContext);
@@ -114,7 +114,7 @@ private:
     bool flip;
   };
 
-  [[nodiscard]] std::expected<void, StarException> particleForPlantPart(PlantDropPiece const& piece, String const& mode, Json const& mainConfig, RenderCallback* renderCallback);
+  [[nodiscard]] std::expected<void, StarException> particleForPlantPart(PlantDropPiece const& piece, String const& mode, Json const& mainConfig, RenderCallback& renderCallback);
 
   NetElementTopGroup m_netGroup;
   String m_description;

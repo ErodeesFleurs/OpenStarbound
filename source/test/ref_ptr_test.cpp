@@ -188,3 +188,27 @@ TEST(Casting, SharedCrossCastAliasesOwnerAndPreservesConst) {
   EXPECT_TRUE(observer.expired());
   EXPECT_TRUE(destroyed);
 }
+
+TEST(Casting, BorrowedCrossCastAdjustsWithoutExtendingLifetime) {
+  bool destroyed = false;
+  auto owner = std::make_shared<QueryBoth>(destroyed);
+  QueryLeft& left = *owner;
+
+  auto right = asRef<QueryRight>(left);
+  ASSERT_TRUE(right);
+  right->get().right = 43;
+  EXPECT_EQ(43, owner->right);
+
+  auto readOnly = rconvert<QueryRight>(std::as_const(left));
+  ASSERT_TRUE(readOnly);
+  EXPECT_EQ(43, readOnly->get().right);
+
+  EXPECT_FALSE(asRef<Test2>(left));
+  auto missing = rconvert<Test2>(left);
+  ASSERT_FALSE(missing);
+  EXPECT_TRUE(missing.error().is<PointerConvertException>());
+
+  owner.reset();
+  EXPECT_TRUE(destroyed);
+  // Borrow values may remain in scope, but must not be dereferenced again.
+}

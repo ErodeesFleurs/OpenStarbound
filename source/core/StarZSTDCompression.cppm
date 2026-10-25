@@ -19,9 +19,9 @@ public:
   CompressionStream(CompressionStream&&) = delete;
   CompressionStream& operator=(CompressionStream&&) = delete;
 
-  [[nodiscard]] std::expected<void, StarException> compress(const char* in, std::size_t inLen, ByteArray& out);
+  [[nodiscard]] std::expected<void, StarException> compress(std::span<char const> in, ByteArray& out);
   [[nodiscard]] std::expected<void, StarException> compress(ByteArray const& in, ByteArray& out);
-  [[nodiscard]] std::expected<ByteArray, StarException> compress(const char* in, std::size_t inLen);
+  [[nodiscard]] std::expected<ByteArray, StarException> compress(std::span<char const> in);
   [[nodiscard]] std::expected<ByteArray, StarException> compress(ByteArray const& in);
 
 private:
@@ -41,9 +41,9 @@ public:
   DecompressionStream(DecompressionStream&&) = delete;
   DecompressionStream& operator=(DecompressionStream&&) = delete;
 
-  [[nodiscard]] std::expected<void, StarException> decompress(const char* in, std::size_t inLen, ByteArray& out);
+  [[nodiscard]] std::expected<void, StarException> decompress(std::span<char const> in, ByteArray& out);
   [[nodiscard]] std::expected<void, StarException> decompress(ByteArray const& in, ByteArray& out);
-  [[nodiscard]] std::expected<ByteArray, StarException> decompress(const char* in, std::size_t inLen);
+  [[nodiscard]] std::expected<ByteArray, StarException> decompress(std::span<char const> in);
   [[nodiscard]] std::expected<ByteArray, StarException> decompress(ByteArray const& in);
 
 private:
@@ -56,14 +56,14 @@ private:
 
 class ZstdCompression {
 public:
-  [[nodiscard]] static std::expected<void, StarException> compress(const char* in, std::size_t inLen, ByteArray& out, int compressionLevel = 0);
+  [[nodiscard]] static std::expected<void, StarException> compress(std::span<char const> in, ByteArray& out, int compressionLevel = 0);
   [[nodiscard]] static std::expected<void, StarException> compress(ByteArray const& in, ByteArray& out, int compressionLevel = 0);
-  [[nodiscard]] static std::expected<ByteArray, StarException> compress(const char* in, std::size_t inLen, int compressionLevel = 0);
+  [[nodiscard]] static std::expected<ByteArray, StarException> compress(std::span<char const> in, int compressionLevel = 0);
   [[nodiscard]] static std::expected<ByteArray, StarException> compress(ByteArray const& in, int compressionLevel = 0);
 
-  [[nodiscard]] static std::expected<void, StarException> decompress(const char* in, std::size_t inLen, ByteArray& out);
+  [[nodiscard]] static std::expected<void, StarException> decompress(std::span<char const> in, ByteArray& out);
   [[nodiscard]] static std::expected<void, StarException> decompress(ByteArray const& in, ByteArray& out);
-  [[nodiscard]] static std::expected<ByteArray, StarException> decompress(const char* in, std::size_t inLen);
+  [[nodiscard]] static std::expected<ByteArray, StarException> decompress(std::span<char const> in);
   [[nodiscard]] static std::expected<ByteArray, StarException> decompress(ByteArray const& in);
 };
 

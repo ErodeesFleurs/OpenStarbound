@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     if (!engine)
       return std::unexpected(std::move(engine.error()));
     (*engine)->setExecutionHost(std::make_unique<LuaExecutionScope>(*root));
-    (*engine)->setImageResolver([root = root.get()](String const& path) -> std::expected<std::shared_ptr<Image const>, StarException> {
+    (*engine)->setImageResolver([&root](String const& path) -> std::expected<std::shared_ptr<Image const>, StarException> {
       auto assets = root->assets();
       if (!assets)
         return std::unexpected(std::move(assets.error()));

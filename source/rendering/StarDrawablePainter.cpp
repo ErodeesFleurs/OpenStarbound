@@ -35,10 +35,11 @@ std::expected<void, StarException> DrawablePainter::drawDrawable(Drawable const&
   Vec4B color = drawable.color.toRgba();
   auto& primitives = m_renderer->immediatePrimitives();
 
-  if (auto linePart = std::get_if<Drawable::LinePart>(&drawable.part)) {
-    auto line = linePart->line;
+  if (std::holds_alternative<Drawable::LinePart>(drawable.part)) {
+    auto const& linePart = std::get<Drawable::LinePart>(drawable.part);
+    auto line = linePart.line;
     line.translate(drawable.position);
-    Vec2F left = Vec2F(vnorm(line.diff())).rot90() * linePart->width / 2.0f;
+    Vec2F left = Vec2F(vnorm(line.diff())).rot90() * linePart.width / 2.0f;
     
     float fullbright = drawable.fullbright ? 0.0f : 1.0f;
     auto& primitive = primitives.emplace_back(std::in_place_type_t<RenderQuad>(),
@@ -47,25 +48,27 @@ std::expected<void, StarException> DrawablePainter::drawDrawable(Drawable const&
       line.max() - left,
       line.max() + left,
       color, fullbright);
-    if (auto* endColor = optionalPtr(linePart->endColor)) {
+    if (auto endColor = optionalRef(linePart.endColor)) {
       RenderQuad& quad = std::get<RenderQuad>(primitive);
-      quad.c.color = quad.d.color = endColor->toRgba();
+      quad.c.color = quad.d.color = endColor->get().toRgba();
     }
-  } else if (auto polyPart = std::get_if<Drawable::PolyPart>(&drawable.part)) {
-    PolyF poly = polyPart->poly;
+  } else if (std::holds_alternative<Drawable::PolyPart>(drawable.part)) {
+    auto const& polyPart = std::get<Drawable::PolyPart>(drawable.part);
+    PolyF poly = polyPart.poly;
     poly.translate(drawable.position);
 
     primitives.emplace_back(std::in_place_type_t<RenderPoly>(), poly.vertexes(), color, 0.0f);
 
-  } else if (auto imagePart = std::get_if<Drawable::ImagePart>(&drawable.part)) {
-    auto loaded = m_textureGroup->loadTexture(imagePart->image);
+  } else if (std::holds_alternative<Drawable::ImagePart>(drawable.part)) {
+    auto const& imagePart = std::get<Drawable::ImagePart>(drawable.part);
+    auto loaded = m_textureGroup->loadTexture(imagePart.image);
     if (!loaded)
       return std::unexpected(std::move(loaded.error()));
     TexturePtr texture = std::move(*loaded);
 
     Vec2F position = drawable.position;
     Vec2F textureSize(texture->size());
-    Mat3F transformation = imagePart->transformation;
+    Mat3F transformation = imagePart.transformation;
     Vec2F lowerLeft  = { transformation[0][2] += position.x(), transformation[1][2] += position.y() };
     Vec2F lowerRight = transformation * Vec2F(textureSize.x(), 0.f);
     Vec2F upperRight = transformation * textureSize;

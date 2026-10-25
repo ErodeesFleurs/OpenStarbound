@@ -51,16 +51,16 @@ float GameTimer::percent() const {
     return 0.0f;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, GameTimer& gt) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, GameTimer& gt) {
   if (auto r = ds >> gt.time; !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds >> gt.timer; !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, GameTimer const& gt) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, GameTimer const& gt) {
   if (auto r = ds << gt.time; !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds << gt.timer; !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 SlidingWindow::SlidingWindow() : windowSize(1.0f), resolution(1) {}
@@ -165,16 +165,16 @@ void EpochTimer::setElapsedTime(double elapsedTime) {
   m_elapsedTime = elapsedTime;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, EpochTimer& et) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EpochTimer& et) {
   if (auto r = ds >> et.m_lastSeenEpochTime; !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds >> et.m_elapsedTime; !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, EpochTimer const& et) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EpochTimer const& et) {
   if (auto r = ds << et.m_lastSeenEpochTime; !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds << et.m_elapsedTime; !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 }

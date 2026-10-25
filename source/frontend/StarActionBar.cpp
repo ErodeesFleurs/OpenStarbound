@@ -207,24 +207,23 @@ import star.player_inventory;
 import star.algorithm;
 namespace Star {
 
-ActionBar::ActionBar(GuiContext& guiContext) : Pane(guiContext) {}
+ActionBar::ActionBar(GuiContext& guiContext, MainInterfacePaneManager& paneManager) : Pane(guiContext), m_paneManager(paneManager) {}
 
-std::expected<std::shared_ptr<ActionBar>, StarException> ActionBar::create(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<Player> player) {
-  auto pane = std::shared_ptr<ActionBar>(new ActionBar(guiContext));
+std::expected<std::shared_ptr<ActionBar>, StarException> ActionBar::create(GuiContext& guiContext, MainInterfacePaneManager& paneManager, std::shared_ptr<Player> player) {
+  auto pane = std::shared_ptr<ActionBar>(new ActionBar(guiContext, paneManager));
   auto base = pane->initializePane();
   if (!base)
     return std::unexpected(std::move(base.error()));
-  auto initialized = pane->initialize(paneManager, std::move(player));
+  auto initialized = pane->initialize(std::move(player));
   if (!initialized)
     return std::unexpected(std::move(initialized.error()));
   return pane;
 }
 
-std::expected<void, StarException> ActionBar::initialize(MainInterfacePaneManager* paneManager, std::shared_ptr<Player> player) {
-  m_paneManager = paneManager;
+std::expected<void, StarException> ActionBar::initialize(std::shared_ptr<Player> player) {
   m_player = std::move(player);
 
-  auto assetsResult703 = context()->root().assets();
+  auto assetsResult703 = context().root().assets();
   if (!assetsResult703)
     return std::unexpected(std::move(assetsResult703.error()));
   auto assets = std::move(*assetsResult703);
@@ -252,7 +251,7 @@ std::expected<void, StarException> ActionBar::initialize(MainInterfacePaneManage
     return std::unexpected(std::move(jsonToStringListResult709.error()));
   m_switchSounds = std::move(*jsonToStringListResult709);
 
-  GuiReader reader(*context());
+  GuiReader reader(context());
 
   for (std::uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
     reader.registerCallback(strf("customBar{}L", i + 1), std::bind(&ActionBar::customBarClick, this, i, true));
@@ -265,19 +264,21 @@ std::expected<void, StarException> ActionBar::initialize(MainInterfacePaneManage
   for (std::uint8_t i = 0; i < EssentialItemCount; ++i)
     reader.registerCallback(strf("essentialBar{}", i + 1), std::bind(&ActionBar::essentialBarClick, this, i));
 
-  reader.registerCallback("pickupToActionBar", [this](Widget* widget)  -> std::expected<void, StarException> {
-      auto button = as<ButtonWidget>(widget);
-      auto configurationResult710 = context()->root().configuration();
+  reader.registerCallback("pickupToActionBar", [this](Widget& widget)  -> std::expected<void, StarException> {
+      auto button = rconvert<ButtonWidget>(widget);
+      if (!button)
+        return std::unexpected(std::move(button.error()));
+      auto configurationResult710 = context().root().configuration();
       if (!configurationResult710)
         return std::unexpected(std::move(configurationResult710.error()));
-      auto setPathResult711 = std::move(*configurationResult710)->setPath("inventory.pickupToActionBar", button->isChecked());
+      auto setPathResult711 = std::move(*configurationResult710)->setPath("inventory.pickupToActionBar", button->get().isChecked());
       if (!setPathResult711)
         return std::unexpected(std::move(setPathResult711.error()));
     
   return {};
 });
 
-  reader.registerCallback("swapCustomBar", [this](Widget*)  -> std::expected<void, StarException> {
+  reader.registerCallback("swapCustomBar", [this](Widget&)  -> std::expected<void, StarException> {
       auto swapCustomBarResult712 = swapCustomBar();
       if (!swapCustomBarResult712)
         return std::unexpected(std::move(swapCustomBarResult712.error()));
@@ -285,7 +286,7 @@ std::expected<void, StarException> ActionBar::initialize(MainInterfacePaneManage
   return {};
 });
 
-  auto configurationResult713 = context()->root().configuration();
+  auto configurationResult713 = context().root().configuration();
   if (!configurationResult713)
     return std::unexpected(std::move(configurationResult713.error()));
   auto configuration = std::move(*configurationResult713);
@@ -307,7 +308,7 @@ std::expected<void, StarException> ActionBar::initialize(MainInterfacePaneManage
   auto getResult717 = m_config.get("paneLayout");
   if (!getResult717)
     return std::unexpected(std::move(getResult717.error()));
-  auto constructResult718 = reader.construct(std::move(*getResult717), this);
+  auto constructResult718 = reader.construct(std::move(*getResult717), *this);
   if (!constructResult718)
     return std::unexpected(std::move(constructResult718.error()));
   if (bottomBar) {
@@ -407,7 +408,7 @@ std::expected<std::shared_ptr<Pane>, StarException> ActionBar::createTooltip(Vec
   if (!item)
     return {};
 
-  auto buildItemTooltipResult731 = ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
+  auto buildItemTooltipResult731 = ItemTooltipBuilder::buildItemTooltip(context(), item, m_player);
   if (!buildItemTooltipResult731)
     return std::unexpected(std::move(buildItemTooltipResult731.error()));
   return std::move(*buildItemTooltipResult731);
@@ -425,26 +426,28 @@ std::expected<bool, StarException> ActionBar::sendEvent(InputEvent const& event)
   auto inventory = m_player->inventory();
 
   auto customBarIndexes = inventory->customBarIndexes();
-  if (auto mouseWheel = std::get_if<MouseWheelEvent>(&event)) {
+  if (std::holds_alternative<MouseWheelEvent>(event)) {
+    auto const& mouseWheel = std::get<MouseWheelEvent>(event);
     auto abl = inventory->selectedActionBarLocation();
 
     int index = 0;
     if (std::holds_alternative<std::monostate>(abl)) {
-      if (mouseWheel->mouseWheel == MouseWheel::Down)
+      if (mouseWheel.mouseWheel == MouseWheel::Down)
         index = 0;
       else
         index = customBarIndexes + EssentialItemCount - 1;
     } else {
-      if (auto cbi = std::get_if<CustomBarIndex>(&abl)) {
-        if (*cbi < customBarIndexes / 2)
-          index = *cbi;
+      if (std::holds_alternative<CustomBarIndex>(abl)) {
+        auto const& cbi = std::get<CustomBarIndex>(abl);
+        if (cbi < customBarIndexes / 2)
+          index = cbi;
         else
-          index = *cbi + EssentialItemCount;
+          index = cbi + EssentialItemCount;
       } else {
         index = customBarIndexes / 2 + (int)std::get<EssentialItem>(abl);
       }
 
-      if (mouseWheel->mouseWheel == MouseWheel::Down)
+      if (mouseWheel.mouseWheel == MouseWheel::Down)
         index = pmod(index + 1, customBarIndexes + EssentialItemCount);
       else
         index = pmod(index - 1, customBarIndexes + EssentialItemCount);
@@ -458,10 +461,10 @@ std::expected<bool, StarException> ActionBar::sendEvent(InputEvent const& event)
       abl = (CustomBarIndex)(index - EssentialItemCount);
 
     inventory->selectActionBarLocation(abl);
-    auto randFromResult733 = RandomSource(context()->root().random().randu64()).randFrom(m_switchSounds);
+    auto randFromResult733 = RandomSource(context().root().random().randu64()).randFrom(m_switchSounds);
     if (!randFromResult733)
       return std::unexpected(std::move(randFromResult733.error()));
-    auto playAudioResult734 = context()->playAudio((**randFromResult733));
+    auto playAudioResult734 = context().playAudio(randFromResult733->get());
     if (!playAudioResult734)
       return std::unexpected(std::move(playAudioResult734.error()));
 
@@ -470,7 +473,7 @@ std::expected<bool, StarException> ActionBar::sendEvent(InputEvent const& event)
 
   if (std::holds_alternative<MouseMoveEvent>(event)) {
     m_customBarHover.reset();
-    Vec2I screenPosition = *context()->mousePosition(event);
+    Vec2I screenPosition = *context().mousePosition(event);
     for (std::uint8_t i = 0; i < customBarIndexes; ++i) {
       if (m_customBarWidgets[i].left->screenBoundRect().contains(screenPosition))
         m_customBarHover = std::make_pair((CustomBarIndex)i, false);
@@ -479,7 +482,7 @@ std::expected<bool, StarException> ActionBar::sendEvent(InputEvent const& event)
     }
   }
 
-  for (auto action : context()->actions(event)) {
+  for (auto action : context().actions(event)) {
     if (action >= InterfaceAction::InterfaceBar1 && action <= InterfaceAction::InterfaceBar10
       && ((int)action - (int)InterfaceAction::InterfaceBar1) < inventory->customBarIndexes())
       inventory->selectActionBarLocation((CustomBarIndex)((int)action - (int)InterfaceAction::InterfaceBar1));
@@ -515,7 +518,7 @@ std::expected<void, StarException> ActionBar::update(float) {
     auto atResult736 = m_customBarWidgets.at(std::get<CustomBarIndex>(abl));
     if (!atResult736)
       return std::unexpected(std::move(atResult736.error()));
-    auto overlayLoc = (**atResult736).left->position();
+    auto overlayLoc = atResult736->get().left->position();
     m_customSelectedWidget->setPosition(overlayLoc + m_actionBarSelectOffset);
     auto showResult737 = m_customSelectedWidget->show();
     if (!showResult737)
@@ -527,7 +530,7 @@ std::expected<void, StarException> ActionBar::update(float) {
     auto atResult739 = m_essentialBarWidgets.at((std::size_t)std::get<EssentialItem>(abl));
     if (!atResult739)
       return std::unexpected(std::move(atResult739.error()));
-    auto overlayLoc = (**atResult739)->position();
+    auto overlayLoc = atResult739->get()->position();
     m_essentialSelectedWidget->setPosition(overlayLoc + m_actionBarSelectOffset);
     auto showResult740 = m_essentialSelectedWidget->show();
     if (!showResult740)
@@ -668,7 +671,7 @@ std::expected<void, StarException> ActionBar::update(float) {
   auto fetchChildResult754 = fetchChild<ButtonWidget>("pickupToActionBar");
   if (!fetchChildResult754)
     return std::unexpected(std::move(fetchChildResult754.error()));
-  auto configurationResult755 = context()->root().configuration();
+  auto configurationResult755 = context().root().configuration();
   if (!configurationResult755)
     return std::unexpected(std::move(configurationResult755.error()));
   auto getPathResult756 = std::move(*configurationResult755)->getPath("inventory.pickupToActionBar");
@@ -725,7 +728,9 @@ std::expected<void, StarException> ActionBar::customBarClick(std::uint8_t index,
 }
 
 std::expected<void, StarException> ActionBar::customBarClickRight(std::uint8_t index, bool primary) {
-  auto inventoryDisplayed = m_paneManager->registeredPaneIsDisplayed(MainInterfacePanes::Inventory);
+  if (!m_paneManager)
+    return std::unexpected(StarException("Action bar is detached from its interface"));
+  auto inventoryDisplayed = m_paneManager->get().registeredPaneIsDisplayed(MainInterfacePanes::Inventory);
   if (!inventoryDisplayed)
     return std::unexpected(std::move(inventoryDisplayed.error()));
   if (*inventoryDisplayed) {

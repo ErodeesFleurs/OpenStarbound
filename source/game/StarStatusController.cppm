@@ -145,10 +145,10 @@ public:
   std::pair<List<std::pair<EntityId, DamageRequest>>, std::uint64_t> inflictedHitsSince(std::uint64_t since = 0) const;
   std::pair<List<DamageNotification>, std::uint64_t> inflictedDamageSince(std::uint64_t since = 0) const;
 
-  [[nodiscard]] std::expected<void, StarException> init(Entity* parentEntity, ActorMovementController* movementController);
+  [[nodiscard]] std::expected<void, StarException> init(Entity& parentEntity, ActorMovementController& movementController);
   [[nodiscard]] std::expected<void, StarException> uninit();
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version = std::nullopt) override;
 
   [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -186,7 +186,7 @@ private:
     explicit EffectAnimator(Root& root);
     [[nodiscard]] static std::expected<std::shared_ptr<EffectAnimator>, StarException> create(Root& root, std::optional<String> animationConfig = {});
 
-    void initNetVersion(NetElementVersion const* version = nullptr) override;
+    void initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version = std::nullopt) override;
 
     [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
     [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -266,8 +266,8 @@ private:
   UniqueEffectMetadataGroup m_uniqueEffectMetadata;
   EffectAnimatorGroup m_effectAnimators;
 
-  Entity* m_parentEntity;
-  ActorMovementController* m_movementController;
+  std::optional<std::reference_wrapper<Entity>> m_parentEntity;
+  std::optional<std::reference_wrapper<ActorMovementController>> m_movementController;
 
   // Members below are only valid on the master entity
 

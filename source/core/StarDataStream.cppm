@@ -11,7 +11,7 @@ import star.type_identity;
 namespace Star {
 
 struct DataStreamExceptionTag {
-  static constexpr char const* name() { return "DataStreamException"; }
+  static constexpr std::string_view name() { return "DataStreamException"; }
 };
 using DataStreamException = StarError<DataStreamExceptionTag, IOException>;
 extern unsigned const CurrentStreamVersion;
@@ -35,36 +35,36 @@ public:
   void setStreamCompatibilityVersion(unsigned streamCompatibilityVersion);
   void setStreamCompatibilityVersion(NetCompatibilityRules const& rules);
 
-  [[nodiscard]] virtual std::expected<void, StarException> readData(char* data, std::size_t len) = 0;
-  [[nodiscard]] virtual std::expected<void, StarException> writeData(char const* data, std::size_t len) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> readData(std::span<char> data) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> writeData(std::span<char const> data) = 0;
   [[nodiscard]] virtual std::expected<bool, StarException> atEnd() { return false; }
   [[nodiscard]] std::expected<ByteArray, StarException> readBytes(std::size_t len);
   [[nodiscard]] std::expected<void, StarException> writeBytes(ByteArray const& ba);
 
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(bool d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(char d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::int8_t d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::uint8_t d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::int16_t d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::uint16_t d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::int32_t d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::uint32_t d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::int64_t d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::uint64_t d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(float d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(double d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(bool& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(char& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::int8_t& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::uint8_t& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::int16_t& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::uint16_t& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::int32_t& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::uint32_t& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::int64_t& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::uint64_t& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(float& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(double& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(bool d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(char d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(std::int8_t d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(std::uint8_t d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(std::int16_t d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(std::uint16_t d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(std::int32_t d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(std::uint32_t d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(std::int64_t d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(std::uint64_t d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(float d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(double d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(bool& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(char& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(std::int8_t& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(std::uint8_t& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(std::int16_t& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(std::uint16_t& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(std::int32_t& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(std::uint32_t& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(std::int64_t& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(std::uint64_t& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(float& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(double& d);
 
   // VLQ integers retain their on-wire 1..10-byte representation. S maps NPos to zero.
   [[nodiscard]] std::expected<std::size_t, StarException> writeVlqU(std::uint64_t i);
@@ -77,17 +77,21 @@ public:
   [[nodiscard]] std::expected<std::int64_t, StarException> readVlqI();
   [[nodiscard]] std::expected<std::size_t, StarException> readVlqS();
 
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(char const* s);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::string const& s);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(ByteArray const& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(String const& s);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::string& s);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(ByteArray& d);
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(String& s);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(std::string_view s);
+  template <std::size_t Size>
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(char const (&text)[Size]) {
+    return *this << std::string_view(text, Size - 1);
+  }
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(std::string const& s);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(ByteArray const& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(String const& s);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(std::string& s);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(ByteArray& d);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(String& s);
   template <typename EnumType> requires std::is_enum_v<EnumType>
-  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(EnumType const& e);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(EnumType const& e);
   template <typename EnumType> requires std::is_enum_v<EnumType>
-  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(EnumType& e);
+  [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(EnumType& e);
 
   template <typename T> [[nodiscard]] std::expected<T, StarException> read();
   template <typename Data> [[nodiscard]] std::expected<void, StarException> read(Data& data);
@@ -119,34 +123,36 @@ public:
   template <typename Container> [[nodiscard]] std::expected<void, StarException> readMapContainer(Container& container);
 
 private:
-  [[nodiscard]] std::expected<void, StarException> writeStringData(char const* data, std::size_t len);
+  [[nodiscard]] std::expected<void, StarException> writeStringData(std::span<char const> data);
   ByteOrder m_byteOrder;
   bool m_nullTerminatedStrings;
   unsigned m_streamCompatibilityVersion;
 };
 
 // Failure short-circuits the remainder of a chain. Inspect its final expected.
-template <typename T>
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::expected<DataStream*, StarException> stream, T const& value) {
+template <typename Stream, typename T>
+  requires std::same_as<Stream, std::expected<std::reference_wrapper<DataStream>, StarException>>
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(Stream stream, T const& value) {
   if (!stream) return std::unexpected(std::move(stream.error()));
-  return **stream << value;
+  return stream->get() << value;
 }
-template <typename T>
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::expected<DataStream*, StarException> stream, T& value) {
+template <typename Stream, typename T>
+  requires std::same_as<Stream, std::expected<std::reference_wrapper<DataStream>, StarException>>
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(Stream stream, T& value) {
   if (!stream) return std::unexpected(std::move(stream.error()));
-  return **stream >> value;
+  return stream->get() >> value;
 }
 
 template <typename EnumType> requires std::is_enum_v<EnumType>
-[[nodiscard]] std::expected<DataStream*, StarException> DataStream::operator<<(EnumType const& e) {
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator<<(EnumType const& e) {
   return *this << std::to_underlying(e);
 }
 template <typename EnumType> requires std::is_enum_v<EnumType>
-[[nodiscard]] std::expected<DataStream*, StarException> DataStream::operator>>(EnumType& e) {
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> DataStream::operator>>(EnumType& e) {
   auto value = read<std::underlying_type_t<EnumType>>();
   if (!value) return std::unexpected(std::move(value.error()));
   e = static_cast<EnumType>(*value);
-  return this;
+  return std::ref(*this);
 }
 template <typename T>
 [[nodiscard]] std::expected<T, StarException> DataStream::read() {

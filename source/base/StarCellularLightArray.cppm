@@ -238,7 +238,7 @@ void CellularLightArray<LightTraits>::begin(std::size_t newWidth, std::size_t ne
     m_cells.reset(new Cell[m_width * m_height]());
 
   } else {
-    std::fill(m_cells.get(), m_cells.get() + m_width * m_height, Cell{LightValue{}, false});
+    std::ranges::fill(std::span{m_cells.get(), m_width * m_height}, Cell{LightValue{}, false});
   }
 }
 

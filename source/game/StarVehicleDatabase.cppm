@@ -15,7 +15,7 @@ class Rebuilder;
 class Vehicle;
 
 struct VehicleDatabaseExceptionTag {
-  static constexpr char const* name() { return "VehicleDatabaseException"; }
+  static constexpr std::string_view name() { return "VehicleDatabaseException"; }
 };
 using VehicleDatabaseException = StarError<VehicleDatabaseExceptionTag, StarException>;
 

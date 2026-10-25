@@ -83,7 +83,7 @@ std::expected<std::shared_ptr<QuestTrackerPane>, StarException> QuestTrackerPane
 }
 
 std::expected<void, StarException> QuestTrackerPane::initialize() {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto config = (*assets)->json("/interface/questtracker/questtracker.config");
   if (!config) return std::unexpected(std::move(config.error()));
@@ -122,10 +122,10 @@ std::expected<void, StarException> QuestTrackerPane::initialize() {
   if (!compassFriction) return std::unexpected(std::move(compassFriction.error()));
   m_compassFriction = *compassFriction;
 
-  GuiReader reader(*context());
+  GuiReader reader(context());
   auto layout = config->get("paneLayout");
   if (!layout) return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, this);
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed) return std::unexpected(std::move(constructed.error()));
 
   auto frame = fetchChild<ImageWidget>("imgFrame");
@@ -164,7 +164,7 @@ std::expected<bool, StarException> QuestTrackerPane::sendEvent(InputEvent const&
     return true;
 
   if (std::holds_alternative<MouseButtonDownEvent>(event) && std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left) {
-    auto mousePos = *context()->mousePosition(event);
+    auto mousePos = *context().mousePosition(event);
     if ((m_expanded && m_expandedFrame->inMember(mousePos)) ||
         (!m_expanded && m_frame->inMember(mousePos))) {
       setExpanded(!m_expanded);

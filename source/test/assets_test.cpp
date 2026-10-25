@@ -41,7 +41,7 @@ namespace {
   }
 
   struct PngIoFailureTag {
-    static constexpr char const* name() { return "PngIoFailure"; }
+    static constexpr std::string_view name() { return "PngIoFailure"; }
   };
   using PngIoFailure = StarError<PngIoFailureTag, StarException>;
 
@@ -143,7 +143,7 @@ const GameTestRegistration assetsSymlinkLoopIsNotFollowed("AssetsTest", "Symlink
   std::error_code ec;
   std::filesystem::create_directories(fsPath(File::relativeTo(tempDir, "real")), ec);
   ASSERT_FALSE(ec) << ec.message();
-  ASSERT_TRUE(File::writeFile("data", File::relativeTo(File::relativeTo(tempDir, "real"), "asset.txt")));
+  ASSERT_TRUE(File::writeFile(String("data"), File::relativeTo(File::relativeTo(tempDir, "real"), "asset.txt")));
   std::filesystem::create_directory_symlink(
       fsPath(File::relativeTo(tempDir, "real")), fsPath(File::relativeTo(tempDir, "link")), ec);
   if (ec)
@@ -203,28 +203,28 @@ const GameTestRegistration assetsConstAnimationCachesRefreshFramesAndParts("Asse
   AnimatedPartSet const frozen = animation;
   auto partResult = frozen.activePart("body");
   ASSERT_TRUE(partResult);
-  auto const& part = **partResult;
+  auto const& part = partResult->get();
   ASSERT_TRUE(part.activeState);
   EXPECT_EQ(part.activeState->frame, 1u);
   auto partFrame = part.properties.get("partFrame");
   ASSERT_TRUE(partFrame);
-  auto partFrameValue = (*partFrame)->toInt();
+  auto partFrameValue = partFrame->get().toInt();
   ASSERT_TRUE(partFrameValue);
   EXPECT_EQ(*partFrameValue, 40);
   auto nextPartFrame = part.nextProperties.get("partFrame");
   ASSERT_TRUE(nextPartFrame);
-  auto nextPartFrameValue = (*nextPartFrame)->toInt();
+  auto nextPartFrameValue = nextPartFrame->get().toInt();
   ASSERT_TRUE(nextPartFrameValue);
   EXPECT_EQ(*nextPartFrameValue, 30);
   auto stateResult = frozen.activeState("movement");
   ASSERT_TRUE(stateResult);
-  auto const& state = **stateResult;
+  auto const& state = stateResult->get();
   EXPECT_EQ(state.frame, 1u);
   EXPECT_EQ(state.nextFrame, 0u);
   EXPECT_FLOAT_EQ(state.frameProgress, 0.5f);
   auto stateFrame = state.properties.get("stateFrame");
   ASSERT_TRUE(stateFrame);
-  auto stateFrameValue = (*stateFrame)->toInt();
+  auto stateFrameValue = stateFrame->get().toInt();
   ASSERT_TRUE(stateFrameValue);
   EXPECT_EQ(*stateFrameValue, 20);
 
@@ -242,7 +242,7 @@ const GameTestRegistration assetsConstAnimationCachesRefreshFramesAndParts("Asse
     auto frame = active.properties.get("partFrame");
     if (!frame)
       return std::unexpected(std::move(frame.error()));
-    auto value = (*frame)->toInt();
+    auto value = frame->get().toInt();
     if (!value)
       return std::unexpected(std::move(value.error()));
     EXPECT_EQ(*value, 40);
@@ -254,19 +254,19 @@ const GameTestRegistration assetsConstAnimationCachesRefreshFramesAndParts("Asse
 
   auto writablePart = animation.parts().get("body");
   ASSERT_TRUE(writablePart);
-  (*writablePart)->partProperties["base"] = false;
-  (*writablePart)->activePartDirty = true;
+  writablePart->get().partProperties["base"] = false;
+  writablePart->get().activePartDirty = true;
   auto updatedPart = animation.activePart("body");
   ASSERT_TRUE(updatedPart);
-  auto base = (*updatedPart)->properties.get("base");
+  auto base = updatedPart->get().properties.get("base");
   ASSERT_TRUE(base);
-  auto baseValue = (*base)->toBool();
+  auto baseValue = base->get().toBool();
   ASSERT_TRUE(baseValue);
   EXPECT_FALSE(*baseValue);
   ASSERT_TRUE(animation.setStateTypeEnabled("movement", false));
   auto disabledPart = animation.activePart("body");
   ASSERT_TRUE(disabledPart);
-  EXPECT_FALSE((*disabledPart)->activeState);
+  EXPECT_FALSE(disabledPart->get().activeState);
 });
 
 const GameTestRegistration assetsWavSignaturesAndPcmSamples("AssetsTest", "WavSignaturesAndPcmSamples", [](GameTest&) {
@@ -294,9 +294,27 @@ const GameTestRegistration assetsWavSignaturesAndPcmSamples("AssetsTest", "WavSi
   EXPECT_EQ(audio->channels(), 1u);
   EXPECT_EQ(audio->sampleRate(), 8000u);
   std::array<std::int16_t, 2> samples{};
-  auto read = audio->read(samples.data(), samples.size());
+  auto read = audio->read(samples);
   ASSERT_TRUE(read);
   ASSERT_EQ(*read, samples.size());
+  EXPECT_EQ(samples[0], 0x1234);
+  EXPECT_EQ(samples[1], -2);
+
+  ASSERT_TRUE(audio->seekSample(1));
+  auto cloned = audio->clone();
+  ASSERT_TRUE(cloned);
+  ASSERT_TRUE(audio->seekSample(0));
+  EXPECT_EQ(cloned->currentSample(), 1u);
+  Audio moved(std::move(*audio));
+  *audio = std::move(*cloned);
+  // Replacing the original decoder must not invalidate a clone's shared PCM storage.
+  ASSERT_TRUE(audio->seekSample(0));
+  moved = std::move(*audio);
+  EXPECT_FALSE(moved.seekSample(3));
+  EXPECT_EQ(moved.currentSample(), 0u);
+  read = moved.read(samples);
+  ASSERT_TRUE(read);
+  EXPECT_EQ(*read, samples.size());
   EXPECT_EQ(samples[0], 0x1234);
   EXPECT_EQ(samples[1], -2);
 
@@ -316,6 +334,55 @@ const GameTestRegistration assetsWavSignaturesAndPcmSamples("AssetsTest", "WavSi
   EXPECT_TRUE(invalidData.error().is<AudioException>());
 });
 
+const GameTestRegistration assetsOggCloneLifetimes("AssetsTest", "OggCloneIndependentCursorsAndLifetime", [](GameTest& fixture) {
+  auto assets = fixture.root().assets();
+  ASSERT_TRUE(assets);
+  auto input = (*assets)->openFile("/sfx/interface/voice_on.ogg");
+  ASSERT_TRUE(input);
+  auto created = Audio::create(std::move(*input), "clone-lifetime.ogg");
+  ASSERT_TRUE(created);
+  std::optional<Audio> owner(std::move(*created));
+  ASSERT_TRUE(owner->compressed());
+  auto total = owner->totalSamples();
+  ASSERT_TRUE(total);
+  ASSERT_GT(*total, 0u);
+  ASSERT_TRUE(owner->seekSample(*total / 2));
+  auto cloned = owner->clone();
+  ASSERT_TRUE(cloned);
+  EXPECT_EQ(cloned->currentSample(), *total / 2);
+  ASSERT_TRUE(owner->seekSample(0));
+  EXPECT_EQ(cloned->currentSample(), *total / 2);
+
+  // A rejected seek leaves the original decoder usable at its existing cursor.
+  EXPECT_FALSE(owner->seekSample(*total + 1));
+  EXPECT_EQ(owner->currentSample(), 0u);
+  std::array<std::int16_t, 64> original{};
+  auto read = owner->read(original);
+  ASSERT_TRUE(read);
+  ASSERT_GT(*read, 0u);
+  owner.reset();
+  ASSERT_TRUE(cloned->seekSample(0));
+  std::array<std::int16_t, 64> replay{};
+  auto replayed = cloned->read(replay);
+  ASSERT_TRUE(replayed);
+  EXPECT_EQ(*replayed, *read);
+  EXPECT_EQ(replay, original);
+
+  ASSERT_TRUE(cloned->seekSample(0));
+  ASSERT_TRUE(cloned->uncompress());
+  EXPECT_FALSE(cloned->compressed());
+  ASSERT_TRUE(cloned->seekSample(0));
+  auto pcmClone = cloned->clone();
+  ASSERT_TRUE(pcmClone);
+  Audio moved(std::move(*pcmClone));
+  *cloned = std::move(moved);
+  replay.fill(0);
+  replayed = cloned->read(replay);
+  ASSERT_TRUE(replayed);
+  EXPECT_EQ(*replayed, *read);
+  EXPECT_EQ(replay, original);
+});
+
 const GameTestRegistration assetsFailedStartupJoinsWorkers("AssetsTest", "FailedStartupJoinsWorkers", [](GameTest& fixture) {
   auto directory = File::temporaryDirectory(fixture.root().random());
   ASSERT_TRUE(directory);
@@ -332,25 +399,25 @@ const GameTestRegistration assetsFailedStartupJoinsWorkers("AssetsTest", "Failed
     EXPECT_TRUE(assets.error().is<AssetException>());
   }
 
-  ASSERT_TRUE(File::writeFile("not json", File::relativeTo(tempDir, "preload.config")));
+  ASSERT_TRUE(File::writeFile(String("not json"), File::relativeTo(tempDir, "preload.config")));
   auto malformed = Assets::create(logger, fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
   ASSERT_FALSE(malformed);
   EXPECT_TRUE(malformed.error().is<AssetException>());
 
-  ASSERT_TRUE(File::writeFile("{}", File::relativeTo(tempDir, "present.json")));
+  ASSERT_TRUE(File::writeFile(String("{}"), File::relativeTo(tempDir, "present.json")));
   ASSERT_TRUE(File::writeFile(
-      "[{\"type\":\"json\",\"path\":\"/present.json\"},{\"type\":\"json\",\"path\":\"/absent.json\"}]",
+      String("[{\"type\":\"json\",\"path\":\"/present.json\"},{\"type\":\"json\",\"path\":\"/absent.json\"}]"),
       File::relativeTo(tempDir, "preload.config")));
   auto missing = Assets::create(logger, fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
   ASSERT_FALSE(missing);
   EXPECT_TRUE(missing.error().is<AssetException>());
 
-  ASSERT_TRUE(File::writeFile("[{\"type\":\"image\",\"path\":\"relative.png\"}]",
+  ASSERT_TRUE(File::writeFile(String("[{\"type\":\"image\",\"path\":\"relative.png\"}]"),
       File::relativeTo(tempDir, "preload.config")));
   auto invalid = Assets::create(logger, fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
   ASSERT_FALSE(invalid);
   EXPECT_TRUE(invalid.error().is<AssetException>());
-  ASSERT_TRUE(File::writeFile("[]", File::relativeTo(tempDir, "preload.config")));
+  ASSERT_TRUE(File::writeFile(String("[]"), File::relativeTo(tempDir, "preload.config")));
   auto valid = Assets::create(logger, fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
   ASSERT_TRUE(valid);
   auto recovered = (*valid)->json("/present.json");
@@ -363,7 +430,7 @@ const GameTestRegistration assetsShutdownWithQueuedImageDependencies("AssetsTest
   ASSERT_TRUE(directory);
   auto tempDir = std::move(*directory);
   auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(tempDir)); });
-  ASSERT_TRUE(File::writeFile("[]", File::relativeTo(tempDir, "preload.config")));
+  ASSERT_TRUE(File::writeFile(String("[]"), File::relativeTo(tempDir, "preload.config")));
   auto bytes = pngTestBytes(fixture.root().logger());
   ASSERT_TRUE(bytes);
   ASSERT_TRUE(File::writeFile(*bytes, File::relativeTo(tempDir, "sample.png")));
@@ -409,7 +476,7 @@ const GameTestRegistration damagedPngHeaderAndImageDataThrow("ImageTest", "Damag
   ASSERT_TRUE(encoded);
   auto bytes = std::move(*encoded);
   ASSERT_GT(bytes.size(), 41u);
-  ASSERT_EQ(std::memcmp(bytes.ptr() + 37, "IDAT", 4), 0);
+  ASSERT_EQ(std::memcmp(bytes.span().data() + 37, "IDAT", 4), 0);
   auto badHeader = bytes;
   badHeader[29] ^= 1; // IHDR CRC: signature intact, metadata parsing fails.
   auto badPixels = bytes;

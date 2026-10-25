@@ -94,21 +94,21 @@ std::expected<void, StarException> MaterialDatabase::load(std::shared_ptr<Assets
     if (!collisionName) return std::unexpected(std::move(collisionName.error()));
     auto collision = CollisionKindNames->getLeft(*collisionName);
     if (!collision) return std::unexpected(std::move(collision.error()));
-    auto blocks = meta.getBool("blocksLiquidFlow", isSolidColliding(**collision));
+    auto blocks = meta.getBool("blocksLiquidFlow", isSolidColliding(collision->get()));
     if (!blocks) return std::unexpected(std::move(blocks.error()));
-    setMetaMaterial(matId, MetaMaterialInfo{matName, matId, **collision, *blocks});
+    setMetaMaterial(matId, MetaMaterialInfo{matName, matId, collision->get(), *blocks});
   }
   auto materials = assets->scanExtension("material");
   if (!materials) return std::unexpected(std::move(materials.error()));
   auto mods = assets->scanExtension("matmod");
   if (!mods) return std::unexpected(std::move(mods.error()));
-  auto queuedMaterials = assets->queueJsons(**materials);
+  auto queuedMaterials = assets->queueJsons(materials->get());
   if (!queuedMaterials) return std::unexpected(std::move(queuedMaterials.error()));
-  auto queuedMods = assets->queueJsons(**mods);
+  auto queuedMods = assets->queueJsons(mods->get());
   if (!queuedMods) return std::unexpected(std::move(queuedMods.error()));
-  for (auto const& path : **materials) {
+  for (auto const& path : materials->get()) {
     auto const& file = path.string();
-    auto readFile = [&]() -> std::expected<void, StarException> {
+    auto readFile = [&, &database = *this]() -> std::expected<void, StarException> {
       auto config = assets->json(file);
       if (!config) return std::unexpected(std::move(config.error()));
       MaterialInfo material;
@@ -229,7 +229,7 @@ std::expected<void, StarException> MaterialDatabase::load(std::shared_ptr<Assets
       if (!collisionName) return std::unexpected(std::move(collisionName.error()));
       auto collision = CollisionKindNames->getLeft(*collisionName);
       if (!collision) return std::unexpected(std::move(collision.error()));
-      material.collisionKind = **collision;
+      material.collisionKind = collision->get();
       {
         auto value = config->getBool("foregroundOnly", false);
         if (!value) return std::unexpected(std::move(value.error()));
@@ -247,11 +247,11 @@ std::expected<void, StarException> MaterialDatabase::load(std::shared_ptr<Assets
       }
       if (material.id != *id || !isRealMaterial(material.id))
         return std::unexpected(MaterialException(strf("Material id {} does not fall in the valid range\n", *id)));
-      if (containsMaterial(material.id))
+      if (database.containsMaterial(material.id))
         return std::unexpected(MaterialException(strf("Duplicate material id {} found for material {}", material.id, material.name)));
-      if (isMaterialName(material.name))
+      if (database.isMaterialName(material.name))
         return std::unexpected(MaterialException(strf("Duplicate material name '{}' found", material.name)));
-      setMaterial(material.id, material);
+      database.setMaterial(material.id, material);
 
       auto interactions = config->getArray("liquidInteractions", {});
       if (!interactions) return std::unexpected(std::move(interactions.error()));
@@ -274,16 +274,16 @@ std::expected<void, StarException> MaterialDatabase::load(std::shared_ptr<Assets
           if (!value) return std::unexpected(std::move(value.error()));
           interaction.topOnly = std::move(*value);
         }
-        m_liquidMaterialInteractions[{(LiquidId)*liquid, material.id}] = interaction;
+        database.m_liquidMaterialInteractions[{(LiquidId)*liquid, material.id}] = interaction;
       }
       return {};
     };
     auto loaded = readFile();
     if (!loaded) return std::unexpected(MaterialException(strf("Error loading material file {}", file), loaded.error()));
   }
-  for (auto const& path : **mods) {
+  for (auto const& path : mods->get()) {
     auto const& file = path.string();
-    auto readFile = [&]() -> std::expected<void, StarException> {
+    auto readFile = [&, &database = *this]() -> std::expected<void, StarException> {
       auto config = assets->json(file);
       if (!config) return std::unexpected(std::move(config.error()));
       ModInfo mod;
@@ -384,12 +384,12 @@ std::expected<void, StarException> MaterialDatabase::load(std::shared_ptr<Assets
 
       if (mod.id != *id || !isRealMod(mod.id))
         return std::unexpected(MaterialException(strf("Mod id {} does not fall in the valid range\n", mod.id)));
-      if (containsMod(mod.id))
+      if (database.containsMod(mod.id))
         return std::unexpected(MaterialException(strf("Duplicate mod id {} found for mod {}", mod.id, mod.name)));
-      if (m_modIndex.contains(mod.name) || m_metaModIndex.hasLeftValue(mod.name))
+      if (database.m_modIndex.contains(mod.name) || database.m_metaModIndex.hasLeftValue(mod.name))
         return std::unexpected(MaterialException(strf("Duplicate mod name '{}' found", mod.name)));
-      setMod(mod.id, mod);
-      m_modIndex[mod.name] = mod.id;
+      database.setMod(mod.id, mod);
+      database.m_modIndex[mod.name] = mod.id;
       auto interactions = config->getArray("liquidInteractions", {});
       if (!interactions) return std::unexpected(std::move(interactions.error()));
       for (auto const& entry : *interactions) {
@@ -411,7 +411,7 @@ std::expected<void, StarException> MaterialDatabase::load(std::shared_ptr<Assets
           if (!value) return std::unexpected(std::move(value.error()));
           interaction.topOnly = std::move(*value);
         }
-        m_liquidModInteractions[{(LiquidId)*liquid, mod.id}] = interaction;
+        database.m_liquidModInteractions[{(LiquidId)*liquid, mod.id}] = interaction;
       }
       return {};
     };
@@ -453,58 +453,58 @@ std::expected<MaterialId, StarException> MaterialDatabase::materialId(String con
   if (auto id = m_metaMaterialIndex.maybe(name)) return *id;
   auto id = m_materialIndex.get(name);
   if (!id) return std::unexpected(std::move(id.error()));
-  return **id;
+  return id->get();
 }
 
 std::expected<String, StarException> MaterialDatabase::materialName(MaterialId id) const {
   if (isRealMaterial(id)) {
     auto info = getMaterialInfo(id);
     if (!info) return std::unexpected(std::move(info.error()));
-    return (*info)->name;
+    return info->get().name;
   }
   auto info = getMetaMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->name;
+  return info->get().name;
 }
 
 std::expected<std::optional<String>, StarException> MaterialDatabase::materialPath(MaterialId id) const {
   if (!isRealMaterial(id)) return std::optional<String>();
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->path;
+  return info->get().path;
 }
 
 std::expected<std::optional<Json>, StarException> MaterialDatabase::materialConfig(MaterialId id) const {
   if (!isRealMaterial(id)) return std::optional<Json>();
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->config;
+  return info->get().config;
 }
 
 std::expected<String, StarException> MaterialDatabase::materialDescription(MaterialId id, String const& species) const {
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  auto description = (*info)->descriptions.getString("description");
+  auto description = info->get().descriptions.getString("description");
   if (!description) return std::unexpected(std::move(description.error()));
-  return (*info)->descriptions.getString(strf("{}Description", species), *description);
+  return info->get().descriptions.getString(strf("{}Description", species), *description);
 }
 
 std::expected<String, StarException> MaterialDatabase::materialDescription(MaterialId id) const {
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->descriptions.getString("description");
+  return info->get().descriptions.getString("description");
 }
 
 std::expected<String, StarException> MaterialDatabase::materialShortDescription(MaterialId id) const {
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->descriptions.getString("shortdescription");
+  return info->get().descriptions.getString("shortdescription");
 }
 
 std::expected<String, StarException> MaterialDatabase::materialCategory(MaterialId id) const {
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->category;
+  return info->get().category;
 }
 
 StringList MaterialDatabase::modNames() const {
@@ -528,48 +528,48 @@ std::expected<ModId, StarException> MaterialDatabase::modId(String const& name) 
   if (auto id = m_metaModIndex.maybeRight(name)) return *id;
   auto id = m_modIndex.get(name);
   if (!id) return std::unexpected(std::move(id.error()));
-  return **id;
+  return id->get();
 }
 
-std::expected<String const*, StarException> MaterialDatabase::modName(ModId id) const {
+std::expected<std::reference_wrapper<String const>, StarException> MaterialDatabase::modName(ModId id) const {
   if (!isRealMod(id)) return m_metaModIndex.getLeft(id);
   auto info = getModInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return &(*info)->name;
+  return std::cref(info->get().name);
 }
 
 std::expected<std::optional<String>, StarException> MaterialDatabase::modPath(ModId id) const {
   if (!isRealMod(id)) return std::optional<String>();
   auto info = getModInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->path;
+  return info->get().path;
 }
 
 std::expected<std::optional<Json>, StarException> MaterialDatabase::modConfig(ModId id) const {
   if (!isRealMod(id)) return std::optional<Json>();
   auto info = getModInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->config;
+  return info->get().config;
 }
 
 std::expected<String, StarException> MaterialDatabase::modDescription(ModId id, String const& species) const {
   auto info = getModInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  auto description = (*info)->descriptions.getString("description");
+  auto description = info->get().descriptions.getString("description");
   if (!description) return std::unexpected(std::move(description.error()));
-  return (*info)->descriptions.getString(strf("{}Description", species), *description);
+  return info->get().descriptions.getString(strf("{}Description", species), *description);
 }
 
 std::expected<String, StarException> MaterialDatabase::modDescription(ModId id) const {
   auto info = getModInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->descriptions.getString("description");
+  return info->get().descriptions.getString("description");
 }
 
 std::expected<String, StarException> MaterialDatabase::modShortDescription(ModId id) const {
   auto info = getModInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->descriptions.getString("shortdescription");
+  return info->get().descriptions.getString("shortdescription");
 }
 
 String MaterialDatabase::defaultFootstepSound() const {
@@ -580,33 +580,33 @@ std::expected<TileDamageParameters, StarException> MaterialDatabase::materialDam
   if (!isRealMaterial(id)) return TileDamageParameters();
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->damageParameters;
+  return info->get().damageParameters;
 }
 
 std::expected<TileDamageParameters, StarException> MaterialDatabase::modDamageParameters(ModId id) const {
   if (!isRealMod(id)) return TileDamageParameters();
   auto info = getModInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->damageParameters;
+  return info->get().damageParameters;
 }
 
 std::expected<bool, StarException> MaterialDatabase::modBreaksWithTile(ModId id) const {
   if (!isRealMod(id)) return false;
   auto info = getModInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->breaksWithTile;
+  return info->get().breaksWithTile;
 }
 
 std::expected<CollisionKind, StarException> MaterialDatabase::materialCollisionKind(MaterialId id) const {
   if (isRealMaterial(id)) {
     auto info = getMaterialInfo(id);
     if (!info) return std::unexpected(std::move(info.error()));
-    return (*info)->collisionKind;
+    return info->get().collisionKind;
   }
   if (containsMetaMaterial(id)) {
     auto info = getMetaMaterialInfo(id);
     if (!info) return std::unexpected(std::move(info.error()));
-    return (*info)->collisionKind;
+    return info->get().collisionKind;
   }
   return CollisionKind::Block;
 }
@@ -615,14 +615,14 @@ std::expected<bool, StarException> MaterialDatabase::canPlaceInLayer(MaterialId 
   if (layer != TileLayer::Background) return true;
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return !(*info)->foregroundOnly;
+  return !info->get().foregroundOnly;
 }
 
 std::expected<ItemDescriptor, StarException> MaterialDatabase::materialItemDrop(MaterialId id) const {
   if (isRealMaterial(id)) {
     auto info = getMaterialInfo(id);
     if (!info) return std::unexpected(std::move(info.error()));
-    if (!(*info)->itemDrop.empty()) return ItemDescriptor::create((*info)->itemDrop, 1, JsonObject());
+    if (!info->get().itemDrop.empty()) return ItemDescriptor::create(info->get().itemDrop, 1, JsonObject());
   }
   return ItemDescriptor();
 }
@@ -631,7 +631,7 @@ std::expected<ItemDescriptor, StarException> MaterialDatabase::modItemDrop(ModId
   if (isRealMod(id)) {
     auto info = getModInfo(id);
     if (!info) return std::unexpected(std::move(info.error()));
-    if (!(*info)->itemDrop.empty()) return ItemDescriptor::create((*info)->itemDrop, 1);
+    if (!info->get().itemDrop.empty()) return ItemDescriptor::create(info->get().itemDrop, 1);
   }
   return ItemDescriptor();
 }
@@ -640,7 +640,7 @@ std::expected<MaterialColorVariant, StarException> MaterialDatabase::materialCol
   if (isRealMaterial(id)) {
     auto info = getMaterialInfo(id);
     if (!info) return std::unexpected(std::move(info.error()));
-    if ((*info)->materialRenderProfile) return (*info)->materialRenderProfile->colorVariants;
+    if (info->get().materialRenderProfile) return info->get().materialRenderProfile->colorVariants;
   }
   return 0;
 }
@@ -649,7 +649,7 @@ std::expected<MaterialColorVariant, StarException> MaterialDatabase::modColorVar
   if (isRealMod(id)) {
     auto info = getModInfo(id);
     if (!info) return std::unexpected(std::move(info.error()));
-    if ((*info)->modRenderProfile) return (*info)->modRenderProfile->colorVariants;
+    if (info->get().modRenderProfile) return info->get().modRenderProfile->colorVariants;
   }
   return 0;
 }
@@ -658,7 +658,7 @@ std::expected<bool, StarException> MaterialDatabase::isMultiColor(MaterialId id)
   if (isRealMaterial(id)) {
     auto info = getMaterialInfo(id);
     if (!info) return std::unexpected(std::move(info.error()));
-    if ((*info)->materialRenderProfile) return (*info)->materialRenderProfile->colorVariants > 0;
+    if (info->get().materialRenderProfile) return info->get().materialRenderProfile->colorVariants > 0;
   }
   return false;
 }
@@ -667,12 +667,12 @@ std::expected<std::shared_ptr<ParticleConfig>, StarException> MaterialDatabase::
   if (isRealMod(modId)) {
     auto info = getModInfo(modId);
     if (!info) return std::unexpected(std::move(info.error()));
-    if ((*info)->miningParticle) return (*info)->miningParticle;
+    if (info->get().miningParticle) return info->get().miningParticle;
   }
   if (isRealMaterial(materialId)) {
     auto info = getMaterialInfo(materialId);
     if (!info) return std::unexpected(std::move(info.error()));
-    if ((*info)->miningParticle) return (*info)->miningParticle;
+    if (info->get().miningParticle) return info->get().miningParticle;
   }
   return std::shared_ptr<ParticleConfig>();
 }
@@ -681,12 +681,12 @@ std::expected<String, StarException> MaterialDatabase::miningSound(MaterialId ma
   if (isRealMod(modId)) {
     auto info = getModInfo(modId);
     if (!info) return std::unexpected(std::move(info.error()));
-    if (!(*info)->miningSounds.empty()) return m_random.randValueFrom((*info)->miningSounds);
+    if (!info->get().miningSounds.empty()) return m_random.randValueFrom(info->get().miningSounds);
   }
   if (isRealMaterial(materialId)) {
     auto info = getMaterialInfo(materialId);
     if (!info) return std::unexpected(std::move(info.error()));
-    if (!(*info)->miningSounds.empty()) return m_random.randValueFrom((*info)->miningSounds);
+    if (!info->get().miningSounds.empty()) return m_random.randValueFrom(info->get().miningSounds);
   }
   return String();
 }
@@ -695,12 +695,12 @@ std::expected<String, StarException> MaterialDatabase::footstepSound(MaterialId 
   if (isRealMod(modId)) {
     auto info = getModInfo(modId);
     if (!info) return std::unexpected(std::move(info.error()));
-    if (!(*info)->footstepSound.empty()) return (*info)->footstepSound;
+    if (!info->get().footstepSound.empty()) return info->get().footstepSound;
   }
   if (isRealMaterial(materialId)) {
     auto info = getMaterialInfo(materialId);
     if (!info) return std::unexpected(std::move(info.error()));
-    if (!(*info)->footstepSound.empty()) return (*info)->footstepSound;
+    if (!info->get().footstepSound.empty()) return info->get().footstepSound;
   }
   return m_defaultFootstepSound;
 }
@@ -708,7 +708,7 @@ std::expected<String, StarException> MaterialDatabase::footstepSound(MaterialId 
 std::expected<Color, StarException> MaterialDatabase::materialParticleColor(MaterialId id, MaterialHue hueShift) const {
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  auto color = (*info)->particleColor;
+  auto color = info->get().particleColor;
   color.setHue(pfmod(color.hue() + materialHueToDegrees(hueShift) / 360.0f, 1.0f));
   return color;
 }
@@ -717,35 +717,35 @@ std::expected<bool, StarException> MaterialDatabase::isTilledMod(ModId id) const
   if (!isRealMod(id)) return false;
   auto info = getModInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->tilled;
+  return info->get().tilled;
 }
 
 std::expected<bool, StarException> MaterialDatabase::isSoil(MaterialId id) const {
   if (!isRealMaterial(id)) return false;
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->soil;
+  return info->get().soil;
 }
 
 std::expected<ModId, StarException> MaterialDatabase::tilledModFor(MaterialId id) const {
   if (!isRealMaterial(id)) return NoModId;
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->tillableMod;
+  return info->get().tillableMod;
 }
 
 std::expected<bool, StarException> MaterialDatabase::isFallingMaterial(MaterialId id) const {
   if (!isRealMaterial(id)) return false;
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->falling;
+  return info->get().falling;
 }
 
 std::expected<bool, StarException> MaterialDatabase::isCascadingFallingMaterial(MaterialId id) const {
   if (!isRealMaterial(id)) return false;
   auto info = getMaterialInfo(id);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->cascading;
+  return info->get().cascading;
 }
 
 std::expected<bool, StarException> MaterialDatabase::supportsMod(MaterialId materialId, ModId modId) const {
@@ -753,7 +753,7 @@ std::expected<bool, StarException> MaterialDatabase::supportsMod(MaterialId mate
   if (!isRealMaterial(materialId) || !isRealMod(modId)) return false;
   auto info = getMaterialInfo(materialId);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->supportsMods;
+  return info->get().supportsMods;
 }
 
 MaterialDatabase::MetaMaterialInfo::MetaMaterialInfo(String name, MaterialId id, CollisionKind collisionKind, bool blocksLiquidFlow)
@@ -801,19 +801,19 @@ void MaterialDatabase::setMod(ModId modId, ModInfo info) {
   m_mods[modId] = std::make_shared<ModInfo>(info);
 }
 
-std::expected<MaterialDatabase::MetaMaterialInfo const*, StarException> MaterialDatabase::getMetaMaterialInfo(MaterialId id) const {
+std::expected<std::reference_wrapper<MaterialDatabase::MetaMaterialInfo const>, StarException> MaterialDatabase::getMetaMaterialInfo(MaterialId id) const {
   if (!containsMetaMaterial(id)) return std::unexpected(MaterialException(strf("No such metamaterial id: {}\n", id)));
-  return m_metaMaterials[metaMaterialIndex(id)].get();
+  return std::cref(*m_metaMaterials[metaMaterialIndex(id)]);
 }
 
-std::expected<MaterialDatabase::MaterialInfo const*, StarException> MaterialDatabase::getMaterialInfo(MaterialId id) const {
+std::expected<std::reference_wrapper<MaterialDatabase::MaterialInfo const>, StarException> MaterialDatabase::getMaterialInfo(MaterialId id) const {
   if (!containsMaterial(id)) return std::unexpected(MaterialException(strf("No such material id: {}\n", id)));
-  return m_materials[id].get();
+  return std::cref(*m_materials[id]);
 }
 
-std::expected<MaterialDatabase::ModInfo const*, StarException> MaterialDatabase::getModInfo(ModId id) const {
+std::expected<std::reference_wrapper<MaterialDatabase::ModInfo const>, StarException> MaterialDatabase::getModInfo(ModId id) const {
   if (!containsMod(id)) return std::unexpected(MaterialException(strf("No such mod id: {}\n", id)));
-  return m_mods[id].get();
+  return std::cref(*m_mods[id]);
 }
 
 }

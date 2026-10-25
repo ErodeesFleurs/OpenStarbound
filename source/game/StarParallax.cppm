@@ -23,8 +23,8 @@ namespace Star {
 class Root;
 
 struct ParallaxLayer {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
 
   ParallaxLayer();
   [[nodiscard]] static std::expected<ParallaxLayer, StarException> create(Json const& store);
@@ -57,8 +57,8 @@ struct ParallaxLayer {
 };
 typedef List<ParallaxLayer> ParallaxLayers;
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
 
 // Object managing and rendering the parallax for a World
 class Parallax {

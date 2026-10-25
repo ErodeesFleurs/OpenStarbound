@@ -149,20 +149,20 @@ std::expected<std::shared_ptr<CharSelectionPane>, StarException> CharSelectionPa
 }
 
 std::expected<void, StarException> CharSelectionPane::init() {
-  GuiReader guiReader(*context());
-  guiReader.registerCallback("playerUpButton", [this](Widget*) { return shiftCharacters(-1); });
-  guiReader.registerCallback("playerDownButton", [this](Widget*) { return shiftCharacters(1); });
-  guiReader.registerCallback("charSelector1", [this](Widget*) { return selectCharacter(0); });
-  guiReader.registerCallback("charSelector2", [this](Widget*) { return selectCharacter(1); });
-  guiReader.registerCallback("charSelector3", [this](Widget*) { return selectCharacter(2); });
-  guiReader.registerCallback("charSelector4", [this](Widget*) { return selectCharacter(3); });
-  guiReader.registerCallback("createCharButton", [this](Widget*) { return m_createCallback(); });
-  guiReader.registerCallback("searchCharacter", [this](Widget* obj) -> std::expected<void, StarException> {
+  GuiReader guiReader(context());
+  guiReader.registerCallback("playerUpButton", [this](Widget&) { return shiftCharacters(-1); });
+  guiReader.registerCallback("playerDownButton", [this](Widget&) { return shiftCharacters(1); });
+  guiReader.registerCallback("charSelector1", [this](Widget&) { return selectCharacter(0); });
+  guiReader.registerCallback("charSelector2", [this](Widget&) { return selectCharacter(1); });
+  guiReader.registerCallback("charSelector3", [this](Widget&) { return selectCharacter(2); });
+  guiReader.registerCallback("charSelector4", [this](Widget&) { return selectCharacter(3); });
+  guiReader.registerCallback("createCharButton", [this](Widget&) { return m_createCallback(); });
+  guiReader.registerCallback("searchCharacter", [this](Widget& obj) -> std::expected<void, StarException> {
     m_downScroll = 0;
-    auto textBox = convert<TextBoxWidget>(obj);
+    auto textBox = rconvert<TextBoxWidget>(obj);
     if (!textBox)
       return std::unexpected(std::move(textBox.error()));
-    auto trimmed = (*textBox)->getText().trim();
+    auto trimmed = textBox->get().getText().trim();
     if (!trimmed)
       return std::unexpected(std::move(trimmed.error()));
     auto lowered = trimmed->toLower();
@@ -171,7 +171,7 @@ std::expected<void, StarException> CharSelectionPane::init() {
     m_search = std::move(*lowered);
     return updateCharacterPlates();
   });
-  guiReader.registerCallback("clearSearch", [this](Widget*) -> std::expected<void, StarException> {
+  guiReader.registerCallback("clearSearch", [this](Widget&) -> std::expected<void, StarException> {
     auto search = requireChild<TextBoxWidget>("searchCharacter");
     if (!search)
       return std::unexpected(std::move(search.error()));
@@ -179,32 +179,32 @@ std::expected<void, StarException> CharSelectionPane::init() {
       return std::unexpected(std::move(result.error()));
     return {};
   });
-  guiReader.registerCallback("toggleDismissCheckbox", [this](Widget* widget) -> std::expected<void, StarException> {
-    auto configuration = context()->root().configuration();
+  guiReader.registerCallback("toggleDismissCheckbox", [this](Widget& widget) -> std::expected<void, StarException> {
+    auto configuration = context().root().configuration();
     if (!configuration)
       return std::unexpected(std::move(configuration.error()));
-    auto button = convert<ButtonWidget>(widget);
+    auto button = rconvert<ButtonWidget>(widget);
     if (!button)
       return std::unexpected(std::move(button.error()));
-    return (*configuration)->set("characterSwapDismisses", (*button)->isChecked());
+    return (*configuration)->set("characterSwapDismisses", button->get().isChecked());
   });
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   auto config = (*assets)->json("/interface/windowconfig/charselection.config");
   if (!config)
     return std::unexpected(std::move(config.error()));
-  return guiReader.construct(*config, this);
+  return guiReader.construct(*config, *this);
 }
 
 std::expected<bool, StarException> CharSelectionPane::sendEvent(InputEvent const& event) {
   if (m_visible) {
-    if (auto mouseWheel = std::get_if<MouseWheelEvent>(&event)) {
-      if (inMember(*context()->mousePosition(event))) {
-        if (mouseWheel->mouseWheel == MouseWheel::Down) {
+    if (std::holds_alternative<MouseWheelEvent>(event)) {
+      if (inMember(*context().mousePosition(event))) {
+        if (std::get<MouseWheelEvent>(event).mouseWheel == MouseWheel::Down) {
           if (auto result = shiftCharacters(1); !result)
             return std::unexpected(std::move(result.error()));
-        } else if (mouseWheel->mouseWheel == MouseWheel::Up) {
+        } else if (std::get<MouseWheelEvent>(event).mouseWheel == MouseWheel::Up) {
           if (auto result = shiftCharacters(-1); !result)
             return std::unexpected(std::move(result.error()));
         }
@@ -241,7 +241,7 @@ std::expected<void, StarException> CharSelectionPane::selectCharacter(unsigned b
     if (!*player)
       return std::unexpected(GuiException("Selected character could not be loaded"));
     if ((*player)->isPermaDead() && !(*player)->isAdmin()) {
-      auto assets = context()->root().assets();
+      auto assets = context().root().assets();
       if (!assets)
         return std::unexpected(std::move(assets.error()));
       auto soundsConfig = (*assets)->json("/interface.config:buttonClickFailSound");
@@ -250,11 +250,11 @@ std::expected<void, StarException> CharSelectionPane::selectCharacter(unsigned b
       auto sounds = soundsConfig->toArray();
       if (!sounds)
         return std::unexpected(std::move(sounds.error()));
-      auto sound = context()->root().random().randValueFrom(*sounds, "").toString();
+      auto sound = context().root().random().randValueFrom(*sounds, "").toString();
       if (!sound)
         return std::unexpected(std::move(sound.error()));
       if (!sound->empty()) {
-        if (auto result = context()->playAudio(*sound); !result)
+        if (auto result = context().playAudio(*sound); !result)
           return std::unexpected(std::move(result.error()));
       }
       return {};
@@ -285,7 +285,7 @@ std::expected<void, StarException> CharSelectionPane::updateCharacterPlates() {
         if (auto result = (*selector)->setPlayer(*player); !result)
           return std::unexpected(std::move(result.error()));
         if (!m_readOnly) {
-          if (auto result = (*selector)->enableDelete([this, playerUuid](Widget*) { return m_deleteCallback(playerUuid); }); !result)
+          if (auto result = (*selector)->enableDelete([this, playerUuid](Widget&) { return m_deleteCallback(playerUuid); }); !result)
             return std::unexpected(std::move(result.error()));
         }
         return {};

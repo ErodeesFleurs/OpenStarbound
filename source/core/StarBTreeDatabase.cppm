@@ -17,7 +17,7 @@ import star.logging;
 namespace Star {
 
 struct DBExceptionTag {
-  static constexpr char const* name() { return "DBException"; }
+  static constexpr std::string_view name() { return "DBException"; }
 };
 using DBException = StarError<DBExceptionTag, IOException>;
 
@@ -113,12 +113,12 @@ private:
   static std::uint32_t const HeaderSize = 512;
 
   // 8 byte magic file identifier
-  static char const* const VersionMagic;
+  static std::array<char, 8> const VersionMagic;
   static std::uint32_t const VersionMagicSize = 8;
   // 2 byte leaf and index start markers.
-  static char const* const FreeIndexMagic;
-  static char const* const IndexMagic;
-  static char const* const LeafMagic;
+  static std::array<char, 2> const FreeIndexMagic;
+  static std::array<char, 2> const IndexMagic;
+  static std::array<char, 2> const LeafMagic;
   // static uint32_t const BlockMagicSize = 2;
   static std::size_t const BTreeRootSelectorBit = 32;
   static std::size_t const BTreeRootInfoStart = 33;
@@ -201,7 +201,7 @@ private:
     typedef std::shared_ptr<IndexNode> Index;
     typedef std::shared_ptr<LeafNode> Leaf;
 
-    explicit BTreeImpl(BTreeDatabase& database) : parent(&database) {}
+    explicit BTreeImpl(BTreeDatabase& database) : parent(database) {}
 
     Pointer rootPointer();
     bool rootIsLeaf();
@@ -241,15 +241,15 @@ private:
     std::optional<Pointer> nextLeaf(Leaf const& leaf);
     void setNextLeaf(Leaf& leaf, std::optional<Pointer> n);
 
-    BTreeDatabase* parent;
+    BTreeDatabase& parent;
   };
 
-  [[nodiscard]] std::expected<void, StarException> readBlock(BlockIndex blockIndex, std::size_t blockOffset, char* block, std::size_t size) const;
+  [[nodiscard]] std::expected<void, StarException> readBlock(BlockIndex blockIndex, std::size_t blockOffset, std::span<char> block) const;
   [[nodiscard]] std::expected<ByteArray, StarException> readBlock(BlockIndex blockIndex) const;
   [[nodiscard]] std::expected<void, StarException> updateBlock(BlockIndex blockIndex, ByteArray const& block);
 
-  [[nodiscard]] std::expected<void, StarException> rawReadBlock(BlockIndex blockIndex, std::size_t blockOffset, char* block, std::size_t size) const;
-  [[nodiscard]] std::expected<void, StarException> rawWriteBlock(BlockIndex blockIndex, std::size_t blockOffset, char const* block, std::size_t size);
+  [[nodiscard]] std::expected<void, StarException> rawReadBlock(BlockIndex blockIndex, std::size_t blockOffset, std::span<char> block) const;
+  [[nodiscard]] std::expected<void, StarException> rawWriteBlock(BlockIndex blockIndex, std::size_t blockOffset, std::span<char const> block);
 
   [[nodiscard]] std::expected<FreeIndexBlock, StarException> readFreeIndexBlock(BlockIndex blockIndex);
   [[nodiscard]] std::expected<void, StarException> writeFreeIndexBlock(BlockIndex blockIndex, FreeIndexBlock indexBlock);
@@ -271,7 +271,7 @@ private:
   [[nodiscard]] std::expected<bool, StarException> tryFlatten();
   [[nodiscard]] std::expected<bool, StarException> flattenVisitor(BTreeImpl::Index& index, BlockIndex& count);
 
-  [[nodiscard]] std::expected<void, StarException> checkIfOpen(char const* methodName, bool shouldBeOpen) const;
+  [[nodiscard]] std::expected<void, StarException> checkIfOpen(std::string_view methodName, bool shouldBeOpen) const;
   [[nodiscard]] std::expected<void, StarException> checkBlockIndex(std::size_t blockIndex) const;
   [[nodiscard]] std::expected<void, StarException> checkKeySize(ByteArray const& k) const;
   std::uint32_t maxFreeIndexLength() const;

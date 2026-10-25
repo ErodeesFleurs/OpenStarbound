@@ -193,24 +193,24 @@ std::expected<void, StarException> EntityMap::updateAllEntities(EntityCallback c
     return {};
   };
 
-  // Even if there is no sort order, we still copy pointers to a temporary
-  // list, so that it is safe to call addEntity from the callback.
+  // Snapshot entry references so adding entities from a callback is safe.
+  // Removing entities during callbacks remains unsupported.
   m_entrySortBuffer.clear();
   for (auto const& entry : m_spatialMap.entries())
-    m_entrySortBuffer.append(&entry.second);
+    m_entrySortBuffer.append(std::cref(entry.second));
 
   if (sortOrder) {
     m_entrySortBuffer.sort([&sortOrder](auto a, auto b) {
-        return sortOrder(a->value, b->value);
+        return sortOrder(a.get().value, b.get().value);
       });
   }
 
   for (auto entry : m_entrySortBuffer) {
     if (callback) {
-      auto result = callback(entry->value);
+      auto result = callback(entry.get().value);
       if (!result) return std::unexpected(std::move(result.error()));
     }
-    auto result = updateEntityInfo(*entry);
+    auto result = updateEntityInfo(entry.get());
     if (!result) return std::unexpected(std::move(result.error()));
   }
   return {};
@@ -311,21 +311,21 @@ std::expected<void, StarException> EntityMap::forEachEntityAtTile(Vec2I const& p
 std::expected<void, StarException> EntityMap::forAllEntities(EntityCallback const& callback, std::function<bool(std::shared_ptr<Entity> const&, std::shared_ptr<Entity> const&)> sortOrder) const {
   if (!callback)
     return std::unexpected(EntityMapException("Missing EntityMap::forAllEntities callback"));
-  // Even if there is no sort order, we still copy pointers to a temporary
-  // list, so that it is safe to call addEntity from the callback.
-  List<std::shared_ptr<Entity> const*> allEntities;
+  // Snapshot owner references so adding entities from a callback is safe.
+  // Removing entities during callbacks remains unsupported.
+  List<std::reference_wrapper<std::shared_ptr<Entity> const>> allEntities;
   allEntities.reserve(m_spatialMap.size());
   for (auto const& entry : m_spatialMap.entries())
-    allEntities.append(&entry.second.value);
+    allEntities.append(std::cref(entry.second.value));
 
   if (sortOrder) {
-    allEntities.sort([&sortOrder](std::shared_ptr<Entity> const* a, std::shared_ptr<Entity> const* b) {
-        return sortOrder(*a, *b);
+    allEntities.sort([&sortOrder](auto a, auto b) {
+        return sortOrder(a.get(), b.get());
       });
   }
 
-  for (auto ptr : allEntities) {
-    auto& entity = *ptr;
+  for (auto borrowed : allEntities) {
+    auto const& entity = borrowed.get();
     auto result = callback(entity);
     if (!result) {
       if (!EntityTypeNames) return std::unexpected(EntityTypeNames.error());
@@ -334,7 +334,7 @@ std::expected<void, StarException> EntityMap::forAllEntities(EntityCallback cons
       auto name = entity->name();
       if (!name) return std::unexpected(std::move(name.error()));
       auto logged = entity->root().logger().error("[EntityMap] Exception caught running forAllEntities callback for {} entity {} (named \"{}\")",
-          **type, entity->entityId(), *name);
+          type->get(), entity->entityId(), *name);
       if (!logged) return std::unexpected(std::move(logged.error()));
       return std::unexpected(std::move(result.error()));
     }

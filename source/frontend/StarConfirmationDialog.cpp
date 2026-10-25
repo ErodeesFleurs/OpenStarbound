@@ -81,12 +81,12 @@ std::expected<std::shared_ptr<ConfirmationDialog>, StarException> ConfirmationDi
 std::expected<void, StarException> ConfirmationDialog::displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise) {
   m_resultPromise = std::move(resultPromise);
   return displayConfirmation(dialogConfig,
-    [this](Widget*) { return m_resultPromise->fulfill(true); },
-    [this](Widget*) { return m_resultPromise->fulfill(false); });
+    [this](Widget&) { return m_resultPromise->fulfill(true); },
+    [this](Widget&) { return m_resultPromise->fulfill(false); });
 }
 
 std::expected<void, StarException> ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCallbackFunc okCallback, WidgetCallbackFunc cancelCallback) {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   Json config = dialogConfig;
@@ -100,12 +100,12 @@ std::expected<void, StarException> ConfirmationDialog::displayConfirmation(Json 
     config = std::move(*loaded);
   }
   removeAllChildren();
-  GuiReader reader(*context());
+  GuiReader reader(context());
   m_okCallback = std::move(okCallback);
   m_cancelCallback = std::move(cancelCallback);
-  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { dismiss(); return {}; });
-  reader.registerCallback("cancel", [this](Widget*) -> std::expected<void, StarException> { dismiss(); return {}; });
-  reader.registerCallback("ok", [this](Widget*) { return ok(); });
+  reader.registerCallback("close", [this](Widget&) -> std::expected<void, StarException> { dismiss(); return {}; });
+  reader.registerCallback("cancel", [this](Widget&) -> std::expected<void, StarException> { dismiss(); return {}; });
+  reader.registerCallback("ok", [this](Widget&) { return ok(); });
   m_confirmed = false;
   auto layoutPath = config.optString("paneLayout");
   if (!layoutPath)
@@ -113,7 +113,7 @@ std::expected<void, StarException> ConfirmationDialog::displayConfirmation(Json 
   auto layout = (*assets)->json(layoutPath->value_or("/interface/windowconfig/confirmation.config:paneLayout"));
   if (!layout)
     return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, this);
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed)
     return std::unexpected(std::move(constructed.error()));
   std::shared_ptr<ImageWidget> titleIcon;
@@ -121,7 +121,7 @@ std::expected<void, StarException> ConfirmationDialog::displayConfirmation(Json 
   if (!icon)
     return std::unexpected(std::move(icon.error()));
   if (*icon) {
-    auto created = ImageWidget::create(*context(), **icon);
+    auto created = ImageWidget::create(context(), **icon);
     if (!created)
       return std::unexpected(std::move(created.error()));
     titleIcon = std::move(*created);
@@ -193,7 +193,7 @@ std::expected<void, StarException> ConfirmationDialog::displayConfirmation(Json 
         auto array = image.second.toArray();
         if (!array)
           return std::unexpected(std::move(array.error()));
-        auto metadata = context()->root().imageMetadataDatabase();
+        auto metadata = context().root().imageMetadataDatabase();
         if (!metadata)
           return std::unexpected(std::move(metadata.error()));
         List<Drawable> drawables;
@@ -236,11 +236,11 @@ std::expected<void, StarException> ConfirmationDialog::displayConfirmation(Json 
   auto sounds = soundsJson->toArray();
   if (!sounds)
     return std::unexpected(std::move(sounds.error()));
-  auto sound = context()->root().random().randValueFrom(*sounds, "").toString();
+  auto sound = context().root().random().randValueFrom(*sounds, "").toString();
   if (!sound)
     return std::unexpected(std::move(sound.error()));
   if (!sound->empty()) {
-    auto played = context()->playAudio(*sound);
+    auto played = context().playAudio(*sound);
     if (!played)
       return std::unexpected(std::move(played.error()));
   }
@@ -257,7 +257,7 @@ std::expected<void, StarException> ConfirmationDialog::dismissed() {
     if (!m_cancelCallback)
       cancelled = std::unexpected(StarException("Confirmation dialog has no cancellation callback"));
     else
-      cancelled = m_cancelCallback(this);
+      cancelled = m_cancelCallback(*this);
     if (cancelled)
       m_confirmed = true;
   }
@@ -270,7 +270,7 @@ std::expected<void, StarException> ConfirmationDialog::dismissed() {
 std::expected<void, StarException> ConfirmationDialog::ok() {
   if (!m_okCallback)
     return std::unexpected(StarException("Confirmation dialog has no confirmation callback"));
-  auto confirmed = m_okCallback(this);
+  auto confirmed = m_okCallback(*this);
   if (!confirmed)
     return std::unexpected(std::move(confirmed.error()));
   m_confirmed = true;

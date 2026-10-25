@@ -9,7 +9,7 @@ import star.version;
 namespace Star {
 
 struct ConfigurationExceptionTag {
-  static constexpr char const* name() { return "ConfigurationException"; }
+  static constexpr std::string_view name() { return "ConfigurationException"; }
 };
 using ConfigurationException = StarError<ConfigurationExceptionTag, StarException>;
 

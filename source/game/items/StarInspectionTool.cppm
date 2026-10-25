@@ -183,37 +183,37 @@ std::expected<std::shared_ptr<InspectionTool>, StarException> InspectionTool::cr
   if (!image)
     return std::unexpected(std::move(image.error()));
   item->m_image = AssetPath::relativeTo(directory, *image);
-  for (auto const& [key, target] : {std::pair{"handPosition", &item->m_handPosition}, std::pair{"lightPosition", &item->m_lightPosition}}) {
+  for (auto const& [key, target] : {std::pair{std::string_view("handPosition"), std::ref(item->m_handPosition)}, std::pair{std::string_view("lightPosition"), std::ref(item->m_lightPosition)}}) {
     auto value = item->instanceValue(key).and_then(jsonToVec2F);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *target = *value;
+    target.get() = *value;
   }
   auto color = item->instanceValue("lightColor").and_then(jsonToColor);
   if (!color)
     return std::unexpected(std::move(color.error()));
   item->m_lightColor = *color;
-  for (auto const& [key, target] : {std::pair{"beamLevel", &item->m_beamWidth}, std::pair{"beamAmbience", &item->m_ambientFactor}}) {
+  for (auto const& [key, target] : {std::pair{std::string_view("beamLevel"), std::ref(item->m_beamWidth)}, std::pair{std::string_view("beamAmbience"), std::ref(item->m_ambientFactor)}}) {
     auto value = item->instanceValue(key).and_then([](Json const& value) { return value.toFloat(); });
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *target = *value;
+    target.get() = *value;
   }
-  for (auto const& [key, target] : {std::pair{"showHighlights", &item->m_showHighlights}, std::pair{"allowScanning", &item->m_allowScanning}}) {
+  for (auto const& [key, target] : {std::pair{std::string_view("showHighlights"), std::ref(item->m_showHighlights)}, std::pair{std::string_view("allowScanning"), std::ref(item->m_allowScanning)}}) {
     auto value = item->instanceValue(key).and_then([](Json const& value) { return value.toBool(); });
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *target = *value;
+    target.get() = *value;
   }
   auto lineOfSight = item->instanceValue("requireLineOfSight", true);
   if (!lineOfSight)
     return std::unexpected(std::move(lineOfSight.error()));
   item->m_requireLineOfSight = *lineOfSight == Json(true);
-  for (auto const& [key, target] : {std::pair{"inspectionAngles", &item->m_inspectionAngles}, std::pair{"inspectionRanges", &item->m_inspectionRanges}}) {
+  for (auto const& [key, target] : {std::pair{std::string_view("inspectionAngles"), std::ref(item->m_inspectionAngles)}, std::pair{std::string_view("inspectionRanges"), std::ref(item->m_inspectionRanges)}}) {
     auto value = item->instanceValue(key).and_then(jsonToVec2F);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *target = *value;
+    target.get() = *value;
   }
   auto ambient = item->instanceValue("ambientInspectionRadius").and_then([](Json const& value) { return value.toFloat(); });
   if (!ambient)
@@ -243,11 +243,11 @@ std::expected<std::shared_ptr<InspectionTool>, StarException> InspectionTool::cr
         return std::unexpected(std::move(name.error()));
       if (!EntityTypeNames)
         return std::unexpected(EntityTypeNames.error());
-      auto type = EntityTypeNames->leftPtr(*name);
+      auto type = EntityTypeNames->maybeLeftRef(*name);
       if (!type)
         return std::unexpected(std::move(type.error()));
       if (*type)
-        item->m_inspectableTypeFilter->add(**type);
+        item->m_inspectableTypeFilter->add((*type)->get());
     }
   }
   item->m_lastFireMode = FireMode::None;
@@ -268,17 +268,17 @@ std::expected<void, StarException> InspectionTool::update(float, FireMode fireMo
   auto itemHand = hand();
   if (!itemHand)
     return std::unexpected(std::move(itemHand.error()));
-  auto aimPosition = (*itemOwner)->aimPosition();
+  auto aimPosition = itemOwner->get().aimPosition();
   if (!aimPosition)
     return std::unexpected(std::move(aimPosition.error()));
-  m_currentAngle = (*itemWorld)->geometry().diff(*aimPosition, (*itemOwner)->position()).angle();
-  auto position = (*itemOwner)->handPosition(*itemHand, m_lightPosition - m_handPosition);
+  m_currentAngle = itemWorld->get().geometry().diff(*aimPosition, itemOwner->get().position()).angle();
+  auto position = itemOwner->get().handPosition(*itemHand, m_lightPosition - m_handPosition);
   if (!position)
     return std::unexpected(std::move(position.error()));
-  m_currentPosition = (*itemOwner)->position() + *position;
+  m_currentPosition = itemOwner->get().position() + *position;
   root().spatialLogger().logPoint("world", m_currentPosition, {0, 0, 255, 255});
   if (fireMode != m_lastFireMode && fireMode != FireMode::None) {
-    auto inspectionPosition = (*itemOwner)->aimPosition();
+    auto inspectionPosition = itemOwner->get().aimPosition();
     if (!inspectionPosition)
       return std::unexpected(std::move(inspectionPosition.error()));
     auto result = inspect(*inspectionPosition);
@@ -312,16 +312,16 @@ std::expected<List<LightSource>, StarException> InspectionTool::lightSources() c
   auto itemHand = hand();
   if (!itemHand)
     return std::unexpected(std::move(itemHand.error()));
-  auto aimPosition = (*itemOwner)->aimPosition();
+  auto aimPosition = itemOwner->get().aimPosition();
   if (!aimPosition)
     return std::unexpected(std::move(aimPosition.error()));
-  float angle = (*itemWorld)->geometry().diff(*aimPosition, (*itemOwner)->position()).angle();
-  auto position = (*itemOwner)->handPosition(*itemHand, m_lightPosition - m_handPosition);
+  float angle = itemWorld->get().geometry().diff(*aimPosition, itemOwner->get().position()).angle();
+  auto position = itemOwner->get().handPosition(*itemHand, m_lightPosition - m_handPosition);
   if (!position)
     return std::unexpected(std::move(position.error()));
   LightSource lightSource;
   lightSource.type = LightType::Point;
-  lightSource.position = (*itemOwner)->position() + *position;
+  lightSource.position = itemOwner->get().position() + *position;
   lightSource.color = m_lightColor.toRgbF();
   lightSource.pointBeam = m_beamWidth;
   lightSource.beamAngle = angle;
@@ -376,7 +376,7 @@ std::expected<float, StarException> InspectionTool::pointInspectionLevel(Vec2F c
   auto itemWorld = world();
   if (!itemWorld)
     return std::unexpected(std::move(itemWorld.error()));
-  Vec2F gdiff = (*itemWorld)->geometry().diff(position, m_currentPosition);
+  Vec2F gdiff = itemWorld->get().geometry().diff(position, m_currentPosition);
   float gdist = gdiff.magnitude();
   float angleFactor = (std::abs(angleDiff(gdiff.angle(), m_currentAngle)) - m_inspectionAngles[0]) / (m_inspectionAngles[1] - m_inspectionAngles[0]);
   float distFactor = (gdist - m_inspectionRanges[0]) / (m_inspectionRanges[1] - m_inspectionRanges[0]);
@@ -390,7 +390,7 @@ std::expected<bool, StarException> InspectionTool::hasLineOfSight(Vec2I const& p
   auto itemWorld = world();
   if (!itemWorld)
     return std::unexpected(std::move(itemWorld.error()));
-  auto collisions = (*itemWorld)->collidingTilesAlongLine(centerOfTile(m_currentPosition), centerOfTile(position));
+  auto collisions = itemWorld->get().collidingTilesAlongLine(centerOfTile(m_currentPosition), centerOfTile(position));
   if (!collisions)
     return std::unexpected(std::move(collisions.error()));
   for (auto collision : *collisions) {
@@ -407,7 +407,7 @@ std::expected<InspectionTool::InspectionResult, StarException> InspectionTool::i
   auto itemOwner = owner();
   if (!itemOwner)
     return std::unexpected(std::move(itemOwner.error()));
-  auto species = (*itemOwner)->species();
+  auto species = itemOwner->get().species();
   auto check = [&](std::shared_ptr<InspectableEntity> const& entity) -> std::expected<std::optional<InspectionResult>, StarException> {
     if (m_inspectableTypeFilter && !m_inspectableTypeFilter->contains(entity->entityType()))
       return {};
@@ -433,8 +433,8 @@ std::expected<InspectionTool::InspectionResult, StarException> InspectionTool::i
   auto itemWorld = world();
   if (!itemWorld)
     return std::unexpected(std::move(itemWorld.error()));
-  WorldGeometry geometry = (*itemWorld)->geometry();
-  auto candidates = (*itemWorld)->query<InspectableEntity>(RectF::withCenter(position, Vec2F()), [&](std::shared_ptr<InspectableEntity> const& entity) -> std::expected<bool, StarException> {
+  WorldGeometry geometry = itemWorld->get().geometry();
+  auto candidates = itemWorld->get().query<InspectableEntity>(RectF::withCenter(position, Vec2F()), [&](std::shared_ptr<InspectableEntity> const& entity) -> std::expected<bool, StarException> {
     if (entity->entityType() == EntityType::Object)
       return false;
     auto contained = geometry.rectContains(entity->metaBoundBox().translated(entity->position()), position);
@@ -458,7 +458,7 @@ std::expected<InspectionTool::InspectionResult, StarException> InspectionTool::i
     if (*result)
       return std::move(**result);
   }
-  auto atTile = (*itemWorld)->atTile<InspectableEntity>(Vec2I::floor(position));
+  auto atTile = itemWorld->get().atTile<InspectableEntity>(Vec2I::floor(position));
   if (!atTile)
     return std::unexpected(std::move(atTile.error()));
   for (auto const& entity : *atTile) {
@@ -480,8 +480,8 @@ std::expected<InspectionTool::InspectionResult, StarException> InspectionTool::i
   }
   if (outOfRange)
     return inspectionFailureText("outOfRangeText", species).transform([](String message) { return InspectionResult{std::move(message), {}}; });
-  MaterialId fgMaterial = (*itemWorld)->material(Vec2I::floor(position), TileLayer::Foreground);
-  MaterialId fgMod = (*itemWorld)->mod(Vec2I(position.floor()), TileLayer::Foreground);
+  MaterialId fgMaterial = itemWorld->get().material(Vec2I::floor(position), TileLayer::Foreground);
+  MaterialId fgMod = itemWorld->get().mod(Vec2I(position.floor()), TileLayer::Foreground);
   auto materialDatabase = root().materialDatabase();
   if (!materialDatabase)
     return std::unexpected(std::move(materialDatabase.error()));
@@ -489,14 +489,14 @@ std::expected<InspectionTool::InspectionResult, StarException> InspectionTool::i
     auto description = isRealMod(fgMod) ? (*materialDatabase)->modDescription(fgMod, species) : (*materialDatabase)->materialDescription(fgMaterial, species);
     return std::move(description).transform([](String message) { return InspectionResult{std::move(message), {}}; });
   }
-  auto liquidLevel = (*itemWorld)->liquidLevel(Vec2I::floor(position));
+  auto liquidLevel = itemWorld->get().liquidLevel(Vec2I::floor(position));
   auto liquidsDatabase = root().liquidsDatabase();
   if (!liquidsDatabase)
     return std::unexpected(std::move(liquidsDatabase.error()));
   if (liquidLevel.liquid != EmptyLiquidId)
     return (*liquidsDatabase)->liquidDescription(liquidLevel.liquid, species).transform([](String message) { return InspectionResult{std::move(message), {}}; });
-  MaterialId bgMaterial = (*itemWorld)->material(Vec2I::floor(position), TileLayer::Background);
-  MaterialId bgMod = (*itemWorld)->mod(Vec2I(position.floor()), TileLayer::Background);
+  MaterialId bgMaterial = itemWorld->get().material(Vec2I::floor(position), TileLayer::Background);
+  MaterialId bgMod = itemWorld->get().mod(Vec2I(position.floor()), TileLayer::Background);
   if (isRealMaterial(bgMaterial)) {
     auto description = isRealMod(bgMod) ? (*materialDatabase)->modDescription(bgMod, species) : (*materialDatabase)->materialDescription(bgMaterial, species);
     return std::move(description).transform([](String message) { return InspectionResult{std::move(message), {}}; });
@@ -517,7 +517,7 @@ std::expected<String, StarException> InspectionTool::inspectionFailureText(Strin
   auto option = options->wrap(root().random().randu64());
   if (!option)
     return std::unexpected(std::move(option.error()));
-  return (*option)->toString();
+  return option->get().toString();
 }
 
 }

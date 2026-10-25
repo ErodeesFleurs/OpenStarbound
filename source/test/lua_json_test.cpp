@@ -578,7 +578,7 @@ TEST(LuaJsonTest, UnsupportedFunctionsAreConversionMisses) {
       return {[function() end] = 42}
     end
   )SCRIPT"));
-  for (auto name : {"unsupportedValue", "unsupportedKey"}) {
+  for (std::string_view name : {"unsupportedValue", "unsupportedKey"}) {
     auto value = context->invokePath<LuaValue>(name);
     ASSERT_TRUE(value);
     auto converted = (*engine)->luaMaybeTo<Json>(*value);
@@ -605,7 +605,7 @@ TEST(LuaJsonTest, UnsupportedNativeValuesRemainErrorsBeforeConversionMisses) {
       return result
     end
   )SCRIPT"));
-  for (auto name : {"invalidValue", "invalidKey", "invalidValueWithFunctionKey", "invalidNullTracking"}) {
+  for (std::string_view name : {"invalidValue", "invalidKey", "invalidValueWithFunctionKey", "invalidNullTracking"}) {
     auto value = context->invokePath<LuaValue>(name);
     ASSERT_TRUE(value);
     auto converted = (*engine)->luaMaybeTo<Json>(*value);
@@ -625,7 +625,7 @@ TEST(LuaJsonTest, EmbeddedNullHonorsTerminationScopeAndOptOut) {
       return {value = "before\0after"}
     end
   )SCRIPT"));
-  Json full = JsonObject{{"value", String("before\0after", 12)}};
+  Json full = JsonObject{{"value", String(std::string_view("before\0after", 12))}};
   auto unrestricted = context->invokePath<Json>("embeddedNull");
   ASSERT_TRUE(unrestricted);
   EXPECT_EQ(*unrestricted, full);

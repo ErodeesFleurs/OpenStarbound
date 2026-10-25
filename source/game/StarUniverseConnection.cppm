@@ -59,7 +59,7 @@ class Logger;
 class UniverseConnectionServer;
 
 struct UniverseConnectionExceptionTag {
-  static constexpr char const* name() { return "UniverseConnectionException"; }
+  static constexpr std::string_view name() { return "UniverseConnectionException"; }
 };
 using UniverseConnectionException = StarError<UniverseConnectionExceptionTag, StarException>;
 
@@ -103,7 +103,7 @@ public:
   [[nodiscard]] std::expected<bool, StarException> receiveAny(unsigned timeout);
 
   // Returns a reference to the packet socket.
-  [[nodiscard]] std::expected<PacketSocket*, StarException> packetSocket();
+  [[nodiscard]] std::expected<std::reference_wrapper<PacketSocket>, StarException> packetSocket();
 
   // Packet stats for the most recent one second window of activity incoming
   // and outgoing.  Will only return valid stats if the underlying PacketSocket
@@ -131,7 +131,7 @@ public:
   // deadlocking, but not the owner-side close().  The receive callback will not
   // be called for any client until the previous callback for that client is
   // complete.
-  typedef std::function<std::expected<void, StarException>(UniverseConnectionServer*, ConnectionId, List<std::shared_ptr<Packet>>)> PacketReceiveCallback;
+  typedef std::function<std::expected<void, StarException>(UniverseConnectionServer&, ConnectionId, List<std::shared_ptr<Packet>>)> PacketReceiveCallback;
 
   [[nodiscard]] static std::expected<std::shared_ptr<UniverseConnectionServer>, StarException> create(Logger& logger, PacketReceiveCallback packetReceiver, std::size_t numWorkerThreads = 0);
   ~UniverseConnectionServer();

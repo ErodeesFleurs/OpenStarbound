@@ -102,7 +102,7 @@ public:
   [[nodiscard]] std::expected<bool, StarException> textInputActive() const;
 
   typedef RegisteredPaneManager<String> TitlePaneManager;
-  TitlePaneManager* paneManager();
+  TitlePaneManager& paneManager();
 
   TitleState currentState() const;
   // TitleState is StartSinglePlayer, StartMultiPlayer, or Quit
@@ -147,14 +147,14 @@ private:
   [[nodiscard]] std::expected<void, StarException> switchState(TitleState titleState);
   [[nodiscard]] std::expected<void, StarException> back();
 
-  [[nodiscard]] std::expected<void, StarException> populateServerList(ListWidget* list);
+  [[nodiscard]] std::expected<void, StarException> populateServerList(ListWidget& list);
 
   float interfaceScale() const;
 
   typedef LuaUpdateScript ScriptComponent;
   std::shared_ptr<ScriptComponent> m_scriptComponent;
 
-  GuiContext* m_guiContext;
+  GuiContext& m_guiContext;
 
   std::shared_ptr<Renderer> m_renderer;
   std::shared_ptr<EnvironmentPainter> m_environmentPainter;
@@ -164,6 +164,7 @@ private:
   Json m_serverList;
 
   std::shared_ptr<TitlePaneManager> m_paneManager;
+  std::weak_ptr<OptionsMenu> m_optionsMenu;
 
   Vec2I m_cursorScreenPos;
   std::shared_ptr<InterfaceCursor> m_cursor;

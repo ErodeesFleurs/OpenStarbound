@@ -131,7 +131,7 @@ std::expected<void, StarException> Font::loadFontImpl() {
     fontImpl->context = m_context;
     {
       std::lock_guard lock(m_context->mutex);
-      if (FT_New_Memory_Face(m_context->library, (FT_Byte const*)m_fontBuffer->ptr(), m_fontBuffer->size(), 0, &fontImpl->face))
+      if (FT_New_Memory_Face(m_context->library, reinterpret_cast<FT_Byte const*>(m_fontBuffer->span().data()), m_fontBuffer->size(), 0, &fontImpl->face))
         return std::unexpected(FontException::format("Could not load font from buffer"));
     }
 
@@ -168,23 +168,22 @@ std::expected<std::tuple<Image, Vec2I, bool>, StarException> Font::render(String
     Vec4B white(255, 255, 255, 0);
     image.fill(white);
     for (unsigned y = 0; y != height; ++y) {
-      std::uint8_t* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
+      std::span<std::uint8_t const> row(slot->bitmap.buffer + y * slot->bitmap.pitch, width);
       for (unsigned x = 0; x != width; ++x) {
         if (x < width && y < height) {
           white[3] = m_alphaThreshold
-            ? (*(p + x) >= m_alphaThreshold ? 255 : 0)
-            :  *(p + x);
+            ? (row[x] >= m_alphaThreshold ? 255 : 0)
+            : row[x];
           image.set32(x + 1, height - y, white);
         }
       }
     }
   } else if ((colored = (slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA))) {
     unsigned bpp = image.bytesPerPixel();
-    std::uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp); // offset by 1 pixel as it's padded
+    auto data = image.data();
     for (std::size_t y = 0; y != height; ++y) {
-      std::memcpy(data - (y * image.width() * bpp),
-             slot->bitmap.buffer + y * slot->bitmap.pitch,
-             slot->bitmap.pitch);
+      auto row = data.subspan(bpp + (image.width() * (image.height() - 2 - y)) * bpp, slot->bitmap.pitch);
+      std::memcpy(row.data(), slot->bitmap.buffer + y * slot->bitmap.pitch, row.size());
     }
     // unfortunately FreeType pre-multiplied the color channels :(
     image.forEachPixel([](unsigned, unsigned, Vec4B& pixel) {

@@ -12,16 +12,16 @@ namespace Star {
 class JsonBuilderStream : public JsonStream {
 public:
   std::expected<void, StarException> beginObject() override;
-  std::expected<void, StarException> objectKey(char32_t const* s, std::size_t len) override;
+  std::expected<void, StarException> objectKey(std::span<char32_t const> s) override;
   std::expected<void, StarException> endObject() override;
   std::expected<void, StarException> beginArray() override;
   std::expected<void, StarException> endArray() override;
-  std::expected<void, StarException> putString(char32_t const* s, std::size_t len) override;
-  std::expected<void, StarException> putDouble(char32_t const* s, std::size_t len) override;
-  std::expected<void, StarException> putInteger(char32_t const* s, std::size_t len) override;
+  std::expected<void, StarException> putString(std::span<char32_t const> s) override;
+  std::expected<void, StarException> putDouble(std::span<char32_t const> s) override;
+  std::expected<void, StarException> putInteger(std::span<char32_t const> s) override;
   std::expected<void, StarException> putBoolean(bool b) override;
   std::expected<void, StarException> putNull() override;
-  std::expected<void, StarException> putWhitespace(char32_t const* s, std::size_t len) override;
+  std::expected<void, StarException> putWhitespace(std::span<char32_t const> s) override;
   std::expected<void, StarException> putColon() override;
   std::expected<void, StarException> putComma() override;
   std::size_t stackSize();

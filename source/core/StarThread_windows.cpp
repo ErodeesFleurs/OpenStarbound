@@ -18,13 +18,13 @@ namespace Star {
 
 struct ThreadImpl {
   static DWORD WINAPI runThread(void* data) {
-    ThreadImpl* ptr = static_cast<ThreadImpl*>(data);
+    auto& state = *static_cast<ThreadImpl*>(data);
     unsigned long exceptionStackSize = 131072;
     SetThreadStackGuarantee(&exceptionStackSize);
-    auto result = ptr->function();
+    auto result = state.function();
     if (!result)
-      EmergencyLog::error("Thread {} failed: {}", ptr->name, outputException(ExceptionDiagnostic(result.error()), true));
-    ptr->stopped = true;
+      EmergencyLog::error("Thread {} failed: {}", state.name, outputException(ExceptionDiagnostic(result.error()), true));
+    state.stopped = true;
     return 0;
   }
 

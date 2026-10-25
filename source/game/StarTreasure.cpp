@@ -102,9 +102,9 @@ std::expected<std::shared_ptr<TreasureDatabase>, StarException> TreasureDatabase
   auto treasureChests = (*assets)->scanExtension("treasurechests");
   if (!treasureChests)
     return std::unexpected(std::move(treasureChests.error()));
-  if (auto queued = (*assets)->queueJsons(**treasurePools); !queued)
+  if (auto queued = (*assets)->queueJsons(treasurePools->get()); !queued)
     return std::unexpected(std::move(queued.error()));
-  if (auto queued = (*assets)->queueJsons(**treasureChests); !queued)
+  if (auto queued = (*assets)->queueJsons(treasureChests->get()); !queued)
     return std::unexpected(std::move(queued.error()));
   auto parseEntry = [](Json const& entry) -> std::expected<TreasureEntry, StarException> {
     auto hasPool = entry.contains("pool");
@@ -133,7 +133,7 @@ std::expected<std::shared_ptr<TreasureDatabase>, StarException> TreasureDatabase
       return std::unexpected(std::move(text.error()));
     return std::unexpected(TreasureException::format("TreasurePool entry '{}' did not specify a valid 'item' or 'pool'", *text));
   };
-  for (auto const& assetFile : **treasurePools) {
+  for (auto const& assetFile : treasurePools->get()) {
     auto const& file = assetFile.string();
     auto definitions = (*assets)->json(file).and_then([](Json const& value) { return value.iterateObject(); });
     if (!definitions)
@@ -222,7 +222,7 @@ std::expected<std::shared_ptr<TreasureDatabase>, StarException> TreasureDatabase
       }
     }
   }
-  for (auto const& assetFile : **treasureChests) {
+  for (auto const& assetFile : treasureChests->get()) {
     auto const& file = assetFile.string();
     auto definitions = (*assets)->json(file).and_then([](Json const& value) { return value.iterateObject(); });
     if (!definitions)
@@ -282,15 +282,15 @@ std::expected<List<std::shared_ptr<Item>>, StarException> TreasureDatabase::crea
 }
 
 std::expected<List<std::shared_ptr<Item>>, StarException> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed) const {
-  return createTreasure(treasurePool, level, seed, nullptr);
+  return createTreasure(treasurePool, level, seed, std::nullopt);
 }
 
-std::expected<List<std::shared_ptr<Item>>, StarException> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed, ItemDatabase const* itemCatalog) const {
+std::expected<List<std::shared_ptr<Item>>, StarException> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
   return createTreasure(treasurePool, level, seed, StringSet(), itemCatalog);
 }
 
-std::expected<List<std::shared_ptr<Item>>, StarException> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools, ItemDatabase const* itemCatalog) const {
-  auto pool = m_treasurePools.ptr(treasurePool);
+std::expected<List<std::shared_ptr<Item>>, StarException> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
+  auto pool = m_treasurePools.maybeRef(treasurePool);
   if (!pool)
     return std::unexpected(TreasureException::format("Unknown treasure pool '{}'", treasurePool));
   if (!visitedPools.add(treasurePool))
@@ -301,14 +301,14 @@ std::expected<List<std::shared_ptr<Item>>, StarException> TreasureDatabase::crea
     if (!catalog)
       return std::unexpected(std::move(catalog.error()));
     catalogOwner = std::move(*catalog);
-    itemCatalog = catalogOwner.get();
+    itemCatalog = std::cref(*catalogOwner);
   }
   List<std::shared_ptr<Item>> treasureItems;
   HashSet<ItemDescriptor> previousDescriptors;
-  auto selected = pool->get(level);
+  auto selected = pool->get().get(level);
   if (!selected)
     return std::unexpected(std::move(selected.error()));
-  auto const& itemPool = **selected;
+  auto const& itemPool = selected->get();
 
   int mix = 0;
   for (auto const& fillEntry : itemPool.fill) {
@@ -322,7 +322,7 @@ std::expected<List<std::shared_ptr<Item>>, StarException> TreasureDatabase::crea
       }
     } else {
       float itemLevel = level + itemPool.levelVariance[0] + staticRandomFloat(seed, ++mix, "FillLevelVariance") * (itemPool.levelVariance[1] - itemPool.levelVariance[0]);
-      auto fillItem = itemCatalog->item(std::get<ItemDescriptor>(fillEntry), itemLevel, seed + ++mix);
+      auto fillItem = itemCatalog->get().item(std::get<ItemDescriptor>(fillEntry), itemLevel, seed + ++mix);
       if (!fillItem)
         return std::unexpected(std::move(fillItem.error()));
       if (itemPool.allowDuplication || previousDescriptors.add((*fillItem)->descriptor().singular()))
@@ -348,7 +348,7 @@ std::expected<List<std::shared_ptr<Item>>, StarException> TreasureDatabase::crea
         float itemLevel = level + itemPool.levelVariance[0] + staticRandomFloat(staticRandomU64(seed, i, "TreasureLevelSeedMixer"), "PoolLevelVariance") * (itemPool.levelVariance[1] - itemPool.levelVariance[0]);
         auto roundItem = std::get<ItemDescriptor>(poolEntry);
         if (itemPool.allowDuplication || previousDescriptors.add(roundItem.singular())) {
-          auto item = itemCatalog->item(roundItem, itemLevel, seed + ++mix);
+          auto item = itemCatalog->get().item(roundItem, itemLevel, seed + ++mix);
           if (!item)
             return std::unexpected(std::move(item.error()));
           treasureItems.append(std::move(*item));
@@ -381,32 +381,32 @@ std::expected<List<std::shared_ptr<Item>>, StarException> TreasureDatabase::fill
   return overflowItems;
 }
 
-std::expected<std::shared_ptr<ContainerObject>, StarException> TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction) const {
+std::expected<std::shared_ptr<ContainerObject>, StarException> TreasureDatabase::createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction) const {
   return createTreasureChest(world, treasureChestSet, position, direction, m_root.random().randu64());
 }
 
-std::expected<std::shared_ptr<ContainerObject>, StarException> TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, std::uint64_t seed) const {
+std::expected<std::shared_ptr<ContainerObject>, StarException> TreasureDatabase::createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction, std::uint64_t seed) const {
   auto objectDatabase = m_root.objectDatabase();
   if (!objectDatabase)
     return std::unexpected(std::move(objectDatabase.error()));
-  auto set = m_treasureChestSets.ptr(treasureChestSet);
+  auto set = m_treasureChestSets.maybeRef(treasureChestSet);
   if (!set)
     return std::unexpected(StarException::format("Unknown treasure chest set '{}'", treasureChestSet));
-  auto level = world->threatLevel();
+  auto level = world.threatLevel();
   if (!level)
     return std::unexpected(std::move(level.error()));
-  auto boxSet = *set;
+  auto boxSet = set->get();
   eraseWhere(boxSet, [&](TreasureChest const& chest) { return *level < chest.minimumLevel; });
   if (boxSet.empty())
     return std::shared_ptr<ContainerObject>();
   auto chest = staticRandomFrom(boxSet, seed, "TreasureChest");
   if (!chest)
     return std::unexpected(std::move(chest.error()));
-  auto containerName = staticRandomFrom((*chest)->containers, seed, "ContainerName");
+  auto containerName = staticRandomFrom(chest->get().containers, seed, "ContainerName");
   if (!containerName)
     return std::unexpected(std::move(containerName.error()));
-  auto parameters = JsonObject{{"treasurePools", JsonArray{(*chest)->treasurePool}}, {"treasureSeed", seed}};
-  auto object = (*objectDatabase)->createForPlacement(world, **containerName, position, direction, parameters);
+  auto parameters = JsonObject{{"treasurePools", JsonArray{chest->get().treasurePool}}, {"treasureSeed", seed}};
+  auto object = (*objectDatabase)->createForPlacement(world, containerName->get(), position, direction, parameters);
   if (!object)
     return std::unexpected(std::move(object.error()));
   if (!*object)

@@ -215,7 +215,7 @@ std::expected<void, StarException> ConsumableItem::update(float dt, FireMode fir
       auto itemOwner = owner();
       if (!itemOwner)
         return std::unexpected(std::move(itemOwner.error()));
-      auto emitted = (*itemOwner)->addEffectEmitters(m_emitters);
+      auto emitted = itemOwner->get().addEffectEmitters(m_emitters);
       if (!emitted)
         return std::unexpected(std::move(emitted.error()));
     }
@@ -260,7 +260,7 @@ std::expected<bool, StarException> ConsumableItem::canUse() const {
   auto itemOwner = owner();
   if (!itemOwner)
     return std::unexpected(std::move(itemOwner.error()));
-  for (auto const& pair : (*itemOwner)->statusController()->activeUniqueStatusEffectSummary()) {
+  for (auto const& pair : itemOwner->get().statusController().activeUniqueStatusEffectSummary()) {
     if (m_blockingEffects.contains(pair.first))
       return false;
   }
@@ -278,7 +278,7 @@ std::expected<void, StarException> ConsumableItem::triggerEffects() {
     auto selected = root().random().randFrom(*options);
     if (!selected)
       return std::unexpected(std::move(selected.error()));
-    auto option = (*selected)->toArray();
+    auto option = selected->get().toArray();
     if (!option)
       return std::unexpected(std::move(option.error()));
     List<EphemeralStatusEffect> effects;
@@ -288,23 +288,23 @@ std::expected<void, StarException> ConsumableItem::triggerEffects() {
         return std::unexpected(std::move(effect.error()));
       effects.append(std::move(*effect));
     }
-    auto added = (*itemOwner)->statusController()->addEphemeralEffects(effects);
+    auto added = itemOwner->get().statusController().addEphemeralEffects(effects);
     if (!added)
       return std::unexpected(std::move(added.error()));
   }
   if (m_foodValue) {
-    (*itemOwner)->statusController()->giveResource("food", *m_foodValue);
-    auto percentage = (*itemOwner)->statusController()->resourcePercentage("food");
+    itemOwner->get().statusController().giveResource("food", *m_foodValue);
+    auto percentage = itemOwner->get().statusController().resourcePercentage("food");
     if (!percentage)
       return std::unexpected(std::move(percentage.error()));
     if (*percentage == 1.0f) {
-      auto added = (*itemOwner)->statusController()->addEphemeralEffect(EphemeralStatusEffect{UniqueStatusEffect("wellfed"), {}});
+      auto added = itemOwner->get().statusController().addEphemeralEffect(EphemeralStatusEffect{UniqueStatusEffect("wellfed"), {}});
       if (!added)
         return std::unexpected(std::move(added.error()));
     }
   }
   if (!m_emote.empty()) {
-    auto emote = (*itemOwner)->requestEmote(m_emote);
+    auto emote = itemOwner->get().requestEmote(m_emote);
     if (!emote)
       return std::unexpected(std::move(emote.error()));
   }
@@ -321,7 +321,7 @@ std::expected<void, StarException> ConsumableItem::maybeConsume() {
     auto itemOwner = owner();
     if (!itemOwner)
       return std::unexpected(std::move(itemOwner.error()));
-    auto sent = (*itemWorld)->sendEntityMessage((*itemOwner)->entityId(), "recordEvent", {"useItem", JsonObject{{"itemType", name()}}});
+    auto sent = itemWorld->get().sendEntityMessage(itemOwner->get().entityId(), "recordEvent", {"useItem", JsonObject{{"itemType", name()}}});
     if (!sent)
       return std::unexpected(std::move(sent.error()));
     if (count())

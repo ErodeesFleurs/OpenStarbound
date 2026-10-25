@@ -211,7 +211,7 @@ std::expected<std::shared_ptr<ScriptPane>, StarException> ScriptPane::create(Gui
   auto initialized = pane->init(std::move(config));
   if (!initialized)
     return std::unexpected(std::move(initialized.error()));
-  auto player = LuaBindings::makePlayerCallbacks(guiContext.root(), pane->m_client->mainPlayer().get());
+  auto player = LuaBindings::makePlayerCallbacks(guiContext.root(), *pane->m_client->mainPlayer());
   if (!player)
     return std::unexpected(std::move(player.error()));
   auto playerAdded = pane->m_script.addCallbacks("player", std::move(*player));
@@ -223,7 +223,7 @@ std::expected<std::shared_ptr<ScriptPane>, StarException> ScriptPane::create(Gui
   auto statusAdded = pane->m_script.addCallbacks("status", std::move(*status));
   if (!statusAdded)
     return std::unexpected(std::move(statusAdded.error()));
-  auto celestial = LuaBindings::makeCelestialCallbacks(guiContext.root(), pane->m_client.get());
+  auto celestial = LuaBindings::makeCelestialCallbacks(guiContext.root(), *pane->m_client);
   if (!celestial)
     return std::unexpected(std::move(celestial.error()));
   auto celestialAdded = pane->m_script.addCallbacks("celestial", std::move(*celestial));
@@ -238,7 +238,7 @@ std::expected<void, StarException> ScriptPane::displayed() {
     auto configured = m_script.setLuaRoot(world->luaRoot());
     if (!configured)
       return std::unexpected(std::move(configured.error()));
-    auto callbacks = LuaBindings::makeWorldCallbacks(context()->root(), world.get());
+    auto callbacks = LuaBindings::makeWorldCallbacks(context().root(), *world);
     if (!callbacks)
       return std::unexpected(std::move(callbacks.error()));
     auto added = m_script.addCallbacks("world", std::move(*callbacks));
@@ -279,12 +279,12 @@ std::expected<std::shared_ptr<Pane>, StarException> ScriptPane::createTooltip(Ve
       auto text = value.toString();
       if (!text)
         return std::unexpected(std::move(text.error()));
-      return SimpleTooltipBuilder::buildTooltip(*context(), *text);
+      return SimpleTooltipBuilder::buildTooltip(context(), *text);
     }
-    auto tooltip = Pane::create(*context());
+    auto tooltip = Pane::create(context());
     if (!tooltip)
       return std::unexpected(std::move(tooltip.error()));
-    auto constructed = m_reader->construct(value, tooltip->get());
+    auto constructed = m_reader->construct(value, **tooltip);
     if (!constructed)
       return std::unexpected(std::move(constructed.error()));
     return std::move(*tooltip);
@@ -301,7 +301,7 @@ std::expected<std::shared_ptr<Pane>, StarException> ScriptPane::createTooltip(Ve
     }
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_client->mainPlayer());
+    return ItemTooltipBuilder::buildItemTooltip(context(), item, m_client->mainPlayer());
   return std::shared_ptr<Pane>{};
 }
 

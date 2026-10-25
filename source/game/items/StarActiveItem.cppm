@@ -128,7 +128,7 @@ public:
 
   [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  [[nodiscard]] std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  [[nodiscard]] std::expected<void, StarException> init(ToolUserEntity& owner, ToolHand hand) override;
   [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   [[nodiscard]] std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;

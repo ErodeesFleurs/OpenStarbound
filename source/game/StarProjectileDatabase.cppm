@@ -39,7 +39,7 @@ class Root;
 class Projectile;
 
 struct ProjectileDatabaseExceptionTag {
-  static constexpr char const* name() { return "ProjectileDatabaseException"; }
+  static constexpr std::string_view name() { return "ProjectileDatabaseException"; }
 };
 using ProjectileDatabaseException = StarError<ProjectileDatabaseExceptionTag, StarException>;
 

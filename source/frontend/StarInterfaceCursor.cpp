@@ -40,7 +40,7 @@ import star.gui_context;
 import star.vector;
 namespace Star {
 
-InterfaceCursor::InterfaceCursor(GuiContext& context) : m_guiContext(&context), m_scale(0) {}
+InterfaceCursor::InterfaceCursor(GuiContext& context) : m_guiContext(context), m_scale(0) {}
 
 std::expected<std::shared_ptr<InterfaceCursor>, StarException> InterfaceCursor::create(GuiContext& context) {
   auto cursor = std::shared_ptr<InterfaceCursor>(new InterfaceCursor(context));
@@ -51,7 +51,7 @@ std::expected<std::shared_ptr<InterfaceCursor>, StarException> InterfaceCursor::
 }
 
 std::expected<void, StarException> InterfaceCursor::resetCursor() {
-  auto assets = m_guiContext->root().assets();
+  auto assets = m_guiContext.get().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   auto config = (*assets)->json("/interface.config:defaultCursor");
@@ -67,7 +67,7 @@ std::expected<void, StarException> InterfaceCursor::setCursor(String const& conf
   if (m_configFile == configFile)
     return {};
 
-  auto& root = m_guiContext->root();
+  auto& root = m_guiContext.get().root();
   auto assets = root.assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
@@ -125,14 +125,15 @@ std::expected<void, StarException> InterfaceCursor::setCursor(String const& conf
 }
 
 std::expected<Drawable, StarException> InterfaceCursor::drawable() const {
-  if (auto image = std::get_if<String>(&m_drawable)) {
-    auto metadata = m_guiContext->root().imageMetadataDatabase();
+  if (std::holds_alternative<String>(m_drawable)) {
+    auto const& image = std::get<String>(m_drawable);
+    auto metadata = m_guiContext.get().root().imageMetadataDatabase();
     if (!metadata)
       return std::unexpected(std::move(metadata.error()));
-    return Drawable::makeImage(**metadata, *image, 1.0f, false, {});
+    return Drawable::makeImage(**metadata, image, 1.0f, false, {});
   }
-  if (auto animation = std::get_if<Animation>(&m_drawable))
-    return animation->drawable(1.0f);
+  if (std::holds_alternative<Animation>(m_drawable))
+    return std::get<Animation>(m_drawable).drawable(1.0f);
   return std::unexpected(StarException("Cursor has not been initialized"));
 }
 
@@ -149,8 +150,8 @@ float InterfaceCursor::scale(float interfaceScale) const {
 }
 
 std::expected<void, StarException> InterfaceCursor::update(float dt) {
-  if (auto animation = std::get_if<Animation>(&m_drawable))
-    animation->update(dt);
+  if (std::holds_alternative<Animation>(m_drawable))
+    std::get<Animation>(m_drawable).update(dt);
   return {};
 }
 

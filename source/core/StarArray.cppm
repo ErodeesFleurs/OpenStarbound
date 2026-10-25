@@ -47,8 +47,8 @@ public:
   template <std::size_t i>
   const_reference get() const;
 
-  [[nodiscard]] std::expected<Element*, StarException> at(std::size_t i);
-  [[nodiscard]] std::expected<Element const*, StarException> at(std::size_t i) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Element>, StarException> at(std::size_t i);
+  [[nodiscard]] std::expected<std::reference_wrapper<Element const>, StarException> at(std::size_t i) const;
 
   template <typename T2>
   Array& operator=(Array<T2, SizeN> const& array);
@@ -150,17 +150,17 @@ auto Array<Element, Size>::get() const -> const_reference {
 }
 
 template <typename Element, std::size_t Size>
-std::expected<Element*, StarException> Array<Element, Size>::at(std::size_t i) {
+std::expected<std::reference_wrapper<Element>, StarException> Array<Element, Size>::at(std::size_t i) {
   if (i >= Size)
     return std::unexpected(OutOfRangeException::format("out of range in Array::at({})", i));
-  return std::addressof(Base::operator[](i));
+  return std::reference_wrapper<Element>(Base::operator[](i));
 }
 
 template <typename Element, std::size_t Size>
-std::expected<Element const*, StarException> Array<Element, Size>::at(std::size_t i) const {
+std::expected<std::reference_wrapper<Element const>, StarException> Array<Element, Size>::at(std::size_t i) const {
   if (i >= Size)
     return std::unexpected(OutOfRangeException::format("out of range in Array::at({})", i));
-  return std::addressof(Base::operator[](i));
+  return std::reference_wrapper<Element const>(Base::operator[](i));
 }
 
 template <typename Element, std::size_t Size>

@@ -21,15 +21,15 @@ public:
     return typeName<DataStreamFunctions>();
   }
   // Either callback can be unset; invoking that direction returns an error.
-  DataStreamFunctions(std::function<std::expected<std::size_t, StarException>(char*, std::size_t)> reader,
-      std::function<std::expected<std::size_t, StarException>(char const*, std::size_t)> writer);
+  DataStreamFunctions(std::function<std::expected<std::size_t, StarException>(std::span<char>)> reader,
+      std::function<std::expected<std::size_t, StarException>(std::span<char const>)> writer);
 
-  [[nodiscard]] std::expected<void, StarException> readData(char* data, std::size_t len) override;
-  [[nodiscard]] std::expected<void, StarException> writeData(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<void, StarException> readData(std::span<char> data) override;
+  [[nodiscard]] std::expected<void, StarException> writeData(std::span<char const> data) override;
 
 private:
-  std::function<std::expected<std::size_t, StarException>(char*, std::size_t)> m_reader;
-  std::function<std::expected<std::size_t, StarException>(char const*, std::size_t)> m_writer;
+  std::function<std::expected<std::size_t, StarException>(std::span<char>)> m_reader;
+  std::function<std::expected<std::size_t, StarException>(std::span<char const>)> m_writer;
 };
 
 class DataStreamIODevice : public DataStream {
@@ -40,19 +40,18 @@ public:
   std::string_view dynamicTypeName() const noexcept override {
     return typeName<DataStreamIODevice>();
   }
-  DataStreamIODevice(std::shared_ptr<IODevice> device);
-
-  std::shared_ptr<IODevice> const& device() const;
+  // Borrows the device for the entire adapter lifetime.
+  explicit DataStreamIODevice(IODevice& device);
 
   [[nodiscard]] std::expected<void, StarException> seek(std::size_t pos, IOSeek seek = IOSeek::Absolute);
   [[nodiscard]] std::expected<bool, StarException> atEnd() override;
   [[nodiscard]] std::expected<StreamOffset, StarException> pos();
 
-  [[nodiscard]] std::expected<void, StarException> readData(char* data, std::size_t len) override;
-  [[nodiscard]] std::expected<void, StarException> writeData(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<void, StarException> readData(std::span<char> data) override;
+  [[nodiscard]] std::expected<void, StarException> writeData(std::span<char const> data) override;
 
 private:
-  std::shared_ptr<IODevice> m_device;
+  IODevice& m_device;
 };
 
 class DataStreamBuffer : public DataStream {
@@ -115,6 +114,12 @@ public:
   DataStreamBuffer(std::size_t initialSize);
   DataStreamBuffer(ByteArray b);
 
+  // A stream owns its bytes and cursor; transfer explicitly rather than aliasing them.
+  DataStreamBuffer(DataStreamBuffer const&) = delete;
+  DataStreamBuffer& operator=(DataStreamBuffer const&) = delete;
+  DataStreamBuffer(DataStreamBuffer&&) = default;
+  DataStreamBuffer& operator=(DataStreamBuffer&&) = default;
+
   // Resize existing buffer to new size.
   [[nodiscard]] std::expected<void, StarException> resize(std::size_t size);
   void reserve(std::size_t size);
@@ -124,10 +129,11 @@ public:
   ByteArray const& data() const;
   ByteArray takeData();
 
+  // Raw storage access is reserved for native adapters; business ranges use span().
   char* ptr();
   char const* ptr() const;
-
-  std::shared_ptr<Buffer> const& device() const;
+  std::span<char> span();
+  std::span<char const> span() const;
 
   std::size_t size() const;
   bool empty() const;
@@ -140,11 +146,11 @@ public:
   void reset(std::size_t newSize);
   void reset(ByteArray b);
 
-  [[nodiscard]] std::expected<void, StarException> readData(char* data, std::size_t len) override;
-  [[nodiscard]] std::expected<void, StarException> writeData(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<void, StarException> readData(std::span<char> data) override;
+  [[nodiscard]] std::expected<void, StarException> writeData(std::span<char const> data) override;
 
 private:
-  std::shared_ptr<Buffer> m_buffer;
+  Buffer m_buffer;
 };
 
 class DataStreamExternalBuffer : public DataStream {
@@ -161,7 +167,9 @@ public:
 
   DataStreamExternalBuffer(DataStreamExternalBuffer const& buffer) = default;
 
+  // Raw storage access is reserved for native adapters; business ranges use span().
   char const* ptr() const;
+  std::span<char const> span() const;
 
   std::size_t size() const;
   bool empty() const;
@@ -173,8 +181,8 @@ public:
 
   void reset(std::span<char const> externalData);
 
-  [[nodiscard]] std::expected<void, StarException> readData(char* data, std::size_t len) override;
-  [[nodiscard]] std::expected<void, StarException> writeData(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<void, StarException> readData(std::span<char> data) override;
+  [[nodiscard]] std::expected<void, StarException> writeData(std::span<char const> data) override;
 
 private:
   ExternalBuffer m_buffer;

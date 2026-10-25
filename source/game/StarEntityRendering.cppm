@@ -40,7 +40,7 @@ class RenderCallback {
 public:
   virtual ~RenderCallback();
 
-  virtual TileDrawer* tileDrawer() const;
+  virtual std::optional<std::reference_wrapper<TileDrawer>> tileDrawer() const;
 
   [[nodiscard]] virtual std::expected<void, StarException> addDrawable(Drawable drawable, EntityRenderLayer renderLayer) = 0;
   [[nodiscard]] virtual std::expected<void, StarException> addLightSource(LightSource lightSource) = 0;

@@ -93,13 +93,13 @@ extern std::expected<EnumMap<MainInterfacePanes>, StarException> const MainInter
   {MainInterfacePanes::Collections, "Collections"},
   {MainInterfacePanes::CharacterSwap, "CharacterSwap"}
 });
-std::expected<std::shared_ptr<MainInterfaceConfig>, StarException> MainInterfaceConfig::loadFromAssets(GuiContext& context) {
+std::expected<std::unique_ptr<MainInterfaceConfig>, StarException> MainInterfaceConfig::loadFromAssets(GuiContext& context) {
   auto& root = context.root();
   auto assets = root.assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
 
 
-  auto config = std::make_shared<MainInterfaceConfig>();
+  auto config = std::make_unique<MainInterfaceConfig>();
 
   {
     auto json = (*assets)->json("/interface.config:textStyle");
@@ -696,7 +696,7 @@ std::expected<std::shared_ptr<MainInterfaceConfig>, StarException> MainInterface
 
   auto macros = (*assets)->scanExtension("macros");
   if (!macros) return std::unexpected(std::move(macros.error()));
-  for (auto const& path : **macros) {
+  for (auto const& path : macros->get()) {
     auto json = (*assets)->json(path.string());
     if (!json) return std::unexpected(std::move(json.error()));
     auto entries = json->iterateObject();

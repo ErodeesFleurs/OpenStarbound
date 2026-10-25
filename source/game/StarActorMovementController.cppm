@@ -38,13 +38,13 @@ class Root;
 class PathController;
 
 struct ActorMovementControllerExceptionTag {
-  static constexpr char const* name() { return "ActorMovementControllerException"; }
+  static constexpr std::string_view name() { return "ActorMovementControllerException"; }
 };
 using ActorMovementControllerException = StarError<ActorMovementControllerExceptionTag, MovementControllerException>;
 
 struct ActorJumpProfile {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorJumpProfile const& movementParameters);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ActorJumpProfile const& movementParameters);
 
   ActorJumpProfile();
   [[nodiscard]] static std::expected<ActorJumpProfile, StarException> create(Json const& config);
@@ -69,15 +69,15 @@ struct ActorJumpProfile {
   std::optional<bool> collisionCancelled;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorJumpProfile const& movementParameters);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ActorJumpProfile const& movementParameters);
 
 // A not-quite superset of MovementParameters, with some fields from
 // MovementParameters ignored because they make no sense, and other fields
 // expanded out to different cases based on Actor specific things.
 struct ActorMovementParameters {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMovementParameters& movementParameters);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMovementParameters const& movementParameters);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ActorMovementParameters& movementParameters);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ActorMovementParameters const& movementParameters);
 
   // Load sensible defaults from a config file.
   [[nodiscard]] static std::expected<ActorMovementParameters, StarException> sensibleDefaults(Root& root);
@@ -149,8 +149,8 @@ struct ActorMovementParameters {
   std::optional<float> pathExploreRate;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMovementParameters& movementParameters);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMovementParameters const& movementParameters);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ActorMovementParameters& movementParameters);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ActorMovementParameters const& movementParameters);
 
 // A set of normalized values that act as "modifiers" or "bonuses" to movement,
 // and can be combined sensibly.  A modifier of 0.0 represents a 0% change, a
@@ -158,8 +158,8 @@ struct ActorMovementParameters {
 // a 20% decrease.  Also includes some flags that disable functionality
 // combined with logical OR.
 struct ActorMovementModifiers {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
 
   explicit ActorMovementModifiers();
   [[nodiscard]] static std::expected<ActorMovementModifiers, StarException> create(Json const& config);
@@ -182,14 +182,16 @@ struct ActorMovementModifiers {
   bool facingSuppressed;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
 
 class ActorMovementController : public virtual MovementController {
 public:
   // Constructs an ActorMovementController with parameters loaded from sensible
   // defaults, and the given parameters (if any) applied on top of them.
   [[nodiscard]] static std::expected<std::shared_ptr<ActorMovementController>, StarException> create(Root& root, ActorMovementParameters const& parameters = ActorMovementParameters());
+
+  void uninit() override;
 
   // Currently active parameters.
   ActorMovementParameters const& baseParameters() const;
@@ -365,7 +367,7 @@ private:
 
 class PathController {
 public:
-  PathController(World* world);
+  PathController(World& world);
 
   PlatformerAStar::Parameters const& parameters();
   void setParameters(PlatformerAStar::Parameters const& parameters);
@@ -385,7 +387,7 @@ private:
 private:
   [[nodiscard]] std::expected<bool, StarException> onGround(ActorMovementController const& movementController, Vec2F const& position, CollisionSet const& collisionSet) const;
 
-  World* m_world;
+  std::reference_wrapper<World> m_world;
   PlatformerAStar::Parameters m_parameters;
 
   std::optional<Vec2F> m_startPosition;

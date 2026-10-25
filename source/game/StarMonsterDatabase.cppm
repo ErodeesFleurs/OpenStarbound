@@ -70,7 +70,7 @@ class RandomSource;
 class Monster;
 
 struct MonsterExceptionTag {
-  static constexpr char const* name() { return "MonsterException"; }
+  static constexpr std::string_view name() { return "MonsterException"; }
 };
 using MonsterException = StarError<MonsterExceptionTag, StarException>;
 

@@ -141,15 +141,17 @@ public:
     ReturnToTitle
   };
 
-  [[nodiscard]] static std::expected<std::shared_ptr<MainInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<WorldPainter> painter, std::shared_ptr<Cinematic> cinematicOverlay);
+  [[nodiscard]] static std::expected<std::unique_ptr<MainInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<WorldPainter> painter, std::shared_ptr<Cinematic> cinematicOverlay);
 
   ~MainInterface();
   [[nodiscard]] std::expected<void, StarException> close();
 
   RunningState currentState() const;
 
-  MainInterfacePaneManager* paneManager();
+  MainInterfacePaneManager& paneManager();
   GuiContext& context() const;
+  // Escaped callbacks borrow this interface only until terminal close.
+  std::stop_token callbackStopToken() const;
 
   [[nodiscard]] std::expected<bool, StarException> escapeDialogOpen() const;
 
@@ -214,8 +216,8 @@ public:
   [[nodiscard]] std::expected<void, StarException> reviveScriptPanes(List<ScriptPaneInfo>& panes);
   [[nodiscard]] std::expected<void, StarException> displayDefaultPanes();
 private:
-  MainInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<WorldPainter> painter, std::shared_ptr<Cinematic> cinematicOverlay);
-  [[nodiscard]] std::expected<void, StarException> initialize();
+  MainInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, WorldPainter& painter, std::shared_ptr<Cinematic> cinematicOverlay);
+  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<WorldPainter> painter);
   [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createEscapeDialog();
   [[nodiscard]] std::expected<void, StarException> initHttpTrustDialog();
 
@@ -241,17 +243,21 @@ private:
 
   [[nodiscard]] std::expected<void, StarException> displayScriptPane(std::shared_ptr<ScriptPane>& scriptPane, EntityId sourceEntity);
 
-  GuiContext* m_guiContext{nullptr};
-  std::shared_ptr<MainInterfaceConfig const> m_config;
+  std::reference_wrapper<GuiContext> m_guiContext;
+  std::unique_ptr<MainInterfaceConfig const> m_config;
   std::shared_ptr<InterfaceCursor> m_cursor;
 
   RunningState m_state{Running};
 
   std::shared_ptr<UniverseClient> m_client;
-  std::shared_ptr<WorldPainter> m_worldPainter;
+  // ClientApplication retains the painter; the escapable WirePane separately shares it.
+  std::reference_wrapper<WorldPainter> m_worldPainter;
   std::shared_ptr<Cinematic> m_cinematicOverlay;
 
   MainInterfacePaneManager m_paneManager;
+  std::stop_source m_callbackStopSource;
+  std::weak_ptr<TeamBar> m_teamBar;
+  std::vector<std::weak_ptr<TeleportDialog>> m_teleportDialogs;
 
   std::shared_ptr<QuestLogInterface> m_questLogInterface;
 
@@ -291,9 +297,9 @@ private:
   GameTimer m_debugMapClearTimer;
   RectF m_debugTextRect{RectF::null()};
 
-  std::shared_ptr<NameplatePainter> m_nameplatePainter;
-  std::shared_ptr<QuestIndicatorPainter> m_questIndicatorPainter;
-  std::shared_ptr<ChatBubbleManager> m_chatBubbleManager;
+  std::unique_ptr<NameplatePainter> m_nameplatePainter;
+  std::unique_ptr<QuestIndicatorPainter> m_questIndicatorPainter;
+  std::unique_ptr<ChatBubbleManager> m_chatBubbleManager;
 
   bool m_disableHud = false;
 

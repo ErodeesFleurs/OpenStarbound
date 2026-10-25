@@ -108,7 +108,7 @@ public:
   virtual EntityType entityType() const override;
   virtual ClientEntityMode clientEntityMode() const override;
 
-  [[nodiscard]] virtual std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] virtual std::expected<void, StarException> init(World& world, EntityId entityId, EntityMode mode) override;
   [[nodiscard]] virtual std::expected<void, StarException> uninit() override;
 
   virtual Vec2F position() const override;
@@ -127,13 +127,13 @@ public:
   [[nodiscard]] virtual std::expected<List<LightSource>, StarException> lightSources() const override;
 
   [[nodiscard]] virtual std::expected<bool, StarException> shouldDestroy() const override;
-  [[nodiscard]] virtual std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] virtual std::expected<void, StarException> destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) override;
 
   [[nodiscard]] virtual std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  [[nodiscard]] virtual std::expected<void, StarException> render(RenderCallback* renderCallback) override;
+  [[nodiscard]] virtual std::expected<void, StarException> render(RenderCallback& renderCallback) override;
 
-  [[nodiscard]] virtual std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback) override;
+  [[nodiscard]] virtual std::expected<void, StarException> renderLightSources(RenderCallback& renderCallback) override;
 
   [[nodiscard]] virtual std::expected<bool, StarException> checkBroken() override;
 
@@ -199,7 +199,7 @@ public:
   [[nodiscard]] virtual std::expected<void, StarException> addNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
   [[nodiscard]] virtual std::expected<void, StarException> removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
 
-  [[nodiscard]] virtual std::expected<void, StarException> evaluate(WireCoordinator* coordinator) override;
+  [[nodiscard]] virtual std::expected<void, StarException> evaluate(WireCoordinator& coordinator) override;
 
   [[nodiscard]] virtual std::expected<List<QuestArcDescriptor>, StarException> offeredQuests() const override;
   [[nodiscard]] virtual std::expected<StringSet, StarException> turnInQuests() const override;
@@ -277,9 +277,9 @@ private:
   EntityRenderLayer renderLayer() const;
 
   // Base class render() simply calls all of these in turn.
-  [[nodiscard]] std::expected<void, StarException> renderLights(RenderCallback* renderCallback) const;
-  [[nodiscard]] std::expected<void, StarException> renderParticles(RenderCallback* renderCallback);
-  [[nodiscard]] std::expected<void, StarException> renderSounds(RenderCallback* renderCallback);
+  [[nodiscard]] std::expected<void, StarException> renderLights(RenderCallback& renderCallback) const;
+  [[nodiscard]] std::expected<void, StarException> renderParticles(RenderCallback& renderCallback);
+  [[nodiscard]] std::expected<void, StarException> renderSounds(RenderCallback& renderCallback);
 
   List<std::shared_ptr<ObjectOrientation>> const& getOrientations() const;
 

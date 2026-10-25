@@ -251,7 +251,7 @@ std::expected<std::shared_ptr<ItemDatabase>, StarException> ItemDatabase::create
     return std::unexpected(std::move(codexes.error()));
   // Builders can query the complete base catalog without re-entering Root's
   // still-unpublished ItemDatabase loader.
-  auto rebuilder = Rebuilder::create(root, "item", database.get());
+  auto rebuilder = Rebuilder::create(root, "item", std::cref(*database));
   if (!rebuilder)
     return std::unexpected(std::move(rebuilder.error()));
   database->m_rebuilder = std::move(*rebuilder);
@@ -321,21 +321,21 @@ std::expected<ItemType, StarException> ItemDatabase::itemType(String const& item
   auto data = itemData(itemName);
   if (!data)
     return std::unexpected(std::move(data.error()));
-  return (*data)->type;
+  return data->get().type;
 }
 
 std::expected<String, StarException> ItemDatabase::itemFriendlyName(String const& itemName) const {
   auto data = itemData(itemName);
   if (!data)
     return std::unexpected(std::move(data.error()));
-  return (*data)->friendlyName;
+  return data->get().friendlyName;
 }
 
 std::expected<StringSet, StarException> ItemDatabase::itemTags(String const& itemName) const {
   auto data = itemData(itemName);
   if (!data)
     return std::unexpected(std::move(data.error()));
-  return (*data)->itemTags;
+  return data->get().itemTags;
 }
 
 std::expected<ItemDatabase::ItemConfig, StarException> ItemDatabase::itemConfig(String const& itemName, Json parameters, std::optional<float> level, std::optional<std::uint64_t> seed) const {
@@ -343,17 +343,17 @@ std::expected<ItemDatabase::ItemConfig, StarException> ItemDatabase::itemConfig(
   if (!data)
     return std::unexpected(std::move(data.error()));
   ItemConfig itemConfig;
-  if ((*data)->assetsConfig) {
+  if (data->get().assetsConfig) {
     auto assets = m_root.assets();
     if (!assets)
       return std::unexpected(std::move(assets.error()));
-    auto config = (*assets)->json(*(*data)->assetsConfig);
+    auto config = (*assets)->json(*data->get().assetsConfig);
     if (!config)
       return std::unexpected(std::move(config.error()));
     itemConfig.config = std::move(*config);
   }
-  itemConfig.directory = (*data)->directory;
-  itemConfig.config = jsonMerge(itemConfig.config, (*data)->customConfig);
+  itemConfig.directory = data->get().directory;
+  itemConfig.config = jsonMerge(itemConfig.config, data->get().customConfig);
   itemConfig.parameters = std::move(parameters);
   auto builder = itemConfig.config.optString("builder");
   if (!builder)
@@ -364,7 +364,7 @@ std::expected<ItemDatabase::ItemConfig, StarException> ItemDatabase::itemConfig(
     auto context = m_luaRoot->createContext(**builder);
     if (!context)
       return std::unexpected(std::move(context.error()));
-    auto rootCallbacks = LuaBindings::makeRootCallbacks(m_root, this);
+    auto rootCallbacks = LuaBindings::makeRootCallbacks(m_root, std::cref(*this));
     if (!rootCallbacks)
       return std::unexpected(std::move(rootCallbacks.error()));
     auto setRoot = context->setCallbacks("root", *rootCallbacks);
@@ -392,7 +392,7 @@ std::expected<std::optional<String>, StarException> ItemDatabase::itemFile(Strin
   auto data = itemData(itemName);
   if (!data)
     return std::unexpected(std::move(data.error()));
-  return std::optional<String>((*data)->directory + (*data)->filename);
+  return std::optional<String>(data->get().directory + data->get().filename);
 }
 
 std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::itemShared(ItemDescriptor descriptor, std::optional<float> level, std::optional<std::uint64_t> seed) const {
@@ -400,11 +400,11 @@ std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::itemShared(Ite
     return std::shared_ptr<Item>();
   ItemCacheEntry entry{descriptor, level, seed};
   std::unique_lock locker(m_cacheMutex);
-  auto cached = m_itemCache.ptr(entry);
+  auto cached = m_itemCache.maybeRef(entry);
   if (!cached)
     return std::unexpected(std::move(cached.error()));
   if (*cached)
-    return **cached;
+    return (*cached)->get();
   locker.unlock();
   auto created = tryCreateItem(descriptor, level, seed);
   if (!created)
@@ -417,7 +417,7 @@ std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::itemShared(Ite
   auto stored = m_itemCache.get(entry, [&](ItemCacheEntry const&) -> std::shared_ptr<Item> { return std::move(*created); });
   if (!stored)
     return std::unexpected(std::move(stored.error()));
-  return **stored;
+  return stored->get();
 }
 
 std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::item(ItemDescriptor descriptor, std::optional<float> level, std::optional<std::uint64_t> seed, bool ignoreInvalid) const {
@@ -620,7 +620,7 @@ HashSet<ItemRecipe> ItemDatabase::allRecipes(StringSet const& types) const {
   return res;
 }
 
-std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::applyAugment(std::shared_ptr<Item> const item, AugmentItem* augment) const {
+std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::applyAugment(std::shared_ptr<Item> const item, AugmentItem& augment) const {
   if (!item)
     return item;
   std::unique_lock locker(m_luaMutex, std::defer_lock);
@@ -630,14 +630,14 @@ std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::applyAugment(s
     auto removed = script.removeCallbacks("root");
     if (!removed)
       return std::unexpected(std::move(removed.error()));
-    auto rootCallbacks = LuaBindings::makeRootCallbacks(m_root, this);
+    auto rootCallbacks = LuaBindings::makeRootCallbacks(m_root, std::cref(*this));
     if (!rootCallbacks)
       return std::unexpected(std::move(rootCallbacks.error()));
     if (auto added = script.addCallbacks("root", std::move(*rootCallbacks)); !added)
       return std::unexpected(std::move(added.error()));
     if (auto set = script.setLuaRoot(m_luaRoot); !set)
       return std::unexpected(std::move(set.error()));
-    auto scripts = augment->augmentScripts();
+    auto scripts = augment.augmentScripts();
     if (!scripts)
       return std::unexpected(std::move(scripts.error()));
     if (auto set = script.setScripts(std::move(*scripts)); !set)
@@ -647,7 +647,7 @@ std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::applyAugment(s
       return std::unexpected(std::move(itemCallbacks.error()));
     if (auto added = script.addCallbacks("item", std::move(*itemCallbacks)); !added)
       return std::unexpected(std::move(added.error()));
-    auto configCallbacks = LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, augment, std::placeholders::_1, std::placeholders::_2));
+    auto configCallbacks = LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, std::ref(augment), std::placeholders::_1, std::placeholders::_2));
     if (!configCallbacks)
       return std::unexpected(std::move(configCallbacks.error()));
     return script.addCallbacks("config", std::move(*configCallbacks));
@@ -672,7 +672,7 @@ std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::applyAugment(s
   if (!cleaned)
     return std::unexpected(std::move(cleaned.error()));
   if (*luaResult && !std::get<0>(**luaResult).isNull()) {
-    auto taken = augment->take(std::get<1>(**luaResult).value_or(1));
+    auto taken = augment.take(std::get<1>(**luaResult).value_or(1));
     if (!taken)
       return std::unexpected(std::move(taken.error()));
     auto descriptor = ItemDescriptor::create(std::get<0>(**luaResult));
@@ -689,7 +689,7 @@ std::expected<bool, StarException> ItemDatabase::ageItem(std::shared_ptr<Item>& 
   auto data = itemData(item->name());
   if (!data)
     return std::unexpected(std::move(data.error()));
-  if ((*data)->agingScripts.empty())
+  if (data->get().agingScripts.empty())
     return false;
   ItemDescriptor original = item->descriptor();
   std::unique_lock locker(m_luaMutex, std::defer_lock);
@@ -698,14 +698,14 @@ std::expected<bool, StarException> ItemDatabase::ageItem(std::shared_ptr<Item>& 
   auto removed = script.removeCallbacks("root");
   if (!removed)
     return std::unexpected(std::move(removed.error()));
-  auto callbacks = LuaBindings::makeRootCallbacks(m_root, this);
+  auto callbacks = LuaBindings::makeRootCallbacks(m_root, std::cref(*this));
   if (!callbacks)
     return std::unexpected(std::move(callbacks.error()));
   if (auto added = script.addCallbacks("root", std::move(*callbacks)); !added)
     return std::unexpected(std::move(added.error()));
   if (auto set = script.setLuaRoot(m_luaRoot); !set)
     return std::unexpected(std::move(set.error()));
-  if (auto set = script.setScripts((*data)->agingScripts); !set)
+  if (auto set = script.setScripts(data->get().agingScripts); !set)
     return std::unexpected(std::move(set.error()));
   auto initialized = script.init();
   if (!initialized) {
@@ -782,7 +782,7 @@ std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::tryCreateItem(
     auto config = itemConfig(current.name(), current.parameters(), level, seed);
     if (!config)
       return std::unexpected(std::move(config.error()));
-    return createItem((*data)->type, *config);
+    return createItem(data->get().type, *config);
   };
   auto initial = [&]() -> std::expected<std::shared_ptr<Item>, StarException> {
     ItemDescriptor current = descriptor;
@@ -854,16 +854,16 @@ std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::tryCreateItem(
   auto fallbackConfig = itemConfig("perfectlygenericitem", std::move(fallbackParameters), fallbackLevel, fallbackSeed);
   if (!fallbackConfig)
     return std::unexpected(std::move(fallbackConfig.error()));
-  auto fallback = createItem((*fallbackData)->type, *fallbackConfig);
+  auto fallback = createItem(fallbackData->get().type, *fallbackConfig);
   if (!fallback)
     return std::unexpected(std::move(fallback.error()));
   (*fallback)->setCount(descriptor.count());
   return fallback;
 }
 
-std::expected<ItemDatabase::ItemData const*, StarException> ItemDatabase::itemData(String const& name) const {
-  if (auto p = m_items.ptr(name))
-    return p;
+std::expected<std::reference_wrapper<ItemDatabase::ItemData const>, StarException> ItemDatabase::itemData(String const& name) const {
+  if (auto p = m_items.maybeRef(name))
+    return *p;
   return std::unexpected(ItemException::format("No such item '{}'", name));
 }
 
@@ -893,7 +893,7 @@ std::expected<void, StarException> ItemDatabase::addItemSet(ItemType type, Strin
   auto files = (*assets)->scanExtension(extension);
   if (!files)
     return std::unexpected(std::move(files.error()));
-  for (auto const& assetFile : **files) {
+  for (auto const& assetFile : files->get()) {
     auto const& file = assetFile.string();
     auto loaded = [&]() -> std::expected<ItemData, StarException> {
       auto config = (*assets)->json(file);
@@ -1016,7 +1016,7 @@ std::expected<void, StarException> ItemDatabase::scanItems() {
     auto files = (*assets)->scanExtension(itemSet.second);
     if (!files)
       return std::unexpected(std::move(files.error()));
-    auto queued = (*assets)->queueJsons(**files);
+    auto queued = (*assets)->queueJsons(files->get());
     if (!queued)
       return std::unexpected(std::move(queued.error()));
   }
@@ -1052,10 +1052,10 @@ std::expected<void, StarException> ItemDatabase::scanRecipes() {
   auto files = (*assets)->scanExtension("recipe");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  auto queued = (*assets)->queueJsons(**files);
+  auto queued = (*assets)->queueJsons(files->get());
   if (!queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& assetFile : **files) {
+  for (auto const& assetFile : files->get()) {
     auto const& file = assetFile.string();
     auto recipe = (*assets)->json(file).and_then([&](Json const& config) { return parseRecipe(config); });
     if (recipe) {
@@ -1121,13 +1121,13 @@ std::expected<void, StarException> ItemDatabase::addBlueprints() {
       auto rarity = RarityNames->getRight((*baseItem)->rarity());
       if (!rarity)
         return std::unexpected(std::move(rarity.error()));
-      config["rarity"] = **rarity;
+      config["rarity"] = rarity->get();
       config["price"] = (*baseItem)->price();
       data.customConfig = std::move(config);
       auto baseData = itemData(baseDesc.name());
       if (!baseData)
         return std::unexpected(std::move(baseData.error()));
-      data.directory = (*baseData)->directory;
+      data.directory = baseData->get().directory;
       m_items[data.name] = std::move(data);
       return {};
     }();

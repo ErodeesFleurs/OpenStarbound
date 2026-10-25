@@ -98,7 +98,7 @@ public:
   EntityType entityType() const override;
 
   [[nodiscard]]
-  std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  std::expected<void, StarException> init(World& world, EntityId entityId, EntityMode mode) override;
   [[nodiscard]]
   std::expected<void, StarException> uninit() override;
 
@@ -131,11 +131,11 @@ public:
   std::expected<bool, StarException> shouldDestroy() const override;
 
   [[nodiscard]]
-  std::expected<void, StarException> render(RenderCallback* renderCallback) override;
+  std::expected<void, StarException> render(RenderCallback& renderCallback) override;
   [[nodiscard]]
-  std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback) override;
+  std::expected<void, StarException> renderLightSources(RenderCallback& renderCallback) override;
   
-  MovementController* movementController() override;
+  MovementController& movementController() override;
   
   // The item that this drop contains
   std::shared_ptr<Item> item() const;

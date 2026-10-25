@@ -77,7 +77,7 @@ std::expected<std::optional<std::pair<List<RectI>, Set<Vec2I>>>, StarException> 
       return {};
     }
     if (forcePlacement) {
-      auto built = (*dungeonGenerator)->buildDungeon(*anchorPart, position - (*anchorPart)->anchorPoint(), &writer, forcePlacement);
+      auto built = (*dungeonGenerator)->buildDungeon(*anchorPart, position - (*anchorPart)->anchorPoint(), writer, forcePlacement);
       if (!built) return std::unexpected(std::move(built.error()));
       return std::optional<std::pair<List<RectI>, Set<Vec2I>>>(std::move(*built));
     }
@@ -99,10 +99,10 @@ std::expected<std::optional<std::pair<List<RectI>, Set<Vec2I>>>, StarException> 
       });
       if (!visited) return std::unexpected(std::move(visited.error()));
       if (!collision) {
-        auto canPlace = (*anchorPart)->canPlace(pos, &writer);
+        auto canPlace = (*anchorPart)->canPlace(pos, writer);
         if (!canPlace) return std::unexpected(std::move(canPlace.error()));
         if (*canPlace) {
-          auto built = (*dungeonGenerator)->buildDungeon(*anchorPart, pos, &writer, forcePlacement);
+          auto built = (*dungeonGenerator)->buildDungeon(*anchorPart, pos, writer, forcePlacement);
           if (!built) return std::unexpected(std::move(built.error()));
           return std::optional<std::pair<List<RectI>, Set<Vec2I>>>(std::move(*built));
         }

@@ -46,22 +46,20 @@ extern std::expected<EnumMap<EntityType>, StarException> const EntityTypeNames =
 
 Entity::~Entity() {}
 
-std::expected<void, StarException> Entity::init(World* world, EntityId entityId, EntityMode mode) {
-  if (!world)
-    return std::unexpected(EntityException("Entity::init called with null world pointer"));
+std::expected<void, StarException> Entity::init(World& world, EntityId entityId, EntityMode mode) {
   if (entityId == NullEntityId)
     return std::unexpected(EntityException("Entity::init called with null entity id"));
   if (m_world)
     return std::unexpected(EntityException("Entity::init called when already initialized"));
 
-  m_world = world;
+  m_world = std::ref(world);
   m_entityMode = mode;
   m_entityId = entityId;
   return {};
 }
 
 std::expected<void, StarException> Entity::uninit() {
-  m_world = nullptr;
+  m_world.reset();
   m_entityMode = {};
   m_entityId = NullEntityId;
   return {};
@@ -133,7 +131,7 @@ std::expected<bool, StarException> Entity::shouldDestroy() const {
   return false;
 }
 
-std::expected<void, StarException> Entity::destroy(RenderCallback*) { return {}; }
+std::expected<void, StarException> Entity::destroy(std::optional<std::reference_wrapper<RenderCallback>>) { return {}; }
 
 std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Entity::receiveMessage(ConnectionId, String const&, JsonArray const&) {
   return {};
@@ -141,9 +139,9 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Entity
 
 std::expected<void, StarException> Entity::update(float, std::uint64_t) { return {}; }
 
-std::expected<void, StarException> Entity::render(RenderCallback*) { return {}; }
+std::expected<void, StarException> Entity::render(RenderCallback&) { return {}; }
 
-std::expected<void, StarException> Entity::renderLightSources(RenderCallback*) { return {}; }
+std::expected<void, StarException> Entity::renderLightSources(RenderCallback&) { return {}; }
 
 EntityId Entity::entityId() const {
   return m_entityId;
@@ -167,14 +165,14 @@ bool Entity::inWorld() const {
   }
 }
 
-std::expected<World*, StarException> Entity::world() const {
+std::expected<std::reference_wrapper<World>, StarException> Entity::world() const {
   if (!m_world)
     return std::unexpected(EntityException("world() called while uninitialized"));
 
-  return m_world;
+  return *m_world;
 }
 
-World* Entity::worldPtr() const {
+std::optional<std::reference_wrapper<World>> Entity::maybeWorld() const {
   return m_world;
 }
 
@@ -207,7 +205,7 @@ Root& Entity::root() const {
 }
 
 Entity::Entity(Root& root) : m_root(root) {
-  m_world = nullptr;
+  m_world.reset();
   m_entityId = NullEntityId;
   m_persistent = false;
   m_keepAlive = false;

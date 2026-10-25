@@ -108,7 +108,7 @@ inline bool operator==(Node const& a, Node const& b) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, Node const& node);
-[[nodiscard]] std::expected<String const*, StarException> actionName(Action action);
+[[nodiscard]] std::expected<std::reference_wrapper<String const>, StarException> actionName(Action action);
 [[nodiscard]] std::expected<String, StarException> printEdge(Edge const& edge);
 
 }

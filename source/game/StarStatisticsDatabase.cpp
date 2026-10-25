@@ -42,11 +42,11 @@ std::expected<void, StarException> StatisticsDatabase::load() {
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto eventFiles = (*assets)->scanExtension("event");
   if (!eventFiles) return std::unexpected(std::move(eventFiles.error()));
-  if (auto result = (*assets)->queueJsons(**eventFiles); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = (*assets)->queueJsons(eventFiles->get()); !result) return std::unexpected(std::move(result.error()));
   auto achievementFiles = (*assets)->scanExtension("achievement");
   if (!achievementFiles) return std::unexpected(std::move(achievementFiles.error()));
-  if (auto result = (*assets)->queueJsons(**achievementFiles); !result) return std::unexpected(std::move(result.error()));
-  for (auto const& path : **eventFiles) {
+  if (auto result = (*assets)->queueJsons(achievementFiles->get()); !result) return std::unexpected(std::move(result.error()));
+  for (auto const& path : eventFiles->get()) {
     auto const& file = path.string();
     std::expected<void, StarException> loggingResult;
     auto loaded = [&]() -> std::expected<void, StarException> {
@@ -65,7 +65,7 @@ std::expected<void, StarException> StatisticsDatabase::load() {
       if (auto result = m_root.logger().error("Error loading event file {}: {}", file, outputException(ExceptionDiagnostic(loaded.error()), true)); !result) return std::unexpected(std::move(result.error()));
     }
   }
-  for (auto const& path : **achievementFiles) {
+  for (auto const& path : achievementFiles->get()) {
     auto const& file = path.string();
     std::expected<void, StarException> loggingResult;
     auto loaded = [&]() -> std::expected<void, StarException> {
@@ -96,30 +96,30 @@ std::expected<void, StarException> StatisticsDatabase::load() {
 
 std::expected<std::shared_ptr<StatEvent>, StarException> StatisticsDatabase::event(String const& name) const {
   std::lock_guard locker(m_cacheMutex);
-  auto cached = m_eventCache.get(name, [this](String const& name) -> std::expected<std::shared_ptr<StatEvent>, StarException> {
-    if (auto path = m_eventPaths.maybe(name)) {
-      auto assets = m_root.assets();
+  auto cached = m_eventCache.get(name, [&database = *this](String const& name) -> std::expected<std::shared_ptr<StatEvent>, StarException> {
+    if (auto path = database.m_eventPaths.maybe(name)) {
+      auto assets = database.m_root.assets();
       if (!assets) return std::unexpected(std::move(assets.error()));
       return readEvent(**assets, *path);
     }
     return std::shared_ptr<StatEvent>{};
   });
   if (!cached) return std::unexpected(std::move(cached.error()));
-  return **cached;
+  return cached->get();
 }
 
 std::expected<std::shared_ptr<Achievement>, StarException> StatisticsDatabase::achievement(String const& name) const {
   std::lock_guard locker(m_cacheMutex);
-  auto cached = m_achievementCache.get(name, [this](String const& name) -> std::expected<std::shared_ptr<Achievement>, StarException> {
-    if (auto path = m_achievementPaths.maybe(name)) {
-      auto assets = m_root.assets();
+  auto cached = m_achievementCache.get(name, [&database = *this](String const& name) -> std::expected<std::shared_ptr<Achievement>, StarException> {
+    if (auto path = database.m_achievementPaths.maybe(name)) {
+      auto assets = database.m_root.assets();
       if (!assets) return std::unexpected(std::move(assets.error()));
       return readAchievement(**assets, *path);
     }
     return std::shared_ptr<Achievement>{};
   });
   if (!cached) return std::unexpected(std::move(cached.error()));
-  return **cached;
+  return cached->get();
 }
 
 StringList StatisticsDatabase::allAchievements() const {

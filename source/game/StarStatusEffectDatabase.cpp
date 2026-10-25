@@ -34,9 +34,9 @@ std::expected<std::shared_ptr<StatusEffectDatabase>, StarException> StatusEffect
   auto database = std::shared_ptr<StatusEffectDatabase>(new StatusEffectDatabase());
   auto files = assets->scanExtension("statuseffect");
   if (!files) return std::unexpected(std::move(files.error()));
-  auto queued = assets->queueJsons(**files);
+  auto queued = assets->queueJsons(files->get());
   if (!queued) return std::unexpected(std::move(queued.error()));
-  for (auto const& asset : **files) {
+  for (auto const& asset : files->get()) {
     auto const& file = asset.string();
     auto config = assets->json(file);
     if (!config) return std::unexpected(std::move(config.error()));
@@ -55,8 +55,8 @@ bool StatusEffectDatabase::isUniqueEffect(UniqueStatusEffect const& effect) cons
 }
 
 std::expected<UniqueStatusEffectConfig, StarException> StatusEffectDatabase::uniqueEffectConfig(UniqueStatusEffect const& effect) const {
-  if (auto uniqueEffect = m_uniqueEffects.ptr(effect))
-    return *uniqueEffect;
+  if (auto uniqueEffect = m_uniqueEffects.maybeRef(effect))
+    return uniqueEffect->get();
   return std::unexpected(StatusEffectDatabaseException::format("No such unique stat effect '{}'", effect));
 }
 

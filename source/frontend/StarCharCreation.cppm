@@ -54,7 +54,7 @@ namespace Star {
 class Player;
 
 struct CharCreationExceptionTag {
-  static constexpr char const* name() { return "CharCreationException"; }
+  static constexpr std::string_view name() { return "CharCreationException"; }
 };
 using CharCreationException = StarError<CharCreationExceptionTag, StarException>;
 
@@ -83,7 +83,7 @@ public:
 private:
   explicit CharCreationPane(GuiContext& guiContext);
   [[nodiscard]] std::expected<void, StarException> init(std::function<std::expected<void, StarException>(std::shared_ptr<Player>)> requestCloseFunc);
-  [[nodiscard]] std::expected<void, StarException> nameBoxCallback(Widget* object);
+  [[nodiscard]] std::expected<void, StarException> nameBoxCallback(Widget& object);
 
   [[nodiscard]] std::expected<void, StarException> changed();
 

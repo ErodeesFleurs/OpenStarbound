@@ -60,14 +60,14 @@ public:
   virtual AudioFormat enableAudio() = 0;
   virtual void disableAudio() = 0;
 
-  typedef std::function<void(std::uint8_t*, int)> AudioCallback;
+  typedef std::function<void(std::span<std::uint8_t>)> AudioCallback;
   [[nodiscard]] virtual std::expected<bool, StarException> openAudioInputDevice(std::uint32_t deviceId, int freq, int channels, AudioCallback callback) = 0;
   virtual bool closeAudioInputDevice() = 0;
 
   virtual bool hasClipboard() = 0;
   virtual bool setClipboard(String text) = 0;
   virtual bool setClipboardData(StringMap<ByteArray>) = 0;
-  [[nodiscard]] virtual std::expected<bool, StarException> setClipboardImage(Image const& image, ByteArray* png = {}, String const* path = nullptr) = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> setClipboardImage(Image const& image, std::optional<std::reference_wrapper<ByteArray>> png = std::nullopt, std::optional<std::reference_wrapper<String const>> path = std::nullopt) = 0;
   [[nodiscard]] virtual std::expected<bool, StarException> setClipboardFile(String const& path) = 0;
   virtual std::optional<String> getClipboard() = 0;
 

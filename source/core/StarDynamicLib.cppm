@@ -19,7 +19,7 @@ export module star.dynamic_lib;
 export namespace Star {
 
 struct DynamicLibExceptionTag {
-  static constexpr char const* name() { return "DynamicLibException"; }
+  static constexpr std::string_view name() { return "DynamicLibException"; }
 };
 using DynamicLibException = StarError<DynamicLibExceptionTag, StarException>;
 
@@ -32,7 +32,7 @@ public:
   [[nodiscard]] static std::expected<std::unique_ptr<DynamicLib>, StarException> loadLibraryBase(String const& baseName);
   [[nodiscard]] static std::expected<std::unique_ptr<DynamicLib>, StarException> currentExecutable();
   virtual ~DynamicLib() = default;
-  [[nodiscard]] virtual std::expected<void*, StarException> funcPtr(char const* name) = 0;
+  [[nodiscard]] virtual std::expected<void*, StarException> funcPtr(String const& name) = 0;
 };
 
 [[nodiscard]] inline std::expected<std::unique_ptr<DynamicLib>, StarException> DynamicLib::loadLibraryBase(String const& baseName) {
@@ -59,8 +59,8 @@ public:
     }
   }
 
-  [[nodiscard]] std::expected<void*, StarException> funcPtr(char const* name) override {
-    auto symbol = GetProcAddress(m_handle, name);
+  [[nodiscard]] std::expected<void*, StarException> funcPtr(String const& name) override {
+    auto symbol = GetProcAddress(m_handle, name.utf8Ptr());
     if (!symbol) {
       auto status = GetLastError();
       return std::unexpected(DynamicLibException::format("Cannot find dynamic library symbol '{}' (Windows error {})", name, status));
@@ -112,11 +112,11 @@ public:
     }
   }
 
-  [[nodiscard]] std::expected<void*, StarException> funcPtr(char const* name) override {
+  [[nodiscard]] std::expected<void*, StarException> funcPtr(String const& name) override {
     // A symbol may legally have a null address. Only dlerror distinguishes it
     // from a failed lookup, and stale loader diagnostics must be cleared first.
     dlerror();
-    auto symbol = dlsym(m_handle, name);
+    auto symbol = dlsym(m_handle, name.utf8Ptr());
     if (auto detail = dlerror())
       return std::unexpected(DynamicLibException::format("Cannot find dynamic library symbol '{}': {}", name, detail));
     return symbol;

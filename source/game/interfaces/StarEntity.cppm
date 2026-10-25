@@ -33,7 +33,7 @@ class World;
 struct DamageNotification;
 
 struct EntityExceptionTag {
-  static constexpr char const* name() { return "EntityException"; }
+  static constexpr std::string_view name() { return "EntityException"; }
 };
 using EntityException = StarError<EntityExceptionTag, StarException>;
 
@@ -84,11 +84,11 @@ public:
   virtual EntityType entityType() const = 0;
 
   // Called when an entity is first inserted into a World.  Calling base class
-  // init sets the world pointer, entityId, and entityMode.
-  [[nodiscard]] virtual std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode);
+  // init binds the world, entityId, and entityMode.
+  [[nodiscard]] virtual std::expected<void, StarException> init(World& world, EntityId entityId, EntityMode mode);
 
   // Should do whatever steps necessary to take an entity out of a world,
-  // default implementation clears the world pointer, entityMode, and entityId.
+  // default implementation clears the world binding, entityMode, and entityId.
   [[nodiscard]] virtual std::expected<void, StarException> uninit();
 
   // Write state data that changes over time, and is used to keep slaves in
@@ -172,8 +172,8 @@ public:
   // world, default returns false.
   [[nodiscard]] virtual std::expected<bool, StarException> shouldDestroy() const;
   // Will be called once before removing the entity from the World on both
-  // master and slave entities.
-  [[nodiscard]] virtual std::expected<void, StarException> destroy(RenderCallback* renderCallback);
+  // master and slave entities. The callback is absent on the server.
+  [[nodiscard]] virtual std::expected<void, StarException> destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback);
 
   // Entities can send other entities potentially remote messages and get
   // responses back from them, and should implement this to receive and respond
@@ -184,22 +184,22 @@ public:
 
   [[nodiscard]] virtual std::expected<void, StarException> update(float dt, std::uint64_t currentStep);
 
-  [[nodiscard]] virtual std::expected<void, StarException> render(RenderCallback* renderer);
+  [[nodiscard]] virtual std::expected<void, StarException> render(RenderCallback& renderer);
 
-  [[nodiscard]] virtual std::expected<void, StarException> renderLightSources(RenderCallback* renderer);
+  [[nodiscard]] virtual std::expected<void, StarException> renderLightSources(RenderCallback& renderer);
 
   EntityId entityId() const;
 
   EntityDamageTeam getTeam() const;
 
   // Returns true if an entity is initialized in a world, and thus has a valid
-  // world pointer, entity id, and entity mode.
+  // world binding, entity id, and entity mode.
   bool inWorld() const;
 
   // Reports an error if not currently in a world.
-  [[nodiscard]] std::expected<World*, StarException> world() const;
-  // Returns nullptr if not currently in a world.
-  World* worldPtr() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<World>, StarException> world() const;
+  // Returns empty if not currently in a world.
+  std::optional<std::reference_wrapper<World>> maybeWorld() const;
 
   // Specifies if the entity is to be saved to disk alongside the sector or
   // despawned.
@@ -235,7 +235,7 @@ private:
   bool m_persistent;
   bool m_keepAlive;
   std::optional<String> m_uniqueId;
-  World* m_world;
+  std::optional<std::reference_wrapper<World>> m_world;
   EntityDamageTeam m_team;
 };
 

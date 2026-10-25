@@ -214,7 +214,7 @@ std::expected<void, StarException> MerchantPane::initialize(std::shared_ptr<Worl
   m_player = std::move(player);
   m_sourceEntityId = sourceEntityId;
 
-  auto assetsResult568 = context()->root().assets();
+  auto assetsResult568 = context().root().assets();
   if (!assetsResult568)
     return std::unexpected(std::move(assetsResult568.error()));
   auto assets = std::move(*assetsResult568);
@@ -259,7 +259,7 @@ std::expected<void, StarException> MerchantPane::initialize(std::shared_ptr<Worl
   auto getUIntResult579 = m_settings.getUInt("sellContainerSize");
   if (!getUIntResult579)
     return std::unexpected(std::move(getUIntResult579.error()));
-  m_itemBag = std::make_shared<ItemBag>(context()->root(), std::move(*getUIntResult579));
+  m_itemBag = std::make_shared<ItemBag>(context().root(), std::move(*getUIntResult579));
 
   auto jsonResult580 = assets->json("/interface/windowconfig/crafting.config:default");
   if (!jsonResult580)
@@ -272,8 +272,8 @@ std::expected<void, StarException> MerchantPane::initialize(std::shared_ptr<Worl
     return std::unexpected(std::move(getUIntResult582.error()));
   m_maxBuyCount = std::move(*getUIntResult582);
 
-  GuiReader reader(*context());
-  reader.registerCallback("spinCount.up", [this](Widget*)  -> std::expected<void, StarException> {
+  GuiReader reader(context());
+  reader.registerCallback("spinCount.up", [this](Widget&)  -> std::expected<void, StarException> {
       if (m_selectedIndex != NPos) {
         {
           auto maxBuyCountResult583 = maxBuyCount();
@@ -294,7 +294,7 @@ std::expected<void, StarException> MerchantPane::initialize(std::shared_ptr<Worl
   return {};
 });
 
-  reader.registerCallback("spinCount.down", [this](Widget*)  -> std::expected<void, StarException> {
+  reader.registerCallback("spinCount.down", [this](Widget&)  -> std::expected<void, StarException> {
       if (m_selectedIndex != NPos) {
         if (m_buyCount > 1)
           m_buyCount--;
@@ -315,35 +315,35 @@ std::expected<void, StarException> MerchantPane::initialize(std::shared_ptr<Worl
   return {};
 });
 
-  reader.registerCallback("countChanged", [this](Widget*)  -> std::expected<void, StarException> { auto countChangedResult587 = countChanged();
+  reader.registerCallback("countChanged", [this](Widget&)  -> std::expected<void, StarException> { auto countChangedResult587 = countChanged();
                                                             if (!countChangedResult587)
                                                               return std::unexpected(std::move(countChangedResult587.error())); 
   return {};
 });
-  reader.registerCallback("parseCountText", [this](Widget*)  -> std::expected<void, StarException> { auto countTextChangedResult588 = countTextChanged();
+  reader.registerCallback("parseCountText", [this](Widget&)  -> std::expected<void, StarException> { auto countTextChangedResult588 = countTextChanged();
                                                               if (!countTextChangedResult588)
                                                                 return std::unexpected(std::move(countTextChangedResult588.error())); 
   return {};
 });
 
-  reader.registerCallback("buy", [this](Widget*)  -> std::expected<void, StarException> { auto buyResult589 = buy();
+  reader.registerCallback("buy", [this](Widget&)  -> std::expected<void, StarException> { auto buyResult589 = buy();
                                                    if (!buyResult589)
                                                      return std::unexpected(std::move(buyResult589.error())); 
   return {};
 });
 
-  reader.registerCallback("sell", [this](Widget*)  -> std::expected<void, StarException> { auto sellResult590 = sell();
+  reader.registerCallback("sell", [this](Widget&)  -> std::expected<void, StarException> { auto sellResult590 = sell();
                                                     if (!sellResult590)
                                                       return std::unexpected(std::move(sellResult590.error())); 
   return {};
 });
 
-  reader.registerCallback("close", [this](Widget*)  -> std::expected<void, StarException> { dismiss(); 
+  reader.registerCallback("close", [this](Widget&)  -> std::expected<void, StarException> { dismiss();
   return {};
 });
 
   reader.registerCallback("itemGrid",
-      [this](Widget*)  -> std::expected<void, StarException> {
+      [this](Widget&)  -> std::expected<void, StarException> {
         auto swapSlotResult591 = swapSlot();
         if (!swapSlotResult591)
           return std::unexpected(std::move(swapSlotResult591.error()));
@@ -362,7 +362,7 @@ std::expected<void, StarException> MerchantPane::initialize(std::shared_ptr<Worl
   if (!getResult594)
     return std::unexpected(std::move(getResult594.error()));
   paneLayout = jsonMerge(paneLayout, std::move(*getResult594));
-  auto constructResult595 = reader.construct(paneLayout, this);
+  auto constructResult595 = reader.construct(paneLayout, *this);
   if (!constructResult595)
     return std::unexpected(std::move(constructResult595.error()));
 
@@ -370,7 +370,7 @@ std::expected<void, StarException> MerchantPane::initialize(std::shared_ptr<Worl
   if (!findChildResult596)
     return std::unexpected(std::move(findChildResult596.error()));
   m_tabSet = std::move(*findChildResult596);
-  m_tabSet->setCallback([this](Widget*)  -> std::expected<void, StarException> {
+  m_tabSet->setCallback([this](Widget&)  -> std::expected<void, StarException> {
     auto bgResult = getBG();
     if (m_tabSet->selectedTab() == 0)
       {
@@ -478,7 +478,7 @@ std::expected<std::shared_ptr<Pane>, StarException> MerchantPane::createTooltip(
       auto entry = m_itemGuiList->itemAt(i);
       if (entry->getChildAt(screenPosition)) {
         auto itemConfig = m_itemList.get(i);
-        auto itemDatabaseResult615 = context()->root().itemDatabase();
+        auto itemDatabaseResult615 = context().root().itemDatabase();
         if (!itemDatabaseResult615)
           return std::unexpected(std::move(itemDatabaseResult615.error()));
         auto getResult616 = itemConfig.get("item");
@@ -491,7 +491,7 @@ std::expected<std::shared_ptr<Pane>, StarException> MerchantPane::createTooltip(
         if (!itemSharedResult618)
           return std::unexpected(std::move(itemSharedResult618.error()));
         std::shared_ptr<Item> item = std::move(*itemSharedResult618);
-        auto buildItemTooltipResult619 = ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
+        auto buildItemTooltipResult619 = ItemTooltipBuilder::buildItemTooltip(context(), item, m_player);
         if (!buildItemTooltipResult619)
           return std::unexpected(std::move(buildItemTooltipResult619.error()));
         return std::move(*buildItemTooltipResult619);
@@ -504,7 +504,7 @@ std::expected<std::shared_ptr<Pane>, StarException> MerchantPane::createTooltip(
         return std::unexpected(std::move(itemAtResult620.error()));
       if (auto item = std::move(*itemAtResult620))
         {
-          auto buildItemTooltipResult621 = ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
+          auto buildItemTooltipResult621 = ItemTooltipBuilder::buildItemTooltip(context(), item, m_player);
           if (!buildItemTooltipResult621)
             return std::unexpected(std::move(buildItemTooltipResult621.error()));
           return std::move(*buildItemTooltipResult621);
@@ -531,7 +531,7 @@ std::expected<void, StarException> MerchantPane::update(float dt) {
       dismiss();
   }
 
-  if (m_refreshTimer.wrapTick(context()->root().timing().timestep)) {
+  if (m_refreshTimer.wrapTick(context().root().timing().timestep)) {
     for (std::size_t i = 0; i < m_itemList.size(); ++i) {
       auto itemConfig = m_itemList.get(i);
       auto itemWidget = m_itemGuiList->itemAt(i);
@@ -577,7 +577,7 @@ std::expected<std::shared_ptr<Item>, StarException> MerchantPane::addItems(std::
 std::expected<void, StarException> MerchantPane::swapSlot() {
   std::shared_ptr<Item> source = m_player->inventory()->swapSlotItem();
   auto inv = m_player->inventory();
-  if (context()->shiftHeld()) {
+  if (context().shiftHeld()) {
     {
       auto selectedItemResult631 = m_itemGrid->selectedItem();
       if (!selectedItemResult631)
@@ -633,7 +633,7 @@ std::expected<void, StarException> MerchantPane::buildItemList() {
     return std::unexpected(std::move(getArrayResult640.error()));
   m_itemList = std::move(*getArrayResult640);
 
-  auto itemDatabaseResult641 = context()->root().itemDatabase();
+  auto itemDatabaseResult641 = context().root().itemDatabase();
   if (!itemDatabaseResult641)
     return std::unexpected(std::move(itemDatabaseResult641.error()));
   auto itemDatabase = std::move(*itemDatabaseResult641);
@@ -720,7 +720,7 @@ std::expected<void, StarException> MerchantPane::buildItemList() {
 }
 
 std::expected<void, StarException> MerchantPane::setupWidget(std::shared_ptr<Widget> const& widget, Json const& itemConfig) {
-  auto& root = context()->root();
+  auto& root = context().root();
   auto assetsResult651 = root.assets();
   if (!assetsResult651)
     return std::unexpected(std::move(assetsResult651.error()));
@@ -794,7 +794,7 @@ std::expected<void, StarException> MerchantPane::updateSelection() {
 
     if (m_selectedIndex != NPos) {
       auto itemConfig = m_itemList.get(m_selectedIndex);
-      auto itemDatabaseResult665 = context()->root().itemDatabase();
+      auto itemDatabaseResult665 = context().root().itemDatabase();
       if (!itemDatabaseResult665)
         return std::unexpected(std::move(itemDatabaseResult665.error()));
       auto getResult666 = itemConfig.get("item");
@@ -895,8 +895,8 @@ std::expected<void, StarException> MerchantPane::buy() {
         
       }
 
-    auto& guiContext = *context();
-    auto assetsResult680 = context()->root().assets();
+    auto& guiContext = context();
+    auto assetsResult680 = context().root().assets();
     if (!assetsResult680)
       return std::unexpected(std::move(assetsResult680.error()));
     auto jsonResult681 = std::move(*assetsResult680)->json("/merchant.config:buySound");
@@ -954,8 +954,8 @@ std::expected<void, StarException> MerchantPane::sell() {
     if (!updateSellTotalResult690)
       return std::unexpected(std::move(updateSellTotalResult690.error()));
 
-    auto& guiContext = *context();
-    auto assetsResult691 = context()->root().assets();
+    auto& guiContext = context();
+    auto assetsResult691 = context().root().assets();
     if (!assetsResult691)
       return std::unexpected(std::move(assetsResult691.error()));
     auto jsonResult692 = std::move(*assetsResult691)->json("/merchant.config:sellSound");
@@ -973,7 +973,7 @@ std::expected<void, StarException> MerchantPane::sell() {
 
 std::expected<int, StarException> MerchantPane::maxBuyCount() {
   if (auto selected = m_itemGuiList->selectedWidget()) {
-    auto assetsResult695 = context()->root().assets();
+    auto assetsResult695 = context().root().assets();
     if (!assetsResult695)
       return std::unexpected(std::move(assetsResult695.error()));
     auto assets = std::move(*assetsResult695);

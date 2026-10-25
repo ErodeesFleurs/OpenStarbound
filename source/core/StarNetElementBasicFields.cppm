@@ -36,7 +36,7 @@ public:
   template <typename Mutator>
   void update(Mutator&& mutator);
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version = std::nullopt) override;
 
   // Values are never interpolated, but they will be delayed for the given
   // interpolationTime.
@@ -57,7 +57,7 @@ protected:
   virtual void updated();
 
 private:
-  NetElementVersion const* m_netVersion = nullptr;
+  std::optional<std::reference_wrapper<NetElementVersion const>> m_netVersion = std::nullopt;
   std::uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
   bool m_updated = false;
@@ -162,7 +162,7 @@ template <typename T>
 void NetElementBasicField<T>::push(T value) {
   m_value = std::move(value);
   updated();
-  m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
+  m_latestUpdateVersion = m_netVersion ? m_netVersion->get().current() : 0;
   if (m_pendingInterpolatedValues)
     m_pendingInterpolatedValues->clear();
 }
@@ -177,14 +177,14 @@ template <typename Mutator>
 void NetElementBasicField<T>::update(Mutator&& mutator) {
   if (mutator(m_value)) {
     updated();
-    m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
+    m_latestUpdateVersion = m_netVersion ? m_netVersion->get().current() : 0;
     if (m_pendingInterpolatedValues)
       m_pendingInterpolatedValues->clear();
   }
 }
 
 template <typename T>
-void NetElementBasicField<T>::initNetVersion(NetElementVersion const* version) {
+void NetElementBasicField<T>::initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version) {
   m_netVersion = version;
   m_latestUpdateVersion = 0;
 }
@@ -233,7 +233,7 @@ template <typename T>
 [[nodiscard]] std::expected<void, StarException> NetElementBasicField<T>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return {};
   { auto result = readData(ds, m_value); if (!result) return std::unexpected(std::move(result.error())); }
-  m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
+  m_latestUpdateVersion = m_netVersion ? m_netVersion->get().current() : 0;
   updated();
   if (m_pendingInterpolatedValues)
     m_pendingInterpolatedValues->clear();
@@ -258,7 +258,7 @@ template <typename T>
   if (!checkWithRules(rules)) return {};
   T t;
   { auto result = readData(ds, t); if (!result) return std::unexpected(std::move(result.error())); }
-  m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
+  m_latestUpdateVersion = m_netVersion ? m_netVersion->get().current() : 0;
   if (m_pendingInterpolatedValues) {
     // Only append an incoming delta to our pending value list if the incoming
     // step is forward in time of every other pending value.  In any other

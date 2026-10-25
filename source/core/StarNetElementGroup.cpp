@@ -10,21 +10,21 @@ import star.net_compatibility;
 import star.version;
 namespace Star {
 
-std::expected<void, StarException> NetElementGroup::addNetElement(NetElement* element, bool propagateInterpolation) {
+std::expected<void, StarException> NetElementGroup::addNetElement(NetElement& element, bool propagateInterpolation) {
   if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((!m_elements.any([element](auto p) { return p.first == element; })));
+    Star::starAssertFailed((!m_elements.any([&element](auto p) { return &p.first.get() == &element; })));
   }
 
-  element->initNetVersion(m_version);
+  element.initNetVersion(m_version);
   if (m_interpolationEnabled && propagateInterpolation) {
-    auto result = element->enableNetInterpolation(m_extrapolationHint);
+    auto result = element.enableNetInterpolation(m_extrapolationHint);
     if (!result) return std::unexpected(std::move(result.error()));
   }
-  m_elements.append(std::pair<NetElement*, bool>(element, propagateInterpolation));
+  m_elements.append(std::pair<std::reference_wrapper<NetElement>, bool>(std::ref(element), propagateInterpolation));
 
 
   for (VersionNumber i = 0; i < (CurrentStreamVersion + 1); i++) {
-    if (element->checkWithRules(NetCompatibilityRules(i)))
+    if (element.checkWithRules(NetCompatibilityRules(i)))
       m_elementCounts[i]++;
   }
   return {};
@@ -35,17 +35,17 @@ void NetElementGroup::clearNetElements() {
   m_elements.clear();
 }
 
-void NetElementGroup::initNetVersion(NetElementVersion const* version) {
+void NetElementGroup::initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version) {
   m_version = version;
   for (auto& p : m_elements)
-    p.first->initNetVersion(m_version);
+    p.first.get().initNetVersion(m_version);
 }
 
 std::expected<void, StarException> NetElementGroup::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return {};
   for (auto& p : m_elements) {
-    if (p.first->checkWithRules(rules)) {
-      auto result = p.first->netStore(ds, rules);
+    if (p.first.get().checkWithRules(rules)) {
+      auto result = p.first.get().netStore(ds, rules);
       if (!result) return std::unexpected(std::move(result.error()));
     }
   }
@@ -55,8 +55,8 @@ std::expected<void, StarException> NetElementGroup::netStore(DataStream& ds, Net
 std::expected<void, StarException> NetElementGroup::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return {};
   for (auto& p : m_elements) {
-    if (p.first->checkWithRules(rules)) {
-      auto result = p.first->netLoad(ds, rules);
+    if (p.first.get().checkWithRules(rules)) {
+      auto result = p.first.get().netLoad(ds, rules);
       if (!result) return std::unexpected(std::move(result.error()));
     }
   }
@@ -68,7 +68,7 @@ std::expected<void, StarException> NetElementGroup::enableNetInterpolation(float
   m_extrapolationHint = extrapolationHint;
   for (auto& p : m_elements) {
     if (p.second) {
-      auto result = p.first->enableNetInterpolation(extrapolationHint);
+      auto result = p.first.get().enableNetInterpolation(extrapolationHint);
       if (!result) return std::unexpected(std::move(result.error()));
     }
   }
@@ -80,7 +80,7 @@ std::expected<void, StarException> NetElementGroup::disableNetInterpolation() {
   m_extrapolationHint = 0;
   for (auto& p : m_elements) {
     if (p.second) {
-      auto result = p.first->disableNetInterpolation();
+      auto result = p.first.get().disableNetInterpolation();
       if (!result) return std::unexpected(std::move(result.error()));
     }
   }
@@ -90,7 +90,7 @@ std::expected<void, StarException> NetElementGroup::disableNetInterpolation() {
 std::expected<void, StarException> NetElementGroup::tickNetInterpolation(float dt) {
   if (m_interpolationEnabled) {
     for (auto& p : m_elements) {
-      auto result = p.first->tickNetInterpolation(dt);
+      auto result = p.first.get().tickNetInterpolation(dt);
       if (!result) return std::unexpected(std::move(result.error()));
     }
   }
@@ -106,8 +106,8 @@ std::expected<bool, StarException> NetElementGroup::writeNetDelta(DataStream& ds
     return false;
   } else if (expectedSize == 1) {
     for (auto& element : m_elements) {
-      if (element.first->checkWithRules(rules)) {
-        return element.first->writeNetDelta(ds, fromVersion, rules);
+      if (element.first.get().checkWithRules(rules)) {
+        return element.first.get().writeNetDelta(ds, fromVersion, rules);
       }
     }
   } else {
@@ -117,11 +117,11 @@ std::expected<bool, StarException> NetElementGroup::writeNetDelta(DataStream& ds
     for (auto& element : m_elements) {
       if (i > expectedSize)
         break;
-      if (!element.first->checkWithRules(rules))
+      if (!element.first.get().checkWithRules(rules))
         continue;
       ++i;
 
-      auto written = element.first->writeNetDelta(m_buffer, fromVersion, rules);
+      auto written = element.first.get().writeNetDelta(m_buffer, fromVersion, rules);
       if (!written) {
         m_buffer.clear();
         return std::unexpected(std::move(written.error()));
@@ -151,8 +151,8 @@ std::expected<void, StarException> NetElementGroup::readNetDelta(DataStream& ds,
     return std::unexpected(IOException("readNetDelta called on empty NetElementGroup"));
   if (expectedSize == 1) {
     for (auto& element : m_elements)
-      if (element.first->checkWithRules(rules))
-        return element.first->readNetDelta(ds, interpolationTime, rules);
+      if (element.first.get().checkWithRules(rules))
+        return element.first.get().readNetDelta(ds, interpolationTime, rules);
     return {};
   }
   auto indexResult = ds.readVlqU();
@@ -160,14 +160,14 @@ std::expected<void, StarException> NetElementGroup::readNetDelta(DataStream& ds,
   std::uint64_t readIndex = *indexResult;
   std::uint64_t i = 0;
   for (auto& element : m_elements) {
-    if (!element.first->checkWithRules(rules)) continue;
+    if (!element.first.get().checkWithRules(rules)) continue;
     if (readIndex == 0 || readIndex - 1 > i) {
       if (m_interpolationEnabled) {
-        auto result = element.first->blankNetDelta(interpolationTime);
+        auto result = element.first.get().blankNetDelta(interpolationTime);
         if (!result) return std::unexpected(std::move(result.error()));
       }
     } else if (readIndex - 1 == i) {
-      auto result = element.first->readNetDelta(ds, interpolationTime, rules);
+      auto result = element.first.get().readNetDelta(ds, interpolationTime, rules);
       if (!result) return std::unexpected(std::move(result.error()));
       auto next = ds.readVlqU();
       if (!next) return std::unexpected(std::move(next.error()));
@@ -185,7 +185,7 @@ std::expected<void, StarException> NetElementGroup::readNetDelta(DataStream& ds,
 std::expected<void, StarException> NetElementGroup::blankNetDelta(float interpolationTime) {
   if (m_interpolationEnabled) {
     for (auto& p : m_elements) {
-      auto result = p.first->blankNetDelta(interpolationTime);
+      auto result = p.first.get().blankNetDelta(interpolationTime);
       if (!result) return std::unexpected(std::move(result.error()));
     }
   }

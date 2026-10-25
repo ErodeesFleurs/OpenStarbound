@@ -61,9 +61,9 @@ std::expected<std::shared_ptr<Stagehand>, StarException> Stagehand::create(Root&
     explicit MakeShared(Root& root) : Entity(root), Stagehand(root) {}
   };
   auto stagehand = std::make_shared<MakeShared>(rootContext);
-  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_xPosition); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_yPosition); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_uniqueIdNetState); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = stagehand->m_netGroup.addNetElement(stagehand->m_xPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = stagehand->m_netGroup.addNetElement(stagehand->m_yPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = stagehand->m_netGroup.addNetElement(stagehand->m_uniqueIdNetState); !result) return std::unexpected(std::move(result.error()));
   auto uniqueId = config.optString("uniqueId");
   if (!uniqueId)
     return std::unexpected(std::move(uniqueId.error()));
@@ -81,9 +81,9 @@ std::expected<std::shared_ptr<Stagehand>, StarException> Stagehand::create(Root&
     explicit MakeShared(Root& root) : Entity(root), Stagehand(root) {}
   };
   auto stagehand = std::make_shared<MakeShared>(rootContext);
-  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_xPosition); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_yPosition); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_uniqueIdNetState); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = stagehand->m_netGroup.addNetElement(stagehand->m_xPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = stagehand->m_netGroup.addNetElement(stagehand->m_yPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = stagehand->m_netGroup.addNetElement(stagehand->m_uniqueIdNetState); !result) return std::unexpected(std::move(result.error()));
   if (auto result = stagehand->readConfig(std::move(*config)); !result)
     return std::unexpected(std::move(result.error()));
   return stagehand;
@@ -108,34 +108,34 @@ std::expected<ByteArray, StarException> Stagehand::netStore(NetCompatibilityRule
   return DataStreamBuffer::serialize(m_config);
 }
 
-std::expected<void, StarException> Stagehand::init(World* world, EntityId entityId, EntityMode mode) {
+std::expected<void, StarException> Stagehand::init(World& world, EntityId entityId, EntityMode mode) {
   if (auto result = Entity::init(world, entityId, mode); !result)
     return result;
-  auto initialize = [&]() -> std::expected<void, StarException> {
-    if (isMaster() && m_scripted) {
-      auto stagehandCallbacks = makeStagehandCallbacks();
+  auto initialize = [&self = *this, &world]() -> std::expected<void, StarException> {
+    if (self.isMaster() && self.m_scripted) {
+      auto stagehandCallbacks = self.makeStagehandCallbacks();
       if (!stagehandCallbacks)
         return std::unexpected(std::move(stagehandCallbacks.error()));
-      if (auto result = m_scriptComponent.addCallbacks("stagehand", std::move(*stagehandCallbacks)); !result)
+      if (auto result = self.m_scriptComponent.addCallbacks("stagehand", std::move(*stagehandCallbacks)); !result)
         return result;
-      auto configCallbacks = LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
-          return m_config.query(name, def);
+      auto configCallbacks = LuaBindings::makeConfigCallbacks([&self](String const& name, Json const& def) {
+          return self.m_config.query(name, def);
         });
       if (!configCallbacks)
         return std::unexpected(std::move(configCallbacks.error()));
-      if (auto result = m_scriptComponent.addCallbacks("config", std::move(*configCallbacks)); !result)
+      if (auto result = self.m_scriptComponent.addCallbacks("config", std::move(*configCallbacks)); !result)
         return result;
-      auto entityCallbacks = LuaBindings::makeEntityCallbacks(this);
+      auto entityCallbacks = LuaBindings::makeEntityCallbacks(self);
       if (!entityCallbacks)
         return std::unexpected(std::move(entityCallbacks.error()));
-      if (auto result = m_scriptComponent.addCallbacks("entity", std::move(*entityCallbacks)); !result)
+      if (auto result = self.m_scriptComponent.addCallbacks("entity", std::move(*entityCallbacks)); !result)
         return result;
-      auto behaviorCallbacks = LuaBindings::makeBehaviorCallbacks(this->root(), &m_behaviors);
+      auto behaviorCallbacks = LuaBindings::makeBehaviorCallbacks(self.root(), self.m_behaviors);
       if (!behaviorCallbacks)
         return std::unexpected(std::move(behaviorCallbacks.error()));
-      if (auto result = m_scriptComponent.addCallbacks("behavior", std::move(*behaviorCallbacks)); !result)
+      if (auto result = self.m_scriptComponent.addCallbacks("behavior", std::move(*behaviorCallbacks)); !result)
         return result;
-      return m_scriptComponent.init(world);
+      return self.m_scriptComponent.init(world);
     }
     return {};
   }();
@@ -207,7 +207,7 @@ std::expected<void, StarException> Stagehand::update(float dt, std::uint64_t) {
   auto currentWorld = world();
   if (!currentWorld)
     return std::unexpected(std::move(currentWorld.error()));
-  if ((*currentWorld)->isClient()) {
+  if (currentWorld->get().isClient()) {
     auto boundBox = metaBoundBox().translated(position());
     this->root().spatialLogger().logPoly("world", PolyF(boundBox), { 0, 255, 255, 255 });
     this->root().spatialLogger().logLine("world", boundBox.min(), boundBox.max(), {0, 255, 255, 255});
@@ -236,13 +236,13 @@ Stagehand::Stagehand(Root& rootContext) : Entity(rootContext), m_scriptComponent
   setPersistent(true);
 
 
-  m_netGroup.setNeedsLoadCallback([this](bool) -> std::expected<void, StarException> {
-      setUniqueId(m_uniqueIdNetState.get());
+  m_netGroup.setNeedsLoadCallback([&self = *this](bool) -> std::expected<void, StarException> {
+      self.setUniqueId(self.m_uniqueIdNetState.get());
       return {};
     });
 
-  m_netGroup.setNeedsStoreCallback([this]() -> std::expected<void, StarException> {
-      m_uniqueIdNetState.set(uniqueId());
+  m_netGroup.setNeedsStoreCallback([&self = *this]() -> std::expected<void, StarException> {
+      self.m_uniqueIdNetState.set(self.uniqueId());
       return {};
     });
 }
@@ -261,7 +261,7 @@ std::expected<void, StarException> Stagehand::readConfig(Json config) {
   auto clientMode = ClientEntityModeNames->getLeft(*clientModeName);
   if (!clientMode)
     return std::unexpected(std::move(clientMode.error()));
-  m_clientEntityMode = **clientMode;
+  m_clientEntityMode = clientMode->get();
   auto position = m_config.opt("position");
   if (!position)
     return std::unexpected(std::move(position.error()));
@@ -314,17 +314,17 @@ std::expected<void, StarException> Stagehand::readConfig(Json config) {
 
 std::expected<LuaCallbacks, StarException> Stagehand::makeStagehandCallbacks() {
   LuaCallbacks callbacks;
-  if (auto result = callbacks.registerCallback("id", [this]() { return entityId(); }); !result)
+  if (auto result = callbacks.registerCallback("id", [&self = *this]() { return self.entityId(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("position", [this]() { return position(); }); !result)
+  if (auto result = callbacks.registerCallback("position", [&self = *this]() { return self.position(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("setPosition", [this](Vec2F const& position) { setPosition(position); }); !result)
+  if (auto result = callbacks.registerCallback("setPosition", [&self = *this](Vec2F const& position) { self.setPosition(position); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("die", [this]() { m_dead = true; }); !result)
+  if (auto result = callbacks.registerCallback("die", [&self = *this]() { self.m_dead = true; }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("typeName", [this]() { return typeName(); }); !result)
+  if (auto result = callbacks.registerCallback("typeName", [&self = *this]() { return self.typeName(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("setUniqueId", [this](std::optional<String> const& uniqueId) { setUniqueId(uniqueId); }); !result)
+  if (auto result = callbacks.registerCallback("setUniqueId", [&self = *this](std::optional<String> const& uniqueId) { self.setUniqueId(uniqueId); }); !result)
     return std::unexpected(std::move(result.error()));
   return callbacks;
 }
@@ -341,7 +341,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Stageh
   auto currentWorld = world();
   if (!currentWorld)
     return std::unexpected(std::move(currentWorld.error()));
-  return m_scriptComponent.handleMessage(message, sendingConnection == (*currentWorld)->connection(), args);
+  return m_scriptComponent.handleMessage(message, sendingConnection == currentWorld->get().connection(), args);
 }
 
 }

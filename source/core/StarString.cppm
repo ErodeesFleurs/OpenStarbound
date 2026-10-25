@@ -19,7 +19,7 @@ class StringList;
 class StringView;
 
 struct StringExceptionTag {
-  static constexpr char const* name() { return "StringException"; }
+  static constexpr std::string_view name() { return "StringException"; }
 };
 using StringException = StarError<StringExceptionTag, StarException>;
 
@@ -76,14 +76,13 @@ public:
   String(String&& s) noexcept;
 
   // These assume utf8 input
-  String(char const* s);
-  String(char const* s, std::size_t n);
+  template <std::size_t N>
+  String(char const (&s)[N]) : m_string(s) {}
   String(std::string const& s);
   String(std::string&& s) noexcept;
 
   [[nodiscard]] static std::expected<String, StarException> create(std::wstring const& s);
-  [[nodiscard]] static std::expected<String, StarException> create(Char const* s);
-  [[nodiscard]] static std::expected<String, StarException> create(Char const* s, std::size_t n);
+  [[nodiscard]] static std::expected<String, StarException> create(std::u32string_view s);
   [[nodiscard]] static std::expected<String, StarException> create(Char c, std::size_t n);
   [[nodiscard]] static std::expected<String, StarException> create(Char c);
 
@@ -175,18 +174,18 @@ public:
 
   void append(String const& s);
   void append(std::string const& s);
-  [[nodiscard]] std::expected<void, StarException> append(Char const* s);
-  [[nodiscard]] std::expected<void, StarException> append(Char const* s, std::size_t n);
-  void append(char const* s);
-  void append(char const* s, std::size_t n);
+  [[nodiscard]] std::expected<void, StarException> append(std::u32string_view s);
+  void append(std::string_view s);
+  template <std::size_t N>
+  void append(char const (&s)[N]) { append(std::string_view(s)); }
   [[nodiscard]] std::expected<void, StarException> append(Char c);
 
   void prepend(String const& s);
   void prepend(std::string const& s);
-  [[nodiscard]] std::expected<void, StarException> prepend(Char const* s);
-  [[nodiscard]] std::expected<void, StarException> prepend(Char const* s, std::size_t n);
-  void prepend(char const* s);
-  void prepend(char const* s, std::size_t n);
+  [[nodiscard]] std::expected<void, StarException> prepend(std::u32string_view s);
+  void prepend(std::string_view s);
+  template <std::size_t N>
+  void prepend(char const (&s)[N]) { prepend(std::string_view(s)); }
   [[nodiscard]] std::expected<void, StarException> prepend(Char c);
 
   [[nodiscard]] std::expected<void, StarException> push_back(Char c);
@@ -230,37 +229,36 @@ public:
 
   String& operator+=(String const& s);
   String& operator+=(std::string const& s);
-  [[nodiscard]] std::expected<String*, StarException> operator+=(Char const* s);
-  String& operator+=(char const* s);
-  [[nodiscard]] std::expected<String*, StarException> operator+=(Char c);
+  [[nodiscard]] std::expected<std::reference_wrapper<String>, StarException> operator+=(std::u32string_view s);
+  template <std::size_t N>
+  String& operator+=(char const (&s)[N]) { append(std::string_view(s)); return *this; }
+  [[nodiscard]] std::expected<std::reference_wrapper<String>, StarException> operator+=(Char c);
 
   friend bool operator==(String const& s1, String const& s2);
   friend bool operator==(String const& s1, std::string const& s2);
   friend bool operator==(String const& s1, std::string_view s2) { return s1.m_string == s2; }
-  friend std::expected<bool, StarException> operator==(String const& s1, Char const* s2);
-  friend bool operator==(String const& s1, char const* s2);
+  friend std::expected<bool, StarException> operator==(String const& s1, std::u32string_view s2);
   friend bool operator==(std::string const& s1, String const& s2);
-  friend std::expected<bool, StarException> operator==(Char const* s1, String const& s2);
-  friend bool operator==(char const* s1, String const& s2);
+  friend std::expected<bool, StarException> operator==(std::u32string_view s1, String const& s2);
 
   // C++20 rewrites !=, >, <= and >= from these, including the mixed operand
   // forms: any of the seven rewrites produces an ambiguity only if a candidate
   // with a worse conversion is needed, and every form has a <=> here.
   friend std::strong_ordering operator<=>(String const& s1, String const& s2);
   friend std::strong_ordering operator<=>(String const& s1, std::string const& s2);
-  friend std::expected<std::strong_ordering, StarException> operator<=>(String const& s1, Char const* s2);
-  friend std::strong_ordering operator<=>(String const& s1, char const* s2);
+  friend std::expected<std::strong_ordering, StarException> operator<=>(String const& s1, std::u32string_view s2);
+  friend std::strong_ordering operator<=>(String const& s1, std::string_view s2);
   friend std::strong_ordering operator<=>(std::string const& s1, String const& s2);
-  friend std::expected<std::strong_ordering, StarException> operator<=>(Char const* s1, String const& s2);
-  friend std::strong_ordering operator<=>(char const* s1, String const& s2);
+  friend std::expected<std::strong_ordering, StarException> operator<=>(std::u32string_view s1, String const& s2);
+  friend std::strong_ordering operator<=>(std::string_view s1, String const& s2);
 
   friend String operator+(String s1, String const& s2);
   friend String operator+(String s1, std::string const& s2);
-  friend std::expected<String, StarException> operator+(String s1, Char const* s2);
-  friend String operator+(String s1, char const* s2);
+  friend std::expected<String, StarException> operator+(String s1, std::u32string_view s2);
+  friend String operator+(String s1, std::string_view s2);
   friend String operator+(std::string const& s1, String const& s2);
-  friend std::expected<String, StarException> operator+(Char const* s1, String const& s2);
-  friend String operator+(char const* s1, String const& s2);
+  friend std::expected<String, StarException> operator+(std::u32string_view s1, String const& s2);
+  friend String operator+(std::string_view s1, String const& s2);
 
   friend std::expected<String, StarException> operator+(String s, Char c);
   friend std::expected<String, StarException> operator+(Char c, String const& s);
@@ -278,6 +276,17 @@ public:
   String& operator+=(StringView s);
   String& operator+=(std::string_view s);
 
+  template <std::size_t N>
+  friend bool operator==(String const& s, char const (&text)[N]) { return s.m_string == std::string_view(text); }
+  template <std::size_t N>
+  friend std::strong_ordering operator<=>(String const& s, char const (&text)[N]) { return s.m_string <=> std::string_view(text); }
+  template <std::size_t N>
+  friend std::strong_ordering operator<=>(char const (&text)[N], String const& s) { return std::string_view(text) <=> s.m_string; }
+  template <std::size_t N>
+  friend String operator+(String s, char const (&text)[N]) { s.append(std::string_view(text)); return s; }
+  template <std::size_t N>
+  friend String operator+(char const (&text)[N], String const& s) { String result(text); result.append(s); return result; }
+
 private:
   [[nodiscard]] std::expected<int, StarException> compare(std::size_t selfOffset,
       std::size_t selfLen,
@@ -289,12 +298,12 @@ private:
   std::string m_string;
 };
 
-[[nodiscard]] std::expected<bool, StarException> operator==(String const& s1, String::Char const* s2);
-[[nodiscard]] std::expected<bool, StarException> operator==(String::Char const* s1, String const& s2);
-[[nodiscard]] std::expected<std::strong_ordering, StarException> operator<=>(String const& s1, String::Char const* s2);
-[[nodiscard]] std::expected<std::strong_ordering, StarException> operator<=>(String::Char const* s1, String const& s2);
-[[nodiscard]] std::expected<String, StarException> operator+(String s1, String::Char const* s2);
-[[nodiscard]] std::expected<String, StarException> operator+(String::Char const* s1, String const& s2);
+[[nodiscard]] std::expected<bool, StarException> operator==(String const& s1, std::u32string_view s2);
+[[nodiscard]] std::expected<bool, StarException> operator==(std::u32string_view s1, String const& s2);
+[[nodiscard]] std::expected<std::strong_ordering, StarException> operator<=>(String const& s1, std::u32string_view s2);
+[[nodiscard]] std::expected<std::strong_ordering, StarException> operator<=>(std::u32string_view s1, String const& s2);
+[[nodiscard]] std::expected<String, StarException> operator+(String s1, std::u32string_view s2);
+[[nodiscard]] std::expected<String, StarException> operator+(std::u32string_view s1, String const& s2);
 [[nodiscard]] std::expected<String, StarException> operator+(String s, String::Char c);
 [[nodiscard]] std::expected<String, StarException> operator+(String::Char c, String const& s);
 
@@ -317,8 +326,8 @@ public:
   StringList(Base&& l);
   StringList(StringList const& l);
   StringList(StringList&& l);
-  [[nodiscard]] static std::expected<StringList, StarException> create(std::size_t len, String::Char const* const* list);
-  StringList(std::size_t len, char const* const* list);
+  [[nodiscard]] static std::expected<StringList, StarException> create(std::span<std::u32string_view const> list);
+  StringList(std::span<std::string_view const> list);
   explicit StringList(std::size_t len, String const& s1 = String());
   StringList(std::initializer_list<String> list);
 
@@ -357,7 +366,8 @@ struct hash<String> {
       value.put(c);
     return value.hash();
   }
-  std::size_t operator()(char const* s) const { return (*this)(std::string_view(s)); }
+  template <std::size_t N>
+  std::size_t operator()(char const (&s)[N]) const { return (*this)(std::string_view(s)); }
   std::size_t operator()(std::string const& s) const { return (*this)(std::string_view(s)); }
 };
 

@@ -86,7 +86,7 @@ public:
 
   EntityType entityType() const override;
 
-  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> init(World& world, EntityId entityId, EntityMode mode) override;
   [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   String typeName() const;
@@ -111,14 +111,14 @@ public:
   // If the bullet time to live has run out, or if it has collided, etc this
   // will return true.
   [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
-  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) override;
 
   [[nodiscard]] std::expected<List<DamageSource>, StarException> damageSources() const override;
   [[nodiscard]] std::expected<void, StarException> hitOther(EntityId targetEntityId, DamageRequest const& dr) override;
 
   [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
-  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback& renderCallback) override;
 
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
@@ -161,7 +161,7 @@ public:
 
   using Entity::setTeam;
   
-  MovementController* movementController() override;
+  MovementController& movementController() override;
 
 private:
   Projectile(Root& rootContext);
@@ -178,7 +178,7 @@ private:
     NetElementBool enabled;
   };
 
-  [[nodiscard]] static std::expected<List<Particle>, StarException> sparkBlock(Root& rootContext, World* world, Vec2I const& position, Vec2F const& damageSource);
+  [[nodiscard]] static std::expected<List<Particle>, StarException> sparkBlock(Root& rootContext, World& world, Vec2I const& position, Vec2F const& damageSource);
 
   int getFrame() const;
   void setFrame(int frame);
@@ -191,7 +191,7 @@ private:
 
   [[nodiscard]] std::expected<LuaCallbacks, StarException> makeProjectileCallbacks();
 
-  [[nodiscard]] std::expected<void, StarException> renderPendingRenderables(RenderCallback* renderCallback);
+  [[nodiscard]] std::expected<void, StarException> renderPendingRenderables(RenderCallback& renderCallback);
 
   std::shared_ptr<ProjectileConfig> m_config;
   Json m_parameters;

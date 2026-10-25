@@ -58,7 +58,7 @@ std::expected<void, StarException> Animation::initialize(Json config, String con
   }
   if (config.isNull())
     config = JsonObject();
-  auto assets = m_root->assets();
+  auto assets = m_root.get().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   auto fetched = (*assets)->fetchJson(config);
@@ -73,7 +73,7 @@ std::expected<void, StarException> Animation::initialize(Json config, String con
   auto mode = AnimationModeNames->getLeft(*modeName);
   if (!mode)
     return std::unexpected(std::move(mode.error()));
-  m_mode = **mode;
+  m_mode = mode->get();
   auto base = config.getString("frames", "");
   if (!base)
     return std::unexpected(std::move(base.error()));
@@ -126,7 +126,7 @@ std::expected<void, StarException> Animation::initialize(Json config, String con
   auto variants = config.getInt("variants", 1);
   if (!variants)
     return std::unexpected(std::move(variants.error()));
-  m_variantOffset = m_root->random().randInt(*variants - 1) * m_frameNumber;
+  m_variantOffset = m_root.get().random().randInt(*variants - 1) * m_frameNumber;
   reset();
   return {};
 }
@@ -157,7 +157,7 @@ std::expected<Drawable, StarException> Animation::drawable(float pixelSize) cons
   String baseFrame = AssetPath::relativeTo(m_directory, m_base).replaceTags(m_tagValues);
   if (m_appendFrame)
     baseFrame += ":" + toString(m_frame);
-  auto imageMetadata = m_root->imageMetadataDatabase();
+  auto imageMetadata = m_root.get().imageMetadataDatabase();
   if (!imageMetadata)
     return std::unexpected(std::move(imageMetadata.error()));
   auto drawable = Drawable::makeImage(**imageMetadata, std::move(baseFrame), pixelSize, m_centered, m_offset);

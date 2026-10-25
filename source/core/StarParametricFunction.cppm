@@ -35,8 +35,8 @@ public:
   std::size_t size() const;
   bool empty() const;
 
-  [[nodiscard]] std::expected<IndexType const*, StarException> index(std::size_t i) const;
-  [[nodiscard]] std::expected<ValueType const*, StarException> value(std::size_t i) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<IndexType const>, StarException> index(std::size_t i) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<ValueType const>, StarException> value(std::size_t i) const;
 
   // Returns true if the values of the table are also valid indexes (true when
   // the data points are monotonic increasing)
@@ -48,7 +48,7 @@ public:
 
   // Find the value to the left of the given index.  If the index is lower than
   // the lowest index point, returns the first value.
-  [[nodiscard]] std::expected<ValueType const*, StarException> get(IndexType index) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<ValueType const>, StarException> get(IndexType index) const;
 
 protected:
   typedef std::vector<IndexType> IndexList;
@@ -165,17 +165,17 @@ bool ParametricTable<IndexType, ValueType>::empty() const {
 }
 
 template <typename IndexType, typename ValueType>
-std::expected<IndexType const*, StarException> ParametricTable<IndexType, ValueType>::index(std::size_t i) const {
+std::expected<std::reference_wrapper<IndexType const>, StarException> ParametricTable<IndexType, ValueType>::index(std::size_t i) const {
   if (i >= size())
     return std::unexpected(MathException("Index out of bounds in ParametricTable::index"));
-  return &m_indexes[i];
+  return std::reference_wrapper<IndexType const>(m_indexes[i]);
 }
 
 template <typename IndexType, typename ValueType>
-std::expected<ValueType const*, StarException> ParametricTable<IndexType, ValueType>::value(std::size_t i) const {
+std::expected<std::reference_wrapper<ValueType const>, StarException> ParametricTable<IndexType, ValueType>::value(std::size_t i) const {
   if (i >= size())
     return std::unexpected(MathException("Index out of bounds in ParametricTable::value"));
-  return &m_values[i];
+  return std::reference_wrapper<ValueType const>(m_values[i]);
 }
 
 template <typename IndexType, typename ValueType>
@@ -202,7 +202,7 @@ std::expected<void, StarException> ParametricTable<IndexType, ValueType>::invert
 }
 
 template <typename IndexType, typename ValueType>
-std::expected<ValueType const*, StarException> ParametricTable<IndexType, ValueType>::get(IndexType index) const {
+std::expected<std::reference_wrapper<ValueType const>, StarException> ParametricTable<IndexType, ValueType>::get(IndexType index) const {
   if (empty())
     return std::unexpected(MathException("get called on empty ParametricTable"));
 
@@ -210,7 +210,7 @@ std::expected<ValueType const*, StarException> ParametricTable<IndexType, ValueT
   if (i != m_indexes.begin())
     --i;
 
-  return &m_values[std::distance(m_indexes.begin(), i)];
+  return std::reference_wrapper<ValueType const>(m_values[std::distance(m_indexes.begin(), i)]);
 }
 
 template <typename IndexType, typename ValueType>

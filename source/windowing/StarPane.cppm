@@ -78,6 +78,10 @@ public:
   }
 
   [[nodiscard]] static std::expected<std::shared_ptr<Pane>, StarException> create(GuiContext& context);
+  ~Pane() override;
+
+  using Widget::removeChild;
+  bool removeChild(Widget& member) override;
 
   struct BGResult {
     String header;
@@ -98,8 +102,8 @@ public:
   // so add them in the correct order.
 
   [[nodiscard]] virtual std::expected<bool, StarException> sendEvent(InputEvent const& event);
-  [[nodiscard]] virtual std::expected<void, StarException> setFocus(Widget const* focus);
-  virtual void removeFocus(Widget const* focus);
+  [[nodiscard]] virtual std::expected<void, StarException> setFocus(Widget const& focus);
+  virtual void removeFocus(Widget const& focus);
   virtual void removeFocus();
 
   [[nodiscard]] virtual std::expected<void, StarException> update(float dt);
@@ -128,8 +132,8 @@ public:
   String subTitle() const;
   std::shared_ptr<Widget> titleIcon() const;
 
-  virtual Pane* window();
-  virtual Pane const* window() const;
+  virtual std::optional<std::reference_wrapper<Pane>> window();
+  virtual std::optional<std::reference_wrapper<Pane const>> window() const;
 
   PaneAnchor anchor();
   void setAnchor(PaneAnchor anchor);

@@ -11,14 +11,14 @@ import star.encode;
 namespace Star {
 
 Uuid::Uuid(RandomService& random) {
-  random.randBytes(m_data.ptr(), UuidSize);
+  random.randBytes({m_data.data(), UuidSize});
 }
 
 std::expected<Uuid, StarException> Uuid::create(ByteArray const& bytes) {
   if (bytes.size() != UuidSize)
     return std::unexpected(UuidException(strf("Size mismatch in reading Uuid from ByteArray: {} vs {}", bytes.size(), UuidSize)));
   auto uuid = nil();
-  bytes.copyTo(uuid.m_data.ptr(), UuidSize);
+  bytes.copyTo({uuid.m_data.data(), UuidSize});
   return uuid;
 }
 
@@ -29,16 +29,16 @@ std::expected<Uuid, StarException> Uuid::create(String const& hex) {
   return create(*bytes);
 }
 
-char const* Uuid::ptr() const {
-  return m_data.ptr();
+std::span<char const> Uuid::span() const {
+  return {m_data.data(), UuidSize};
 }
 
 ByteArray Uuid::bytes() const {
-  return ByteArray(m_data.ptr(), UuidSize);
+  return ByteArray(span());
 }
 
 String Uuid::hex() const {
-  return hexEncode(m_data.ptr(), UuidSize);
+  return hexEncode(span());
 }
 
 bool Uuid::operator==(Uuid const& u) const {
@@ -68,16 +68,16 @@ bool Uuid::operator>=(Uuid const& u) const {
 std::size_t hash<Uuid>::operator()(Uuid const& u) const {
   std::size_t hashval = 0;
   for (std::size_t i = 0; i < UuidSize; ++i)
-    hashCombine(hashval, u.ptr()[i]);
+    hashCombine(hashval, u.span()[i]);
   return hashval;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, Uuid& uuid) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Uuid& uuid) {
   auto result = ds.read<Uuid>();
   if (!result)
     return std::unexpected(std::move(result.error()));
   uuid = std::move(*result);
-  return &ds;
+  return std::ref(ds);
 }
 
 template <>
@@ -88,11 +88,11 @@ std::expected<Uuid, StarException> DataStream::read<Uuid>() {
   return Uuid::create(*bytes);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, Uuid const& uuid) {
-  auto result = ds.writeData(uuid.ptr(), UuidSize);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Uuid const& uuid) {
+  auto result = ds.writeData(uuid.span());
   if (!result)
     return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 }

@@ -52,16 +52,16 @@ import star.tool_user_item;
 
 namespace Star {
 
-ToolUserItem::ToolUserItem() : m_owner(nullptr) {}
+ToolUserItem::ToolUserItem() = default;
 
-std::expected<void, StarException> ToolUserItem::init(ToolUserEntity* owner, ToolHand hand) {
-  m_owner = owner;
+std::expected<void, StarException> ToolUserItem::init(ToolUserEntity& owner, ToolHand hand) {
+  m_owner = std::ref(owner);
   m_hand = hand;
   return {};
 }
 
 std::expected<void, StarException> ToolUserItem::uninit() {
-  m_owner = nullptr;
+  m_owner.reset();
   m_hand = {};
   return {};
 }
@@ -72,16 +72,16 @@ bool ToolUserItem::initialized() const {
   return (bool)m_owner;
 }
 
-std::expected<ToolUserEntity*, StarException> ToolUserItem::owner() const {
+std::expected<std::reference_wrapper<ToolUserEntity>, StarException> ToolUserItem::owner() const {
   if (!m_owner)
     return std::unexpected(ToolUserItemException("Not initialized in ToolUserItem::owner"));
-  return m_owner;
+  return *m_owner;
 }
 
 std::expected<EntityMode, StarException> ToolUserItem::entityMode() const {
   if (!m_owner)
     return std::unexpected(ToolUserItemException("Not initialized in ToolUserItem::entityMode"));
-  auto mode = m_owner->entityMode();
+  auto mode = m_owner->get().entityMode();
   if (!mode)
     return std::unexpected(ToolUserItemException("Owner is uninitialized in ToolUserItem::entityMode"));
   return *mode;
@@ -93,10 +93,10 @@ std::expected<ToolHand, StarException> ToolUserItem::hand() const {
   return *m_hand;
 }
 
-std::expected<World*, StarException> ToolUserItem::world() const {
+std::expected<std::reference_wrapper<World>, StarException> ToolUserItem::world() const {
   if (!m_owner)
     return std::unexpected(ToolUserItemException("Not initialized in ToolUserItem::world"));
-  return m_owner->world();
+  return m_owner->get().world();
 }
 
 std::expected<List<DamageSource>, StarException> ToolUserItem::damageSources() const {

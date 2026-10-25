@@ -72,14 +72,15 @@ public:
     return Star::typeName<OptionsMenu>();
   }
 
-  [[nodiscard]] static std::expected<std::shared_ptr<OptionsMenu>, StarException> create(GuiContext& guiContext, PaneManager* manager, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] static std::expected<std::shared_ptr<OptionsMenu>, StarException> create(GuiContext& guiContext, PaneManager& manager, std::shared_ptr<UniverseClient> client);
+  void detachInterface() noexcept;
 
   [[nodiscard]] std::expected<void, StarException> show() override;
 
   [[nodiscard]] std::expected<void, StarException> toggleFullscreen();
 
 private:
-  OptionsMenu(GuiContext& guiContext, PaneManager* manager);
+  OptionsMenu(GuiContext& guiContext, PaneManager& manager);
   [[nodiscard]] std::expected<void, StarException> init(std::shared_ptr<UniverseClient> client);
   static StringList const ConfigKeys;
 
@@ -127,7 +128,7 @@ private:
   std::shared_ptr<BindingsMenu> m_modBindingsMenu;
   std::shared_ptr<KeybindingsMenu> m_keybindingsMenu;
   std::shared_ptr<GraphicsMenu> m_graphicsMenu;
-  PaneManager* m_paneManager;
+  std::optional<std::reference_wrapper<PaneManager>> m_paneManager;
 };
 
 }

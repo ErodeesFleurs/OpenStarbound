@@ -81,7 +81,7 @@ public:
 
   [[nodiscard]] static std::expected<std::shared_ptr<LoungeableObject>, StarException> create(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
 
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback) override;
 
   [[nodiscard]] std::expected<InteractAction, StarException> interact(InteractRequest const& request) override;
 

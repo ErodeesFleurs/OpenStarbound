@@ -8,6 +8,7 @@ import star.time;
 import star.random;
 import star.ttl_cache;
 import star.casting;
+import star.optional;
 import star.game_types;
 import star.poly;
 import star.strong_typedef;
@@ -159,7 +160,7 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
         auto world = entity->world();
         if (!world)
           return std::unexpected(std::move(world.error()));
-        auto other = (*world)->entity(otherId);
+        auto other = world->get().entity(otherId);
         return other && entity->getTeam().canDamage(other->getTeam(), false);
   }); !registration)
       return std::unexpected(std::move(registration.error()));
@@ -172,10 +173,10 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("aggressive",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<Json, StarException> {
-        if (auto monster = as<Monster>(entity))
-            return monster->aggressive();
-        if (auto npc = as<Npc>(entity))
-            return npc->aggressive();
+        if (auto monster = asRef<Monster>(*entity))
+            return monster->get().aggressive();
+        if (auto npc = asRef<Npc>(*entity))
+            return npc->get().aggressive();
         return false;
     }); !registration)
       return std::unexpected(std::move(registration.error()));
@@ -187,23 +188,23 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
         auto name = EntityTypeNames->getRight(entity->entityType());
         if (!name)
           return std::unexpected(std::move(name.error()));
-        return engine.createString(**name);
+        return engine.createString(name->get());
   }); !registration)
       return std::unexpected(std::move(registration.error()));
 
     if (auto registration = methods.registerMethod("typeName",
     [&](std::shared_ptr<Entity> const& entity, LuaEngine&) -> std::expected<std::optional<String>, StarException> {
-        if (auto monster = as<Monster>(entity))
-            return monster->typeName();
-        if (auto npc = as<Npc>(entity))
-            return npc->npcType();
-        if (auto vehicle = as<Vehicle>(entity))
-            return vehicle->name();
-        if (auto object = as<Object>(entity))
-            return object->name();
-        if (auto itemDrop = as<ItemDrop>(entity)) {
-            if (itemDrop->item())
-            return itemDrop->item()->name();
+        if (auto monster = asRef<Monster>(*entity))
+            return monster->get().typeName();
+        if (auto npc = asRef<Npc>(*entity))
+            return npc->get().npcType();
+        if (auto vehicle = asRef<Vehicle>(*entity))
+            return vehicle->get().name();
+        if (auto object = asRef<Object>(*entity))
+            return object->get().name();
+        if (auto itemDrop = asRef<ItemDrop>(*entity)) {
+            if (itemDrop->get().item())
+            return itemDrop->get().item()->name();
         }
         return {};
     }); !registration)
@@ -223,8 +224,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("velocity",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::optional<Vec2F>, StarException> {
-        if (auto mobileEntity = as<MobileEntity>(entity))
-            return mobileEntity->movementController()->velocity();
+        if (auto mobileEntity = asRef<MobileEntity>(*entity))
+            return mobileEntity->get().movementController().velocity();
 
         return {};
     }); !registration)
@@ -238,9 +239,9 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("description",
     [&](std::shared_ptr<Entity> const& entity, std::optional<String> const& species) -> std::expected<std::optional<String>, StarException> {
-        if (auto inspectableEntity = as<InspectableEntity>(entity)) {
+        if (auto inspectableEntity = asRef<InspectableEntity>(*entity)) {
             if (species)
-            return inspectableEntity->inspectionDescription(*species);
+            return inspectableEntity->get().inspectionDescription(*species);
         }
 
         return entity->description();
@@ -257,14 +258,14 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     [&](std::shared_ptr<Entity> const& entity, String const& parameterName, std::optional<Json> const& defaultValue) -> std::expected<Json, StarException> {
         std::expected<Json, StarException> val = Json();
         bool handled = true;
-        if (auto object = as<Object>(entity))
-            val = object->configValue(parameterName);
-        else if (auto npc = as<Npc>(entity))
-            val = npc->scriptConfigParameter(parameterName);
-        else if (auto projectile = as<Projectile>(entity))
-            val = projectile->configValue(parameterName);
-        else if (auto stagehand = as<Stagehand>(entity))
-            val = stagehand->configValue(parameterName);
+        if (auto object = asRef<Object>(*entity))
+            val = object->get().configValue(parameterName);
+        else if (auto npc = asRef<Npc>(*entity))
+            val = npc->get().scriptConfigParameter(parameterName);
+        else if (auto projectile = asRef<Projectile>(*entity))
+            val = projectile->get().configValue(parameterName);
+        else if (auto stagehand = asRef<Stagehand>(*entity))
+            val = stagehand->get().configValue(parameterName);
         else
             handled = false;
         if (!val)
@@ -281,7 +282,7 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
             auto world = entity->world();
             if (!world)
               return std::unexpected(std::move(world.error()));
-            return (*world)->sendEntityMessage(entity->entityId(), message, JsonArray::from(std::move(args)));
+            return world->get().sendEntityMessage(entity->entityId(), message, JsonArray::from(std::move(args)));
         }
         return RpcPromise<Json>::createFailed("Entity not in world");
   }); !registration)
@@ -290,10 +291,10 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     // scripted entity methods
     if (auto registration = methods.registerMethod("callScript",
     [&](std::shared_ptr<Entity> const& entity, String const& function, LuaVariadic<LuaValue> const& args) -> std::expected<std::optional<LuaValue>, StarException> {
-        auto scrEntity = as<ScriptedEntity>(entity);
-        if (!scrEntity || !scrEntity->isMaster() || !entity->inWorld())
+        auto scrEntity = asRef<ScriptedEntity>(*entity);
+        if (!scrEntity || !scrEntity->get().isMaster() || !entity->inWorld())
             return std::unexpected(StarException::format("Entity {} does not exist or is not a local master scripted entity", entity->entityId()));
-        return scrEntity->callScript(function, args);
+        return scrEntity->get().callScript(function, args);
     }); !registration)
       return std::unexpected(std::move(registration.error()));
 
@@ -301,23 +302,23 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     if (auto registration = methods.registerMethod("nametag",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::optional<Json>, StarException> {
         Json result;
-        if (auto nametagEntity = as<NametagEntity>(entity)) {
-            auto nametag = nametagEntity->nametag();
+        if (auto nametagEntity = asRef<NametagEntity>(*entity)) {
+            auto nametag = nametagEntity->get().nametag();
             if (!nametag)
                 return std::unexpected(std::move(nametag.error()));
-            auto color = nametagEntity->nametagColor();
+            auto color = nametagEntity->get().nametagColor();
             if (!color)
                 return std::unexpected(std::move(color.error()));
-            auto origin = nametagEntity->nametagOrigin();
+            auto origin = nametagEntity->get().nametagOrigin();
             if (!origin)
                 return std::unexpected(std::move(origin.error()));
             result = JsonObject{
                 {"nametag", std::move(*nametag)},
-                {"displayed", nametagEntity->displayNametag()},
+                {"displayed", nametagEntity->get().displayNametag()},
                 {"color", jsonFromColor(Color::rgb(*color))},
                 {"origin", jsonFromVec2F(*origin)},
             };
-            if (auto status = nametagEntity->statusText())
+            if (auto status = nametagEntity->get().statusText())
             {
                 auto setStatus = result.set("status", *status);
                 if (!setStatus)
@@ -333,13 +334,13 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     // portrait entity methods
     if (auto registration = methods.registerMethod("portrait",
     [&](std::shared_ptr<Entity> const& entity, String const& portraitMode) -> std::expected<LuaNullTermWrapper<std::optional<List<Drawable>>>, StarException> {
-        if (auto portrait = as<PortraitEntity>(entity)) {
+        if (auto portrait = asRef<PortraitEntity>(*entity)) {
             if (!PortraitModeNames)
                 return std::unexpected(PortraitModeNames.error());
             auto mode = PortraitModeNames->getLeft(portraitMode);
             if (!mode)
               return std::unexpected(std::move(mode.error()));
-            auto drawables = portrait->portrait(**mode);
+            auto drawables = portrait->get().portrait(mode->get());
             if (!drawables)
               return std::unexpected(std::move(drawables.error()));
             return LuaNullTermWrapper<std::optional<List<Drawable>>>(std::move(*drawables));
@@ -352,11 +353,11 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     // damage bar entity methods
     if (auto registration = methods.registerMethod("health",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::optional<Vec2F>, StarException> {
-        if (auto dmgEntity = as<DamageBarEntity>(entity)) {
-            auto maxHealth = dmgEntity->maxHealth();
+        if (auto dmgEntity = asRef<DamageBarEntity>(*entity)) {
+            auto maxHealth = dmgEntity->get().maxHealth();
             if (!maxHealth)
                 return std::unexpected(std::move(maxHealth.error()));
-            return Vec2F(dmgEntity->health(), *maxHealth);
+            return Vec2F(dmgEntity->get().health(), *maxHealth);
         }
         return {};
     }); !registration)
@@ -365,8 +366,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     // interactive entity methods
     if (auto registration = methods.registerMethod("isInteractive",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto interactEntity = as<InteractiveEntity>(entity))
-            return interactEntity->isInteractive();
+        if (auto interactEntity = asRef<InteractiveEntity>(*entity))
+            return interactEntity->get().isInteractive();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
@@ -374,8 +375,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     // chatty entity methods
     if (auto registration = methods.registerMethod("mouthPosition",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::optional<Vec2F>, StarException> {
-        if (auto chatty = as<ChattyEntity>(entity))
-            return chatty->mouthPosition();
+        if (auto chatty = asRef<ChattyEntity>(*entity))
+            return chatty->get().mouthPosition();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
@@ -384,50 +385,50 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     // status controller methods, they're networked anyway so might as well make them available to read
     if (auto registration = methods.registerMethod("statusProperty", [&](std::shared_ptr<Entity> entity, String name, Json const& def = Json()) -> std::expected<std::optional<Json>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->statusProperty(name, def);
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().statusController().statusProperty(name, def);
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("stat", [&](std::shared_ptr<Entity> entity, String name) -> std::expected<std::optional<float>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->stat(name);
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().statusController().stat(name);
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("statPositive", [&](std::shared_ptr<Entity> entity, String name) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->statPositive(name);
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().statusController().statPositive(name);
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("resourceNames", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<StringList>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->resourceNames();
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().statusController().resourceNames();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("resource", [&](std::shared_ptr<Entity> entity, String name) -> std::expected<std::optional<float>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->resource(name);
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().statusController().resource(name);
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("isResource", [&](std::shared_ptr<Entity> entity, String name) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->isResource(name);
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().statusController().isResource(name);
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("resourcePositive", [&](std::shared_ptr<Entity> entity, String name) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->resourcePositive(name);
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().statusController().resourcePositive(name);
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("resourceLocked", [&](std::shared_ptr<Entity> entity, String name) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity)) {
-            auto locked = actor->statusController()->resourceLocked(name);
+        if (auto actor = asRef<ActorEntity>(*entity)) {
+            auto locked = actor->get().statusController().resourceLocked(name);
             if (!locked)
               return std::unexpected(std::move(locked.error()));
             return std::optional<bool>(*locked);
@@ -436,21 +437,21 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
   }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("resourceMax", [&](std::shared_ptr<Entity> entity, String name) -> std::expected<std::optional<float>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->resourceMax(name);
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().statusController().resourceMax(name);
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("resourcePercentage", [&](std::shared_ptr<Entity> entity, String name) -> std::expected<std::optional<float>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->resourcePercentage(name);
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().statusController().resourcePercentage(name);
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("getPersistentEffects", [&](std::shared_ptr<Entity> entity, String name) -> std::expected<std::optional<JsonArray>, StarException> {
-        if (auto actor = as<ActorEntity>(entity)) {
+        if (auto actor = asRef<ActorEntity>(*entity)) {
             JsonArray effects;
-            for (auto const& effect : actor->statusController()->getPersistentEffects(name)) {
+            for (auto const& effect : actor->get().statusController().getPersistentEffects(name)) {
                 auto json = jsonFromPersistentStatusEffect(effect);
                 if (!json)
                   return std::unexpected(std::move(json.error()));
@@ -462,8 +463,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
   }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("activeUniqueStatusEffectSummary", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<List<JsonArray>>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->activeUniqueStatusEffectSummary().transformed([](std::pair<UniqueStatusEffect, std::optional<float>> effect) {
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().statusController().activeUniqueStatusEffectSummary().transformed([](std::pair<UniqueStatusEffect, std::optional<float>> effect) {
             JsonArray effectJson = {effect.first};
             if (effect.second)
                 effectJson.append(*effect.second);
@@ -473,8 +474,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("uniqueStatusEffectActive", [&](std::shared_ptr<Entity> entity, String name) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->uniqueStatusEffectActive(name);
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().statusController().uniqueStatusEffectActive(name);
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
@@ -482,186 +483,186 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     // movement controller methods, they're networked anyway so might as well make them available to read
 
     if (auto registration = methods.registerMethod("mass", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<float>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->mass();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().mass();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("boundBox", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<RectF>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->collisionPoly().boundBox();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().collisionPoly().boundBox();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("collisionPoly", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<PolyF>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->collisionPoly();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().collisionPoly();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("collisionBody", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<PolyF>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->collisionBody();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().collisionBody();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("collisionBoundBox", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<RectF>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->collisionBody().boundBox();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().collisionBody().boundBox();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("localBoundBox", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<RectF>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->localBoundBox();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().localBoundBox();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("rotation", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<float>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->rotation();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().rotation();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("isColliding", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->isColliding();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().isColliding();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("isNullColliding", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->isNullColliding();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().isNullColliding();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("isCollisionStuck", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->isCollisionStuck();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().isCollisionStuck();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("stickingDirection", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<float>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->stickingDirection();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().stickingDirection();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("liquidPercentage", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<float>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->liquidPercentage();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().liquidPercentage();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("liquidId", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<std::uint8_t>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->liquidId();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().liquidId();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("onGround", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->onGround();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().onGround();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("zeroG", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->zeroG();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().zeroG();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("atWorldLimit", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->atWorldLimit();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().atWorldLimit();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("anchorState", [&](std::shared_ptr<Entity> entity) -> std::expected<LuaVariadic<LuaValue>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            if (auto anchorState = actor->movementController()->anchorState())
+        if (auto actor = asRef<ActorEntity>(*entity))
+            if (auto anchorState = actor->get().movementController().anchorState())
             return LuaVariadic<LuaValue>{LuaInt(anchorState->entityId), LuaInt(anchorState->positionIndex)};
         return LuaVariadic<LuaValue>();
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     // slightly inconsistent for the sake of being more clear what the function is
     if (auto registration = methods.registerMethod("baseMovementParameters", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<Json>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->baseParameters().toJson();
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().movementController().baseParameters().toJson();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     // slightly inconsistent for the sake of being more clear what the function is
     if (auto registration = methods.registerMethod("movementParameters", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<Json>, StarException> {
-        if (auto mobile = as<MobileEntity>(entity))
-            return mobile->movementController()->parameters().toJson();
+        if (auto mobile = asRef<MobileEntity>(*entity))
+            return mobile->get().movementController().parameters().toJson();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
 
     if (auto registration = methods.registerMethod("walking", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->walking();
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().movementController().walking();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("running", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->running();
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().movementController().running();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("movingDirection", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<int>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return numericalDirection(actor->movementController()->movingDirection());
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return numericalDirection(actor->get().movementController().movingDirection());
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("facingDirection", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<int>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return numericalDirection(actor->movementController()->facingDirection());
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return numericalDirection(actor->get().movementController().facingDirection());
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("crouching", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->crouching();
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().movementController().crouching();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("flying", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->flying();
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().movementController().flying();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("falling", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->falling();
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().movementController().falling();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("canJump", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->canJump();
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().movementController().canJump();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("jumping", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->jumping();
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().movementController().jumping();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("groundMovement", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->groundMovement();
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().movementController().groundMovement();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = methods.registerMethod("liquidMovement", [&](std::shared_ptr<Entity> entity) -> std::expected<std::optional<bool>, StarException> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->liquidMovement();
+        if (auto actor = asRef<ActorEntity>(*entity))
+            return actor->get().movementController().liquidMovement();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error())); 
@@ -678,8 +679,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
             return std::unexpected(StarException(strf("Unknown tool hand {}", handName)));
         }
 
-        if (auto toolUser = as<ToolUserEntity>(entity)) {
-            if (auto item = toolUser->handItem(toolHand)) {
+        if (auto toolUser = asRef<ToolUserEntity>(*entity)) {
+            if (auto item = toolUser->get().handItem(toolHand)) {
                 return item->name();
             }
         }
@@ -699,8 +700,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
             return std::unexpected(StarException(strf("Unknown tool hand {}", handName)));
         }
 
-        if (auto toolUser = as<ToolUserEntity>(entity)) {
-            if (auto item = toolUser->handItem(toolHand)) {
+        if (auto toolUser = asRef<ToolUserEntity>(*entity)) {
+            if (auto item = toolUser->get().handItem(toolHand)) {
                 return item->descriptor().toJson();
             }
         }
@@ -711,8 +712,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("aimPosition",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::optional<Vec2F>, StarException> {
-        if (auto toolUser = as<ToolUserEntity>(entity))
-            return toolUser->aimPosition();
+        if (auto toolUser = asRef<ToolUserEntity>(*entity))
+            return toolUser->get().aimPosition();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
@@ -721,10 +722,10 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     // humanoid entity methods
     if (auto registration = methods.registerMethod("species",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::optional<String>, StarException> {
-        if (auto player = as<Player>(entity)) {
-            return player->species();
-        } else if (auto npc = as<Npc>(entity)) {
-            return npc->species();
+        if (auto player = asRef<Player>(*entity)) {
+            return player->get().species();
+        } else if (auto npc = asRef<Npc>(*entity)) {
+            return npc->get().species();
         } else {
             return {};
         }
@@ -734,10 +735,10 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     if (auto registration = methods.registerMethod("gender",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::optional<String>, StarException> {
         std::optional<Gender> gender;
-        if (auto player = as<Player>(entity))
-            gender = player->gender();
-        else if (auto npc = as<Npc>(entity))
-            gender = npc->gender();
+        if (auto player = asRef<Player>(*entity))
+            gender = player->get().gender();
+        else if (auto npc = asRef<Npc>(*entity))
+            gender = npc->get().gender();
         if (!gender)
             return {};
         if (!GenderNames)
@@ -745,15 +746,15 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
         auto name = GenderNames->getRight(*gender);
         if (!name)
           return std::unexpected(std::move(name.error()));
-        return **name;
+        return name->get();
   }); !registration)
       return std::unexpected(std::move(registration.error()));
 
     // player methods
     if (auto registration = methods.registerMethod("currency",
     [&](std::shared_ptr<Entity> const& entity, String const& currencyType) -> std::expected<std::optional<std::uint64_t>, StarException> {
-        if (auto player = as<Player>(entity)) {
-            return player->currency(currencyType);
+        if (auto player = asRef<Player>(*entity)) {
+            return player->get().currency(currencyType);
         }
         return {};
     }); !registration)
@@ -761,11 +762,11 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("hasCountOfItem",
     [&](std::shared_ptr<Entity> const& entity, Json descriptor, std::optional<bool> exactMatch) -> std::expected<std::optional<std::uint64_t>, StarException> {
-        if (auto player = as<Player>(entity)) {
+        if (auto player = asRef<Player>(*entity)) {
             auto item = ItemDescriptor::create(descriptor);
             if (!item)
               return std::unexpected(std::move(item.error()));
-            return player->inventory()->hasCountOfItem(*item, exactMatch.value_or(false));
+            return player->get().inventory()->hasCountOfItem(*item, exactMatch.value_or(false));
         }
         return {};
   }); !registration)
@@ -776,8 +777,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     [&](std::shared_ptr<Entity> const& entity, std::optional<std::size_t> anchorIndex) -> std::expected<std::optional<List<EntityId>>, StarException> {
         if (!entity->inWorld())
             return {};
-        if (auto loungeable = as<LoungeableEntity>(entity)) {
-            auto entities = loungeable->entitiesLoungingIn(anchorIndex.value_or(std::size_t{}));
+        if (auto loungeable = asRef<LoungeableEntity>(*entity)) {
+            auto entities = loungeable->get().entitiesLoungingIn(anchorIndex.value_or(std::size_t{}));
             if (!entities)
               return std::unexpected(std::move(entities.error()));
             return entities->values();
@@ -790,10 +791,10 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     [&](std::shared_ptr<Entity> const& entity, std::optional<std::size_t> anchorIndex) -> std::expected<std::optional<bool>, StarException> {
         if (!entity->inWorld())
             return {};
-        auto loungeable = as<LoungeableEntity>(entity);
+        auto loungeable = asRef<LoungeableEntity>(*entity);
         std::size_t anchor = anchorIndex.value_or(std::size_t{});
-        if (loungeable && loungeable->anchorCount() > anchor) {
-            auto entities = loungeable->entitiesLoungingIn(anchor);
+        if (loungeable && loungeable->get().anchorCount() > anchor) {
+            auto entities = loungeable->get().entitiesLoungingIn(anchor);
             if (!entities)
               return std::unexpected(std::move(entities.error()));
             return !entities->empty();
@@ -806,8 +807,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::optional<std::size_t>, StarException> {
         if (!entity->inWorld())
             return {};
-        if (auto loungeable = as<LoungeableEntity>(entity))
-            return loungeable->anchorCount();
+        if (auto loungeable = asRef<LoungeableEntity>(*entity))
+            return loungeable->get().anchorCount();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
@@ -815,8 +816,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     // object methods
     if (auto registration = methods.registerMethod("objectSpaces",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<List<Vec2I>, StarException> {
-        if (auto tileEntity = as<TileEntity>(entity))
-            return tileEntity->spaces();
+        if (auto tileEntity = asRef<TileEntity>(*entity))
+            return tileEntity->get().spaces();
         return {};
     }); !registration)
       return std::unexpected(std::move(registration.error()));
@@ -824,8 +825,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     // farmables
     if (auto registration = methods.registerMethod("farmableStage",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::optional<int>, StarException> {
-        if (auto farmable = as<FarmableObject>(entity)) {
-            return farmable->stage();
+        if (auto farmable = asRef<FarmableObject>(*entity)) {
+            return farmable->get().stage();
         }
 
         return {};
@@ -835,8 +836,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     // containers
     if (auto registration = methods.registerMethod("containerSize",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::optional<int>, StarException> {
-        if (auto container = as<ContainerObject>(entity))
-            return container->containerSize();
+        if (auto container = asRef<ContainerObject>(*entity))
+            return container->get().containerSize();
 
         return {};
     }); !registration)
@@ -844,8 +845,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerClose",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<bool, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
-            auto result = container->containerClose();
+        if (auto container = asRef<ContainerObject>(*entity)) {
+            auto result = container->get().containerClose();
             if (!result)
               return std::unexpected(std::move(result.error()));
             return true;
@@ -856,8 +857,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerOpen",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<bool, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
-            auto result = container->containerOpen();
+        if (auto container = asRef<ContainerObject>(*entity)) {
+            auto result = container->get().containerOpen();
             if (!result)
               return std::unexpected(std::move(result.error()));
             return true;
@@ -868,12 +869,12 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerItems",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<Json, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto itemDb = entity->root().itemDatabase();
             if (!itemDb)
               return std::unexpected(std::move(itemDb.error()));
             JsonArray result;
-            for (auto const& item : container->itemBag()->items())
+            for (auto const& item : container->get().itemBag()->items())
                 result.append((*itemDb)->toJson(item));
             return result;
         }
@@ -883,11 +884,11 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerItemAt",
     [&](std::shared_ptr<Entity> const& entity, std::size_t offset) -> std::expected<Json, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto itemDb = entity->root().itemDatabase();
             if (!itemDb)
               return std::unexpected(std::move(itemDb.error()));
-            auto const& items = container->itemBag()->items();
+            auto const& items = container->get().itemBag()->items();
             if (offset < items.size())
                 return (*itemDb)->toJson(items[offset]);
         }
@@ -897,11 +898,11 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerConsume",
     [&](std::shared_ptr<Entity> const& entity, Json const& items) -> std::expected<std::optional<bool>, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto descriptor = ItemDescriptor::create(items);
             if (!descriptor)
               return std::unexpected(std::move(descriptor.error()));
-            auto promise = container->consumeItems(*descriptor);
+            auto promise = container->get().consumeItems(*descriptor);
             if (!promise)
               return std::unexpected(std::move(promise.error()));
             return promise->result();
@@ -912,9 +913,9 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerConsumeAt",
     [&](std::shared_ptr<Entity> const& entity, std::size_t offset, int count) -> std::expected<std::optional<bool>, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
-            if (offset < container->containerSize()) {
-                auto promise = container->consumeItems(offset, count);
+        if (auto container = asRef<ContainerObject>(*entity)) {
+            if (offset < container->get().containerSize()) {
+                auto promise = container->get().consumeItems(offset, count);
                 if (!promise)
                   return std::unexpected(std::move(promise.error()));
                 return promise->result();
@@ -926,11 +927,11 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerAvailable",
     [&](std::shared_ptr<Entity> const& entity, Json const& items) -> std::expected<std::optional<std::size_t>, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto descriptor = ItemDescriptor::create(items);
             if (!descriptor)
               return std::unexpected(std::move(descriptor.error()));
-            return container->itemBag()->available(*descriptor);
+            return container->get().itemBag()->available(*descriptor);
         }
         return {};
   }); !registration)
@@ -941,8 +942,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
         auto itemDb = entity->root().itemDatabase();
         if (!itemDb)
           return std::unexpected(std::move(itemDb.error()));
-        if (auto container = as<ContainerObject>(entity)) {
-            auto promise = container->clearContainer();
+        if (auto container = asRef<ContainerObject>(*entity)) {
+            auto promise = container->get().clearContainer();
             if (!promise)
               return std::unexpected(std::move(promise.error()));
             auto items = promise->result();
@@ -961,12 +962,12 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerTakeAt",
     [&](std::shared_ptr<Entity> const& entity, std::size_t offset) -> std::expected<Json, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto itemDb = entity->root().itemDatabase();
             if (!itemDb)
               return std::unexpected(std::move(itemDb.error()));
-            if (offset < container->containerSize()) {
-                auto promise = container->takeItems(offset);
+            if (offset < container->get().containerSize()) {
+                auto promise = container->get().takeItems(offset);
                 if (!promise)
                   return std::unexpected(std::move(promise.error()));
                 auto item = promise->result();
@@ -982,12 +983,12 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerTakeNumItemsAt",
     [&](std::shared_ptr<Entity> const& entity, std::size_t offset, int const& count) -> std::expected<Json, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto itemDb = entity->root().itemDatabase();
             if (!itemDb)
               return std::unexpected(std::move(itemDb.error()));
-            if (offset < container->containerSize()) {
-                auto promise = container->takeItems(offset, count);
+            if (offset < container->get().containerSize()) {
+                auto promise = container->get().takeItems(offset, count);
                 if (!promise)
                   return std::unexpected(std::move(promise.error()));
                 auto item = promise->result();
@@ -1003,14 +1004,14 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerItemsCanFit",
     [&](std::shared_ptr<Entity> const& entity, Json const& items) -> std::expected<std::optional<std::size_t>, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto itemDb = entity->root().itemDatabase();
             if (!itemDb)
               return std::unexpected(std::move(itemDb.error()));
             auto item = (*itemDb)->fromJson(items);
             if (!item)
               return std::unexpected(std::move(item.error()));
-            return container->itemBag()->itemsCanFit(*item);
+            return container->get().itemBag()->itemsCanFit(optionalRef(*item));
         }
         return {};
   }); !registration)
@@ -1018,14 +1019,14 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerItemsFitWhere",
     [&](std::shared_ptr<Entity> const& entity, Json const& items) -> std::expected<Json, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto itemDb = entity->root().itemDatabase();
             if (!itemDb)
               return std::unexpected(std::move(itemDb.error()));
             auto item = (*itemDb)->fromJson(items);
             if (!item)
               return std::unexpected(std::move(item.error()));
-            auto result = container->itemBag()->itemsFitWhere(*item);
+            auto result = container->get().itemBag()->itemsFitWhere(optionalRef(*item));
             auto slots = jsonFromList<std::size_t>(result.slots);
             if (!slots)
               return std::unexpected(std::move(slots.error()));
@@ -1037,14 +1038,14 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerAddItems",
     [&](std::shared_ptr<Entity> const& entity, Json const& items) -> std::expected<Json, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto itemDb = entity->root().itemDatabase();
             if (!itemDb)
               return std::unexpected(std::move(itemDb.error()));
             auto item = (*itemDb)->fromJson(items);
             if (!item)
               return std::unexpected(std::move(item.error()));
-            auto promise = container->addItems(*item);
+            auto promise = container->get().addItems(*item);
             if (!promise)
               return std::unexpected(std::move(promise.error()));
             auto result = promise->result();
@@ -1059,14 +1060,14 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerStackItems",
     [&](std::shared_ptr<Entity> const& entity, Json const& items) -> std::expected<Json, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto itemDb = entity->root().itemDatabase();
             if (!itemDb)
               return std::unexpected(std::move(itemDb.error()));
             auto item = (*itemDb)->fromJson(items);
             if (!item)
               return std::unexpected(std::move(item.error()));
-            auto promise = container->addItems(*item);
+            auto promise = container->get().addItems(*item);
             if (!promise)
               return std::unexpected(std::move(promise.error()));
             auto result = promise->result();
@@ -1081,15 +1082,15 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerPutItemsAt",
     [&](std::shared_ptr<Entity> const& entity, Json const& items, std::size_t offset) -> std::expected<Json, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto itemDb = entity->root().itemDatabase();
             if (!itemDb)
               return std::unexpected(std::move(itemDb.error()));
             auto item = (*itemDb)->fromJson(items);
             if (!item)
               return std::unexpected(std::move(item.error()));
-            if (offset < container->containerSize()) {
-                auto promise = container->putItems(offset, *item);
+            if (offset < container->get().containerSize()) {
+                auto promise = container->get().putItems(offset, *item);
                 if (!promise)
                   return std::unexpected(std::move(promise.error()));
                 auto result = promise->result();
@@ -1105,15 +1106,15 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerSwapItems",
     [&](std::shared_ptr<Entity> const& entity, Json const& items, std::size_t offset, bool noCombine) -> std::expected<Json, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto itemDb = entity->root().itemDatabase();
             if (!itemDb)
               return std::unexpected(std::move(itemDb.error()));
             auto item = (*itemDb)->fromJson(items);
             if (!item)
               return std::unexpected(std::move(item.error()));
-            if (offset < container->containerSize()) {
-                auto promise = container->swapItems(offset, *item, !noCombine);
+            if (offset < container->get().containerSize()) {
+                auto promise = container->get().swapItems(offset, *item, !noCombine);
                 if (!promise)
                   return std::unexpected(std::move(promise.error()));
                 auto result = promise->result();
@@ -1129,15 +1130,15 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("containerItemApply",
     [&](std::shared_ptr<Entity> const& entity, Json const& items, std::size_t offset) -> std::expected<Json, StarException> {
-        if (auto container = as<ContainerObject>(entity)) {
+        if (auto container = asRef<ContainerObject>(*entity)) {
             auto itemDb = entity->root().itemDatabase();
             if (!itemDb)
               return std::unexpected(std::move(itemDb.error()));
             auto item = (*itemDb)->fromJson(items);
             if (!item)
               return std::unexpected(std::move(item.error()));
-            if (offset < container->containerSize()) {
-                auto promise = container->swapItems(offset, *item, false);
+            if (offset < container->get().containerSize()) {
+                auto promise = container->get().applyAugment(offset, *item);
                 if (!promise)
                   return std::unexpected(std::move(promise.error()));
                 auto result = promise->result();
@@ -1153,8 +1154,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("movingCollisionCount",
     [&](std::shared_ptr<Entity> const& entity) -> std::expected<std::size_t, StarException> {
-        if (auto phys = as<PhysicsEntity>(entity)) {
-            return phys->movingCollisionCount();
+        if (auto phys = asRef<PhysicsEntity>(*entity)) {
+            return phys->get().movingCollisionCount();
         }
 
         return 0;
@@ -1163,8 +1164,8 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
 
     if (auto registration = methods.registerMethod("movingCollision",
     [&](std::shared_ptr<Entity> const& entity, std::size_t index) -> std::expected<std::optional<PhysicsMovingCollision>, StarException> {
-        if (auto phys = as<PhysicsEntity>(entity)) {
-            return phys->movingCollision(index);
+        if (auto phys = asRef<PhysicsEntity>(*entity)) {
+            return phys->get().movingCollision(index);
         }
 
         return {};

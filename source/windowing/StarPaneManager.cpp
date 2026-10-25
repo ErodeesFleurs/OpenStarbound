@@ -72,7 +72,7 @@ extern std::expected<EnumMap<PaneLayer>, StarException> const PaneLayerNames = E
 });
 
 PaneManager::PaneManager(GuiContext& context)
-  : m_context(&context), m_prevInterfaceScale(1), m_tooltipMouseoverRadius(0) {}
+  : m_context(context), m_prevInterfaceScale(1), m_tooltipMouseoverRadius(0) {}
 
 std::expected<std::shared_ptr<PaneManager>, StarException> PaneManager::create(GuiContext& context) {
   auto manager = std::make_shared<PaneManager>(context);
@@ -83,7 +83,7 @@ std::expected<std::shared_ptr<PaneManager>, StarException> PaneManager::create(G
 }
 
 std::expected<void, StarException> PaneManager::initializePaneManager() {
-  auto assets = m_context->root().assets();
+  auto assets = m_context.root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   auto radiusJson = (*assets)->json("/panes.config:tooltipMouseoverRadius");
@@ -321,12 +321,12 @@ std::expected<bool, StarException> PaneManager::keyboardCapturedForTextInput() c
 
 std::expected<bool, StarException> PaneManager::sendInputEvent(InputEvent const& event) {
   if (std::holds_alternative<MouseMoveEvent>(event)) {
-    m_tooltipLastMousePos = *m_context->mousePosition(event);
+    m_tooltipLastMousePos = *m_context.mousePosition(event);
 
     for (auto const& layerPair : m_displayedPanes) {
       for (auto const& panePair : layerPair.second) {
         if (panePair.first->dragActive()) {
-          panePair.first->drag(*m_context->mousePosition(event));
+          panePair.first->drag(*m_context.mousePosition(event));
           return true;
         }
       }
@@ -360,7 +360,7 @@ std::expected<bool, StarException> PaneManager::sendInputEvent(InputEvent const&
   // the keyboard otherwise it will always be used to close first before being
   // a normal event. This is so a window can control its own closing if it
   // really needs to (like the keybindings window).
-  if (std::holds_alternative<KeyDownEvent>(event) && m_context->actions(event).contains(InterfaceAction::GuiClose)) {
+  if (std::holds_alternative<KeyDownEvent>(event) && m_context.actions(event).contains(InterfaceAction::GuiClose)) {
     if (auto top = topPane({PaneLayer::ModalWindow, PaneLayer::Window})) {
       auto dismissed = dismiss(top);
       if (!dismissed)
@@ -421,8 +421,8 @@ std::expected<void, StarException> PaneManager::render() {
   for (auto const& layerPair : std::views::reverse(m_displayedPanes)) {
     for (auto const& panePair : std::views::reverse(layerPair.second)) {
       if (panePair.first->active()) {
-        if (m_prevInterfaceScale != m_context->interfaceScale()) {
-          auto position = calculateNewInterfacePosition(panePair.first, m_context->interfaceScale() / m_prevInterfaceScale);
+        if (m_prevInterfaceScale != m_context.interfaceScale()) {
+          auto position = calculateNewInterfacePosition(panePair.first, m_context.interfaceScale() / m_prevInterfaceScale);
           if (!position)
             return std::unexpected(std::move(position.error()));
           panePair.first->setPosition(*position);
@@ -439,10 +439,10 @@ std::expected<void, StarException> PaneManager::render() {
     }
   }
 
-  auto reset = m_context->resetInterfaceScissorRect();
+  auto reset = m_context.resetInterfaceScissorRect();
   if (!reset)
     return std::unexpected(std::move(reset.error()));
-  m_prevInterfaceScale = m_context->interfaceScale();
+  m_prevInterfaceScale = m_context.interfaceScale();
   return {};
 }
 
@@ -483,10 +483,10 @@ std::expected<void, StarException> PaneManager::update(float dt) {
     Vec2I offsetDirection = Vec2I::filled(1);
     Vec2I offsetAdjust = Vec2I();
 
-    auto width = m_context->windowWidth();
+    auto width = m_context.windowWidth();
     if (!width)
       return std::unexpected(std::move(width.error()));
-    if (m_tooltipLastMousePos[0] + m_tooltipMouseOffset[0] + m_activeTooltip->size()[0] > (int)*width / m_context->interfaceScale()) {
+    if (m_tooltipLastMousePos[0] + m_tooltipMouseOffset[0] + m_activeTooltip->size()[0] > (int)*width / m_context.interfaceScale()) {
       offsetDirection[0] = -1;
       offsetAdjust[0] = -m_activeTooltip->size()[0];
     }
@@ -525,7 +525,7 @@ std::expected<void, StarException> PaneManager::update(float dt) {
 }
 
 std::expected<Vec2I, StarException> PaneManager::windowSize() const {
-  auto size = m_context->windowInterfaceSize();
+  auto size = m_context.windowInterfaceSize();
   if (!size)
     return std::unexpected(std::move(size.error()));
   return Vec2I(*size);

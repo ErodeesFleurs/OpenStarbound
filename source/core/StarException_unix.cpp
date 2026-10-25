@@ -77,11 +77,11 @@ const char* StarException::what() const noexcept {
   return m_whatBuffer.c_str();
 }
 
-StarException::StarException(char const* type, std::string message, bool genStackTrace) noexcept {
+StarException::StarException(std::string_view type, std::string message, bool genStackTrace) noexcept {
 #ifdef STAR_USE_CPPTRACE
-  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string const& message, std::string const& stack) {
+  auto printException = [](std::ostream& os, bool fullStacktrace, std::string_view type, std::string const& message, std::string const& stack) {
 #else
-  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string const& message, std::optional<StackCapture> const& stack) {
+  auto printException = [](std::ostream& os, bool fullStacktrace, std::string_view type, std::string const& message, std::optional<StackCapture> const& stack) {
 #endif
     os << "(" << type << ")";
     if (!message.empty())
@@ -106,7 +106,7 @@ StarException::StarException(char const* type, std::string message, bool genStac
 #endif
 }
 
-StarException::StarException(char const* type, std::string message, ExceptionDiagnostic cause) noexcept
+StarException::StarException(std::string_view type, std::string message, ExceptionDiagnostic cause) noexcept
   : StarException(type, std::move(message), true) {
   auto printException = [](std::ostream& os, bool fullStacktrace, std::function<void(std::ostream&, bool)> const& self, std::function<void(std::ostream&, bool)> const& cause) {
     self(os, fullStacktrace);
@@ -135,7 +135,7 @@ OutputProxy outputException(ExceptionDiagnostic const& e, bool fullStacktrace) {
   return OutputProxy(std::bind(e.m_printException, std::placeholders::_1, fullStacktrace));
 }
 
-void printStack(char const* message) {
+void printStack(std::string_view message) {
 #ifdef STAR_USE_CPPTRACE
   EmergencyLog::info("Stack Trace ({})...\n{}", message, captureBacktrace());
 #else
@@ -143,7 +143,7 @@ void printStack(char const* message) {
 #endif
 }
 
-void fatalError(char const* message, bool showStackTrace) {
+void fatalError(std::string_view message, bool showStackTrace) {
   if (showStackTrace)
 #ifdef STAR_USE_CPPTRACE
     EmergencyLog::error("Fatal Error: {}\n{}", message, captureBacktrace());

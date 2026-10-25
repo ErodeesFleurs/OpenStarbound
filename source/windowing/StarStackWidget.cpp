@@ -72,7 +72,7 @@ std::expected<void, StarException> StackWidget::showPage(std::size_t page) {
 }
 
 std::expected<void, StarException> StackWidget::showPage(String const& name) {
-  auto page = m_memberHash.ptr(name);
+  auto page = m_memberHash.maybeRef(name);
   if (!page)
     return std::unexpected(GuiException::format("Unknown stack page: {}", name));
   if (m_shownPage) {
@@ -80,7 +80,7 @@ std::expected<void, StarException> StackWidget::showPage(String const& name) {
     if (!hidden)
       return std::unexpected(std::move(hidden.error()));
   }
-  m_shownPage = *page;
+  m_shownPage = page->get();
   m_page = makeRight(name);
   if (m_shownPage)
     return m_shownPage->show();

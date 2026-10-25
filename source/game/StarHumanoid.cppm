@@ -94,14 +94,14 @@ struct Personality {
 
 [[nodiscard]] std::expected<Personality, StarException> parsePersonalityArray(Json const& config);
 
-[[nodiscard]] std::expected<Personality*, StarException> parsePersonality(Personality& personality, Json const& config);
+[[nodiscard]] std::expected<std::reference_wrapper<Personality>, StarException> parsePersonality(Personality& personality, Json const& config);
 [[nodiscard]] std::expected<Personality, StarException> parsePersonality(Json const& config);
 
 Json jsonFromPersonality(Personality const& personality);
 
 struct HumanoidIdentity {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, HumanoidIdentity& identity);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, HumanoidIdentity const& identity);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, HumanoidIdentity& identity);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, HumanoidIdentity const& identity);
   explicit HumanoidIdentity();
   [[nodiscard]] static std::expected<HumanoidIdentity, StarException> create(Json config);
 
@@ -133,8 +133,8 @@ struct HumanoidIdentity {
 
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, HumanoidIdentity& identity);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, HumanoidIdentity const& identity);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, HumanoidIdentity& identity);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, HumanoidIdentity const& identity);
 
 class Humanoid {
 public:
@@ -155,7 +155,7 @@ public:
 
   [[nodiscard]] static std::expected<std::shared_ptr<Humanoid>, StarException> create(Root& root);
   [[nodiscard]] static std::expected<std::shared_ptr<Humanoid>, StarException> create(Root& root, Json const& config);
-  [[nodiscard]] static std::expected<std::shared_ptr<Humanoid>, StarException> create(Root& root, HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json(), ItemDatabase const* itemCatalog = nullptr);
+  [[nodiscard]] static std::expected<std::shared_ptr<Humanoid>, StarException> create(Root& root, HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json(), std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog = std::nullopt);
   [[nodiscard]] static std::expected<std::shared_ptr<Humanoid>, StarException> create(Humanoid const& humanoid);
   Humanoid& operator=(Humanoid const&) = delete;
 
@@ -229,7 +229,7 @@ public:
   };
 
   template <typename T>
-  inline T const* getLastWearableOfType() const;
+  inline std::optional<std::reference_wrapper<T const>> getLastWearableOfType() const;
 
   [[nodiscard]] std::expected<void, StarException> removeWearable(std::uint8_t slot);
   [[nodiscard]] std::expected<void, StarException> setWearableFromHead(std::uint8_t slot, HeadArmor const& head, Gender gender);
@@ -282,7 +282,7 @@ public:
 
   // Updates the animation based on whatever the current animation state is,
   // wrapping or clamping animation time as appropriate.
-  [[nodiscard]] std::expected<void, StarException> animate(float dt, NetworkedAnimator::DynamicTarget * dynamicTarget);
+  [[nodiscard]] std::expected<void, StarException> animate(float dt, std::optional<std::reference_wrapper<NetworkedAnimator::DynamicTarget>> dynamicTarget);
 
   // Reset animation time to 0.0f
   [[nodiscard]] std::expected<void, StarException> resetAnimation();
@@ -300,8 +300,8 @@ public:
   [[nodiscard]] static std::expected<std::shared_ptr<Humanoid>, StarException> makeDummy(Root& root, Gender gender);
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)
-  [[nodiscard]] std::expected<List<Drawable>, StarException> renderDummy(Gender gender, HeadArmor const* head = {}, ChestArmor const* chest = {},
-      LegsArmor const* legs = {}, BackArmor const* back = {});
+  [[nodiscard]] std::expected<List<Drawable>, StarException> renderDummy(Gender gender, std::optional<std::reference_wrapper<HeadArmor const>> head = std::nullopt, std::optional<std::reference_wrapper<ChestArmor const>> chest = std::nullopt,
+      std::optional<std::reference_wrapper<LegsArmor const>> legs = std::nullopt, std::optional<std::reference_wrapper<BackArmor const>> back = std::nullopt);
 
   [[nodiscard]] std::expected<Vec2F, StarException> primaryHandPosition(Vec2F const& offset) const;
   [[nodiscard]] std::expected<Vec2F, StarException> altHandPosition(Vec2F const& offset) const;
@@ -345,8 +345,8 @@ public:
   String getFrontArmFromIdentity() const;
   String getVaporTrailFrameset() const;
 
-  NetworkedAnimator * networkedAnimator();
-  NetworkedAnimator const* networkedAnimator() const;
+  std::optional<std::reference_wrapper<NetworkedAnimator>> networkedAnimator();
+  std::optional<std::reference_wrapper<NetworkedAnimator const>> networkedAnimator() const;
   List<String> animationScripts() const;
 
   [[nodiscard]] std::expected<Json, StarException> humanoidConfig(bool withOverrides = true);
@@ -358,7 +358,7 @@ public:
 private:
   explicit Humanoid(Root& root);
   Humanoid(Humanoid const&) = default;
-  Root* m_root;
+  Root& m_root;
   String m_genderName = "male";
   struct HandDrawingInfo {
     List<Drawable> itemDrawables;
@@ -549,12 +549,13 @@ private:
 };
 
 template <typename T>
-inline T const* Humanoid::getLastWearableOfType() const {
+inline std::optional<std::reference_wrapper<T const>> Humanoid::getLastWearableOfType() const {
   for (std::size_t i = m_fashion->wearables.size(); i != 0; --i) {
-    if (auto ptr = std::get_if<T>(&m_fashion->wearables[i - 1]))
-      return ptr;
+    auto const& wearable = m_fashion->wearables[i - 1];
+    if (std::holds_alternative<T>(wearable))
+      return std::cref(std::get<T>(wearable));
   }
-  return nullptr;
+  return std::nullopt;
 }
 
 }

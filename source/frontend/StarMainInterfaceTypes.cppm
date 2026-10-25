@@ -78,7 +78,7 @@ extern std::expected<EnumMap<MainInterfacePanes>, StarException> const MainInter
 typedef RegisteredPaneManager<MainInterfacePanes> MainInterfacePaneManager;
 
 struct MainInterfaceConfig {
-  [[nodiscard]] static std::expected<std::shared_ptr<MainInterfaceConfig>, StarException> loadFromAssets(GuiContext& context);
+  [[nodiscard]] static std::expected<std::unique_ptr<MainInterfaceConfig>, StarException> loadFromAssets(GuiContext& context);
 
   TextStyle textStyle;
 

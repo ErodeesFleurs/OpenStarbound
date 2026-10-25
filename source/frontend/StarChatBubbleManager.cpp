@@ -152,17 +152,17 @@ import star.image_metadata_database;
 import star.algorithm;
 namespace Star {
 ChatBubbleManager::ChatBubbleManager(GuiContext& context)
-  : m_guiContext(&context), m_textTemplate(Vec2F()), m_portraitTextTemplate(Vec2F()) {}
+  : m_guiContext(context), m_textTemplate(Vec2F()), m_portraitTextTemplate(Vec2F()) {}
 
-std::expected<std::shared_ptr<ChatBubbleManager>, StarException> ChatBubbleManager::create(GuiContext& context) {
-  auto manager = std::shared_ptr<ChatBubbleManager>(new ChatBubbleManager(context));
+std::expected<std::unique_ptr<ChatBubbleManager>, StarException> ChatBubbleManager::create(GuiContext& context) {
+  auto manager = std::unique_ptr<ChatBubbleManager>(new ChatBubbleManager(context));
   auto initialized = manager->initialize();
   if (!initialized) return std::unexpected(std::move(initialized.error()));
   return manager;
 }
 
 std::expected<void, StarException> ChatBubbleManager::initialize() {
-  auto& context = *m_guiContext;
+  auto& context = m_guiContext.get();
   auto assets = context.root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto config = (*assets)->json("/interface/windowconfig/chatbubbles.config");
@@ -318,7 +318,7 @@ std::expected<void, StarException> ChatBubbleManager::setCamera(WorldCamera cons
   float oldPixelRatio = m_camera.pixelRatio();
   float oldInterfaceScale = m_cachedInterfaceScale;
   m_camera = camera;
-  m_cachedInterfaceScale = m_guiContext->interfaceScale();
+  m_cachedInterfaceScale = m_guiContext.get().interfaceScale();
   if (m_camera.pixelRatio() != oldPixelRatio || m_cachedInterfaceScale != oldInterfaceScale) {
     List<ChatAction> actions;
     auto collected = m_bubbles.forEach([&actions](BubbleState<Bubble> const& state, Bubble& bubble) -> std::expected<void, StarException> {
@@ -411,7 +411,7 @@ std::expected<std::uint8_t, StarException> ChatBubbleManager::calcDistanceFadeAl
 std::expected<void, StarException> ChatBubbleManager::render() {
   if (m_bubbles.empty() && m_portraitBubbles.empty())
     return {};
-  auto configuration = m_guiContext->root().configuration();
+  auto configuration = m_guiContext.get().root().configuration();
   if (!configuration) return std::unexpected(std::move(configuration.error()));
   auto setting = (*configuration)->get("speechBubbles");
   if (!setting) return std::unexpected(std::move(setting.error()));
@@ -419,7 +419,7 @@ std::expected<void, StarException> ChatBubbleManager::render() {
   if (!enabled) return std::unexpected(std::move(enabled.error()));
   if (!*enabled) return {};
 
-  float pixelRatio = m_guiContext->interfaceScale();
+  float pixelRatio = m_guiContext.get().interfaceScale();
 
   auto rendered = m_bubbles.forEach([this, pixelRatio](BubbleState<Bubble> const& state, Bubble& bubble) -> std::expected<void, StarException> {
       if (bubble.onscreen) {
@@ -459,14 +459,14 @@ std::expected<void, StarException> ChatBubbleManager::render() {
 }
 
 std::expected<void, StarException> ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent) {
-  auto assets = m_guiContext->root().assets();
+  auto assets = m_guiContext.get().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto baseConfig = (*assets)->json("/interface/windowconfig/chatbubbles.config");
   if (!baseConfig) return std::unexpected(std::move(baseConfig.error()));
   auto part = baseConfig->getFloat("partSize");
   if (!part) return std::unexpected(std::move(part.error()));
   float partSize = *part;
-  float pixelRatio = m_guiContext->interfaceScale();
+  float pixelRatio = m_guiContext.get().interfaceScale();
 
   for (auto action : chatActions) {
     Json config = JsonObject{};
@@ -484,11 +484,11 @@ std::expected<void, StarException> ChatBubbleManager::addChatActions(List<ChatAc
       // bother me so bad if it weren't so fucking easy to do right.
 
       // yea I agree
-      auto styled = m_guiContext->setTextStyle(m_textStyle, pixelRatio);
+      auto styled = m_guiContext.get().setTextStyle(m_textStyle, pixelRatio);
       if (!styled) return std::unexpected(std::move(styled.error()));
       TextPositioning tp = m_textTemplate;
       tp.wrapWidth = tp.wrapWidth.transform([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
-      auto result = m_guiContext->determineTextSize(sayAction.text, tp);
+      auto result = m_guiContext.get().determineTextSize(sayAction.text, tp);
       if (!result) return std::unexpected(std::move(result.error()));
       float textWidth = result->width() / pixelRatio + m_textPadding[0];
       float textHeight = result->height() / pixelRatio + m_textPadding[1];
@@ -511,29 +511,29 @@ std::expected<void, StarException> ChatBubbleManager::addChatActions(List<ChatAc
             };
             if (y == 0) {
               if (x == 0) {
-                backgroundImages.append(std::make_tuple("/interface/chatbubbles/cornerBottomLeft.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/cornerBottomLeft.png", partPosition(x, y)});
               } else if (x == innerTiles[0] - 1) {
-                backgroundImages.append(std::make_tuple("/interface/chatbubbles/cornerBottomRight.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/cornerBottomRight.png", partPosition(x, y)});
               } else {
                 if (middleIdx == x)
-                  backgroundImages.append(std::make_tuple("/interface/chatbubbles/point.png", partPosition(x, y - 1)));
+                  backgroundImages.append(BubbleImage{"/interface/chatbubbles/point.png", partPosition(x, y - 1)});
                 else
-                  backgroundImages.append(std::make_tuple("/interface/chatbubbles/sideDown.png", partPosition(x, y)));
+                  backgroundImages.append(BubbleImage{"/interface/chatbubbles/sideDown.png", partPosition(x, y)});
               }
             } else if (y == innerTiles[1] - 1) {
               if (x == 0)
-                backgroundImages.append(std::make_tuple("/interface/chatbubbles/cornerTopLeft.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/cornerTopLeft.png", partPosition(x, y)});
               else if (x == innerTiles[0] - 1)
-                backgroundImages.append(std::make_tuple("/interface/chatbubbles/cornerTopRight.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/cornerTopRight.png", partPosition(x, y)});
               else
-                backgroundImages.append(std::make_tuple("/interface/chatbubbles/sideUp.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/sideUp.png", partPosition(x, y)});
             } else {
               if (x == 0)
-                backgroundImages.append(std::make_tuple("/interface/chatbubbles/sideLeft.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/sideLeft.png", partPosition(x, y)});
               else if (x == innerTiles[0] - 1)
-                backgroundImages.append(std::make_tuple("/interface/chatbubbles/sideRight.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/sideRight.png", partPosition(x, y)});
               else
-                backgroundImages.append(std::make_tuple("/interface/chatbubbles/center.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/center.png", partPosition(x, y)});
             }
           }
         }
@@ -635,7 +635,7 @@ std::expected<void, StarException> ChatBubbleManager::addChatActions(List<ChatAc
         if (!pitch) return std::unexpected(std::move(pitch.error()));
         audioInstance->setVolume(*volume);
         audioInstance->setPitchMultiplier(*pitch);
-        auto played = m_guiContext->playAudio(audioInstance);
+        auto played = m_guiContext.get().playAudio(audioInstance);
         if (!played) return std::unexpected(std::move(played.error()));
       }
     }
@@ -644,7 +644,7 @@ std::expected<void, StarException> ChatBubbleManager::addChatActions(List<ChatAc
 }
 
 std::expected<RectF, StarException> ChatBubbleManager::bubbleImageRect(Vec2F screenPos, BubbleImage const& image, float pixelRatio) {
-  auto metadata = m_guiContext->root().imageMetadataDatabase();
+  auto metadata = m_guiContext.get().root().imageMetadataDatabase();
   if (!metadata) return std::unexpected(std::move(metadata.error()));
   auto size = (*metadata)->imageSize(std::get<0>(image));
   if (!size) return std::unexpected(std::move(size.error()));
@@ -652,18 +652,18 @@ std::expected<RectF, StarException> ChatBubbleManager::bubbleImageRect(Vec2F scr
 }
 
 std::expected<void, StarException> ChatBubbleManager::drawBubbleImage(Vec2F screenPos, BubbleImage const& image, float pixelRatio, int alpha) {
-  return m_guiContext->drawQuad(std::get<0>(image), screenPos + std::get<1>(image) * pixelRatio, pixelRatio, {255, 255, 255, alpha});
+  return m_guiContext.get().drawQuad(std::get<0>(image), screenPos + std::get<1>(image) * pixelRatio, pixelRatio, {255, 255, 255, alpha});
 }
 
 std::expected<void, StarException> ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& text, float pixelRatio, int alpha, bool isPortrait) {
   TextStyle style = std::get<1>(text);
   style.color[3] *= ((float)alpha / 255.f);
-  auto styled = m_guiContext->setTextStyle(style, pixelRatio);
+  auto styled = m_guiContext.get().setTextStyle(style, pixelRatio);
   if (!styled) return std::unexpected(std::move(styled.error()));
   TextPositioning tp = isPortrait ? m_portraitTextTemplate : m_textTemplate;
   tp.pos = screenPos + std::get<3>(text) * pixelRatio;
   tp.wrapWidth = tp.wrapWidth.transform([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
-  auto rendered = m_guiContext->renderText(std::get<0>(text), tp);
+  auto rendered = m_guiContext.get().renderText(std::get<0>(text), tp);
   if (!rendered) return std::unexpected(std::move(rendered.error()));
   return {};
 }

@@ -157,7 +157,7 @@ namespace {
         auto tile = world.getServerTile(Vec2I(x, y));
         if (!tile)
           return std::unexpected(std::move(tile.error()));
-        auto sample = tileHash(Vec2I(x, y), **tile);
+        auto sample = tileHash(Vec2I(x, y), tile->get());
         if (!sample)
           return std::unexpected(std::move(sample.error()));
         hash ^= *sample;
@@ -286,15 +286,15 @@ const GameTestRegistration shipWorldIsDeterministic("WorldSnapshot", "ShipWorldI
       Vec2I position = center + Vec2I(x, y);
       auto firstTile = (*firstWorld)->getServerTile(position);
       ASSERT_TRUE(firstTile) << firstTile.error().what();
-      auto firstSample = tileHash(position, **firstTile);
+      auto firstSample = tileHash(position, firstTile->get());
       ASSERT_TRUE(firstSample) << firstSample.error().what();
       firstHash ^= *firstSample;
       auto secondTile = (*secondWorld)->getServerTile(position);
       ASSERT_TRUE(secondTile) << secondTile.error().what();
-      auto secondSample = tileHash(position, **secondTile);
+      auto secondSample = tileHash(position, secondTile->get());
       ASSERT_TRUE(secondSample) << secondSample.error().what();
       secondHash ^= *secondSample;
-      if ((*firstTile)->foreground != EmptyMaterialId)
+      if (firstTile->get().foreground != EmptyMaterialId)
         ++nonEmptyTiles;
     }
   }
@@ -411,9 +411,9 @@ const GameTestRegistration delayedExplosionOutlivesProjectile("ProjectileActions
   ASSERT_TRUE(dirt) << dirt.error().what();
   auto modified = world->modifyServerTile(tilePosition, true);
   ASSERT_TRUE(modified) << modified.error().what();
-  auto tile = *modified;
-  ASSERT_NE(tile, nullptr);
-  tile->foreground = *dirt;
+  ASSERT_TRUE(*modified);
+  auto& tile = (*modified)->get();
+  tile.foreground = *dirt;
 
   auto projectileDatabase = root.projectileDatabase();
   ASSERT_TRUE(projectileDatabase) << projectileDatabase.error().what();
@@ -442,7 +442,7 @@ const GameTestRegistration delayedExplosionOutlivesProjectile("ProjectileActions
   EXPECT_EQ(world->material(tilePosition, TileLayer::Foreground), *dirt);
   auto damagedTile = world->getServerTile(tilePosition);
   ASSERT_TRUE(damagedTile) << damagedTile.error().what();
-  EXPECT_FALSE((*damagedTile)->foregroundDamage.dead());
+  EXPECT_FALSE(damagedTile->get().foregroundDamage.dead());
   for (unsigned step = 0; step < 10 && world->material(tilePosition, TileLayer::Foreground) != EmptyMaterialId; ++step)
     ASSERT_TRUE(world->update(0.2f));
   EXPECT_EQ(world->material(tilePosition, TileLayer::Foreground), EmptyMaterialId);
@@ -466,11 +466,11 @@ const GameTestRegistration firstContactTriggersCollisionActionOnce("ProjectileAc
   ASSERT_TRUE(dirt) << dirt.error().what();
   auto attachment = world->modifyServerTile(ground, true);
   ASSERT_TRUE(attachment) << attachment.error().what();
-  ASSERT_NE(*attachment, nullptr);
-  ASSERT_EQ((*attachment)->foreground, EmptyMaterialId);
+  ASSERT_TRUE(*attachment);
+  ASSERT_EQ((*attachment)->get().foreground, EmptyMaterialId);
   // As in the real material-isolation fixture, supply a background attachment:
   // forceModifyTile bypasses protection, not the normal adjacency requirement.
-  (*attachment)->background = StructureMaterialId;
+  (*attachment)->get().background = StructureMaterialId;
   // Production placement derives foreground collision from the material.
   auto placed = world->forceModifyTile(ground, PlaceMaterial{TileLayer::Foreground, *dirt, MaterialHue(0)}, true);
   ASSERT_TRUE(placed) << placed.error().what();

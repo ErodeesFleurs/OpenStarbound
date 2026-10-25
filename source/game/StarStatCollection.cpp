@@ -77,16 +77,16 @@ std::expected<std::shared_ptr<StatCollection>, StarException> StatCollection::cr
     }
   }
 
-  auto modifiers = collection->addNetElement(&collection->m_statModifiersNetState);
+  auto modifiers = collection->addNetElement(collection->m_statModifiersNetState);
   if (!modifiers) return std::unexpected(std::move(modifiers.error()));
   // Sort resource names alphabetically to ensure the same order on master and slaves.
   auto resourceNames = collection->m_stats.resourceNames();
   std::ranges::sort(resourceNames);
   for (auto const& resource : resourceNames) {
     auto& resourceNetState = collection->m_resourceValuesNetStates[resource];
-    auto valueAdded = collection->addNetElement(&resourceNetState);
+    auto valueAdded = collection->addNetElement(resourceNetState);
     if (!valueAdded) return std::unexpected(std::move(valueAdded.error()));
-    auto lockAdded = collection->addNetElement(&collection->m_resourceLockedNetStates[resource]);
+    auto lockAdded = collection->addNetElement(collection->m_resourceLockedNetStates[resource]);
     if (!lockAdded) return std::unexpected(std::move(lockAdded.error()));
   }
   return collection;
@@ -157,13 +157,13 @@ std::expected<void, StarException> StatCollection::resetResource(String const& r
   if (!unlocked) return std::unexpected(std::move(unlocked.error()));
   auto def = m_defaultResourceValues.get(resourceName);
   if (!def) return std::unexpected(std::move(def.error()));
-  if (auto value = (*def)->leftPtr()) {
-    auto set = m_stats.setResourceValue(resourceName, *value);
+  if (auto value = def->get().maybeLeftRef()) {
+    auto set = m_stats.setResourceValue(resourceName, value->get());
     if (!set) return std::unexpected(std::move(set.error()));
   } else {
-    auto percentage = (*def)->right();
+    auto percentage = def->get().right();
     if (!percentage) return std::unexpected(std::move(percentage.error()));
-    auto set = m_stats.setResourcePercentage(resourceName, **percentage);
+    auto set = m_stats.setResourcePercentage(resourceName, percentage->get());
     if (!set) return std::unexpected(std::move(set.error()));
   }
   return {};

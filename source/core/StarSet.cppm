@@ -11,7 +11,7 @@ import star.format;
 namespace Star {
 
 struct SetExceptionTag {
-  static constexpr char const* name() { return "SetException"; }
+  static constexpr std::string_view name() { return "SetException"; }
 };
 using SetException = StarError<SetExceptionTag, StarException>;
 
@@ -577,8 +577,8 @@ std::ostream& operator<<(std::ostream& os, Container const& set)
     requires std::same_as<SetOutputResult<Container>, std::ostream&>;
 
 template <SetContainer Container>
-[[nodiscard]] std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Container const& set)
-    requires std::same_as<SetOutputResult<Container>, std::expected<std::ostream*, StarException>>;
+[[nodiscard]] std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, Container const& set)
+    requires std::same_as<SetOutputResult<Container>, std::expected<std::reference_wrapper<std::ostream>, StarException>>;
 
 template <SetContainer Container>
 std::ostream& operator<<(std::ostream& os, Container const& set)
@@ -592,8 +592,8 @@ std::ostream& operator<<(std::ostream& os, Container const& set)
 }
 
 template <SetContainer Container>
-[[nodiscard]] std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Container const& set)
-    requires std::same_as<SetOutputResult<Container>, std::expected<std::ostream*, StarException>> {
+[[nodiscard]] std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, Container const& set)
+    requires std::same_as<SetOutputResult<Container>, std::expected<std::reference_wrapper<std::ostream>, StarException>> {
   os << "(";
   for (auto i = set.begin(); i != set.end(); ++i) {
     if (i != set.begin()) os << ", ";
@@ -601,7 +601,7 @@ template <SetContainer Container>
     if (!written) return std::unexpected(std::move(written.error()));
   }
   os << ")";
-  return &os;
+  return std::ref(os);
 }
 
 }

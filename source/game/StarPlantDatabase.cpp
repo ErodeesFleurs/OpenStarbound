@@ -252,7 +252,7 @@ std::expected<std::shared_ptr<PlantDatabase>, StarException> PlantDatabase::crea
     auto bushes = (*assets)->scanExtension("bush");
     if (!bushes) return std::unexpected(std::move(bushes.error()));
     for (auto files : {*stems,*foliages,*grasses,*bushes})
-      if (auto queued = (*assets)->queueJsons(*files); !queued) return std::unexpected(std::move(queued.error()));
+      if (auto queued = (*assets)->queueJsons(files.get()); !queued) return std::unexpected(std::move(queued.error()));
     auto read = [&](auto const& files, auto& configs) -> std::expected<void, StarException> {
       for (auto const& scannedFile : files) {
         String file = scannedFile.string();
@@ -266,10 +266,10 @@ std::expected<std::shared_ptr<PlantDatabase>, StarException> PlantDatabase::crea
       }
       return {};
     };
-    if (auto result = read(**stems,database->m_treeStemConfigs); !result) return result;
-    if (auto result = read(**foliages,database->m_treeFoliageConfigs); !result) return result;
-    if (auto result = read(**grasses,database->m_grassConfigs); !result) return result;
-    return read(**bushes,database->m_bushConfigs);
+    if (auto result = read(stems->get(),database->m_treeStemConfigs); !result) return result;
+    if (auto result = read(foliages->get(),database->m_treeFoliageConfigs); !result) return result;
+    if (auto result = read(grasses->get(),database->m_grassConfigs); !result) return result;
+    return read(bushes->get(),database->m_bushConfigs);
   }();
   if (!load) return std::unexpected(PlantDatabaseException("Error loading plant database",load.error()));
   return database;
@@ -293,7 +293,7 @@ StringList PlantDatabase::treeFoliageNames() const {
 std::expected<String, StarException> PlantDatabase::treeStemShape(String const& stemName) const {
   auto result252 = m_treeStemConfigs.get(stemName);
 if (!result252) return std::unexpected(std::move(result252.error()));
-auto result253 = (**result252).settings.get("shape");
+auto result253 = result252->get().settings.get("shape");
 if (!result253) return std::unexpected(std::move(result253.error()));
 auto result254 = std::move(*result253).toString();
 if (!result254) return std::unexpected(std::move(result254.error()));
@@ -303,7 +303,7 @@ return std::move(*result254);
 std::expected<String, StarException> PlantDatabase::treeFoliageShape(String const& foliageName) const {
   auto result249 = m_treeFoliageConfigs.get(foliageName);
 if (!result249) return std::unexpected(std::move(result249.error()));
-auto result250 = (**result249).settings.get("shape");
+auto result250 = result249->get().settings.get("shape");
 if (!result250) return std::unexpected(std::move(result250.error()));
 auto result251 = std::move(*result250).toString();
 if (!result251) return std::unexpected(std::move(result251.error()));
@@ -334,14 +334,14 @@ std::expected<TreeVariant, StarException> PlantDatabase::buildTreeVariant(
 
   auto result236 = m_treeStemConfigs.get(stemName);
 if (!result236) return std::unexpected(std::move(result236.error()));
-auto stemConfig = (**result236);
+auto const& stemConfig = result236->get();
   treeVariant.stemDirectory = stemConfig.directory;
   treeVariant.stemSettings = stemConfig.settings;
   treeVariant.stemHueShift = stemHueShift;
 
   auto result237 = m_treeFoliageConfigs.get(foliageName);
 if (!result237) return std::unexpected(std::move(result237.error()));
-auto foliageConfig = (**result237);
+auto const& foliageConfig = result237->get();
   treeVariant.foliageDirectory = foliageConfig.directory;
   treeVariant.foliageSettings = foliageConfig.settings;
   treeVariant.foliageHueShift = foliageHueShift;
@@ -398,7 +398,7 @@ std::expected<TreeVariant, StarException> PlantDatabase::buildTreeVariant(String
 
   auto result225 = m_treeStemConfigs.get(stemName);
 if (!result225) return std::unexpected(std::move(result225.error()));
-auto stemConfig = (**result225);
+auto const& stemConfig = result225->get();
   treeVariant.stemDirectory = stemConfig.directory;
   treeVariant.stemSettings = stemConfig.settings;
   treeVariant.stemHueShift = stemHueShift;
@@ -465,7 +465,7 @@ std::expected<GrassVariant, StarException> PlantDatabase::buildGrassVariant(Stri
   GrassVariant grassVariant;
   auto result212 = m_grassConfigs.get(name);
 if (!result212) return std::unexpected(std::move(result212.error()));
-auto config = (**result212);
+auto const& config = result212->get();
 
   grassVariant.name = name;
   grassVariant.directory = config.directory;
@@ -525,7 +525,7 @@ if (std::move(*result211) == ceiling)
 std::expected<StringList, StarException> PlantDatabase::bushMods(String const& bushName) const {
   auto config = m_bushConfigs.get(bushName);
   if (!config) return std::unexpected(std::move(config.error()));
-  auto mods = (*config)->settings.opt("mods");
+  auto mods = config->get().settings.opt("mods");
   if (!mods) return std::unexpected(std::move(mods.error()));
   if (!*mods) return StringList{};
   return jsonToStringList(**mods);
@@ -538,7 +538,7 @@ std::expected<BushVariant, StarException> PlantDatabase::buildBushVariant(String
   BushVariant bushVariant;
   auto result193 = m_bushConfigs.get(bushName);
 if (!result193) return std::unexpected(std::move(result193.error()));
-auto config = (**result193);
+auto const& config = result193->get();
 
   bushVariant.bushName = bushName;
   bushVariant.modName = modName;
@@ -554,7 +554,7 @@ if (!result196) return std::unexpected(std::move(result196.error()));
 auto shapeMap = std::move(*result196);
     auto result197 = shapeMap.get("base");
 if (!result197) return std::unexpected(std::move(result197.error()));
-auto result198 = (**result197).toString();
+auto result198 = result197->get().toString();
 if (!result198) return std::unexpected(std::move(result198.error()));
 auto base = std::move(*result198);
     StringList mods;
@@ -562,7 +562,7 @@ auto base = std::move(*result198);
       {
 auto result199 = shapeMap.get("mods");
 if (!result199) return std::unexpected(std::move(result199.error()));
-auto result200 = (**result199).get(modName, JsonArray());
+auto result200 = result199->get().get(modName, JsonArray());
 if (!result200) return std::unexpected(std::move(result200.error()));
 auto result201 = jsonToStringList(std::move(*result200));
 if (!result201) return std::unexpected(std::move(result201.error()));
@@ -636,13 +636,13 @@ Json PlantDatabase::Config::toJson() const {
 std::expected<Json, StarException> PlantDatabase::treeFoliageConfig(String const & foliageName) const {
   auto config = m_treeFoliageConfigs.get(foliageName);
   if (!config) return std::unexpected(std::move(config.error()));
-  return (*config)->toJson();
+  return config->get().toJson();
 }
 
 std::expected<Json, StarException> PlantDatabase::treeStemConfig(String const & stemName) const {
   auto config = m_treeStemConfigs.get(stemName);
   if (!config) return std::unexpected(std::move(config.error()));
-  return (*config)->toJson();
+  return config->get().toJson();
 }
 
 }

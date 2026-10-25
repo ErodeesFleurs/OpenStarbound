@@ -106,7 +106,7 @@ std::expected<String, StarException> CurrencyItem::pickupSound() const {
     auto mediumLimit = mediumLimitValue->toUInt();
     if (!mediumLimit)
       return std::unexpected(std::move(mediumLimit.error()));
-    soundsKey = count() <= *mediumLimit ? "pickupSoundsMedium" : "pickupSoundsLarge";
+    soundsKey = count() <= *mediumLimit ? std::string_view("pickupSoundsMedium") : std::string_view("pickupSoundsLarge");
   }
   auto soundsValue = instanceValue(soundsKey, {});
   if (!soundsValue)
@@ -118,7 +118,7 @@ std::expected<String, StarException> CurrencyItem::pickupSound() const {
     auto sound = root().random().randFrom(*sounds);
     if (!sound)
       return std::unexpected(std::move(sound.error()));
-    return **sound;
+    return sound->get();
   }
   return Item::pickupSound();
 }

@@ -80,7 +80,7 @@ struct WorldRenderData {
   Lightmap lightMap;
 
   List<EntityDrawables> entityDrawables;
-  List<Particle> const* particles;
+  std::optional<std::reference_wrapper<List<Particle> const>> particles;
 
   List<OverheadBar> overheadBars;
   List<Drawable> nametags;
@@ -101,7 +101,7 @@ inline void WorldRenderData::clear() {
   tiles.resize({0, 0}); // keep reserved
 
   entityDrawables.clear();
-  particles = nullptr;
+  particles.reset();
   overheadBars.clear();
   nametags.clear();
   backgroundOverlays.clear();

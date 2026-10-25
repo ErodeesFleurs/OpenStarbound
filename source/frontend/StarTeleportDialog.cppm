@@ -75,7 +75,8 @@ public:
   }
 
   [[nodiscard]] static std::expected<std::shared_ptr<TeleportDialog>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client,
-      PaneManager* paneManager, Json config, EntityId sourceEntityId, TeleportBookmark currentLocation);
+      PaneManager& paneManager, Json config, EntityId sourceEntityId, TeleportBookmark currentLocation);
+  void detachInterface() { m_paneManager.reset(); }
 
   [[nodiscard]] std::expected<void, StarException> tick(float dt) override;
 
@@ -84,11 +85,11 @@ public:
   [[nodiscard]] std::expected<void, StarException> editBookmark();
 
 private:
-  TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, PaneManager* paneManager, EntityId sourceEntityId, TeleportBookmark currentLocation);
+  TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, PaneManager& paneManager, EntityId sourceEntityId, TeleportBookmark currentLocation);
   [[nodiscard]] std::expected<void, StarException> initialize(Json config);
   EntityId m_sourceEntityId;
   std::shared_ptr<UniverseClient> m_client;
-  PaneManager* m_paneManager;
+  std::optional<std::reference_wrapper<PaneManager>> m_paneManager;
   List<std::pair<WarpAction, bool>> m_destinations;
   TeleportBookmark m_currentLocation;
 };

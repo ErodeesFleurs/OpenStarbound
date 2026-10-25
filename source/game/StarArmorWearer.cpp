@@ -1,5 +1,6 @@
 import star.json;
 import star.json_extra;
+import star.optional;
 import star.ordered_map;
 import star.lru_cache;
 import star.thread;
@@ -129,7 +130,7 @@ std::expected<std::shared_ptr<ArmorWearer>, StarException> ArmorWearer::create(R
     armor.isCosmetic = i >= 4;
     if (i >= 8)
       armor.netState.setCompatibilityVersion(9);
-    auto added = wearer->addNetElement(&armor.netState);
+    auto added = wearer->addNetElement(armor.netState);
     if (!added)
       return std::unexpected(std::move(added.error()));
   }
@@ -258,11 +259,10 @@ std::expected<void, StarException> ArmorWearer::effects(EffectEmitter& effectEmi
     }
   }
 
-  for (auto& source : {
-      std::pair{"headArmor", &headEffects}, std::pair{"chestArmor", &chestEffects},
-      std::pair{"legsArmor", &legsEffects}, std::pair{"backArmor", &backEffects}}) {
-    effectEmitter.addEffectSources(source.first, std::move(*source.second));
-  }
+  effectEmitter.addEffectSources("headArmor", std::move(headEffects));
+  effectEmitter.addEffectSources("chestArmor", std::move(chestEffects));
+  effectEmitter.addEffectSources("legsArmor", std::move(legsEffects));
+  effectEmitter.addEffectSources("backArmor", std::move(backEffects));
   return {};
 }
 
@@ -285,7 +285,7 @@ std::expected<Json, StarException> ArmorWearer::diskStore() const {
   auto versioning = m_root.versioningDatabase();
   if (!versioning)
     return std::unexpected(std::move(versioning.error()));
-  static char const* const slotNames[] = {
+  static std::string_view const slotNames[] = {
       "headItem", "chestItem", "legsItem", "backItem",
       "headCosmeticItem", "chestCosmeticItem", "legsCosmeticItem", "backCosmeticItem"};
   for (std::size_t i = first; i != m_armors.size(); ++i) {
@@ -305,7 +305,7 @@ std::expected<void, StarException> ArmorWearer::diskLoad(Json const& diskStore) 
   auto itemDatabase = m_root.itemDatabase();
   if (!itemDatabase)
     return std::unexpected(std::move(itemDatabase.error()));
-  static char const* const slotNames[] = {
+  static std::string_view const slotNames[] = {
       "headItem", "chestItem", "legsItem", "backItem",
       "headCosmeticItem", "chestCosmeticItem", "legsCosmeticItem", "backCosmeticItem"};
   for (std::size_t i = 0; i != m_armors.size(); ++i) {
@@ -360,7 +360,7 @@ bool ArmorWearer::setItem(std::uint8_t slot, std::shared_ptr<ArmorItem> item, bo
     return false;
   auto& armor = m_armors[slot];
 
-  bool itemChanged = !Item::itemsEqual(armor.item, item);
+  bool itemChanged = !Item::itemsEqual(optionalRef(armor.item), optionalRef(item));
   bool visChanged = visible != armor.visible;
 
   if (itemChanged)

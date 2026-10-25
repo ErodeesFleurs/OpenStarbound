@@ -321,45 +321,45 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeCelestialCallbacks(R
   return callbacks;
 }
 
-std::expected<LuaCallbacks, StarException> LuaBindings::makeCelestialCallbacks(Root& root, Universe* universe) {
-  auto celestialDatabase = universe->celestialDatabase();
+std::expected<LuaCallbacks, StarException> LuaBindings::makeCelestialCallbacks(Root& root, Universe& universe) {
+  auto celestialDatabase = universe.celestialDatabase();
   
   auto createdCallbacks = makeCelestialCallbacks(root, celestialDatabase);
   if (!createdCallbacks)
     return std::unexpected(std::move(createdCallbacks.error()));
   LuaCallbacks callbacks = std::move(*createdCallbacks);
   
-  if (auto client = as<UniverseClient>(universe)) {
-    auto systemWorld = client->systemWorldClient();
+  if (auto client = asRef<UniverseClient>(universe)) {
+    auto systemWorld = client->get().systemWorldClient();
 
     if (auto registration = callbacks.registerCallback("skyFlying", [client]() {
-        return client->currentSky()->flying();
+        return client->get().currentSky()->flying();
       }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = callbacks.registerCallback("skyFlyingType", [client]() -> std::expected<String, StarException> {
     if (!FlyingTypeNames)
       return std::unexpected(FlyingTypeNames.error());
-    auto name = FlyingTypeNames->getRight(client->currentSky()->flyingType());
+    auto name = FlyingTypeNames->getRight(client->get().currentSky()->flyingType());
     if (!name)
       return std::unexpected(std::move(name.error()));
-    return **name;
+    return name->get();
   }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = callbacks.registerCallback("skyWarpPhase", [client]() -> std::expected<String, StarException> {
     if (!WarpPhaseNames)
       return std::unexpected(WarpPhaseNames.error());
-    auto name = WarpPhaseNames->getRight(client->currentSky()->warpPhase());
+    auto name = WarpPhaseNames->getRight(client->get().currentSky()->warpPhase());
     if (!name)
       return std::unexpected(std::move(name.error()));
-    return **name;
+    return name->get();
   }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = callbacks.registerCallback("skyWarpProgress", [client]() -> float {
-        return client->currentSky()->warpProgress();
+        return client->get().currentSky()->warpProgress();
       }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = callbacks.registerCallback("skyInHyperspace", [client]() -> bool {
-        return client->currentSky()->inHyperspace();
+        return client->get().currentSky()->inHyperspace();
       }); !registration)
       return std::unexpected(std::move(registration.error()));
 
@@ -367,7 +367,7 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeCelestialCallbacks(R
     auto location = jsonToSystemLocation(destination);
     if (!location)
       return std::unexpected(std::move(location.error()));
-    return client->flyShip(system, *location, settings);
+    return client->get().flyShip(system, *location, settings);
   }); !registration)
       return std::unexpected(std::move(registration.error()));
     if (auto registration = callbacks.registerCallback("flying", [systemWorld]() {
@@ -458,8 +458,8 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeCelestialCallbacks(R
     if (!action)
       return std::unexpected(std::move(action.error()));
     if (*action)
-      if (auto warp = std::get_if<WarpToWorld>(&**action))
-        return printWorldId(warp->world);
+      if (std::holds_alternative<WarpToWorld>(**action))
+        return printWorldId(std::get<WarpToWorld>(**action).world);
     return {};
   }); !registration)
       return std::unexpected(std::move(registration.error()));

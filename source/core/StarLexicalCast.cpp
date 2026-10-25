@@ -6,8 +6,7 @@ import star.lexical_cast;
 
 namespace Star {
 
-BadLexicalCast lexicalCastError(std::errc ec, const char* first, const char* last) {
-  std::string_view str(first, last - first);
+BadLexicalCast lexicalCastError(std::errc ec, std::string_view str) {
   if (ec == std::errc::invalid_argument)
     return BadLexicalCast(strf("Lexical cast failed on '{}' (invalid argument)", str));
   else
@@ -15,15 +14,12 @@ BadLexicalCast lexicalCastError(std::errc ec, const char* first, const char* las
 }
 
 template <>
-bool tryLexicalCast(bool& result, const char* first, const char* last) {
-  std::size_t len = last - first;
-  // Compare the whole literal, not just its first len characters: strncmp with
-  // the input length accepted short prefixes such as "t" or "tru".
-  if (len == 4 && std::memcmp(first, "true", 4) == 0) {
+bool tryLexicalCast(bool& result, std::string_view text) {
+  if (text == "true") {
     result = true;
     return true;
   }
-  if (len == 5 && std::memcmp(first, "false", 5) == 0) {
+  if (text == "false") {
     result = false;
     return true;
   }
@@ -34,12 +30,11 @@ bool tryLexicalCast(bool& result, const char* first, const char* last) {
 }
 
 template <>
-std::expected<bool, StarException> lexicalCast(const char* first, const char* last) {
-  std::size_t len = last - first;
-  if (len == 4 && std::memcmp(first, "true", 4) == 0)
+std::expected<bool, StarException> lexicalCast(std::string_view text) {
+  if (text == "true")
     return true;
-  else if (len != 5 || std::memcmp(first, "false", 5) != 0)
-    return std::unexpected(lexicalCastError(std::errc(), first, last));
+  else if (text != "false")
+    return std::unexpected(lexicalCastError(std::errc(), text));
 
   return false;
 }

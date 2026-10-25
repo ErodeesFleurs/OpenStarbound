@@ -397,7 +397,7 @@ struct Fixture<Pool, Workload> {
       : entries(makeCache(random, size)), capacity(size), next(size) {
     for (Key key = 0; key < size; ++key) {
       auto result = entries.get(key, valueFor);
-      if (!result || **result != valueFor(key)) {
+      if (!result || result->get() != valueFor(key)) {
         valid = false;
         return;
       }
@@ -409,14 +409,14 @@ struct Fixture<Pool, Workload> {
     for (std::size_t i = 0; i < capacity; ++i) {
       auto hitKey = (next - 1) % (2 * capacity);
       auto hit = entries.get(hitKey, valueFor);
-      if (!hit || **hit != valueFor(hitKey))
+      if (!hit || hit->get() != valueFor(hitKey))
         return false;
-      benchmark::DoNotOptimize(**hit);
+      benchmark::DoNotOptimize(hit->get());
       auto key = next++ % (2 * capacity);
       auto miss = entries.get(key, valueFor);
-      if (!miss || **miss != valueFor(key))
+      if (!miss || miss->get() != valueFor(key))
         return false;
-      benchmark::DoNotOptimize(**miss);
+      benchmark::DoNotOptimize(miss->get());
     }
     return entries.currentSize() == capacity;
   }
@@ -448,10 +448,10 @@ struct Fixture<Pool, Shape::StatisticsPayload> {
 
   Fixture(Backend<Pool>&, std::size_t size, WorkloadInput<Shape::StatisticsPayload> const& input)
       : entries(size), queries(input.queries), capacity(size), next(size) {
-    auto producer = [this](Star::String const& key) { return produce(key); };
+    auto producer = [&self = *this](Star::String const& key) { return self.produce(key); };
     for (std::size_t i = 0; i < size; ++i) {
       auto result = entries.get(queries[i], producer);
-      if (!result || !**result || (**result)->eventName != queries[i]) {
+      if (!result || !result->get() || result->get()->eventName != queries[i]) {
         valid = false;
         return;
       }
@@ -461,22 +461,22 @@ struct Fixture<Pool, Shape::StatisticsPayload> {
   bool churn() {
     if (!valid)
       return false;
-    auto producer = [this](Star::String const& key) { return produce(key); };
+    auto producer = [&self = *this](Star::String const& key) { return self.produce(key); };
     auto before = produced;
     for (std::size_t i = 0; i < capacity; ++i) {
       auto const& hitKey = queries[(next - 1) % queries.size()];
       auto hit = entries.get(hitKey, producer);
-      if (!hit || !**hit || (**hit)->eventName != hitKey)
+      if (!hit || !hit->get() || hit->get()->eventName != hitKey)
         return false;
       // StatisticsDatabase returns an owning shared_ptr, not a cache-node
       // pointer. Exercise that copy/release too; no node or allocator escapes.
-      auto returnedHit = **hit;
+      auto returnedHit = hit->get();
       benchmark::DoNotOptimize(returnedHit);
       auto const& key = queries[next++ % queries.size()];
       auto miss = entries.get(key, producer);
-      if (!miss || !**miss || (**miss)->eventName != key)
+      if (!miss || !miss->get() || miss->get()->eventName != key)
         return false;
-      auto returnedMiss = **miss;
+      auto returnedMiss = miss->get();
       benchmark::DoNotOptimize(returnedMiss);
     }
     return entries.currentSize() == capacity && produced - before == capacity;

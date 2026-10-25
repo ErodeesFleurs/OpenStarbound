@@ -165,7 +165,7 @@ static std::expected<void, StarException> run(int argc, char** argv) {
       auto text = coordinateOption->first();
       if (!text)
         return std::unexpected(std::move(text.error()));
-      auto parsed = CelestialCoordinate::create(Json(**text));
+      auto parsed = CelestialCoordinate::create(Json(text->get()));
       if (!parsed)
         return std::unexpected(std::move(parsed.error()));
       coordinate = std::move(*parsed);
@@ -188,7 +188,7 @@ static std::expected<void, StarException> run(int argc, char** argv) {
       auto text = regionsOption->first();
       if (!text)
         return std::unexpected(std::move(text.error()));
-      auto parsed = lexicalCast<unsigned>(**text);
+      auto parsed = lexicalCast<unsigned>(text->get());
       if (!parsed)
         return std::unexpected(std::move(parsed.error()));
       regionsToGenerate = *parsed;
@@ -199,7 +199,7 @@ static std::expected<void, StarException> run(int argc, char** argv) {
       auto text = regionSizeOption->first();
       if (!text)
         return std::unexpected(std::move(text.error()));
-      auto parsed = lexicalCast<unsigned>(**text);
+      auto parsed = lexicalCast<unsigned>(text->get());
       if (!parsed)
         return std::unexpected(std::move(parsed.error()));
       regionSize = *parsed;
@@ -210,7 +210,7 @@ static std::expected<void, StarException> run(int argc, char** argv) {
       auto text = reportEveryOption->first();
       if (!text)
         return std::unexpected(std::move(text.error()));
-      auto parsed = lexicalCast<unsigned>(**text);
+      auto parsed = lexicalCast<unsigned>(text->get());
       if (!parsed)
         return std::unexpected(std::move(parsed.error()));
       reportEvery = *parsed;

@@ -19,11 +19,11 @@ namespace JsonPath {
   typedef std::function<std::expected<TypeHint, StarException>(String&, String const&, Utf8Cursor&)> PathParser;
 
   struct ParsingExceptionTag {
-    static constexpr char const* name() { return "ParsingException"; }
+    static constexpr std::string_view name() { return "ParsingException"; }
   };
   using ParsingException = StarError<ParsingExceptionTag, JsonException>;
   struct TraversalExceptionTag {
-    static constexpr char const* name() { return "TraversalException"; }
+    static constexpr std::string_view name() { return "TraversalException"; }
   };
   using TraversalException = StarError<TraversalExceptionTag, JsonException>;
 

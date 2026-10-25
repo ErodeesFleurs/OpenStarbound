@@ -9,6 +9,7 @@ import star.time;
 import star.random;
 import star.ttl_cache;
 import star.casting;
+import star.optional;
 import star.game_types;
 import star.material_types;
 import star.rpc_promise;
@@ -211,69 +212,69 @@ class ScriptedEntity;
 namespace LuaBindings {
 
   [[nodiscard]] std::expected<void, StarException> addWorldDebugCallbacks(Root& root, LuaCallbacks& callbacks);
-  [[nodiscard]] std::expected<void, StarException> addWorldEntityCallbacks(LuaCallbacks& callbacks, World* world);
-  [[nodiscard]] std::expected<void, StarException> addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world);
-  [[nodiscard]] std::expected<void, StarException> addWorldGeometryCallbacks(LuaCallbacks& callbacks, World* world);
-  [[nodiscard]] std::expected<void, StarException> addWorldCollisionCallbacks(LuaCallbacks& callbacks, World* world);
+  [[nodiscard]] std::expected<void, StarException> addWorldEntityCallbacks(LuaCallbacks& callbacks, World& world);
+  [[nodiscard]] std::expected<void, StarException> addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World& world);
+  [[nodiscard]] std::expected<void, StarException> addWorldGeometryCallbacks(LuaCallbacks& callbacks, World& world);
+  [[nodiscard]] std::expected<void, StarException> addWorldCollisionCallbacks(LuaCallbacks& callbacks, World& world);
 
   namespace WorldCallbacks {
-    [[nodiscard]] std::expected<bool, StarException> placeObject(World* world, String const& arg1, Vec2I const& arg2, std::optional<int> const& arg3, Json const& arg4);
-    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnItem(World* world, Json const& itemType, Vec2F const& worldPosition, std::optional<std::size_t> const& inputCount, Json const& inputParameters, std::optional<Vec2F> const& initialVelocity, std::optional<float> const& intangibleTime);
-    [[nodiscard]] std::expected<List<EntityId>, StarException> spawnTreasure(World* world, Vec2F const& position, String const& pool, float level, std::optional<std::uint64_t> seed);
-    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnMonster(World* world, String const& arg1, Vec2F const& arg2, std::optional<JsonObject> const& arg3);
-    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnNpc(World* world, Vec2F const& arg1, String const& arg2, String const& arg3, float arg4, std::optional<std::uint64_t> arg5, Json const& arg6);
-    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnStagehand(World* world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides);
-    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnProjectile(World* world, String const& arg1, Vec2F const& arg2, std::optional<EntityId> const& arg3, std::optional<Vec2F> const& arg4, bool arg5, Json const& arg6);
-    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnVehicle(World* world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig);
-    [[nodiscard]] std::expected<Json, StarException> getProperty(World* world, String const& arg1, Json const& arg2);
-    [[nodiscard]] std::expected<void, StarException> setProperty(World* world, String const& arg1, Json const& arg2);
-    [[nodiscard]] std::expected<std::optional<PlatformerAStar::Path>, StarException> findPlatformerPath(World* world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters);
-    [[nodiscard]] std::expected<std::shared_ptr<PlatformerAStar::PathFinder>, StarException> platformerPathStart(World* world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters);
+    [[nodiscard]] std::expected<bool, StarException> placeObject(World& world, String const& arg1, Vec2I const& arg2, std::optional<int> const& arg3, Json const& arg4);
+    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnItem(World& world, Json const& itemType, Vec2F const& worldPosition, std::optional<std::size_t> const& inputCount, Json const& inputParameters, std::optional<Vec2F> const& initialVelocity, std::optional<float> const& intangibleTime);
+    [[nodiscard]] std::expected<List<EntityId>, StarException> spawnTreasure(World& world, Vec2F const& position, String const& pool, float level, std::optional<std::uint64_t> seed);
+    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnMonster(World& world, String const& arg1, Vec2F const& arg2, std::optional<JsonObject> const& arg3);
+    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnNpc(World& world, Vec2F const& arg1, String const& arg2, String const& arg3, float arg4, std::optional<std::uint64_t> arg5, Json const& arg6);
+    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnStagehand(World& world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides);
+    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnProjectile(World& world, String const& arg1, Vec2F const& arg2, std::optional<EntityId> const& arg3, std::optional<Vec2F> const& arg4, bool arg5, Json const& arg6);
+    [[nodiscard]] std::expected<std::optional<EntityId>, StarException> spawnVehicle(World& world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig);
+    [[nodiscard]] std::expected<Json, StarException> getProperty(World& world, String const& arg1, Json const& arg2);
+    [[nodiscard]] std::expected<void, StarException> setProperty(World& world, String const& arg1, Json const& arg2);
+    [[nodiscard]] std::expected<std::optional<PlatformerAStar::Path>, StarException> findPlatformerPath(World& world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters);
+    [[nodiscard]] std::expected<std::shared_ptr<PlatformerAStar::PathFinder>, StarException> platformerPathStart(World& world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters);
   }
 
   namespace ClientWorldCallbacks {
-    [[nodiscard]] std::expected<void, StarException> resendEntity(WorldClient* world, EntityId arg1);
-    [[nodiscard]] std::expected<RectI, StarException> clientWindow(WorldClient* world);
+    [[nodiscard]] std::expected<void, StarException> resendEntity(WorldClient& world, EntityId arg1);
+    [[nodiscard]] std::expected<RectI, StarException> clientWindow(WorldClient& world);
   }
 
   namespace ServerWorldCallbacks {
-    [[nodiscard]] std::expected<String, StarException> id(WorldServer* world);
-    [[nodiscard]] std::expected<bool, StarException> breakObject(WorldServer* world, EntityId arg1, bool arg2);
-    [[nodiscard]] std::expected<bool, StarException> isVisibleToPlayer(WorldServer* world, RectF const& arg1);
-    [[nodiscard]] std::expected<bool, StarException> loadRegion(WorldServer* world, RectF const& arg1);
-    [[nodiscard]] std::expected<bool, StarException> regionActive(WorldServer* world, RectF const& arg1);
-    [[nodiscard]] std::expected<void, StarException> setTileProtection(WorldServer* world, DungeonId arg1, bool arg2);
-    [[nodiscard]] std::expected<bool, StarException> isPlayerModified(WorldServer* world, RectI const& region);
-    [[nodiscard]] std::expected<std::optional<LiquidLevel>, StarException> forceDestroyLiquid(WorldServer* world, Vec2F const& position);
-    [[nodiscard]] std::expected<EntityId, StarException> loadUniqueEntity(WorldServer* world, String const& uniqueId);
-    [[nodiscard]] std::expected<void, StarException> setUniqueId(WorldServer* world, EntityId entityId, std::optional<String> const& uniqueId);
-    [[nodiscard]] std::expected<Json, StarException> takeItemDrop(World* world, EntityId entityId, std::optional<EntityId> const& takenBy);
-    [[nodiscard]] std::expected<void, StarException> setPlayerStart(World* world, Vec2F const& playerStart, std::optional<bool> respawnInWorld);
-    [[nodiscard]] std::expected<List<EntityId>, StarException> players(World* world);
-    [[nodiscard]] std::expected<LuaString, StarException> fidelity(World* world, LuaEngine& engine);
-    [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args);
-    [[nodiscard]] std::expected<bool, StarException> sendPacket(WorldServer* world, ConnectionId clientId, String const& packetType, Json const& packetData);
+    [[nodiscard]] std::expected<String, StarException> id(WorldServer& world);
+    [[nodiscard]] std::expected<bool, StarException> breakObject(WorldServer& world, EntityId arg1, bool arg2);
+    [[nodiscard]] std::expected<bool, StarException> isVisibleToPlayer(WorldServer& world, RectF const& arg1);
+    [[nodiscard]] std::expected<bool, StarException> loadRegion(WorldServer& world, RectF const& arg1);
+    [[nodiscard]] std::expected<bool, StarException> regionActive(WorldServer& world, RectF const& arg1);
+    [[nodiscard]] std::expected<void, StarException> setTileProtection(WorldServer& world, DungeonId arg1, bool arg2);
+    [[nodiscard]] std::expected<bool, StarException> isPlayerModified(WorldServer& world, RectI const& region);
+    [[nodiscard]] std::expected<std::optional<LiquidLevel>, StarException> forceDestroyLiquid(WorldServer& world, Vec2F const& position);
+    [[nodiscard]] std::expected<EntityId, StarException> loadUniqueEntity(WorldServer& world, String const& uniqueId);
+    [[nodiscard]] std::expected<void, StarException> setUniqueId(WorldServer& world, EntityId entityId, std::optional<String> const& uniqueId);
+    [[nodiscard]] std::expected<Json, StarException> takeItemDrop(World& world, EntityId entityId, std::optional<EntityId> const& takenBy);
+    [[nodiscard]] std::expected<void, StarException> setPlayerStart(WorldServer& world, Vec2F const& playerStart, std::optional<bool> respawnInWorld);
+    [[nodiscard]] std::expected<List<EntityId>, StarException> players(WorldServer& world);
+    [[nodiscard]] std::expected<LuaString, StarException> fidelity(WorldServer& world, LuaEngine& engine);
+    [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> callScriptContext(WorldServer& world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args);
+    [[nodiscard]] std::expected<bool, StarException> sendPacket(WorldServer& world, ConnectionId clientId, String const& packetType, Json const& packetData);
   }
 
   namespace WorldGeometryCallbacks {
-    [[nodiscard]] std::expected<float, StarException> magnitude(World* world, Vec2F pos1, std::optional<Vec2F> pos2);
-    [[nodiscard]] std::expected<Vec2F, StarException> distance(World* world, Vec2F const& arg1, Vec2F const& arg2);
-    [[nodiscard]] std::expected<bool, StarException> polyContains(World* world, PolyF const& poly, Vec2F const& pos);
-    [[nodiscard]] std::expected<LuaValue, StarException> xwrap(World* world, LuaEngine& engine, LuaValue const& positionOrX);
-    [[nodiscard]] std::expected<LuaValue, StarException> nearestTo(World* world, LuaEngine& engine, std::variant<Vec2F, float> const& sourcePositionOrX, std::variant<Vec2F, float> const& targetPositionOrX);
+    [[nodiscard]] std::expected<float, StarException> magnitude(World& world, Vec2F pos1, std::optional<Vec2F> pos2);
+    [[nodiscard]] std::expected<Vec2F, StarException> distance(World& world, Vec2F const& arg1, Vec2F const& arg2);
+    [[nodiscard]] std::expected<bool, StarException> polyContains(World& world, PolyF const& poly, Vec2F const& pos);
+    [[nodiscard]] std::expected<LuaValue, StarException> xwrap(World& world, LuaEngine& engine, LuaValue const& positionOrX);
+    [[nodiscard]] std::expected<LuaValue, StarException> nearestTo(World& world, LuaEngine& engine, std::variant<Vec2F, float> const& sourcePositionOrX, std::variant<Vec2F, float> const& targetPositionOrX);
   }
 
   namespace WorldCollisionCallbacks {
-    [[nodiscard]] std::expected<bool, StarException> rectCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2);
-    [[nodiscard]] std::expected<bool, StarException> pointTileCollision(World* world, Vec2F const& arg1, std::optional<CollisionSet> const& arg2);
-    [[nodiscard]] std::expected<bool, StarException> lineTileCollision(World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3);
-    [[nodiscard]] std::expected<std::optional<std::pair<Vec2F, Vec2I>>, StarException> lineTileCollisionPoint(World* world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& maybeCollisionSet);
-    [[nodiscard]] std::expected<bool, StarException> rectTileCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2);
-    [[nodiscard]] std::expected<bool, StarException> pointCollision(World* world, Vec2F const& point, std::optional<CollisionSet> const& collisionSet);
-    [[nodiscard]] std::expected<LuaTupleReturn<std::optional<Vec2F>, std::optional<Vec2F>>, StarException> lineCollision(World* world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& maybeCollisionSet);
-    [[nodiscard]] std::expected<bool, StarException> polyCollision(World* world, PolyF const& arg1, std::optional<Vec2F> const& arg2, std::optional<CollisionSet> const& arg3);
-    [[nodiscard]] std::expected<List<Vec2I>, StarException> collisionBlocksAlongLine(World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3, std::optional<int> const& arg4);
-    [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> resolvePolyCollision(World* world, PolyF poly, Vec2F const& position, float maximumCorrection, std::optional<CollisionSet> const& collisionSet);
+    [[nodiscard]] std::expected<bool, StarException> rectCollision(World& world, RectF const& arg1, std::optional<CollisionSet> const& arg2);
+    [[nodiscard]] std::expected<bool, StarException> pointTileCollision(World& world, Vec2F const& arg1, std::optional<CollisionSet> const& arg2);
+    [[nodiscard]] std::expected<bool, StarException> lineTileCollision(World& world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3);
+    [[nodiscard]] std::expected<std::optional<std::pair<Vec2F, Vec2I>>, StarException> lineTileCollisionPoint(World& world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& maybeCollisionSet);
+    [[nodiscard]] std::expected<bool, StarException> rectTileCollision(World& world, RectF const& arg1, std::optional<CollisionSet> const& arg2);
+    [[nodiscard]] std::expected<bool, StarException> pointCollision(World& world, Vec2F const& point, std::optional<CollisionSet> const& collisionSet);
+    [[nodiscard]] std::expected<LuaTupleReturn<std::optional<Vec2F>, std::optional<Vec2F>>, StarException> lineCollision(World& world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& maybeCollisionSet);
+    [[nodiscard]] std::expected<bool, StarException> polyCollision(World& world, PolyF const& arg1, std::optional<Vec2F> const& arg2, std::optional<CollisionSet> const& arg3);
+    [[nodiscard]] std::expected<List<Vec2I>, StarException> collisionBlocksAlongLine(World& world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3, std::optional<int> const& arg4);
+    [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> resolvePolyCollision(World& world, PolyF poly, Vec2F const& position, float maximumCorrection, std::optional<CollisionSet> const& collisionSet);
   }
 
   namespace WorldDebugCallbacks {
@@ -284,100 +285,100 @@ namespace LuaBindings {
   }
 
   namespace WorldEntityCallbacks {
-    [[nodiscard]] std::expected<LuaTable, StarException> entityQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    [[nodiscard]] std::expected<LuaTable, StarException> monsterQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    [[nodiscard]] std::expected<LuaTable, StarException> npcQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    [[nodiscard]] std::expected<LuaTable, StarException> objectQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    [[nodiscard]] std::expected<LuaTable, StarException> itemDropQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    [[nodiscard]] std::expected<LuaTable, StarException> playerQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    [[nodiscard]] std::expected<LuaTable, StarException> loungeableQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    [[nodiscard]] std::expected<LuaTable, StarException> entityLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
-    [[nodiscard]] std::expected<LuaTable, StarException> objectLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
-    [[nodiscard]] std::expected<LuaTable, StarException> npcLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
-    [[nodiscard]] std::expected<bool, StarException> entityExists(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<bool, StarException> entityCanDamage(World* world, EntityId sourceId, EntityId targetId);
-    [[nodiscard]] std::expected<Json, StarException> entityDamageTeam(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<bool, StarException> entityAggressive(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<LuaString>, StarException> entityType(World* world, LuaEngine& engine, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> entityPosition(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> entityVelocity(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<RectF>, StarException> entityMetaBoundBox(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<std::uint64_t>, StarException> entityCurrency(World* world, EntityId entityId, String const& currencyType);
-    [[nodiscard]] std::expected<std::optional<std::uint64_t>, StarException> entityHasCountOfItem(World* world, EntityId entityId, Json descriptor, std::optional<bool> exactMatch);
-    [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> entityHealth(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<String>, StarException> entitySpecies(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<String>, StarException> entityGender(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<String>, StarException> entityName(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<Json>, StarException> entityNametag(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<String>, StarException> entityDescription(World* world, EntityId entityId, std::optional<String> const& species);
-    [[nodiscard]] std::expected<LuaNullTermWrapper<std::optional<List<Drawable>>>, StarException> entityPortrait(World* world, EntityId entityId, String const& portraitMode);
-    [[nodiscard]] std::expected<std::optional<String>, StarException> entityHandItem(World* world, EntityId entityId, String const& handName);
-    [[nodiscard]] std::expected<Json, StarException> entityHandItemDescriptor(World* world, EntityId entityId, String const& handName);
-    [[nodiscard]] std::expected<LuaNullTermWrapper<std::optional<String>>, StarException> entityUniqueId(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<Json, StarException> getObjectParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue);
-    [[nodiscard]] std::expected<Json, StarException> getNpcScriptParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue);
-    [[nodiscard]] std::expected<List<Vec2I>, StarException> objectSpaces(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<int>, StarException> farmableStage(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<int>, StarException> containerSize(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<bool, StarException> containerClose(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<bool, StarException> containerOpen(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<Json, StarException> containerItems(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<Json, StarException> containerItemAt(World* world, EntityId entityId, std::size_t offset);
-    [[nodiscard]] std::expected<std::optional<bool>, StarException> containerConsume(World* world, EntityId entityId, Json const& items);
-    [[nodiscard]] std::expected<std::optional<bool>, StarException> containerConsumeAt(World* world, EntityId entityId, std::size_t offset, int count);
-    [[nodiscard]] std::expected<std::optional<std::size_t>, StarException> containerAvailable(World* world, EntityId entityId, Json const& items);
-    [[nodiscard]] std::expected<Json, StarException> containerTakeAll(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<Json, StarException> containerTakeAt(World* world, EntityId entityId, std::size_t offset);
-    [[nodiscard]] std::expected<Json, StarException> containerTakeNumItemsAt(World* world, EntityId entityId, std::size_t offset, int const& count);
-    [[nodiscard]] std::expected<std::optional<std::size_t>, StarException> containerItemsCanFit(World* world, EntityId entityId, Json const& items);
-    [[nodiscard]] std::expected<Json, StarException> containerItemsFitWhere(World* world, EntityId entityId, Json const& items);
-    [[nodiscard]] std::expected<Json, StarException> containerAddItems(World* world, EntityId entityId, Json const& items);
-    [[nodiscard]] std::expected<Json, StarException> containerStackItems(World* world, EntityId entityId, Json const& items);
-    [[nodiscard]] std::expected<Json, StarException> containerPutItemsAt(World* world, EntityId entityId, Json const& items, std::size_t offset);
-    [[nodiscard]] std::expected<Json, StarException> containerSwapItems(World* world, EntityId entityId, Json const& items, std::size_t offset);
-    [[nodiscard]] std::expected<Json, StarException> containerSwapItemsNoCombine(World* world, EntityId entityId, Json const& items, std::size_t offset);
-    [[nodiscard]] std::expected<Json, StarException> containerItemApply(World* world, EntityId entityId, Json const& items, std::size_t offset);
-    [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> callScriptedEntity(World* world, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args);
-    [[nodiscard]] std::expected<RpcPromise<Vec2F>, StarException> findUniqueEntity(World* world, String const& uniqueId);
-    [[nodiscard]] std::expected<RpcPromise<Json>, StarException> sendEntityMessage(World* world, LuaEngine& engine, LuaValue entityId, String const& message, LuaVariadic<Json> args);
-    [[nodiscard]] std::expected<std::optional<List<EntityId>>, StarException> loungingEntities(World* world, EntityId entityId, std::optional<std::size_t> anchorIndex);
-    [[nodiscard]] std::expected<std::optional<bool>, StarException> loungeableOccupied(World* world, EntityId entityId, std::optional<std::size_t> anchorIndex);
-    [[nodiscard]] std::expected<std::optional<std::size_t>, StarException> loungeableAnchorCount(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<bool, StarException> isMonster(World* world, EntityId entityId, std::optional<bool> const& aggressive);
-    [[nodiscard]] std::expected<std::optional<String>, StarException> monsterType(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<String>, StarException> npcType(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<std::optional<String>, StarException> stagehandType(World* world, EntityId entityId);
-    [[nodiscard]] std::expected<bool, StarException> isNpc(World* world, EntityId entityId, std::optional<int> const& damageTeam);
+    [[nodiscard]] std::expected<LuaTable, StarException> entityQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    [[nodiscard]] std::expected<LuaTable, StarException> monsterQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    [[nodiscard]] std::expected<LuaTable, StarException> npcQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    [[nodiscard]] std::expected<LuaTable, StarException> objectQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    [[nodiscard]] std::expected<LuaTable, StarException> itemDropQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    [[nodiscard]] std::expected<LuaTable, StarException> playerQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    [[nodiscard]] std::expected<LuaTable, StarException> loungeableQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    [[nodiscard]] std::expected<LuaTable, StarException> entityLineQuery(World& world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
+    [[nodiscard]] std::expected<LuaTable, StarException> objectLineQuery(World& world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
+    [[nodiscard]] std::expected<LuaTable, StarException> npcLineQuery(World& world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
+    [[nodiscard]] std::expected<bool, StarException> entityExists(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<bool, StarException> entityCanDamage(World& world, EntityId sourceId, EntityId targetId);
+    [[nodiscard]] std::expected<Json, StarException> entityDamageTeam(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<bool, StarException> entityAggressive(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<LuaString>, StarException> entityType(World& world, LuaEngine& engine, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> entityPosition(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> entityVelocity(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<RectF>, StarException> entityMetaBoundBox(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<std::uint64_t>, StarException> entityCurrency(World& world, EntityId entityId, String const& currencyType);
+    [[nodiscard]] std::expected<std::optional<std::uint64_t>, StarException> entityHasCountOfItem(World& world, EntityId entityId, Json descriptor, std::optional<bool> exactMatch);
+    [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> entityHealth(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<String>, StarException> entitySpecies(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<String>, StarException> entityGender(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<String>, StarException> entityName(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<Json>, StarException> entityNametag(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<String>, StarException> entityDescription(World& world, EntityId entityId, std::optional<String> const& species);
+    [[nodiscard]] std::expected<LuaNullTermWrapper<std::optional<List<Drawable>>>, StarException> entityPortrait(World& world, EntityId entityId, String const& portraitMode);
+    [[nodiscard]] std::expected<std::optional<String>, StarException> entityHandItem(World& world, EntityId entityId, String const& handName);
+    [[nodiscard]] std::expected<Json, StarException> entityHandItemDescriptor(World& world, EntityId entityId, String const& handName);
+    [[nodiscard]] std::expected<LuaNullTermWrapper<std::optional<String>>, StarException> entityUniqueId(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<Json, StarException> getObjectParameter(World& world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue);
+    [[nodiscard]] std::expected<Json, StarException> getNpcScriptParameter(World& world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue);
+    [[nodiscard]] std::expected<List<Vec2I>, StarException> objectSpaces(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<int>, StarException> farmableStage(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<int>, StarException> containerSize(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<bool, StarException> containerClose(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<bool, StarException> containerOpen(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<Json, StarException> containerItems(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<Json, StarException> containerItemAt(World& world, EntityId entityId, std::size_t offset);
+    [[nodiscard]] std::expected<std::optional<bool>, StarException> containerConsume(World& world, EntityId entityId, Json const& items);
+    [[nodiscard]] std::expected<std::optional<bool>, StarException> containerConsumeAt(World& world, EntityId entityId, std::size_t offset, int count);
+    [[nodiscard]] std::expected<std::optional<std::size_t>, StarException> containerAvailable(World& world, EntityId entityId, Json const& items);
+    [[nodiscard]] std::expected<Json, StarException> containerTakeAll(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<Json, StarException> containerTakeAt(World& world, EntityId entityId, std::size_t offset);
+    [[nodiscard]] std::expected<Json, StarException> containerTakeNumItemsAt(World& world, EntityId entityId, std::size_t offset, int const& count);
+    [[nodiscard]] std::expected<std::optional<std::size_t>, StarException> containerItemsCanFit(World& world, EntityId entityId, Json const& items);
+    [[nodiscard]] std::expected<Json, StarException> containerItemsFitWhere(World& world, EntityId entityId, Json const& items);
+    [[nodiscard]] std::expected<Json, StarException> containerAddItems(World& world, EntityId entityId, Json const& items);
+    [[nodiscard]] std::expected<Json, StarException> containerStackItems(World& world, EntityId entityId, Json const& items);
+    [[nodiscard]] std::expected<Json, StarException> containerPutItemsAt(World& world, EntityId entityId, Json const& items, std::size_t offset);
+    [[nodiscard]] std::expected<Json, StarException> containerSwapItems(World& world, EntityId entityId, Json const& items, std::size_t offset);
+    [[nodiscard]] std::expected<Json, StarException> containerSwapItemsNoCombine(World& world, EntityId entityId, Json const& items, std::size_t offset);
+    [[nodiscard]] std::expected<Json, StarException> containerItemApply(World& world, EntityId entityId, Json const& items, std::size_t offset);
+    [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> callScriptedEntity(World& world, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args);
+    [[nodiscard]] std::expected<RpcPromise<Vec2F>, StarException> findUniqueEntity(World& world, String const& uniqueId);
+    [[nodiscard]] std::expected<RpcPromise<Json>, StarException> sendEntityMessage(World& world, LuaEngine& engine, LuaValue entityId, String const& message, LuaVariadic<Json> args);
+    [[nodiscard]] std::expected<std::optional<List<EntityId>>, StarException> loungingEntities(World& world, EntityId entityId, std::optional<std::size_t> anchorIndex);
+    [[nodiscard]] std::expected<std::optional<bool>, StarException> loungeableOccupied(World& world, EntityId entityId, std::optional<std::size_t> anchorIndex);
+    [[nodiscard]] std::expected<std::optional<std::size_t>, StarException> loungeableAnchorCount(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<bool, StarException> isMonster(World& world, EntityId entityId, std::optional<bool> const& aggressive);
+    [[nodiscard]] std::expected<std::optional<String>, StarException> monsterType(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<String>, StarException> npcType(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<String>, StarException> stagehandType(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<bool, StarException> isNpc(World& world, EntityId entityId, std::optional<int> const& damageTeam);
   }
 
   namespace WorldEnvironmentCallbacks {
-    [[nodiscard]] std::expected<float, StarException> lightLevel(World* world, Vec2F const& position);
-    [[nodiscard]] std::expected<float, StarException> windLevel(World* world, Vec2F const& position);
-    [[nodiscard]] std::expected<bool, StarException> breathable(World* world, Vec2F const& position);
-    [[nodiscard]] std::expected<bool, StarException> underground(World* world, Vec2F const& position);
-    [[nodiscard]] std::expected<LuaValue, StarException> material(World* world, LuaEngine& engine, Vec2F const& position, String const& layerName);
-    [[nodiscard]] std::expected<LuaValue, StarException> mod(World* world, LuaEngine& engine, Vec2F const& position, String const& layerName);
-    [[nodiscard]] std::expected<float, StarException> materialHueShift(World* world, Vec2F const& position, String const& layerName);
-    [[nodiscard]] std::expected<float, StarException> modHueShift(World* world, Vec2F const& position, String const& layerName);
-    [[nodiscard]] std::expected<MaterialColorVariant, StarException> materialColor(World* world, Vec2F const& position, String const& layerName);
-    [[nodiscard]] std::expected<void, StarException> setMaterialColor(World* world, Vec2F const& position, String const& layerName, MaterialColorVariant color);
-    [[nodiscard]] std::expected<bool, StarException> damageTiles(World* world, List<Vec2I> const& arg1, String const& arg2, Vec2F const& arg3, String const& arg4, float arg5, std::optional<unsigned> const& arg6, std::optional<EntityId> sourceEntity);
-    [[nodiscard]] std::expected<bool, StarException> damageTileArea(World* world, Vec2F center, float radius, String layer, Vec2F sourcePosition, String damageType, float damage, std::optional<unsigned> const& harvestLevel, std::optional<EntityId> sourceEntity);
-    [[nodiscard]] std::expected<bool, StarException> placeMaterial(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5);
-    [[nodiscard]] std::expected<bool, StarException> replaceMaterials(World* world, List<Vec2I> const& tilePositions, String const& layer, String const& materialName, std::optional<int> const& hueShift, bool enableDrops);
-    [[nodiscard]] std::expected<bool, StarException> replaceMaterialArea(World* world, Vec2F center, float radius, String const& layer, String const& materialName, std::optional<int> const& hueShift, bool enableDrops);
-    [[nodiscard]] std::expected<bool, StarException> placeMod(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5);
-    [[nodiscard]] std::expected<List<std::pair<Vec2I, LiquidLevel>>, StarException> liquidAlongLine(World* world, Vec2F const& start, Vec2F const& end);
-    [[nodiscard]] std::expected<bool, StarException> tileIsOccupied(World* world, Vec2I const& arg1, std::optional<bool> const& arg2, std::optional<bool> const& arg3);
-    [[nodiscard]] std::expected<double, StarException> time(World* world);
-    [[nodiscard]] std::expected<std::uint64_t, StarException> day(World* world);
-    [[nodiscard]] std::expected<double, StarException> timeOfDay(World* world);
-    [[nodiscard]] std::expected<float, StarException> dayLength(World* world);
-    [[nodiscard]] std::expected<std::optional<LiquidLevel>, StarException> liquidAt(World* world, std::variant<RectF, Vec2I> boundBoxOrPoint);
-    [[nodiscard]] std::expected<float, StarException> gravity(World* world, Vec2F const& arg1);
-    [[nodiscard]] std::expected<bool, StarException> spawnLiquid(World* world, Vec2F const& arg1, LiquidId arg2, float arg3);
-    [[nodiscard]] std::expected<std::optional<LiquidLevel>, StarException> destroyLiquid(World* world, Vec2F const& position);
-    bool isTileProtected(World* world, Vec2F const& position);
+    [[nodiscard]] std::expected<float, StarException> lightLevel(World& world, Vec2F const& position);
+    [[nodiscard]] std::expected<float, StarException> windLevel(World& world, Vec2F const& position);
+    [[nodiscard]] std::expected<bool, StarException> breathable(World& world, Vec2F const& position);
+    [[nodiscard]] std::expected<bool, StarException> underground(World& world, Vec2F const& position);
+    [[nodiscard]] std::expected<LuaValue, StarException> material(World& world, LuaEngine& engine, Vec2F const& position, String const& layerName);
+    [[nodiscard]] std::expected<LuaValue, StarException> mod(World& world, LuaEngine& engine, Vec2F const& position, String const& layerName);
+    [[nodiscard]] std::expected<float, StarException> materialHueShift(World& world, Vec2F const& position, String const& layerName);
+    [[nodiscard]] std::expected<float, StarException> modHueShift(World& world, Vec2F const& position, String const& layerName);
+    [[nodiscard]] std::expected<MaterialColorVariant, StarException> materialColor(World& world, Vec2F const& position, String const& layerName);
+    [[nodiscard]] std::expected<void, StarException> setMaterialColor(World& world, Vec2F const& position, String const& layerName, MaterialColorVariant color);
+    [[nodiscard]] std::expected<bool, StarException> damageTiles(World& world, List<Vec2I> const& arg1, String const& arg2, Vec2F const& arg3, String const& arg4, float arg5, std::optional<unsigned> const& arg6, std::optional<EntityId> sourceEntity);
+    [[nodiscard]] std::expected<bool, StarException> damageTileArea(World& world, Vec2F center, float radius, String layer, Vec2F sourcePosition, String damageType, float damage, std::optional<unsigned> const& harvestLevel, std::optional<EntityId> sourceEntity);
+    [[nodiscard]] std::expected<bool, StarException> placeMaterial(World& world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5);
+    [[nodiscard]] std::expected<bool, StarException> replaceMaterials(World& world, List<Vec2I> const& tilePositions, String const& layer, String const& materialName, std::optional<int> const& hueShift, bool enableDrops);
+    [[nodiscard]] std::expected<bool, StarException> replaceMaterialArea(World& world, Vec2F center, float radius, String const& layer, String const& materialName, std::optional<int> const& hueShift, bool enableDrops);
+    [[nodiscard]] std::expected<bool, StarException> placeMod(World& world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5);
+    [[nodiscard]] std::expected<List<std::pair<Vec2I, LiquidLevel>>, StarException> liquidAlongLine(World& world, Vec2F const& start, Vec2F const& end);
+    [[nodiscard]] std::expected<bool, StarException> tileIsOccupied(World& world, Vec2I const& arg1, std::optional<bool> const& arg2, std::optional<bool> const& arg3);
+    [[nodiscard]] std::expected<double, StarException> time(World& world);
+    [[nodiscard]] std::expected<std::uint64_t, StarException> day(World& world);
+    [[nodiscard]] std::expected<double, StarException> timeOfDay(World& world);
+    [[nodiscard]] std::expected<float, StarException> dayLength(World& world);
+    [[nodiscard]] std::expected<std::optional<LiquidLevel>, StarException> liquidAt(World& world, std::variant<RectF, Vec2I> boundBoxOrPoint);
+    [[nodiscard]] std::expected<float, StarException> gravity(World& world, Vec2F const& arg1);
+    [[nodiscard]] std::expected<bool, StarException> spawnLiquid(World& world, Vec2F const& arg1, LiquidId arg2, float arg3);
+    [[nodiscard]] std::expected<std::optional<LiquidLevel>, StarException> destroyLiquid(World& world, Vec2F const& position);
+    bool isTileProtected(World& world, Vec2F const& position);
   }
 }
 
@@ -398,7 +399,7 @@ namespace LuaBindings {
   using Selector = std::function<std::expected<bool, StarException>(std::shared_ptr<EntityT> const&)>;
 
   template <typename EntityT>
-  [[nodiscard]] std::expected<LuaTable, StarException> entityQueryImpl(World* world, LuaEngine& engine, LuaTable const& options, Selector<EntityT> selector) {
+  [[nodiscard]] std::expected<LuaTable, StarException> entityQueryImpl(World& world, LuaEngine& engine, LuaTable const& options, Selector<EntityT> selector) {
     auto withoutEntityIdResult = options.get<std::optional<EntityId>>("withoutEntityId");
     if (!withoutEntityIdResult)
       return std::unexpected(std::move(withoutEntityIdResult.error()));
@@ -426,11 +427,11 @@ namespace LuaBindings {
         } else {
           if (!EntityTypeNames)
             return std::unexpected(EntityTypeNames.error());
-          auto entityTypeResult = EntityTypeNames->getLeft(type.ptr());
+          auto entityTypeResult = EntityTypeNames->getLeft(type.toString());
           if (!entityTypeResult)
             return std::unexpected(std::move(entityTypeResult.error()));
           auto entityType = std::move(*entityTypeResult);
-          includedTypes->add(*entityType);
+          includedTypes->add(entityType.get());
         }
         return {};
       });
@@ -490,13 +491,13 @@ namespace LuaBindings {
     if (!boundModePointerResult)
       return std::unexpected(std::move(boundModePointerResult.error()));
     auto boundModePointer = std::move(*boundModePointerResult);
-    auto boundMode = *boundModePointer;
+    auto boundMode = boundModePointer.get();
     auto orderResult = options.get<std::optional<LuaString>>("order");
     if (!orderResult)
       return std::unexpected(std::move(orderResult.error()));
     auto order = std::move(*orderResult);
 
-    auto geometry = world->geometry();
+    auto geometry = world.geometry();
 
     auto innerSelector = [=, &callScriptArgs](std::shared_ptr<EntityT> const& entity) -> std::expected<bool, StarException> {
       if (selector) {
@@ -569,19 +570,19 @@ namespace LuaBindings {
     List<std::shared_ptr<EntityT>> entities;
 
     if (lineQuery) {
-      auto queriedResult = world->lineQuery<EntityT>(lineQuery->min(), lineQuery->max(), innerSelector);
+      auto queriedResult = world.lineQuery<EntityT>(lineQuery->min(), lineQuery->max(), innerSelector);
       if (!queriedResult)
         return std::unexpected(std::move(queriedResult.error()));
       auto queried = std::move(*queriedResult);
       entities = std::move(queried);
     } else if (polyQuery) {
-      auto queriedResult = world->query<EntityT>(polyQuery->boundBox(), innerSelector);
+      auto queriedResult = world.query<EntityT>(polyQuery->boundBox(), innerSelector);
       if (!queriedResult)
         return std::unexpected(std::move(queriedResult.error()));
       auto queried = std::move(*queriedResult);
       entities = std::move(queried);
     } else if (rectQuery) {
-      auto queriedResult = world->query<EntityT>(*rectQuery, innerSelector);
+      auto queriedResult = world.query<EntityT>(*rectQuery, innerSelector);
       if (!queriedResult)
         return std::unexpected(std::move(queriedResult.error()));
       auto queried = std::move(*queriedResult);
@@ -589,14 +590,14 @@ namespace LuaBindings {
     } else if (radiusQuery) {
       RectF region(radiusQuery->first - Vec2F::filled(radiusQuery->second),
           radiusQuery->first + Vec2F::filled(radiusQuery->second));
-      auto queriedResult = world->query<EntityT>(region, innerSelector);
+      auto queriedResult = world.query<EntityT>(region, innerSelector);
       if (!queriedResult)
         return std::unexpected(std::move(queriedResult.error()));
       auto queried = std::move(*queriedResult);
       entities = std::move(queried);
     } else {
       // global query
-      auto queried = world->forAllEntities([&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
+      auto queried = world.forAllEntities([&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
         if (auto ofType = as<EntityT>(entity)) {
           auto selectedResult = innerSelector(ofType);
           if (!selectedResult)
@@ -623,13 +624,13 @@ namespace LuaBindings {
         else if (radiusQuery)
           nearestPosition = radiusQuery->first;
         sortByComputedValue(entities,
-            [world, nearestPosition](std::shared_ptr<EntityT> const& entity) {
-              return world->geometry().diff(entity->position(), nearestPosition).magnitude();
+            [&world, nearestPosition](std::shared_ptr<EntityT> const& entity) {
+              return world.geometry().diff(entity->position(), nearestPosition).magnitude();
             });
       } else if (*order == "random") {
-        world->root().random().shuffle(entities);
+        world.root().random().shuffle(entities);
       } else {
-        return std::unexpected(StarException(strf("Unsupported query order {}", order->ptr())));
+        return std::unexpected(StarException(strf("Unsupported query order {}", order->view())));
       }
     }
 
@@ -649,7 +650,7 @@ namespace LuaBindings {
   }
 
   template <typename EntityT>
-  [[nodiscard]] std::expected<LuaTable, StarException> entityQuery(World* world,
+  [[nodiscard]] std::expected<LuaTable, StarException> entityQuery(World& world,
       LuaEngine& engine,
       Vec2F const& pos1,
       LuaValue const& pos2,
@@ -682,7 +683,7 @@ namespace LuaBindings {
   }
 
   template <typename EntityT>
-  [[nodiscard]] std::expected<LuaTable, StarException> entityLineQuery(World* world,
+  [[nodiscard]] std::expected<LuaTable, StarException> entityLineQuery(World& world,
       LuaEngine& engine,
       Vec2F const& point1,
       Vec2F const& point2,
@@ -700,7 +701,7 @@ namespace LuaBindings {
   }
   
   // Thread-safe callbacks that can be used from any thread under the world
-  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWorldThreadCallbacks(Root& root, World* world) {
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWorldThreadCallbacks(Root& root, World& world) {
     LuaCallbacks callbacks;
     
     if (auto result = addWorldDebugCallbacks(root, callbacks); !result)
@@ -711,7 +712,7 @@ namespace LuaBindings {
     return callbacks;
   }
 
-  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWorldCallbacks(Root& root, World* world) {
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWorldCallbacks(Root& root, World& world) {
     auto baseCallbacks = makeWorldThreadCallbacks(root, world);
     if (!baseCallbacks)
       return std::unexpected(std::move(baseCallbacks.error()));
@@ -724,80 +725,80 @@ namespace LuaBindings {
     if (auto result = addWorldCollisionCallbacks(callbacks, world); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallbackWithSignature<bool, String, Vec2I, std::optional<int>, Json>("placeObject", std::bind(WorldCallbacks::placeObject, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, String, Vec2I, std::optional<int>, Json>("placeObject", std::bind(WorldCallbacks::placeObject, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, Json, Vec2F, std::optional<std::size_t>, Json, std::optional<Vec2F>, std::optional<float>>("spawnItem", std::bind(WorldCallbacks::spawnItem, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, Json, Vec2F, std::optional<std::size_t>, Json, std::optional<Vec2F>, std::optional<float>>("spawnItem", std::bind(WorldCallbacks::spawnItem, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<List<EntityId>, Vec2F, String, float, std::optional<std::uint64_t>>("spawnTreasure", std::bind(WorldCallbacks::spawnTreasure, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<List<EntityId>, Vec2F, String, float, std::optional<std::uint64_t>>("spawnTreasure", std::bind(WorldCallbacks::spawnTreasure, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, String, Vec2F, std::optional<JsonObject>>("spawnMonster", std::bind(WorldCallbacks::spawnMonster, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, String, Vec2F, std::optional<JsonObject>>("spawnMonster", std::bind(WorldCallbacks::spawnMonster, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, Vec2F, String, String, float, std::optional<std::uint64_t>, Json>("spawnNpc", std::bind(WorldCallbacks::spawnNpc, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, Vec2F, String, String, float, std::optional<std::uint64_t>, Json>("spawnNpc", std::bind(WorldCallbacks::spawnNpc, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, Vec2F, String, Json>("spawnStagehand", std::bind(WorldCallbacks::spawnStagehand, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, Vec2F, String, Json>("spawnStagehand", std::bind(WorldCallbacks::spawnStagehand, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, String, Vec2F, std::optional<EntityId>, std::optional<Vec2F>, bool, Json>("spawnProjectile", std::bind(WorldCallbacks::spawnProjectile, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, String, Vec2F, std::optional<EntityId>, std::optional<Vec2F>, bool, Json>("spawnProjectile", std::bind(WorldCallbacks::spawnProjectile, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, String, Vec2F, Json>("spawnVehicle", std::bind(WorldCallbacks::spawnVehicle, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<EntityId>, String, Vec2F, Json>("spawnVehicle", std::bind(WorldCallbacks::spawnVehicle, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, String, Json>("getProperty", std::bind(WorldCallbacks::getProperty, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, String, Json>("getProperty", std::bind(WorldCallbacks::getProperty, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<void, String, Json>("setProperty", std::bind(WorldCallbacks::setProperty, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<void, String, Json>("setProperty", std::bind(WorldCallbacks::setProperty, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<PlatformerAStar::Path>, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("findPlatformerPath", std::bind(WorldCallbacks::findPlatformerPath, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<PlatformerAStar::Path>, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("findPlatformerPath", std::bind(WorldCallbacks::findPlatformerPath, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::shared_ptr<PlatformerAStar::PathFinder>, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("platformerPathStart", std::bind(WorldCallbacks::platformerPathStart, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::shared_ptr<PlatformerAStar::PathFinder>, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("platformerPathStart", std::bind(WorldCallbacks::platformerPathStart, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallback("type", [world](LuaEngine& engine) -> std::expected<LuaString, StarException> {
-        if (auto serverWorld = as<WorldServer>(world)) {
-          if (auto worldParameters = serverWorld->worldTemplate()->worldParameters())
+    if (auto result = callbacks.registerCallback("type", [&world](LuaEngine& engine) -> std::expected<LuaString, StarException> {
+        if (auto serverWorld = asRef<WorldServer>(world)) {
+          if (auto worldParameters = serverWorld->get().worldTemplate()->worldParameters())
             return engine.createString(worldParameters->typeName);
-        } else if (auto clientWorld = as<WorldClient>(world)) {
-          if (auto worldParameters = clientWorld->currentTemplate()->worldParameters())
+        } else if (auto clientWorld = asRef<WorldClient>(world)) {
+          if (auto worldParameters = clientWorld->get().currentTemplate()->worldParameters())
             return engine.createString(worldParameters->typeName);
         }
         return engine.createString("unknown");
       }); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallback("inSurfaceLayer", [world](Vec2I const& position) -> bool {
-        if (auto serverWorld = as<WorldServer>(world))
-          return serverWorld->worldTemplate()->inSurfaceLayer(position);
-        else if (auto clientWorld = as<WorldClient>(world))
-          return clientWorld->currentTemplate()->inSurfaceLayer(position);
+    if (auto result = callbacks.registerCallback("inSurfaceLayer", [&world](Vec2I const& position) -> bool {
+        if (auto serverWorld = asRef<WorldServer>(world))
+          return serverWorld->get().worldTemplate()->inSurfaceLayer(position);
+        else if (auto clientWorld = asRef<WorldClient>(world))
+          return clientWorld->get().currentTemplate()->inSurfaceLayer(position);
         return false;
       }); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallback("surfaceLevel", [world]() -> float {
-        if (auto serverWorld = as<WorldServer>(world))
-          return serverWorld->worldTemplate()->surfaceLevel();
-        else if (auto clientWorld = as<WorldClient>(world))
-          return clientWorld->currentTemplate()->surfaceLevel();
+    if (auto result = callbacks.registerCallback("surfaceLevel", [&world]() -> float {
+        if (auto serverWorld = asRef<WorldServer>(world))
+          return serverWorld->get().worldTemplate()->surfaceLevel();
+        else if (auto clientWorld = asRef<WorldClient>(world))
+          return clientWorld->get().currentTemplate()->surfaceLevel();
         else
-          return world->geometry().size()[1] / 2.0f;
+          return world.geometry().size()[1] / 2.0f;
       }); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallback("terrestrial", [world]() -> bool {
-        if (auto serverWorld = as<WorldServer>(world)) {
-          if (auto worldParameters = serverWorld->worldTemplate()->worldParameters())
+    if (auto result = callbacks.registerCallback("terrestrial", [&world]() -> bool {
+        if (auto serverWorld = asRef<WorldServer>(world)) {
+          if (auto worldParameters = serverWorld->get().worldTemplate()->worldParameters())
             return worldParameters->type() == WorldParametersType::TerrestrialWorldParameters;
-        } else if (auto clientWorld = as<WorldClient>(world)) {
-          if (auto worldParameters = clientWorld->currentTemplate()->worldParameters())
+        } else if (auto clientWorld = asRef<WorldClient>(world)) {
+          if (auto worldParameters = clientWorld->get().currentTemplate()->worldParameters())
             return worldParameters->type() == WorldParametersType::TerrestrialWorldParameters;
         }
         return false;
       }); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallback("biomeBlocksAt", [world](Vec2I position) -> std::expected<std::optional<List<MaterialId>>, StarException> {
+    if (auto result = callbacks.registerCallback("biomeBlocksAt", [&world](Vec2I position) -> std::expected<std::optional<List<MaterialId>>, StarException> {
         std::shared_ptr<WorldTemplate const> worldTemplate;
-        if (auto client = as<WorldClient>(world))
-          worldTemplate = client->currentTemplate();
-        else if (auto server = as<WorldServer>(world))
-          worldTemplate = server->worldTemplate();
+        if (auto client = asRef<WorldClient>(world))
+          worldTemplate = client->get().currentTemplate();
+        else if (auto server = asRef<WorldServer>(world))
+          worldTemplate = server->get().worldTemplate();
         if (worldTemplate) {
           auto blockResult = worldTemplate->blockInfo(position[0], position[1]);
           if (!blockResult)
@@ -818,21 +819,24 @@ namespace LuaBindings {
       return std::unexpected(std::move(result.error()));
 
 
-    if (auto result = callbacks.registerCallback("dungeonId", [world](Vec2I position) -> std::expected<DungeonId, StarException> {
-        if (auto serverWorld = as<WorldServer>(world)) {
-          return serverWorld->dungeonId(position);
+    if (auto result = callbacks.registerCallback("dungeonId", [&world](Vec2I position) -> std::expected<DungeonId, StarException> {
+        if (auto serverWorld = asRef<WorldServer>(world)) {
+          return serverWorld->get().dungeonId(position);
         } else {
-          return as<WorldClient>(world)->dungeonId(position);
+          auto clientWorld = rconvert<WorldClient>(world);
+          if (!clientWorld)
+            return std::unexpected(std::move(clientWorld.error()));
+          return clientWorld->get().dungeonId(position);
         }
       }); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallback("biomeAt", [world](Vec2I position) -> std::expected<Json, StarException> {
+    if (auto result = callbacks.registerCallback("biomeAt", [&world](Vec2I position) -> std::expected<Json, StarException> {
         std::shared_ptr<WorldTemplate const> worldTemplate;
-        if (auto client = as<WorldClient>(world))
-          worldTemplate = client->currentTemplate();
-        else if (auto server = as<WorldServer>(world))
-          worldTemplate = server->worldTemplate();
+        if (auto client = asRef<WorldClient>(world))
+          worldTemplate = client->get().currentTemplate();
+        else if (auto server = asRef<WorldServer>(world))
+          worldTemplate = server->get().worldTemplate();
         if (worldTemplate) {
           auto blockResult = worldTemplate->blockInfo(position[0], position[1]);
           if (!blockResult)
@@ -849,12 +853,12 @@ namespace LuaBindings {
         return {};
       }); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallback("blockInfoAt", [world](Vec2I position) -> std::expected<Json, StarException> {
+    if (auto result = callbacks.registerCallback("blockInfoAt", [&world](Vec2I position) -> std::expected<Json, StarException> {
         std::shared_ptr<WorldTemplate const> worldTemplate;
-        if (auto client = as<WorldClient>(world))
-          worldTemplate = client->currentTemplate();
-        else if (auto server = as<WorldServer>(world))
-          worldTemplate = server->worldTemplate();
+        if (auto client = asRef<WorldClient>(world))
+          worldTemplate = client->get().currentTemplate();
+        else if (auto server = asRef<WorldServer>(world))
+          worldTemplate = server->get().worldTemplate();
         if (!worldTemplate)
           return {};
         auto blockResult = worldTemplate->blockInfo(position[0], position[1]);
@@ -865,34 +869,34 @@ namespace LuaBindings {
       }); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto clientWorld = as<WorldClient>(world)) {
-      if (auto result = callbacks.registerCallback("inWorld", [clientWorld]() { return clientWorld->inWorld(); }); !result)
+    if (auto clientWorld = asRef<WorldClient>(world)) {
+      if (auto result = callbacks.registerCallback("inWorld", [clientWorld]() { return clientWorld->get().inWorld(); }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("mainPlayer", [clientWorld]() -> std::optional<int> {
-        if (clientWorld->isHeadless()) {
+        if (clientWorld->get().isHeadless()) {
           return {};
         } else {
-          return clientWorld->clientState().playerId(); 
+          return clientWorld->get().clientState().playerId(); 
         }
       }); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallback("headless", [clientWorld]() { return clientWorld->isHeadless();  }); !result)
+      if (auto result = callbacks.registerCallback("headless", [clientWorld]() { return clientWorld->get().isHeadless();  }); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallback("subWorldId", [clientWorld]() { return clientWorld->subWorldId();  }); !result)
+      if (auto result = callbacks.registerCallback("subWorldId", [clientWorld]() { return clientWorld->get().subWorldId();  }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("isClient", []() { return true;  }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("isServer", []() { return false; }); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallback("latency", [clientWorld]() { return clientWorld->latency(); }); !result)
+      if (auto result = callbacks.registerCallback("latency", [clientWorld]() { return clientWorld->get().latency(); }); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<void, EntityId>("resendEntity", std::bind(ClientWorldCallbacks::resendEntity, clientWorld, std::placeholders::_1)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<void, EntityId>("resendEntity", std::bind(ClientWorldCallbacks::resendEntity, std::ref(clientWorld->get()), std::placeholders::_1)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<RectI>("clientWindow", std::bind(ClientWorldCallbacks::clientWindow, clientWorld)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<RectI>("clientWindow", std::bind(ClientWorldCallbacks::clientWindow, std::ref(clientWorld->get()))); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("players", [clientWorld]() -> std::expected<List<EntityId>, StarException> {
         List<EntityId> playerIds;
-        auto queried = clientWorld->forAllEntities([&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
+        auto queried = clientWorld->get().forAllEntities([&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
           if (entity->entityType() == EntityType::Player)
             playerIds.emplace_back(entity->entityId());
           return {};
@@ -903,170 +907,170 @@ namespace LuaBindings {
       }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("callScriptContext", [clientWorld](String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) -> std::expected<std::optional<LuaValue>, StarException> {
-        auto context = clientWorld->scriptContext(contextName);
+        auto context = clientWorld->get().scriptContext(contextName);
         if (!context)
           return std::unexpected(StarException::format("Context {} does not exist", contextName));
         return context->invoke(function, args);
       }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("unload", [clientWorld]() -> std::expected<void, StarException> {
-        if (!clientWorld->isHeadless())
+        if (!clientWorld->get().isHeadless())
           return std::unexpected(StarException::format("Non-headless worlds cannot be unloaded."));
-        clientWorld->requestDestroy();
+        clientWorld->get().requestDestroy();
         return {};
       }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("template", [clientWorld]() {
-        return clientWorld->currentTemplate()->store();
+        return clientWorld->get().currentTemplate()->store();
       }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("setTemplate", [clientWorld](Json worldTemplate) -> std::expected<void, StarException> {
-        clientWorld->setTemplate(worldTemplate);
+        clientWorld->get().setTemplate(worldTemplate);
         return {};
       }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("wire", [clientWorld](Vec2I outputPosition, std::size_t outputIndex, Vec2I inputPosition, std::size_t inputIndex) -> std::expected<void, StarException> {
-        clientWorld->wire(outputPosition, outputIndex, inputPosition, inputIndex);
+        clientWorld->get().wire(outputPosition, outputIndex, inputPosition, inputIndex);
         return {};
       }); !result)
         return std::unexpected(std::move(result.error()));
     }
 
-    if (auto serverWorld = as<WorldServer>(world)) {
+    if (auto serverWorld = asRef<WorldServer>(world)) {
       if (auto result = callbacks.registerCallback("isClient", []() { return false; }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("isServer", []() { return true;  }); !result)
         return std::unexpected(std::move(result.error()));
 
-      if (auto result = callbacks.registerCallbackWithSignature<String>("id", std::bind(ServerWorldCallbacks::id, serverWorld)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<String>("id", std::bind(ServerWorldCallbacks::id, std::ref(serverWorld->get()))); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId, bool>("breakObject", std::bind(ServerWorldCallbacks::breakObject, serverWorld, std::placeholders::_1, std::placeholders::_2)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId, bool>("breakObject", std::bind(ServerWorldCallbacks::breakObject, std::ref(serverWorld->get()), std::placeholders::_1, std::placeholders::_2)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<bool, RectF>("isVisibleToPlayer", std::bind(ServerWorldCallbacks::isVisibleToPlayer, serverWorld, std::placeholders::_1)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<bool, RectF>("isVisibleToPlayer", std::bind(ServerWorldCallbacks::isVisibleToPlayer, std::ref(serverWorld->get()), std::placeholders::_1)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<bool, RectF>("loadRegion", std::bind(ServerWorldCallbacks::loadRegion, serverWorld, std::placeholders::_1)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<bool, RectF>("loadRegion", std::bind(ServerWorldCallbacks::loadRegion, std::ref(serverWorld->get()), std::placeholders::_1)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<bool, RectF>("regionActive", std::bind(ServerWorldCallbacks::regionActive, serverWorld, std::placeholders::_1)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<bool, RectF>("regionActive", std::bind(ServerWorldCallbacks::regionActive, std::ref(serverWorld->get()), std::placeholders::_1)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<void, DungeonId, bool>("setTileProtection", std::bind(ServerWorldCallbacks::setTileProtection, serverWorld, std::placeholders::_1, std::placeholders::_2)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<void, DungeonId, bool>("setTileProtection", std::bind(ServerWorldCallbacks::setTileProtection, std::ref(serverWorld->get()), std::placeholders::_1, std::placeholders::_2)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<bool, RectI>("isPlayerModified", std::bind(ServerWorldCallbacks::isPlayerModified, serverWorld, std::placeholders::_1)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<bool, RectI>("isPlayerModified", std::bind(ServerWorldCallbacks::isPlayerModified, std::ref(serverWorld->get()), std::placeholders::_1)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, Vec2F>("forceDestroyLiquid", std::bind(ServerWorldCallbacks::forceDestroyLiquid, serverWorld, std::placeholders::_1)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, Vec2F>("forceDestroyLiquid", std::bind(ServerWorldCallbacks::forceDestroyLiquid, std::ref(serverWorld->get()), std::placeholders::_1)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<EntityId, String>("loadUniqueEntity", std::bind(ServerWorldCallbacks::loadUniqueEntity, serverWorld, std::placeholders::_1)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<EntityId, String>("loadUniqueEntity", std::bind(ServerWorldCallbacks::loadUniqueEntity, std::ref(serverWorld->get()), std::placeholders::_1)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<void, EntityId, String>("setUniqueId", std::bind(ServerWorldCallbacks::setUniqueId, serverWorld, std::placeholders::_1, std::placeholders::_2)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<void, EntityId, String>("setUniqueId", std::bind(ServerWorldCallbacks::setUniqueId, std::ref(serverWorld->get()), std::placeholders::_1, std::placeholders::_2)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, std::optional<EntityId>>("takeItemDrop", std::bind(ServerWorldCallbacks::takeItemDrop, world, std::placeholders::_1, std::placeholders::_2)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, std::optional<EntityId>>("takeItemDrop", std::bind(ServerWorldCallbacks::takeItemDrop, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<void, Vec2F, std::optional<bool>>("setPlayerStart", std::bind(ServerWorldCallbacks::setPlayerStart, world, std::placeholders::_1, std::placeholders::_2)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<void, Vec2F, std::optional<bool>>("setPlayerStart", std::bind(ServerWorldCallbacks::setPlayerStart, std::ref(serverWorld->get()), std::placeholders::_1, std::placeholders::_2)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<List<EntityId>>("players", std::bind(ServerWorldCallbacks::players, world)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<List<EntityId>>("players", std::bind(ServerWorldCallbacks::players, std::ref(serverWorld->get()))); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<LuaString, LuaEngine&>("fidelity", std::bind(ServerWorldCallbacks::fidelity, world, std::placeholders::_1)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<LuaString, LuaEngine&>("fidelity", std::bind(ServerWorldCallbacks::fidelity, std::ref(serverWorld->get()), std::placeholders::_1)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<std::optional<LuaValue>, String, String, LuaVariadic<LuaValue>>("callScriptContext", std::bind(ServerWorldCallbacks::callScriptContext, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<std::optional<LuaValue>, String, String, LuaVariadic<LuaValue>>("callScriptContext", std::bind(ServerWorldCallbacks::callScriptContext, std::ref(serverWorld->get()), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallbackWithSignature<bool, ConnectionId, String, Json>("sendPacket", std::bind(ServerWorldCallbacks::sendPacket, serverWorld, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+      if (auto result = callbacks.registerCallbackWithSignature<bool, ConnectionId, String, Json>("sendPacket", std::bind(ServerWorldCallbacks::sendPacket, std::ref(serverWorld->get()), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
         return std::unexpected(std::move(result.error()));
 
       if (auto result = callbacks.registerCallbackWithSignature<double>("skyTime", [serverWorld]() {
-          return serverWorld->sky()->epochTime();
+          return serverWorld->get().sky()->epochTime();
         }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallbackWithSignature<void, double>("setSkyTime", [serverWorld](double skyTime) {
-          return serverWorld->sky()->setEpochTime(skyTime);
+          return serverWorld->get().sky()->setEpochTime(skyTime);
         }); !result)
         return std::unexpected(std::move(result.error()));
 
-      if (auto result = callbacks.registerCallback("expiryTime", [serverWorld]() -> float { return serverWorld->expiryTime(); }); !result)
+      if (auto result = callbacks.registerCallback("expiryTime", [serverWorld]() -> float { return serverWorld->get().expiryTime(); }); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallback("setExpiryTime", [serverWorld](float expiryTime) { return serverWorld->setExpiryTime(expiryTime); }); !result)
+      if (auto result = callbacks.registerCallback("setExpiryTime", [serverWorld](float expiryTime) { return serverWorld->get().setExpiryTime(expiryTime); }); !result)
         return std::unexpected(std::move(result.error()));
 
       if (auto result = callbacks.registerCallback("wire", [serverWorld](Vec2I outputPosition, std::size_t outputIndex, Vec2I inputPosition, std::size_t inputIndex) -> std::expected<void, StarException> {
-        return serverWorld->wire(outputPosition, outputIndex, inputPosition, inputIndex);
+        return serverWorld->get().wire(outputPosition, outputIndex, inputPosition, inputIndex);
       }); !result)
         return std::unexpected(std::move(result.error()));
 
       if (auto result = callbacks.registerCallback("flyingType", [serverWorld]() -> std::expected<String, StarException> {
         if (!FlyingTypeNames)
           return std::unexpected(FlyingTypeNames.error());
-        auto namePointerResult = FlyingTypeNames->getRight(serverWorld->sky()->flyingType());
+        auto namePointerResult = FlyingTypeNames->getRight(serverWorld->get().sky()->flyingType());
         if (!namePointerResult)
           return std::unexpected(std::move(namePointerResult.error()));
         auto namePointer = std::move(*namePointerResult);
-        auto name = *namePointer;
+        auto const& name = namePointer.get();
         return name;
       }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("warpPhase", [serverWorld]() -> std::expected<String, StarException> {
         if (!WarpPhaseNames)
           return std::unexpected(WarpPhaseNames.error());
-        auto namePointerResult = WarpPhaseNames->getRight(serverWorld->sky()->warpPhase());
+        auto namePointerResult = WarpPhaseNames->getRight(serverWorld->get().sky()->warpPhase());
         if (!namePointerResult)
           return std::unexpected(std::move(namePointerResult.error()));
         auto namePointer = std::move(*namePointerResult);
-        auto name = *namePointer;
+        auto const& name = namePointer.get();
         return name;
       }); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallback("setUniverseFlag", [serverWorld](String flagName) { return serverWorld->universeSettings()->setFlag(flagName); }); !result)
+      if (auto result = callbacks.registerCallback("setUniverseFlag", [serverWorld](String flagName) { return serverWorld->get().universeSettings()->setFlag(flagName); }); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallback("universeFlags", [serverWorld]() { return serverWorld->universeSettings()->flags(); }); !result)
+      if (auto result = callbacks.registerCallback("universeFlags", [serverWorld]() { return serverWorld->get().universeSettings()->flags(); }); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = callbacks.registerCallback("universeFlagSet", [serverWorld](String const& flagName) { return serverWorld->universeSettings()->flags().contains(flagName); }); !result)
+      if (auto result = callbacks.registerCallback("universeFlagSet", [serverWorld](String const& flagName) { return serverWorld->get().universeSettings()->flags().contains(flagName); }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("placeDungeon", [serverWorld](String dungeonName, Vec2I position, std::optional<DungeonId> dungeonId) -> std::expected<bool, StarException> {
-        return serverWorld->placeDungeon(dungeonName, position, dungeonId);
+        return serverWorld->get().placeDungeon(dungeonName, position, dungeonId);
       }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("tryPlaceDungeon", [serverWorld](String dungeonName, Vec2I position, std::optional<DungeonId> dungeonId) -> std::expected<bool, StarException> {
-        return serverWorld->placeDungeon(dungeonName, position, dungeonId, false);
+        return serverWorld->get().placeDungeon(dungeonName, position, dungeonId, false);
       }); !result)
         return std::unexpected(std::move(result.error()));
 
       if (auto result = callbacks.registerCallback("addBiomeRegion", [serverWorld](Vec2I position, String biomeName, String subBlockSelector, int width) {
-          return serverWorld->addBiomeRegion(position, biomeName, subBlockSelector, width);
+          return serverWorld->get().addBiomeRegion(position, biomeName, subBlockSelector, width);
         }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("expandBiomeRegion", [serverWorld](Vec2I position, int width) {
-          return serverWorld->expandBiomeRegion(position, width);
+          return serverWorld->get().expandBiomeRegion(position, width);
         }); !result)
         return std::unexpected(std::move(result.error()));
 
       if (auto result = callbacks.registerCallback("pregenerateAddBiome", [serverWorld](Vec2I position, int width) {
-          return serverWorld->pregenerateAddBiome(position, width);
+          return serverWorld->get().pregenerateAddBiome(position, width);
         }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("pregenerateExpandBiome", [serverWorld](Vec2I position, int width) {
-          return serverWorld->pregenerateExpandBiome(position, width);
+          return serverWorld->get().pregenerateExpandBiome(position, width);
         }); !result)
         return std::unexpected(std::move(result.error()));
 
       if (auto result = callbacks.registerCallback("setLayerEnvironmentBiome", [serverWorld](Vec2I position) {
-          return serverWorld->setLayerEnvironmentBiome(position);
+          return serverWorld->get().setLayerEnvironmentBiome(position);
         }); !result)
         return std::unexpected(std::move(result.error()));
 
       if (auto result = callbacks.registerCallback("setPlanetType", [serverWorld](String planetType, String primaryBiomeName) {
-          return serverWorld->setPlanetType(planetType, primaryBiomeName);
+          return serverWorld->get().setPlanetType(planetType, primaryBiomeName);
         }); !result)
         return std::unexpected(std::move(result.error()));
 
       if (auto result = callbacks.registerCallback("setDungeonGravity", [serverWorld](DungeonId dungeonId, std::optional<float> gravity) {
-          return serverWorld->setDungeonGravity(dungeonId, gravity);
+          return serverWorld->get().setDungeonGravity(dungeonId, gravity);
         }); !result)
         return std::unexpected(std::move(result.error()));
 
       if (auto result = callbacks.registerCallback("setDungeonBreathable", [serverWorld](DungeonId dungeonId, std::optional<bool> breathable) {
-          return serverWorld->setDungeonBreathable(dungeonId, breathable);
+          return serverWorld->get().setDungeonBreathable(dungeonId, breathable);
         }); !result)
         return std::unexpected(std::move(result.error()));
 
       if (auto result = callbacks.registerCallback("setDungeonId", [serverWorld](RectI tileRegion, DungeonId dungeonId) {
-          return serverWorld->setDungeonId(tileRegion, dungeonId);
+          return serverWorld->get().setDungeonId(tileRegion, dungeonId);
         }); !result)
         return std::unexpected(std::move(result.error()));
 
@@ -1074,25 +1078,25 @@ namespace LuaBindings {
         List<BiomeItemDistribution> distributions;
         distributions.reserve(distributionConfigs.size());
         for (auto const& config : distributionConfigs) {
-          auto distributionResult = BiomeItemDistribution::create(serverWorld->root(), config, serverWorld->root().random().randu64());
+          auto distributionResult = BiomeItemDistribution::create(serverWorld->get().root(), config, serverWorld->get().root().random().randu64());
           if (!distributionResult)
             return std::unexpected(std::move(distributionResult.error()));
           auto distribution = std::move(*distributionResult);
           distributions.append(std::move(distribution));
         }
-        return serverWorld->enqueuePlacement(std::move(distributions), id);
+        return serverWorld->get().enqueuePlacement(std::move(distributions), id);
       }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("template", [serverWorld]() {
-        return serverWorld->worldTemplate()->store();
+        return serverWorld->get().worldTemplate()->store();
       }); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = callbacks.registerCallback("setTemplate", [serverWorld](Json worldTemplate) -> std::expected<void, StarException> {
-        auto newTemplateResult = WorldTemplate::create(serverWorld->root(), worldTemplate);
+        auto newTemplateResult = WorldTemplate::create(serverWorld->get().root(), worldTemplate);
         if (!newTemplateResult)
           return std::unexpected(std::move(newTemplateResult.error()));
         auto newTemplate = std::move(*newTemplateResult);
-        return serverWorld->setTemplate(std::move(newTemplate));
+        return serverWorld->get().setTemplate(std::move(newTemplate));
       }); !result)
         return std::unexpected(std::move(result.error()));
     }
@@ -1112,30 +1116,30 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<void, StarException> addWorldEntityCallbacks(LuaCallbacks& callbacks, World* world) {
-    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("entityQuery", std::bind(WorldEntityCallbacks::entityQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+  std::expected<void, StarException> addWorldEntityCallbacks(LuaCallbacks& callbacks, World& world) {
+    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("entityQuery", std::bind(WorldEntityCallbacks::entityQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("monsterQuery", std::bind(WorldEntityCallbacks::monsterQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("monsterQuery", std::bind(WorldEntityCallbacks::monsterQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("npcQuery", std::bind(WorldEntityCallbacks::npcQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("npcQuery", std::bind(WorldEntityCallbacks::npcQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("objectQuery", std::bind(WorldEntityCallbacks::objectQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("objectQuery", std::bind(WorldEntityCallbacks::objectQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("itemDropQuery", std::bind(WorldEntityCallbacks::itemDropQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("itemDropQuery", std::bind(WorldEntityCallbacks::itemDropQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("playerQuery", std::bind(WorldEntityCallbacks::playerQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("playerQuery", std::bind(WorldEntityCallbacks::playerQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("loungeableQuery", std::bind(WorldEntityCallbacks::loungeableQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("loungeableQuery", std::bind(WorldEntityCallbacks::loungeableQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, std::optional<LuaTable>>("entityLineQuery", std::bind(WorldEntityCallbacks::entityLineQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, std::optional<LuaTable>>("entityLineQuery", std::bind(WorldEntityCallbacks::entityLineQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, std::optional<LuaTable>>("objectLineQuery", std::bind(WorldEntityCallbacks::objectLineQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, std::optional<LuaTable>>("objectLineQuery", std::bind(WorldEntityCallbacks::objectLineQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, std::optional<LuaTable>>("npcLineQuery", std::bind(WorldEntityCallbacks::npcLineQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, std::optional<LuaTable>>("npcLineQuery", std::bind(WorldEntityCallbacks::npcLineQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
     if (auto result = callbacks.registerCallback("objectAt",
-        [world](Vec2I const& tilePosition) -> std::expected<std::optional<int>, StarException> {
-          auto objectResult = world->findEntityAtTile(tilePosition, [](std::shared_ptr<TileEntity> const& entity) -> std::expected<bool, StarException> { return is<Object>(entity); });
+        [&world](Vec2I const& tilePosition) -> std::expected<std::optional<int>, StarException> {
+          auto objectResult = world.findEntityAtTile(tilePosition, [](std::shared_ptr<TileEntity> const& entity) -> std::expected<bool, StarException> { return is<Object>(entity); });
           if (!objectResult)
             return std::unexpected(std::move(objectResult.error()));
           auto object = std::move(*objectResult);
@@ -1145,8 +1149,8 @@ namespace LuaBindings {
       }); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::shared_ptr<Entity>>, EntityId>("entity", [world](EntityId entityId) -> std::optional<std::shared_ptr<Entity>> {
-      if (auto entity = world->entity(entityId)) {
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::shared_ptr<Entity>>, EntityId>("entity", [&world](EntityId entityId) -> std::optional<std::shared_ptr<Entity>> {
+      if (auto entity = world.entity(entityId)) {
         return entity;
       } else {
         return {};
@@ -1154,7 +1158,7 @@ namespace LuaBindings {
     }); !result)
       return std::unexpected(std::move(result.error()));
     
-    if (auto result = callbacks.registerCallback("entities", [world](LuaEngine& engine, std::optional<LuaTable> options) -> std::expected<LuaTable, StarException> {
+    if (auto result = callbacks.registerCallback("entities", [&world](LuaEngine& engine, std::optional<LuaTable> options) -> std::expected<LuaTable, StarException> {
       if (!options) {
         auto table = engine.createTable();
         if (!table)
@@ -1165,122 +1169,122 @@ namespace LuaBindings {
     }); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallbackWithSignature<bool, int>("entityExists", std::bind(WorldEntityCallbacks::entityExists, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, int>("entityExists", std::bind(WorldEntityCallbacks::entityExists, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, int, int>("entityCanDamage", std::bind(WorldEntityCallbacks::entityCanDamage, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, int, int>("entityCanDamage", std::bind(WorldEntityCallbacks::entityCanDamage, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId>("entityDamageTeam", std::bind(WorldEntityCallbacks::entityDamageTeam, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId>("entityDamageTeam", std::bind(WorldEntityCallbacks::entityDamageTeam, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId>("entityAggressive", std::bind(WorldEntityCallbacks::entityAggressive, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId>("entityAggressive", std::bind(WorldEntityCallbacks::entityAggressive, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<LuaString>, LuaEngine&, int>("entityType", std::bind(WorldEntityCallbacks::entityType, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<LuaString>, LuaEngine&, int>("entityType", std::bind(WorldEntityCallbacks::entityType, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<Vec2F>, int>("entityPosition", std::bind(WorldEntityCallbacks::entityPosition, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<Vec2F>, int>("entityPosition", std::bind(WorldEntityCallbacks::entityPosition, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<Vec2F>, int>("entityVelocity", std::bind(WorldEntityCallbacks::entityVelocity, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<Vec2F>, int>("entityVelocity", std::bind(WorldEntityCallbacks::entityVelocity, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<RectF>, int>("entityMetaBoundBox", std::bind(WorldEntityCallbacks::entityMetaBoundBox, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<RectF>, int>("entityMetaBoundBox", std::bind(WorldEntityCallbacks::entityMetaBoundBox, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::uint64_t>, EntityId, String>("entityCurrency", std::bind(WorldEntityCallbacks::entityCurrency, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::uint64_t>, EntityId, String>("entityCurrency", std::bind(WorldEntityCallbacks::entityCurrency, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::uint64_t>, EntityId, Json, std::optional<bool>>("entityHasCountOfItem", std::bind(WorldEntityCallbacks::entityHasCountOfItem, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::uint64_t>, EntityId, Json, std::optional<bool>>("entityHasCountOfItem", std::bind(WorldEntityCallbacks::entityHasCountOfItem, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<Vec2F>, EntityId>("entityHealth", std::bind(WorldEntityCallbacks::entityHealth, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<Vec2F>, EntityId>("entityHealth", std::bind(WorldEntityCallbacks::entityHealth, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("entitySpecies", std::bind(WorldEntityCallbacks::entitySpecies, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("entitySpecies", std::bind(WorldEntityCallbacks::entitySpecies, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("entityGender", std::bind(WorldEntityCallbacks::entityGender, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("entityGender", std::bind(WorldEntityCallbacks::entityGender, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("entityName", std::bind(WorldEntityCallbacks::entityName, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("entityName", std::bind(WorldEntityCallbacks::entityName, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<Json>, EntityId>("entityNametag", std::bind(WorldEntityCallbacks::entityNametag, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<Json>, EntityId>("entityNametag", std::bind(WorldEntityCallbacks::entityNametag, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId, std::optional<String>>("entityDescription", std::bind(WorldEntityCallbacks::entityDescription, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId, std::optional<String>>("entityDescription", std::bind(WorldEntityCallbacks::entityDescription, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaNullTermWrapper<std::optional<List<Drawable>>>, EntityId, String>("entityPortrait", std::bind(WorldEntityCallbacks::entityPortrait, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaNullTermWrapper<std::optional<List<Drawable>>>, EntityId, String>("entityPortrait", std::bind(WorldEntityCallbacks::entityPortrait, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId, String>("entityHandItem", std::bind(WorldEntityCallbacks::entityHandItem, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId, String>("entityHandItem", std::bind(WorldEntityCallbacks::entityHandItem, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, String>("entityHandItemDescriptor", std::bind(WorldEntityCallbacks::entityHandItemDescriptor, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, String>("entityHandItemDescriptor", std::bind(WorldEntityCallbacks::entityHandItemDescriptor, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaNullTermWrapper<std::optional<String>>, EntityId>("entityUniqueId", std::bind(WorldEntityCallbacks::entityUniqueId, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaNullTermWrapper<std::optional<String>>, EntityId>("entityUniqueId", std::bind(WorldEntityCallbacks::entityUniqueId, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, String, std::optional<Json>>("getObjectParameter", std::bind(WorldEntityCallbacks::getObjectParameter, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, String, std::optional<Json>>("getObjectParameter", std::bind(WorldEntityCallbacks::getObjectParameter, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, String, std::optional<Json>>("getNpcScriptParameter", std::bind(WorldEntityCallbacks::getNpcScriptParameter, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, String, std::optional<Json>>("getNpcScriptParameter", std::bind(WorldEntityCallbacks::getNpcScriptParameter, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<List<Vec2I>, EntityId>("objectSpaces", std::bind(WorldEntityCallbacks::objectSpaces, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<List<Vec2I>, EntityId>("objectSpaces", std::bind(WorldEntityCallbacks::objectSpaces, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<int>, EntityId>("farmableStage", std::bind(WorldEntityCallbacks::farmableStage, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<int>, EntityId>("farmableStage", std::bind(WorldEntityCallbacks::farmableStage, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<int>, EntityId>("containerSize", std::bind(WorldEntityCallbacks::containerSize, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<int>, EntityId>("containerSize", std::bind(WorldEntityCallbacks::containerSize, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId>("containerClose", std::bind(WorldEntityCallbacks::containerClose, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId>("containerClose", std::bind(WorldEntityCallbacks::containerClose, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId>("containerOpen", std::bind(WorldEntityCallbacks::containerOpen, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId>("containerOpen", std::bind(WorldEntityCallbacks::containerOpen, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId>("containerItems", std::bind(WorldEntityCallbacks::containerItems, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId>("containerItems", std::bind(WorldEntityCallbacks::containerItems, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, std::size_t>("containerItemAt", std::bind(WorldEntityCallbacks::containerItemAt, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, std::size_t>("containerItemAt", std::bind(WorldEntityCallbacks::containerItemAt, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<bool>, EntityId, Json>("containerConsume", std::bind(WorldEntityCallbacks::containerConsume, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<bool>, EntityId, Json>("containerConsume", std::bind(WorldEntityCallbacks::containerConsume, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<bool>, EntityId, std::size_t, int>("containerConsumeAt", std::bind(WorldEntityCallbacks::containerConsumeAt, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<bool>, EntityId, std::size_t, int>("containerConsumeAt", std::bind(WorldEntityCallbacks::containerConsumeAt, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::size_t>, EntityId, Json>("containerAvailable", std::bind(WorldEntityCallbacks::containerAvailable, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::size_t>, EntityId, Json>("containerAvailable", std::bind(WorldEntityCallbacks::containerAvailable, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId>("containerTakeAll", std::bind(WorldEntityCallbacks::containerTakeAll, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId>("containerTakeAll", std::bind(WorldEntityCallbacks::containerTakeAll, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, std::size_t>("containerTakeAt", std::bind(WorldEntityCallbacks::containerTakeAt, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, std::size_t>("containerTakeAt", std::bind(WorldEntityCallbacks::containerTakeAt, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, std::size_t, int>("containerTakeNumItemsAt", std::bind(WorldEntityCallbacks::containerTakeNumItemsAt, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, std::size_t, int>("containerTakeNumItemsAt", std::bind(WorldEntityCallbacks::containerTakeNumItemsAt, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::size_t>, EntityId, Json>("containerItemsCanFit", std::bind(WorldEntityCallbacks::containerItemsCanFit, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::size_t>, EntityId, Json>("containerItemsCanFit", std::bind(WorldEntityCallbacks::containerItemsCanFit, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerItemsFitWhere", std::bind(WorldEntityCallbacks::containerItemsFitWhere, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerItemsFitWhere", std::bind(WorldEntityCallbacks::containerItemsFitWhere, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerAddItems", std::bind(WorldEntityCallbacks::containerAddItems, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerAddItems", std::bind(WorldEntityCallbacks::containerAddItems, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerStackItems", std::bind(WorldEntityCallbacks::containerStackItems, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerStackItems", std::bind(WorldEntityCallbacks::containerStackItems, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json, std::size_t>("containerPutItemsAt", std::bind(WorldEntityCallbacks::containerPutItemsAt, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json, std::size_t>("containerPutItemsAt", std::bind(WorldEntityCallbacks::containerPutItemsAt, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json, std::size_t>("containerSwapItems", std::bind(WorldEntityCallbacks::containerSwapItems, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json, std::size_t>("containerSwapItems", std::bind(WorldEntityCallbacks::containerSwapItems, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json, std::size_t>("containerSwapItemsNoCombine", std::bind(WorldEntityCallbacks::containerSwapItemsNoCombine, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json, std::size_t>("containerSwapItemsNoCombine", std::bind(WorldEntityCallbacks::containerSwapItemsNoCombine, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json, std::size_t>("containerItemApply", std::bind(WorldEntityCallbacks::containerItemApply, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, Json, std::size_t>("containerItemApply", std::bind(WorldEntityCallbacks::containerItemApply, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<LuaValue>, EntityId, String, LuaVariadic<LuaValue>>("callScriptedEntity", std::bind(WorldEntityCallbacks::callScriptedEntity, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<LuaValue>, EntityId, String, LuaVariadic<LuaValue>>("callScriptedEntity", std::bind(WorldEntityCallbacks::callScriptedEntity, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<RpcPromise<Vec2F>, String>("findUniqueEntity", std::bind(WorldEntityCallbacks::findUniqueEntity, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<RpcPromise<Vec2F>, String>("findUniqueEntity", std::bind(WorldEntityCallbacks::findUniqueEntity, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<RpcPromise<Json>, LuaEngine&, LuaValue, String, LuaVariadic<Json>>("sendEntityMessage", std::bind(WorldEntityCallbacks::sendEntityMessage, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<RpcPromise<Json>, LuaEngine&, LuaValue, String, LuaVariadic<Json>>("sendEntityMessage", std::bind(WorldEntityCallbacks::sendEntityMessage, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<List<EntityId>>, EntityId, std::optional<std::size_t>>("loungingEntities", std::bind(WorldEntityCallbacks::loungingEntities, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<List<EntityId>>, EntityId, std::optional<std::size_t>>("loungingEntities", std::bind(WorldEntityCallbacks::loungingEntities, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<bool>, EntityId, std::optional<std::size_t>>("loungeableOccupied", std::bind(WorldEntityCallbacks::loungeableOccupied, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<bool>, EntityId, std::optional<std::size_t>>("loungeableOccupied", std::bind(WorldEntityCallbacks::loungeableOccupied, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::size_t>, EntityId>("loungeableAnchorCount", std::bind(WorldEntityCallbacks::loungeableAnchorCount, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::size_t>, EntityId>("loungeableAnchorCount", std::bind(WorldEntityCallbacks::loungeableAnchorCount, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId, std::optional<bool>>("isMonster", std::bind(WorldEntityCallbacks::isMonster, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId, std::optional<bool>>("isMonster", std::bind(WorldEntityCallbacks::isMonster, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("monsterType", std::bind(WorldEntityCallbacks::monsterType, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("monsterType", std::bind(WorldEntityCallbacks::monsterType, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("npcType", std::bind(WorldEntityCallbacks::npcType, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("npcType", std::bind(WorldEntityCallbacks::npcType, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("stagehandType", std::bind(WorldEntityCallbacks::stagehandType, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("stagehandType", std::bind(WorldEntityCallbacks::stagehandType, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId, std::optional<int>>("isNpc", std::bind(WorldEntityCallbacks::isNpc, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, EntityId, std::optional<int>>("isNpc", std::bind(WorldEntityCallbacks::isNpc, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallback("isEntityInteractive", [world](EntityId entityId) -> std::optional<bool> {
-        if (auto entity = world->get<InteractiveEntity>(entityId))
+    if (auto result = callbacks.registerCallback("isEntityInteractive", [&world](EntityId entityId) -> std::optional<bool> {
+        if (auto entity = world.get<InteractiveEntity>(entityId))
           return entity->isInteractive();
         return {};
       }); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallback("entityAimPosition", [world](EntityId entityId) -> std::expected<std::optional<Vec2F>, StarException> {
-        if (auto entity = world->get<ToolUserEntity>(entityId)) {
+    if (auto result = callbacks.registerCallback("entityAimPosition", [&world](EntityId entityId) -> std::expected<std::optional<Vec2F>, StarException> {
+        if (auto entity = world.get<ToolUserEntity>(entityId)) {
           auto position = entity->aimPosition();
           if (!position)
             return std::unexpected(std::move(position.error()));
@@ -1289,8 +1293,8 @@ namespace LuaBindings {
         return {};
       }); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallback("entityMouthPosition", [world](EntityId entityId) -> std::expected<std::optional<Vec2F>, StarException> {
-        if (auto entity = world->get<ChattyEntity>(entityId)) {
+    if (auto result = callbacks.registerCallback("entityMouthPosition", [&world](EntityId entityId) -> std::expected<std::optional<Vec2F>, StarException> {
+        if (auto entity = world.get<ChattyEntity>(entityId)) {
           auto positionResult = entity->mouthPosition();
           if (!positionResult)
             return std::unexpected(std::move(positionResult.error()));
@@ -1300,8 +1304,8 @@ namespace LuaBindings {
         return {};
       }); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallback("entityTypeName", [world](EntityId entityId) -> std::expected<std::optional<String>, StarException> {
-        auto entity = world->entity(entityId);
+    if (auto result = callbacks.registerCallback("entityTypeName", [&world](EntityId entityId) -> std::expected<std::optional<String>, StarException> {
+        auto entity = world.entity(entityId);
         if (auto monster = as<Monster>(entity))
           return monster->typeName();
         if (auto npc = as<Npc>(entity))
@@ -1317,8 +1321,8 @@ namespace LuaBindings {
         return {};
       }); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallback("itemDropItem", [world](EntityId const& entityId) -> Json {
-        if (auto itemDrop = world->get<ItemDrop>(entityId))
+    if (auto result = callbacks.registerCallback("itemDropItem", [&world](EntityId const& entityId) -> Json {
+        if (auto itemDrop = world.get<ItemDrop>(entityId))
           return itemDrop->item()->descriptor().toJson();
         return {};
       }); !result)
@@ -1326,34 +1330,38 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<void, StarException> addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world) {
-    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F>("lightLevel", std::bind(WorldEnvironmentCallbacks::lightLevel, world, std::placeholders::_1)); !result)
+  std::expected<void, StarException> addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World& world) {
+    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F>("lightLevel", std::bind(WorldEnvironmentCallbacks::lightLevel, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F>("windLevel", std::bind(WorldEnvironmentCallbacks::windLevel, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F>("windLevel", std::bind(WorldEnvironmentCallbacks::windLevel, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F>("breathable", std::bind(WorldEnvironmentCallbacks::breathable, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F>("breathable", std::bind(WorldEnvironmentCallbacks::breathable, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F>("underground", std::bind(WorldEnvironmentCallbacks::underground, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F>("underground", std::bind(WorldEnvironmentCallbacks::underground, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Vec2F, String>("material", std::bind(WorldEnvironmentCallbacks::material, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Vec2F, String>("material", std::bind(WorldEnvironmentCallbacks::material, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Vec2F, String>("mod", std::bind(WorldEnvironmentCallbacks::mod, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Vec2F, String>("mod", std::bind(WorldEnvironmentCallbacks::mod, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F, String>("materialHueShift", std::bind(WorldEnvironmentCallbacks::materialHueShift, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F, String>("materialHueShift", std::bind(WorldEnvironmentCallbacks::materialHueShift, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F, String>("modHueShift", std::bind(WorldEnvironmentCallbacks::modHueShift, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F, String>("modHueShift", std::bind(WorldEnvironmentCallbacks::modHueShift, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<MaterialColorVariant, Vec2F, String>("materialColor", std::bind(WorldEnvironmentCallbacks::materialColor, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<MaterialColorVariant, Vec2F, String>("materialColor", std::bind(WorldEnvironmentCallbacks::materialColor, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<void, Vec2F, String, MaterialColorVariant>("setMaterialColor", std::bind(WorldEnvironmentCallbacks::setMaterialColor, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<void, Vec2F, String, MaterialColorVariant>("setMaterialColor", std::bind(WorldEnvironmentCallbacks::setMaterialColor, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallback("oceanLevel", [world](Vec2I position) -> std::expected<int, StarException> {
+    if (auto result = callbacks.registerCallback("oceanLevel", [&world](Vec2I position) -> std::expected<int, StarException> {
         std::shared_ptr<WorldTemplate const> worldTemplate;
-        if (auto server = as<WorldServer>(world))
-          worldTemplate = server->worldTemplate();
-        else
-          worldTemplate = as<WorldClient>(world)->currentTemplate();
+        if (auto server = asRef<WorldServer>(world))
+          worldTemplate = server->get().worldTemplate();
+        else {
+          auto client = rconvert<WorldClient>(world);
+          if (!client)
+            return std::unexpected(std::move(client.error()));
+          worldTemplate = client->get().currentTemplate();
+        }
         auto blockResult = worldTemplate->blockInfo(position[0], position[1]);
         if (!blockResult)
           return std::unexpected(std::move(blockResult.error()));
@@ -1362,153 +1370,153 @@ namespace LuaBindings {
       }); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallback("environmentStatusEffects", [world](Vec2F const& position) {
-        return world->environmentStatusEffects(position);
+    if (auto result = callbacks.registerCallback("environmentStatusEffects", [&world](Vec2F const& position) {
+        return world.environmentStatusEffects(position);
       }); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallback("weatherStatusEffects", [world](Vec2F const& position) {
-        return world->weatherStatusEffects(position);
+    if (auto result = callbacks.registerCallback("weatherStatusEffects", [&world](Vec2F const& position) {
+        return world.weatherStatusEffects(position);
       }); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallback("exposedToWeather", [world](Vec2F const& position) {
-        return world->exposedToWeather(position);
+    if (auto result = callbacks.registerCallback("exposedToWeather", [&world](Vec2F const& position) {
+        return world.exposedToWeather(position);
       }); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallback("activeWeather", [world](Vec2F const& position) {
-        return world->activeWeather(position);
+    if (auto result = callbacks.registerCallback("activeWeather", [&world](Vec2F const& position) {
+        return world.activeWeather(position);
       }); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, Vec2F, String, float, std::optional<unsigned>, std::optional<EntityId>>("damageTiles", std::bind(WorldEnvironmentCallbacks::damageTiles, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, Vec2F, String, float, std::optional<unsigned>, std::optional<EntityId>>("damageTiles", std::bind(WorldEnvironmentCallbacks::damageTiles, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, Vec2F, String, float, std::optional<unsigned>, std::optional<EntityId>>("damageTileArea", std::bind(WorldEnvironmentCallbacks::damageTileArea, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7, std::placeholders::_8)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, Vec2F, String, float, std::optional<unsigned>, std::optional<EntityId>>("damageTileArea", std::bind(WorldEnvironmentCallbacks::damageTileArea, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7, std::placeholders::_8)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, std::optional<int>, bool>("placeMaterial", std::bind(WorldEnvironmentCallbacks::placeMaterial, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, std::optional<int>, bool>("placeMaterial", std::bind(WorldEnvironmentCallbacks::placeMaterial, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, String, std::optional<int>, bool>("replaceMaterials", std::bind(WorldEnvironmentCallbacks::replaceMaterials, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, String, std::optional<int>, bool>("replaceMaterials", std::bind(WorldEnvironmentCallbacks::replaceMaterials, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, String, std::optional<int>, bool>("replaceMaterialArea", std::bind(WorldEnvironmentCallbacks::replaceMaterialArea, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, String, std::optional<int>, bool>("replaceMaterialArea", std::bind(WorldEnvironmentCallbacks::replaceMaterialArea, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, std::optional<int>, bool>("placeMod", std::bind(WorldEnvironmentCallbacks::placeMod, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, std::optional<int>, bool>("placeMod", std::bind(WorldEnvironmentCallbacks::placeMod, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)); !result)
       return std::unexpected(std::move(result.error()));
 
-    if (auto result = callbacks.registerCallback("radialTileQuery", [world](Vec2F center, float radius, String layerName) -> std::expected<List<Vec2I>, StarException> {
+    if (auto result = callbacks.registerCallback("radialTileQuery", [&world](Vec2F center, float radius, String layerName) -> std::expected<List<Vec2I>, StarException> {
       if (!TileLayerNames)
         return std::unexpected(TileLayerNames.error());
       auto layerPointerResult = TileLayerNames->getLeft(layerName);
       if (!layerPointerResult)
         return std::unexpected(std::move(layerPointerResult.error()));
       auto layerPointer = std::move(*layerPointerResult);
-      auto layer = *layerPointer;
+      auto layer = layerPointer.get();
       List<Vec2I> tiles;
       for (auto const& tile : tileAreaBrush(radius, center, false)) {
-        if (world->material(tile, layer) != EmptyMaterialId)
+        if (world.material(tile, layer) != EmptyMaterialId)
           tiles.append(tile);
       }
       return tiles;
       }); !result)
       return std::unexpected(std::move(result.error()));
     
-    if (auto result = callbacks.registerCallbackWithSignature<List<std::pair<Vec2I, LiquidLevel>>, Vec2F, Vec2F>("liquidAlongLine", std::bind(WorldEnvironmentCallbacks::liquidAlongLine, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<List<std::pair<Vec2I, LiquidLevel>>, Vec2F, Vec2F>("liquidAlongLine", std::bind(WorldEnvironmentCallbacks::liquidAlongLine, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2I, std::optional<bool>, std::optional<bool>>("tileIsOccupied", std::bind(WorldEnvironmentCallbacks::tileIsOccupied, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2I, std::optional<bool>, std::optional<bool>>("tileIsOccupied", std::bind(WorldEnvironmentCallbacks::tileIsOccupied, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<float>("threatLevel", std::bind(&World::threatLevel, world)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<float>("threatLevel", std::bind(&World::threatLevel, std::ref(world))); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<double>("time", std::bind(WorldEnvironmentCallbacks::time, world)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<double>("time", std::bind(WorldEnvironmentCallbacks::time, std::ref(world))); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::uint64_t>("day", std::bind(WorldEnvironmentCallbacks::day, world)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::uint64_t>("day", std::bind(WorldEnvironmentCallbacks::day, std::ref(world))); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<double>("timeOfDay", std::bind(WorldEnvironmentCallbacks::timeOfDay, world)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<double>("timeOfDay", std::bind(WorldEnvironmentCallbacks::timeOfDay, std::ref(world))); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<float>("dayLength", std::bind(WorldEnvironmentCallbacks::dayLength, world)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<float>("dayLength", std::bind(WorldEnvironmentCallbacks::dayLength, std::ref(world))); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, std::variant<RectF, Vec2I>>("liquidAt", std::bind(WorldEnvironmentCallbacks::liquidAt, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, std::variant<RectF, Vec2I>>("liquidAt", std::bind(WorldEnvironmentCallbacks::liquidAt, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F>("gravity", std::bind(WorldEnvironmentCallbacks::gravity, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F>("gravity", std::bind(WorldEnvironmentCallbacks::gravity, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, LiquidId, float>("spawnLiquid", std::bind(WorldEnvironmentCallbacks::spawnLiquid, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, LiquidId, float>("spawnLiquid", std::bind(WorldEnvironmentCallbacks::spawnLiquid, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, Vec2F>("destroyLiquid", std::bind(WorldEnvironmentCallbacks::destroyLiquid, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, Vec2F>("destroyLiquid", std::bind(WorldEnvironmentCallbacks::destroyLiquid, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F>("isTileProtected", std::bind(WorldEnvironmentCallbacks::isTileProtected, world, std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F>("isTileProtected", std::bind(WorldEnvironmentCallbacks::isTileProtected, std::ref(world), std::placeholders::_1)); !result)
       return std::unexpected(std::move(result.error()));
     return {};
   }
   
-  std::expected<void, StarException> addWorldGeometryCallbacks(LuaCallbacks& callbacks, World* world) {
+  std::expected<void, StarException> addWorldGeometryCallbacks(LuaCallbacks& callbacks, World& world) {
 
-    if (auto result = callbacks.registerCallback("size", [world]() -> Vec2U {
-        return world->geometry().size();
+    if (auto result = callbacks.registerCallback("size", [&world]() -> Vec2U {
+        return world.geometry().size();
       }); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F, std::optional<Vec2F>>("magnitude", std::bind(&WorldGeometryCallbacks::magnitude, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<float, Vec2F, std::optional<Vec2F>>("magnitude", std::bind(&WorldGeometryCallbacks::magnitude, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<Vec2F, Vec2F, Vec2F>("distance", std::bind(WorldGeometryCallbacks::distance, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<Vec2F, Vec2F, Vec2F>("distance", std::bind(WorldGeometryCallbacks::distance, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, PolyF, Vec2F>("polyContains", std::bind(WorldGeometryCallbacks::polyContains, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, PolyF, Vec2F>("polyContains", std::bind(WorldGeometryCallbacks::polyContains, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, LuaValue>("xwrap", std::bind(WorldGeometryCallbacks::xwrap, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, LuaValue>("xwrap", std::bind(WorldGeometryCallbacks::xwrap, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, std::variant<Vec2F, float>, std::variant<Vec2F, float>>("nearestTo", std::bind(WorldGeometryCallbacks::nearestTo, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, std::variant<Vec2F, float>, std::variant<Vec2F, float>>("nearestTo", std::bind(WorldGeometryCallbacks::nearestTo, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
     return {};
   }
   
-  std::expected<void, StarException> addWorldCollisionCallbacks(LuaCallbacks& callbacks, World* world) {
-    if (auto result = callbacks.registerCallbackWithSignature<bool, RectF, std::optional<CollisionSet>>("rectCollision", std::bind(WorldCollisionCallbacks::rectCollision, world, std::placeholders::_1, std::placeholders::_2)); !result)
+  std::expected<void, StarException> addWorldCollisionCallbacks(LuaCallbacks& callbacks, World& world) {
+    if (auto result = callbacks.registerCallbackWithSignature<bool, RectF, std::optional<CollisionSet>>("rectCollision", std::bind(WorldCollisionCallbacks::rectCollision, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, std::optional<CollisionSet>>("pointTileCollision", std::bind(WorldCollisionCallbacks::pointTileCollision, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, std::optional<CollisionSet>>("pointTileCollision", std::bind(WorldCollisionCallbacks::pointTileCollision, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, Vec2F, std::optional<CollisionSet>>("lineTileCollision", std::bind(WorldCollisionCallbacks::lineTileCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, Vec2F, std::optional<CollisionSet>>("lineTileCollision", std::bind(WorldCollisionCallbacks::lineTileCollision, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::pair<Vec2F, Vec2I>>, Vec2F, Vec2F, std::optional<CollisionSet>>("lineTileCollisionPoint", std::bind(WorldCollisionCallbacks::lineTileCollisionPoint, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<std::pair<Vec2F, Vec2I>>, Vec2F, Vec2F, std::optional<CollisionSet>>("lineTileCollisionPoint", std::bind(WorldCollisionCallbacks::lineTileCollisionPoint, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, RectF, std::optional<CollisionSet>>("rectTileCollision", std::bind(WorldCollisionCallbacks::rectTileCollision, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, RectF, std::optional<CollisionSet>>("rectTileCollision", std::bind(WorldCollisionCallbacks::rectTileCollision, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, std::optional<CollisionSet>>("pointCollision", std::bind(WorldCollisionCallbacks::pointCollision, world, std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, Vec2F, std::optional<CollisionSet>>("pointCollision", std::bind(WorldCollisionCallbacks::pointCollision, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaTupleReturn<std::optional<Vec2F>, std::optional<Vec2F>>, Vec2F, Vec2F, std::optional<CollisionSet>>("lineCollision", std::bind(WorldCollisionCallbacks::lineCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<LuaTupleReturn<std::optional<Vec2F>, std::optional<Vec2F>>, Vec2F, Vec2F, std::optional<CollisionSet>>("lineCollision", std::bind(WorldCollisionCallbacks::lineCollision, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<bool, PolyF, std::optional<Vec2F>, std::optional<CollisionSet>>("polyCollision", std::bind(WorldCollisionCallbacks::polyCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<bool, PolyF, std::optional<Vec2F>, std::optional<CollisionSet>>("polyCollision", std::bind(WorldCollisionCallbacks::polyCollision, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<List<Vec2I>, Vec2F, Vec2F, std::optional<CollisionSet>, std::optional<int>>("collisionBlocksAlongLine", std::bind(WorldCollisionCallbacks::collisionBlocksAlongLine, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<List<Vec2I>, Vec2F, Vec2F, std::optional<CollisionSet>, std::optional<int>>("collisionBlocksAlongLine", std::bind(WorldCollisionCallbacks::collisionBlocksAlongLine, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<std::optional<Vec2F>, PolyF, Vec2F, float, std::optional<CollisionSet>>("resolvePolyCollision", std::bind(WorldCollisionCallbacks::resolvePolyCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<Vec2F>, PolyF, Vec2F, float, std::optional<CollisionSet>>("resolvePolyCollision", std::bind(WorldCollisionCallbacks::resolvePolyCollision, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
     return {};
   }
 
-  std::expected<float, StarException> WorldGeometryCallbacks::magnitude(World* world, Vec2F pos1, std::optional<Vec2F> pos2) {
+  std::expected<float, StarException> WorldGeometryCallbacks::magnitude(World& world, Vec2F pos1, std::optional<Vec2F> pos2) {
     if (pos2)
-      return world->geometry().diff(pos1, *pos2).magnitude();
+      return world.geometry().diff(pos1, *pos2).magnitude();
     else
       return pos1.magnitude();
   }
 
-  std::expected<Vec2F, StarException> WorldGeometryCallbacks::distance(World* world, Vec2F const& arg1, Vec2F const& arg2) {
-    return world->geometry().diff(arg1, arg2);
+  std::expected<Vec2F, StarException> WorldGeometryCallbacks::distance(World& world, Vec2F const& arg1, Vec2F const& arg2) {
+    return world.geometry().diff(arg1, arg2);
   }
 
-  std::expected<bool, StarException> WorldGeometryCallbacks::polyContains(World* world, PolyF const& poly, Vec2F const& pos) {
-    return world->geometry().polyContains(poly, pos);
+  std::expected<bool, StarException> WorldGeometryCallbacks::polyContains(World& world, PolyF const& poly, Vec2F const& pos) {
+    return world.geometry().polyContains(poly, pos);
   }
 
-  std::expected<LuaValue, StarException> WorldGeometryCallbacks::xwrap(World* world, LuaEngine& engine, LuaValue const& positionOrX) {
+  std::expected<LuaValue, StarException> WorldGeometryCallbacks::xwrap(World& world, LuaEngine& engine, LuaValue const& positionOrX) {
     auto xResult = engine.luaMaybeTo<float>(positionOrX);
     if (!xResult)
       return std::unexpected(std::move(xResult.error()));
     auto x = std::move(*xResult);
     if (x)
-      return LuaFloat(world->geometry().xwrap(*x));
+      return LuaFloat(world.geometry().xwrap(*x));
     auto positionResult = engine.luaTo<Vec2F>(positionOrX);
     if (!positionResult)
       return std::unexpected(std::move(positionResult.error()));
     auto position = std::move(*positionResult);
-    return engine.luaFrom<Vec2F>(world->geometry().xwrap(position));
+    return engine.luaFrom<Vec2F>(world.geometry().xwrap(position));
   }
 
-  std::expected<LuaValue, StarException> WorldGeometryCallbacks::nearestTo(World* world, LuaEngine& engine, std::variant<Vec2F, float> const& sourcePositionOrX, std::variant<Vec2F, float> const& targetPositionOrX) {
+  std::expected<LuaValue, StarException> WorldGeometryCallbacks::nearestTo(World& world, LuaEngine& engine, std::variant<Vec2F, float> const& sourcePositionOrX, std::variant<Vec2F, float> const& targetPositionOrX) {
     if (std::holds_alternative<Vec2F>(targetPositionOrX)) {
       Vec2F targetPosition = std::get<Vec2F>(targetPositionOrX);
       Vec2F sourcePosition;
@@ -1517,7 +1525,7 @@ namespace LuaBindings {
       else
         sourcePosition[0] = std::get<float>(sourcePositionOrX);
 
-      return engine.luaFrom<Vec2F>(world->geometry().nearestTo(sourcePosition, targetPosition));
+      return engine.luaFrom<Vec2F>(world.geometry().nearestTo(sourcePosition, targetPosition));
 
     } else {
       float targetX = std::get<float>(targetPositionOrX);
@@ -1527,61 +1535,61 @@ namespace LuaBindings {
       else
         sourceX = std::get<float>(sourcePositionOrX);
 
-      return LuaFloat(world->geometry().nearestTo(sourceX, targetX));
+      return LuaFloat(world.geometry().nearestTo(sourceX, targetX));
     }
   }
 
-  std::expected<bool, StarException> WorldCollisionCallbacks::rectCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2) {
+  std::expected<bool, StarException> WorldCollisionCallbacks::rectCollision(World& world, RectF const& arg1, std::optional<CollisionSet> const& arg2) {
     PolyF body = PolyF(arg1);
 
     if (arg2)
-      return world->polyCollision(body, *arg2);
+      return world.polyCollision(body, *arg2);
     else
-      return world->polyCollision(body);
+      return world.polyCollision(body);
   }
 
-  std::expected<bool, StarException> WorldCollisionCallbacks::pointTileCollision(World* world, Vec2F const& arg1, std::optional<CollisionSet> const& arg2) {
+  std::expected<bool, StarException> WorldCollisionCallbacks::pointTileCollision(World& world, Vec2F const& arg1, std::optional<CollisionSet> const& arg2) {
     if (arg2)
-      return world->pointTileCollision(arg1, *arg2);
+      return world.pointTileCollision(arg1, *arg2);
     else
-      return world->pointTileCollision(arg1);
+      return world.pointTileCollision(arg1);
   }
 
   std::expected<bool, StarException> WorldCollisionCallbacks::lineTileCollision(
-      World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3) {
+      World& world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3) {
     Vec2F const begin = arg1;
     Vec2F const end = arg2;
 
     if (arg3)
-      return world->lineTileCollision(begin, end, *arg3);
+      return world.lineTileCollision(begin, end, *arg3);
     else
-      return world->lineTileCollision(begin, end);
+      return world.lineTileCollision(begin, end);
   }
 
-  std::expected<std::optional<std::pair<Vec2F, Vec2I>>, StarException> WorldCollisionCallbacks::lineTileCollisionPoint(World* world, Vec2F const& begin, Vec2F const& end, std::optional<CollisionSet> const& collisionSet) {
+  std::expected<std::optional<std::pair<Vec2F, Vec2I>>, StarException> WorldCollisionCallbacks::lineTileCollisionPoint(World& world, Vec2F const& begin, Vec2F const& end, std::optional<CollisionSet> const& collisionSet) {
     if (collisionSet)
-      return world->lineTileCollisionPoint(begin, end, *collisionSet);
+      return world.lineTileCollisionPoint(begin, end, *collisionSet);
     else
-      return world->lineTileCollisionPoint(begin, end);
+      return world.lineTileCollisionPoint(begin, end);
   }
 
-  std::expected<bool, StarException> WorldCollisionCallbacks::rectTileCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2) {
+  std::expected<bool, StarException> WorldCollisionCallbacks::rectTileCollision(World& world, RectF const& arg1, std::optional<CollisionSet> const& arg2) {
     RectI const region = RectI::integral(arg1);
 
     if (arg2)
-      return world->rectTileCollision(region, *arg2);
+      return world.rectTileCollision(region, *arg2);
     else
-      return world->rectTileCollision(region);
+      return world.rectTileCollision(region);
   }
 
-  std::expected<bool, StarException> WorldCollisionCallbacks::pointCollision(World* world, Vec2F const& point, std::optional<CollisionSet> const& collisionSet) {
-    return world->pointCollision(point, collisionSet.value_or(DefaultCollisionSet));
+  std::expected<bool, StarException> WorldCollisionCallbacks::pointCollision(World& world, Vec2F const& point, std::optional<CollisionSet> const& collisionSet) {
+    return world.pointCollision(point, collisionSet.value_or(DefaultCollisionSet));
   }
 
-  std::expected<LuaTupleReturn<std::optional<Vec2F>, std::optional<Vec2F>>, StarException> WorldCollisionCallbacks::lineCollision(World* world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& collisionSet) {
+  std::expected<LuaTupleReturn<std::optional<Vec2F>, std::optional<Vec2F>>, StarException> WorldCollisionCallbacks::lineCollision(World& world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& collisionSet) {
     std::optional<Vec2F> point;
     std::optional<Vec2F> normal;
-    auto collisionResult = world->lineCollision(Line2F(start, end), collisionSet.value_or(DefaultCollisionSet));
+    auto collisionResult = world.lineCollision(Line2F(start, end), collisionSet.value_or(DefaultCollisionSet));
     if (!collisionResult)
       return std::unexpected(std::move(collisionResult.error()));
     auto collision = std::move(*collisionResult);
@@ -1593,7 +1601,7 @@ namespace LuaBindings {
   }
 
   std::expected<bool, StarException> WorldCollisionCallbacks::polyCollision(
-      World* world, PolyF const& arg1, std::optional<Vec2F> const& arg2, std::optional<CollisionSet> const& arg3) {
+      World& world, PolyF const& arg1, std::optional<Vec2F> const& arg2, std::optional<CollisionSet> const& arg3) {
     PolyF body = arg1;
 
     Vec2F center;
@@ -1603,23 +1611,23 @@ namespace LuaBindings {
     }
 
     if (arg3)
-      return world->polyCollision(body, *arg3);
+      return world.polyCollision(body, *arg3);
     else
-      return world->polyCollision(body);
+      return world.polyCollision(body);
   }
 
   std::expected<List<Vec2I>, StarException> WorldCollisionCallbacks::collisionBlocksAlongLine(
-      World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3, std::optional<int> const& arg4) {
+      World& world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3, std::optional<int> const& arg4) {
     Vec2F const begin = arg1;
     Vec2F const end = arg2;
 
     CollisionSet collisionSet = arg3.value_or(DefaultCollisionSet);
     int const maxSize = arg4 ? *arg4 : -1;
-    return world->collidingTilesAlongLine(begin, end, collisionSet, maxSize);
+    return world.collidingTilesAlongLine(begin, end, collisionSet, maxSize);
   }
 
   std::expected<std::optional<Vec2F>, StarException> WorldCollisionCallbacks::resolvePolyCollision(
-      World* world, PolyF poly, Vec2F const& position, float maximumCorrection, std::optional<CollisionSet> const& maybeCollisionSet) {
+      World& world, PolyF poly, Vec2F const& position, float maximumCorrection, std::optional<CollisionSet> const& maybeCollisionSet) {
     struct CollisionPoly {
       PolyF poly;
       Vec2F center;
@@ -1629,7 +1637,7 @@ namespace LuaBindings {
     poly.translate(position);
     List<CollisionPoly> collisions;
     CollisionSet collisionSet = maybeCollisionSet.value_or(DefaultCollisionSet);
-    auto blocksResult = world->forEachCollisionBlock(RectI::integral(poly.boundBox().padded(maximumCorrection + 1.0f)),
+    auto blocksResult = world.forEachCollisionBlock(RectI::integral(poly.boundBox().padded(maximumCorrection + 1.0f)),
         [&](auto const& block) -> std::expected<void, StarException> {
           if (collisionSet.contains(block.kind))
             collisions.append({block.poly, Vec2F(block.space), 0.0f});
@@ -1692,10 +1700,10 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<List<std::pair<Vec2I, LiquidLevel>>, StarException> WorldEnvironmentCallbacks::liquidAlongLine(World* world, Vec2F const& start, Vec2F const& end) {
+  std::expected<List<std::pair<Vec2I, LiquidLevel>>, StarException> WorldEnvironmentCallbacks::liquidAlongLine(World& world, Vec2F const& start, Vec2F const& end) {
     List<std::pair<Vec2I, LiquidLevel>> levels;
-    auto traversed = forBlocksAlongLine<float>(start, world->geometry().diff(end, start), [&](int x, int y) -> std::expected<bool, StarException> {
-        auto liquidLevelResult = world->liquidLevel(RectF::withSize(Vec2F(x, y), Vec2F(1, 1)));
+    auto traversed = forBlocksAlongLine<float>(start, world.geometry().diff(end, start), [&](int x, int y) -> std::expected<bool, StarException> {
+        auto liquidLevelResult = world.liquidLevel(RectF::withSize(Vec2F(x, y), Vec2F(1, 1)));
         if (!liquidLevelResult)
           return std::unexpected(std::move(liquidLevelResult.error()));
         auto liquidLevel = std::move(*liquidLevelResult);
@@ -1709,22 +1717,22 @@ namespace LuaBindings {
   }
 
   std::expected<bool, StarException> WorldEnvironmentCallbacks::tileIsOccupied(
-      World* world, Vec2I const& arg1, std::optional<bool> const& arg2, std::optional<bool> const& arg3) {
+      World& world, Vec2I const& arg1, std::optional<bool> const& arg2, std::optional<bool> const& arg3) {
     Vec2I const tile = arg1;
     bool const tileLayerBool = arg2.value_or(true);
     bool const includeEphemeral = arg3.value_or(false);
 
     TileLayer const tileLayer = tileLayerBool ? TileLayer::Foreground : TileLayer::Background;
 
-    return world->tileIsOccupied(tile, tileLayer, includeEphemeral);
+    return world.tileIsOccupied(tile, tileLayer, includeEphemeral);
   }
 
-  std::expected<bool, StarException> WorldCallbacks::placeObject(World* world,
+  std::expected<bool, StarException> WorldCallbacks::placeObject(World& world,
       String const& objectType,
       Vec2I const& worldPosition,
       std::optional<int> const& objectDirection,
       Json const& objectParameters) {
-    auto objectDatabaseResult = world->root().objectDatabase();
+    auto objectDatabaseResult = world.root().objectDatabase();
     if (!objectDatabaseResult)
       return std::unexpected(std::move(objectDatabaseResult.error()));
     auto objectDatabase = std::move(*objectDatabaseResult);
@@ -1736,20 +1744,20 @@ namespace LuaBindings {
       auto placedObject = std::move(*placedObjectResult);
       if (!placedObject)
         return false;
-      if (auto operation = world->addEntity(placedObject); !operation)
+      if (auto operation = world.addEntity(placedObject); !operation)
         return std::unexpected(std::move(operation.error()));
       return true;
     };
     auto result = spawn();
     if (!result) {
-      if (auto logged = world->root().logger().warn("Could not create placable object of kind '{}', exception caught: {}", objectType, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
+      if (auto logged = world.root().logger().warn("Could not create placable object of kind '{}', exception caught: {}", objectType, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
         return std::unexpected(std::move(logged.error()));
       return false;
     }
     return std::move(*result);
   }
 
-  std::expected<std::optional<EntityId>, StarException> WorldCallbacks::spawnItem(World* world,
+  std::expected<std::optional<EntityId>, StarException> WorldCallbacks::spawnItem(World& world,
       Json const& itemType,
       Vec2F const& worldPosition,
       std::optional<std::size_t> const& inputCount,
@@ -1763,7 +1771,7 @@ namespace LuaBindings {
           : ItemDescriptor::create(itemType);
       if (!descriptorResult)
         return std::unexpected(std::move(descriptorResult.error()));
-      auto itemDropResult = ItemDrop::createRandomizedDrop(world->root(), *descriptorResult, worldPosition);
+      auto itemDropResult = ItemDrop::createRandomizedDrop(world.root(), *descriptorResult, worldPosition);
       if (!itemDropResult)
         return std::unexpected(std::move(itemDropResult.error()));
       auto itemDrop = std::move(*itemDropResult);
@@ -1775,13 +1783,13 @@ namespace LuaBindings {
         itemDrop->setVelocity(*initialVelocity);
       if (intangibleTime)
         itemDrop->setIntangibleTime(*intangibleTime);
-      if (auto operation = world->addEntity(itemDrop); !operation)
+      if (auto operation = world.addEntity(itemDrop); !operation)
         return std::unexpected(std::move(operation.error()));
       return itemDrop->inWorld() ? std::optional<EntityId>(itemDrop->entityId()) : std::nullopt;
     };
     auto result = spawn();
     if (emptyItem) {
-      auto logged = world->root().logger().warn("Could not spawn item, item empty in WorldCallbacks::spawnItem");
+      auto logged = world.root().logger().warn("Could not spawn item, item empty in WorldCallbacks::spawnItem");
       if (!logged)
         return std::unexpected(std::move(logged.error()));
     }
@@ -1790,7 +1798,7 @@ namespace LuaBindings {
       if (!itemKindResult)
         return std::unexpected(std::move(itemKindResult.error()));
       auto itemKind = std::move(*itemKindResult);
-      if (auto logged = world->root().logger().warn("Could not spawn Item of kind '{}', exception caught: {}", itemKind, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
+      if (auto logged = world.root().logger().warn("Could not spawn Item of kind '{}', exception caught: {}", itemKind, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
         return std::unexpected(std::move(logged.error()));
       return {};
     }
@@ -1798,44 +1806,44 @@ namespace LuaBindings {
   }
 
   std::expected<List<EntityId>, StarException> WorldCallbacks::spawnTreasure(
-      World* world, Vec2F const& position, String const& pool, float level, std::optional<std::uint64_t> seed) {
+      World& world, Vec2F const& position, String const& pool, float level, std::optional<std::uint64_t> seed) {
     List<EntityId> entities;
-    auto treasureDatabaseResult = world->root().treasureDatabase();
+    auto treasureDatabaseResult = world.root().treasureDatabase();
     if (!treasureDatabaseResult)
       return std::unexpected(std::move(treasureDatabaseResult.error()));
     auto treasureDatabase = std::move(*treasureDatabaseResult);
     auto spawn = [&]() -> std::expected<void, StarException> {
-      auto treasureResult = treasureDatabase->createTreasure(pool, level, seed.value_or(world->root().random().randu64()));
+      auto treasureResult = treasureDatabase->createTreasure(pool, level, seed.value_or(world.root().random().randu64()));
       if (!treasureResult)
         return std::unexpected(std::move(treasureResult.error()));
       auto treasure = std::move(*treasureResult);
       for (auto const& treasureItem : treasure) {
-        auto entityResult = ItemDrop::createRandomizedDrop(world->root(), treasureItem, position);
+        auto entityResult = ItemDrop::createRandomizedDrop(world.root(), treasureItem, position);
         if (!entityResult)
           return std::unexpected(std::move(entityResult.error()));
         auto entity = std::move(*entityResult);
         entities.append(entity->entityId());
-        if (auto operation = world->addEntity(entity); !operation)
+        if (auto operation = world.addEntity(entity); !operation)
           return std::unexpected(std::move(operation.error()));
       }
       return {};
     };
     if (auto result = spawn(); !result) {
-      if (auto operation = world->root().logger().warn("Could not spawn treasure from pool '{}', exception caught: {}", pool, outputException(ExceptionDiagnostic(result.error()), false)); !operation)
+      if (auto operation = world.root().logger().warn("Could not spawn treasure from pool '{}', exception caught: {}", pool, outputException(ExceptionDiagnostic(result.error()), false)); !operation)
         return std::unexpected(std::move(operation.error()));
     }
     return entities;
   }
 
   std::expected<std::optional<EntityId>, StarException> WorldCallbacks::spawnMonster(
-      World* world, String const& arg1, Vec2F const& arg2, std::optional<JsonObject> const& arg3) {
-    auto monsterDatabaseResult = world->root().monsterDatabase();
+      World& world, String const& arg1, Vec2F const& arg2, std::optional<JsonObject> const& arg3) {
+    auto monsterDatabaseResult = world.root().monsterDatabase();
     if (!monsterDatabaseResult)
       return std::unexpected(std::move(monsterDatabaseResult.error()));
     auto monsterDatabase = std::move(*monsterDatabaseResult);
     auto spawn = [&]() -> std::expected<std::optional<EntityId>, StarException> {
       JsonObject parameters;
-      parameters["aggressive"] = world->root().random().randb();
+      parameters["aggressive"] = world.root().random().randb();
       if (arg3)
         parameters.merge(*arg3, true);
       float level = 1;
@@ -1844,7 +1852,7 @@ namespace LuaBindings {
         if (!levelJsonResult)
           return std::unexpected(std::move(levelJsonResult.error()));
         auto levelJson = std::move(*levelJsonResult);
-        auto parsedLevelResult = levelJson->toFloat();
+        auto parsedLevelResult = levelJson.get().toFloat();
         if (!parsedLevelResult)
           return std::unexpected(std::move(parsedLevelResult.error()));
         auto parsedLevel = std::move(*parsedLevelResult);
@@ -1859,28 +1867,28 @@ namespace LuaBindings {
         return std::unexpected(std::move(monsterResult.error()));
       auto monster = std::move(*monsterResult);
       monster->setPosition(arg2);
-      if (auto operation = world->addEntity(monster); !operation)
+      if (auto operation = world.addEntity(monster); !operation)
         return std::unexpected(std::move(operation.error()));
       return monster->inWorld() ? std::optional<EntityId>(monster->entityId()) : std::nullopt;
     };
     auto result = spawn();
     if (!result) {
-      if (auto logged = world->root().logger().warn("Could not spawn Monster of type '{}', exception caught: {}", arg1, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
+      if (auto logged = world.root().logger().warn("Could not spawn Monster of type '{}', exception caught: {}", arg1, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
         return std::unexpected(std::move(logged.error()));
       return {};
     }
     return std::move(*result);
   }
 
-  std::expected<std::optional<EntityId>, StarException> WorldCallbacks::spawnNpc(World* world,
+  std::expected<std::optional<EntityId>, StarException> WorldCallbacks::spawnNpc(World& world,
       Vec2F const& arg1,
       String const& arg2,
       String const& arg3,
       float arg4,
       std::optional<std::uint64_t> arg5,
       Json const& arg6) {
-    auto seed = arg5 ? *arg5 : world->root().random().randu64();
-    auto npcDatabaseResult = world->root().npcDatabase();
+    auto seed = arg5 ? *arg5 : world.root().random().randu64();
+    auto npcDatabaseResult = world.root().npcDatabase();
     if (!npcDatabaseResult)
       return std::unexpected(std::move(npcDatabaseResult.error()));
     auto npcDatabase = std::move(*npcDatabaseResult);
@@ -1894,13 +1902,13 @@ namespace LuaBindings {
         return std::unexpected(std::move(npcResult.error()));
       auto npc = std::move(*npcResult);
       npc->setPosition(arg1);
-      if (auto operation = world->addEntity(npc); !operation)
+      if (auto operation = world.addEntity(npc); !operation)
         return std::unexpected(std::move(operation.error()));
       return npc->inWorld() ? std::optional<EntityId>(npc->entityId()) : std::nullopt;
     };
     auto result = spawn();
     if (!result) {
-      if (auto logged = world->root().logger().warn("Could not spawn NPC of species '{}' and type '{}', exception caught: {}", arg2, arg3, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
+      if (auto logged = world.root().logger().warn("Could not spawn NPC of species '{}' and type '{}', exception caught: {}", arg2, arg3, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
         return std::unexpected(std::move(logged.error()));
       return {};
     }
@@ -1908,8 +1916,8 @@ namespace LuaBindings {
   }
 
   std::expected<std::optional<EntityId>, StarException> WorldCallbacks::spawnStagehand(
-      World* world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides) {
-    auto stagehandDatabaseResult = world->root().stagehandDatabase();
+      World& world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides) {
+    auto stagehandDatabaseResult = world.root().stagehandDatabase();
     if (!stagehandDatabaseResult)
       return std::unexpected(std::move(stagehandDatabaseResult.error()));
     auto stagehandDatabase = std::move(*stagehandDatabaseResult);
@@ -1919,20 +1927,20 @@ namespace LuaBindings {
         return std::unexpected(std::move(stagehandResult.error()));
       auto stagehand = std::move(*stagehandResult);
       stagehand->setPosition(spawnPosition);
-      if (auto operation = world->addEntity(stagehand); !operation)
+      if (auto operation = world.addEntity(stagehand); !operation)
         return std::unexpected(std::move(operation.error()));
       return stagehand->inWorld() ? std::optional<EntityId>(stagehand->entityId()) : std::nullopt;
     };
     auto result = spawn();
     if (!result) {
-      if (auto logged = world->root().logger().warn("Could not spawn Stagehand of type '{}', exception caught: {}", typeName, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
+      if (auto logged = world.root().logger().warn("Could not spawn Stagehand of type '{}', exception caught: {}", typeName, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
         return std::unexpected(std::move(logged.error()));
       return {};
     }
     return std::move(*result);
   }
 
-  std::expected<std::optional<EntityId>, StarException> WorldCallbacks::spawnProjectile(World* world,
+  std::expected<std::optional<EntityId>, StarException> WorldCallbacks::spawnProjectile(World& world,
       String const& projectileType,
       Vec2F const& spawnPosition,
       std::optional<EntityId> const& sourceEntityId,
@@ -1940,7 +1948,7 @@ namespace LuaBindings {
       bool trackSourceEntity,
       Json const& projectileParameters) {
     auto spawn = [&]() -> std::expected<std::optional<EntityId>, StarException> {
-      auto projectileDatabaseResult = world->root().projectileDatabase();
+      auto projectileDatabaseResult = world.root().projectileDatabase();
       if (!projectileDatabaseResult)
         return std::unexpected(std::move(projectileDatabaseResult.error()));
       auto projectileDatabase = std::move(*projectileDatabaseResult);
@@ -1951,13 +1959,13 @@ namespace LuaBindings {
       projectile->setInitialPosition(spawnPosition);
       projectile->setInitialDirection(projectileDirection.value_or(Vec2F{}));
       projectile->setSourceEntity(sourceEntityId.value_or(NullEntityId), trackSourceEntity);
-      if (auto operation = world->addEntity(projectile); !operation)
+      if (auto operation = world.addEntity(projectile); !operation)
         return std::unexpected(std::move(operation.error()));
       return projectile->inWorld() ? std::optional<EntityId>(projectile->entityId()) : std::nullopt;
     };
     auto result = spawn();
     if (!result) {
-      if (auto logged = world->root().logger().warn("Could not spawn Projectile of type '{}', exception caught: {}", projectileType, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
+      if (auto logged = world.root().logger().warn("Could not spawn Projectile of type '{}', exception caught: {}", projectileType, outputException(ExceptionDiagnostic(result.error()), false)); !logged)
         return std::unexpected(std::move(logged.error()));
       return {};
     }
@@ -1965,8 +1973,8 @@ namespace LuaBindings {
   }
 
   std::expected<std::optional<EntityId>, StarException> WorldCallbacks::spawnVehicle(
-      World* world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig) {
-    auto vehicleDatabaseResult = world->root().vehicleDatabase();
+      World& world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig) {
+    auto vehicleDatabaseResult = world.root().vehicleDatabase();
     if (!vehicleDatabaseResult)
       return std::unexpected(std::move(vehicleDatabaseResult.error()));
     auto vehicleDatabase = std::move(*vehicleDatabaseResult);
@@ -1975,37 +1983,37 @@ namespace LuaBindings {
       return std::unexpected(std::move(vehicleResult.error()));
     auto vehicle = std::move(*vehicleResult);
     vehicle->setPosition(pos);
-    if (auto operation = world->addEntity(vehicle); !operation)
+    if (auto operation = world.addEntity(vehicle); !operation)
       return std::unexpected(std::move(operation.error()));
     return vehicle->inWorld() ? std::optional<EntityId>(vehicle->entityId()) : std::nullopt;
   }
 
-  std::expected<double, StarException> WorldEnvironmentCallbacks::time(World* world) {
-    return world->epochTime();
+  std::expected<double, StarException> WorldEnvironmentCallbacks::time(World& world) {
+    return world.epochTime();
   }
 
-  std::expected<std::uint64_t, StarException> WorldEnvironmentCallbacks::day(World* world) {
-    return world->day();
+  std::expected<std::uint64_t, StarException> WorldEnvironmentCallbacks::day(World& world) {
+    return world.day();
   }
 
-  std::expected<double, StarException> WorldEnvironmentCallbacks::timeOfDay(World* world) {
-    return world->timeOfDay() / world->dayLength();
+  std::expected<double, StarException> WorldEnvironmentCallbacks::timeOfDay(World& world) {
+    return world.timeOfDay() / world.dayLength();
   }
 
-  std::expected<float, StarException> WorldEnvironmentCallbacks::dayLength(World* world) {
-    return world->dayLength();
+  std::expected<float, StarException> WorldEnvironmentCallbacks::dayLength(World& world) {
+    return world.dayLength();
   }
 
-  std::expected<Json, StarException> WorldCallbacks::getProperty(World* world, String const& arg1, Json const& arg2) {
-    return world->getProperty(arg1, arg2);
+  std::expected<Json, StarException> WorldCallbacks::getProperty(World& world, String const& arg1, Json const& arg2) {
+    return world.getProperty(arg1, arg2);
   }
 
-  std::expected<void, StarException> WorldCallbacks::setProperty(World* world, String const& arg1, Json const& arg2) {
-    return world->setProperty(arg1, arg2);
+  std::expected<void, StarException> WorldCallbacks::setProperty(World& world, String const& arg1, Json const& arg2) {
+    return world.setProperty(arg1, arg2);
   }
 
-  std::expected<std::optional<LiquidLevel>, StarException> WorldEnvironmentCallbacks::liquidAt(World* world, std::variant<RectF, Vec2I> boundBoxOrPoint) {
-    auto levelResult = std::visit([world](auto const& value) -> std::expected<LiquidLevel, StarException> { return world->liquidLevel(value); }, boundBoxOrPoint);
+  std::expected<std::optional<LiquidLevel>, StarException> WorldEnvironmentCallbacks::liquidAt(World& world, std::variant<RectF, Vec2I> boundBoxOrPoint) {
+    auto levelResult = std::visit([&world](auto const& value) -> std::expected<LiquidLevel, StarException> { return world.liquidLevel(value); }, boundBoxOrPoint);
     if (!levelResult)
       return std::unexpected(std::move(levelResult.error()));
     if (levelResult->liquid != EmptyLiquidId)
@@ -2013,18 +2021,18 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<float, StarException> WorldEnvironmentCallbacks::gravity(World* world, Vec2F const& arg1) {
-    return world->gravity(arg1);
+  std::expected<float, StarException> WorldEnvironmentCallbacks::gravity(World& world, Vec2F const& arg1) {
+    return world.gravity(arg1);
   }
 
-  std::expected<bool, StarException> WorldEnvironmentCallbacks::spawnLiquid(World* world, Vec2F const& position, LiquidId liquid, float quantity) {
-    return world->modifyTile(Vec2I::floor(position), PlaceLiquid{liquid, quantity}, true);
+  std::expected<bool, StarException> WorldEnvironmentCallbacks::spawnLiquid(World& world, Vec2F const& position, LiquidId liquid, float quantity) {
+    return world.modifyTile(Vec2I::floor(position), PlaceLiquid{liquid, quantity}, true);
   }
 
-  std::expected<std::optional<LiquidLevel>, StarException> WorldEnvironmentCallbacks::destroyLiquid(World* world, Vec2F const& position) {
-    auto liquidLevel = world->liquidLevel(Vec2I::floor(position));
+  std::expected<std::optional<LiquidLevel>, StarException> WorldEnvironmentCallbacks::destroyLiquid(World& world, Vec2F const& position) {
+    auto liquidLevel = world.liquidLevel(Vec2I::floor(position));
     if (liquidLevel.liquid != EmptyLiquidId) {
-      auto modifiedResult = world->modifyTile(Vec2I::floor(position), PlaceLiquid{EmptyLiquidId, 0}, true);
+      auto modifiedResult = world.modifyTile(Vec2I::floor(position), PlaceLiquid{EmptyLiquidId, 0}, true);
       if (!modifiedResult)
         return std::unexpected(std::move(modifiedResult.error()));
       auto modified = std::move(*modifiedResult);
@@ -2034,11 +2042,11 @@ namespace LuaBindings {
     return {};
   }
 
-  bool WorldEnvironmentCallbacks::isTileProtected(World* world, Vec2F const& position) {
-    return world->isTileProtected(Vec2I::floor(position));
+  bool WorldEnvironmentCallbacks::isTileProtected(World& world, Vec2F const& position) {
+    return world.isTileProtected(Vec2I::floor(position));
   }
 
-  std::expected<std::optional<PlatformerAStar::Path>, StarException> WorldCallbacks::findPlatformerPath(World* world,
+  std::expected<std::optional<PlatformerAStar::Path>, StarException> WorldCallbacks::findPlatformerPath(World& world,
       Vec2F const& start,
       Vec2F const& end,
       ActorMovementParameters actorMovementParameters,
@@ -2052,7 +2060,7 @@ namespace LuaBindings {
     return pathFinder->result();
   }
 
-  std::expected<std::shared_ptr<PlatformerAStar::PathFinder>, StarException> WorldCallbacks::platformerPathStart(World* world,
+  std::expected<std::shared_ptr<PlatformerAStar::PathFinder>, StarException> WorldCallbacks::platformerPathStart(World& world,
       Vec2F const& start,
       Vec2F const& end,
       ActorMovementParameters actorMovementParameters,
@@ -2060,20 +2068,20 @@ namespace LuaBindings {
     return PlatformerAStar::PathFinder::create(world, start, end, std::move(actorMovementParameters), std::move(searchParameters));
   }
 
-  std::expected<void, StarException> ClientWorldCallbacks::resendEntity(WorldClient* world, EntityId arg1) {
-    return world->resendEntity(arg1);
+  std::expected<void, StarException> ClientWorldCallbacks::resendEntity(WorldClient& world, EntityId arg1) {
+    return world.resendEntity(arg1);
   }
 
-  std::expected<RectI, StarException> ClientWorldCallbacks::clientWindow(WorldClient* world) {
-    return world->clientWindow();
+  std::expected<RectI, StarException> ClientWorldCallbacks::clientWindow(WorldClient& world) {
+    return world.clientWindow();
   }
 
-  std::expected<String, StarException> ServerWorldCallbacks::id(WorldServer* world) {
-    return world->worldId();
+  std::expected<String, StarException> ServerWorldCallbacks::id(WorldServer& world) {
+    return world.worldId();
   }
 
-  std::expected<bool, StarException> ServerWorldCallbacks::breakObject(WorldServer* world, EntityId arg1, bool arg2) {
-    if (auto entity = world->get<Object>(arg1)) {
+  std::expected<bool, StarException> ServerWorldCallbacks::breakObject(WorldServer& world, EntityId arg1, bool arg2) {
+    if (auto entity = world.get<Object>(arg1)) {
       bool smash = arg2;
       if (auto operation = entity->breakObject(smash); !operation)
         return std::unexpected(std::move(operation.error()));
@@ -2082,32 +2090,32 @@ namespace LuaBindings {
     return false;
   }
 
-  std::expected<bool, StarException> ServerWorldCallbacks::isVisibleToPlayer(WorldServer* world, RectF const& arg1) {
-    return world->isVisibleToPlayer(arg1);
+  std::expected<bool, StarException> ServerWorldCallbacks::isVisibleToPlayer(WorldServer& world, RectF const& arg1) {
+    return world.isVisibleToPlayer(arg1);
   }
 
-  std::expected<bool, StarException> ServerWorldCallbacks::loadRegion(WorldServer* world, RectF const& arg1) {
-    return world->signalRegion(RectI::integral(arg1));
+  std::expected<bool, StarException> ServerWorldCallbacks::loadRegion(WorldServer& world, RectF const& arg1) {
+    return world.signalRegion(RectI::integral(arg1));
   }
 
-  std::expected<bool, StarException> ServerWorldCallbacks::regionActive(WorldServer* world, RectF const& arg1) {
-    return world->regionActive(RectI::integral(arg1));
+  std::expected<bool, StarException> ServerWorldCallbacks::regionActive(WorldServer& world, RectF const& arg1) {
+    return world.regionActive(RectI::integral(arg1));
   }
 
-  std::expected<void, StarException> ServerWorldCallbacks::setTileProtection(WorldServer* world, DungeonId arg1, bool arg2) {
+  std::expected<void, StarException> ServerWorldCallbacks::setTileProtection(WorldServer& world, DungeonId arg1, bool arg2) {
     DungeonId dungeonId = arg1;
     bool isProtected = arg2;
-    return world->setTileProtection(dungeonId, isProtected);
+    return world.setTileProtection(dungeonId, isProtected);
   }
 
-  std::expected<bool, StarException> ServerWorldCallbacks::isPlayerModified(WorldServer* world, RectI const& region) {
-    return world->isPlayerModified(region);
+  std::expected<bool, StarException> ServerWorldCallbacks::isPlayerModified(WorldServer& world, RectI const& region) {
+    return world.isPlayerModified(region);
   }
 
-  std::expected<std::optional<LiquidLevel>, StarException> ServerWorldCallbacks::forceDestroyLiquid(WorldServer* world, Vec2F const& position) {
-    auto liquidLevel = world->liquidLevel(Vec2I::floor(position));
+  std::expected<std::optional<LiquidLevel>, StarException> ServerWorldCallbacks::forceDestroyLiquid(WorldServer& world, Vec2F const& position) {
+    auto liquidLevel = world.liquidLevel(Vec2I::floor(position));
     if (liquidLevel.liquid != EmptyLiquidId) {
-      auto modifiedResult = world->forceModifyTile(Vec2I::floor(position), PlaceLiquid{EmptyLiquidId, 0}, true);
+      auto modifiedResult = world.forceModifyTile(Vec2I::floor(position), PlaceLiquid{EmptyLiquidId, 0}, true);
       if (!modifiedResult)
         return std::unexpected(std::move(modifiedResult.error()));
       auto modified = std::move(*modifiedResult);
@@ -2117,37 +2125,37 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<EntityId, StarException> ServerWorldCallbacks::loadUniqueEntity(WorldServer* world, String const& uniqueId) {
-    return world->loadUniqueEntity(uniqueId);
+  std::expected<EntityId, StarException> ServerWorldCallbacks::loadUniqueEntity(WorldServer& world, String const& uniqueId) {
+    return world.loadUniqueEntity(uniqueId);
   }
 
-  std::expected<void, StarException> ServerWorldCallbacks::setUniqueId(WorldServer* world, EntityId entityId, std::optional<String> const& uniqueId) {
-    auto entity = world->entity(entityId);
-    if (auto npc = as<Npc>(entity.get()))
-      npc->setUniqueId(uniqueId);
-    else if (auto monster = as<Monster>(entity.get()))
-      monster->setUniqueId(uniqueId);
-    else if (auto object = as<Object>(entity.get()))
-      object->setUniqueId(uniqueId);
-    else if (auto stagehand = as<Stagehand>(entity.get()))
-      stagehand->setUniqueId(uniqueId);
-    else if (entity) {
+  std::expected<void, StarException> ServerWorldCallbacks::setUniqueId(WorldServer& world, EntityId entityId, std::optional<String> const& uniqueId) {
+    auto entity = world.entity(entityId);
+    if (!entity)
+      return std::unexpected(StarException::format("No such entity with id {}", entityId));
+    if (auto npc = asRef<Npc>(*entity))
+      npc->get().setUniqueId(uniqueId);
+    else if (auto monster = asRef<Monster>(*entity))
+      monster->get().setUniqueId(uniqueId);
+    else if (auto object = asRef<Object>(*entity))
+      object->get().setUniqueId(uniqueId);
+    else if (auto stagehand = asRef<Stagehand>(*entity))
+      stagehand->get().setUniqueId(uniqueId);
+    else {
       if (!EntityTypeNames)
         return std::unexpected(EntityTypeNames.error());
       auto typePointerResult = EntityTypeNames->getRight(entity->entityType());
       if (!typePointerResult)
         return std::unexpected(std::move(typePointerResult.error()));
       auto typePointer = std::move(*typePointerResult);
-      auto type = *typePointer;
+      auto type = typePointer.get();
       return std::unexpected(StarException::format("Cannot set unique id on entity of type {}", type));
     }
-    else
-      return std::unexpected(StarException::format("No such entity with id {}", entityId));
     return {};
   }
 
-  std::expected<Json, StarException> ServerWorldCallbacks::takeItemDrop(World* world, EntityId entityId, std::optional<EntityId> const& takenBy) {
-    auto itemDrop = world->get<ItemDrop>(entityId);
+  std::expected<Json, StarException> ServerWorldCallbacks::takeItemDrop(World& world, EntityId entityId, std::optional<EntityId> const& takenBy) {
+    auto itemDrop = world.get<ItemDrop>(entityId);
     if (itemDrop) {
       auto canTake = itemDrop->canTake();
       if (!canTake)
@@ -2163,46 +2171,46 @@ namespace LuaBindings {
     return Json();
   }
 
-  std::expected<void, StarException> ServerWorldCallbacks::setPlayerStart(World* world, Vec2F const& playerStart, std::optional<bool> respawnInWorld) {
-    as<WorldServer>(world)->setPlayerStart(playerStart, respawnInWorld.value_or(false));
+  std::expected<void, StarException> ServerWorldCallbacks::setPlayerStart(WorldServer& world, Vec2F const& playerStart, std::optional<bool> respawnInWorld) {
+    world.setPlayerStart(playerStart, respawnInWorld.value_or(false));
     return {};
   }
 
-  std::expected<List<EntityId>, StarException> ServerWorldCallbacks::players(World* world) {
-    return as<WorldServer>(world)->players();
+  std::expected<List<EntityId>, StarException> ServerWorldCallbacks::players(WorldServer& world) {
+    return world.players();
   }
 
-  std::expected<LuaString, StarException> ServerWorldCallbacks::fidelity(World* world, LuaEngine& engine) {
+  std::expected<LuaString, StarException> ServerWorldCallbacks::fidelity(WorldServer& world, LuaEngine& engine) {
     if (!WorldServerFidelityNames)
       return std::unexpected(WorldServerFidelityNames.error());
-    auto namePointerResult = WorldServerFidelityNames->getRight(as<WorldServer>(world)->fidelity());
+    auto namePointerResult = WorldServerFidelityNames->getRight(world.fidelity());
     if (!namePointerResult)
       return std::unexpected(std::move(namePointerResult.error()));
     auto namePointer = std::move(*namePointerResult);
-    auto name = *namePointer;
+    auto const& name = namePointer.get();
     return engine.createString(name);
   }
 
-  std::expected<std::optional<LuaValue>, StarException> ServerWorldCallbacks::callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) {
-    auto context = as<WorldServer>(world)->scriptContext(contextName);
+  std::expected<std::optional<LuaValue>, StarException> ServerWorldCallbacks::callScriptContext(WorldServer& world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) {
+    auto context = world.scriptContext(contextName);
     if (!context)
       return std::unexpected(StarException::format("Context {} does not exist", contextName));
     return context->invoke(function, args);
   }
 
-  std::expected<bool, StarException> ServerWorldCallbacks::sendPacket(WorldServer* world, ConnectionId clientId, String const& packetType, Json const& packetData) {
+  std::expected<bool, StarException> ServerWorldCallbacks::sendPacket(WorldServer& world, ConnectionId clientId, String const& packetType, Json const& packetData) {
     if (!PacketTypeNames)
       return std::unexpected(PacketTypeNames.error());
     auto typePointerResult = PacketTypeNames->getLeft(packetType);
     if (!typePointerResult)
       return std::unexpected(std::move(typePointerResult.error()));
     auto typePointer = std::move(*typePointerResult);
-    auto type = *typePointer;
-    auto packetResult = createPacket(world->root().random(), type, packetData);
+    auto type = typePointer.get();
+    auto packetResult = createPacket(world.root().random(), type, packetData);
     if (!packetResult)
       return std::unexpected(std::move(packetResult.error()));
     auto packet = std::move(*packetResult);
-    return world->sendPacket(clientId, packet);
+    return world.sendPacket(clientId, packet);
   }
 
   std::expected<void, StarException> WorldDebugCallbacks::debugPoint(Root& root, Vec2F const& arg1, Color const& arg2) {
@@ -2243,19 +2251,19 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<LuaTable, StarException> WorldEntityCallbacks::entityQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
+  std::expected<LuaTable, StarException> WorldEntityCallbacks::entityQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     return LuaBindings::entityQuery<Entity>(world, engine, pos1, pos2, std::move(options));
   }
 
-  std::expected<LuaTable, StarException> WorldEntityCallbacks::monsterQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
+  std::expected<LuaTable, StarException> WorldEntityCallbacks::monsterQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     return LuaBindings::entityQuery<Monster>(world, engine, pos1, pos2, std::move(options));
   }
 
-  std::expected<LuaTable, StarException> WorldEntityCallbacks::npcQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
+  std::expected<LuaTable, StarException> WorldEntityCallbacks::npcQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     return LuaBindings::entityQuery<Npc>(world, engine, pos1, pos2, std::move(options));
   }
 
-  std::expected<LuaTable, StarException> WorldEntityCallbacks::objectQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
+  std::expected<LuaTable, StarException> WorldEntityCallbacks::objectQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     String objectName;
     if (options) {
       auto nameResult = options->get<std::optional<String>>("name");
@@ -2281,15 +2289,15 @@ namespace LuaBindings {
         });
   }
 
-  std::expected<LuaTable, StarException> WorldEntityCallbacks::itemDropQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
+  std::expected<LuaTable, StarException> WorldEntityCallbacks::itemDropQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     return LuaBindings::entityQuery<ItemDrop>(world, engine, pos1, pos2, std::move(options));
   }
 
-  std::expected<LuaTable, StarException> WorldEntityCallbacks::playerQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
+  std::expected<LuaTable, StarException> WorldEntityCallbacks::playerQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     return LuaBindings::entityQuery<Player>(world, engine, pos1, pos2, std::move(options));
   }
 
-  std::expected<LuaTable, StarException> WorldEntityCallbacks::loungeableQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
+  std::expected<LuaTable, StarException> WorldEntityCallbacks::loungeableQuery(World& world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     String orientationName;
     if (options) {
       auto nameResult = options->get<std::optional<String>>("orientation");
@@ -2328,25 +2336,25 @@ namespace LuaBindings {
     return LuaBindings::entityQuery<LoungeableObject>(world, engine, pos1, pos2, std::move(options), filter);
   }
 
-  std::expected<LuaTable, StarException> WorldEntityCallbacks::entityLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, std::optional<LuaTable> options) {
+  std::expected<LuaTable, StarException> WorldEntityCallbacks::entityLineQuery(World& world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, std::optional<LuaTable> options) {
     return LuaBindings::entityLineQuery<Entity>(world, engine, point1, point2, std::move(options));
   }
 
-  std::expected<LuaTable, StarException> WorldEntityCallbacks::objectLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, std::optional<LuaTable> options) {
+  std::expected<LuaTable, StarException> WorldEntityCallbacks::objectLineQuery(World& world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, std::optional<LuaTable> options) {
     return LuaBindings::entityLineQuery<Object>(world, engine, point1, point2, std::move(options));
   }
 
-  std::expected<LuaTable, StarException> WorldEntityCallbacks::npcLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, std::optional<LuaTable> options) {
+  std::expected<LuaTable, StarException> WorldEntityCallbacks::npcLineQuery(World& world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, std::optional<LuaTable> options) {
     return LuaBindings::entityLineQuery<Npc>(world, engine, point1, point2, std::move(options));
   }
 
-  std::expected<bool, StarException> WorldEntityCallbacks::entityExists(World* world, EntityId entityId) {
-    return (bool)world->entity(entityId);
+  std::expected<bool, StarException> WorldEntityCallbacks::entityExists(World& world, EntityId entityId) {
+    return (bool)world.entity(entityId);
   }
 
-  std::expected<bool, StarException> WorldEntityCallbacks::entityCanDamage(World* world, EntityId sourceId, EntityId targetId) {
-    auto source = world->entity(sourceId);
-    auto target = world->entity(targetId);
+  std::expected<bool, StarException> WorldEntityCallbacks::entityCanDamage(World& world, EntityId sourceId, EntityId targetId) {
+    auto source = world.entity(sourceId);
+    auto target = world.entity(targetId);
 
     if (!source || !target || !source->getTeam().canDamage(target->getTeam(), false))
       return false;
@@ -2354,14 +2362,14 @@ namespace LuaBindings {
     return true;
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::entityDamageTeam(World* world, EntityId entityId) {
-    if (auto entity = world->entity(entityId))
+  std::expected<Json, StarException> WorldEntityCallbacks::entityDamageTeam(World& world, EntityId entityId) {
+    if (auto entity = world.entity(entityId))
       return entity->getTeam().toJson();
     return {};
   }
 
-  std::expected<bool, StarException> WorldEntityCallbacks::entityAggressive(World* world, EntityId entityId) {
-    auto entity = world->entity(entityId);
+  std::expected<bool, StarException> WorldEntityCallbacks::entityAggressive(World& world, EntityId entityId) {
+    auto entity = world.entity(entityId);
     if (auto monster = as<Monster>(entity))
       return monster->aggressive();
     if (auto npc = as<Npc>(entity))
@@ -2369,55 +2377,55 @@ namespace LuaBindings {
     return false;
   }
 
-  std::expected<std::optional<LuaString>, StarException> WorldEntityCallbacks::entityType(World* world, LuaEngine& engine, EntityId entityId) {
-    if (auto entity = world->entity(entityId)) {
+  std::expected<std::optional<LuaString>, StarException> WorldEntityCallbacks::entityType(World& world, LuaEngine& engine, EntityId entityId) {
+    if (auto entity = world.entity(entityId)) {
       if (!EntityTypeNames)
         return std::unexpected(EntityTypeNames.error());
       auto namePointerResult = EntityTypeNames->getRight(entity->entityType());
       if (!namePointerResult)
         return std::unexpected(std::move(namePointerResult.error()));
       auto namePointer = std::move(*namePointerResult);
-      auto name = *namePointer;
+      auto const& name = namePointer.get();
       return engine.createString(name);
     }
     return {};
   }
 
-  std::expected<std::optional<Vec2F>, StarException> WorldEntityCallbacks::entityPosition(World* world, EntityId entityId) {
-    if (auto entity = world->entity(entityId)) {
+  std::expected<std::optional<Vec2F>, StarException> WorldEntityCallbacks::entityPosition(World& world, EntityId entityId) {
+    if (auto entity = world.entity(entityId)) {
       return entity->position();
     } else {
       return {};
     }
   }
 
-  std::expected<std::optional<RectF>, StarException> WorldEntityCallbacks::entityMetaBoundBox(World* world, EntityId entityId) {
-    if (auto entity = world->entity(entityId)) {
+  std::expected<std::optional<RectF>, StarException> WorldEntityCallbacks::entityMetaBoundBox(World& world, EntityId entityId) {
+    if (auto entity = world.entity(entityId)) {
       return entity->metaBoundBox();
     } else {
       return {};
     }
   }
 
-  std::expected<std::optional<Vec2F>, StarException> WorldEntityCallbacks::entityVelocity(World* world, EntityId entityId) {
-    auto entity = world->entity(entityId);
+  std::expected<std::optional<Vec2F>, StarException> WorldEntityCallbacks::entityVelocity(World& world, EntityId entityId) {
+    auto entity = world.entity(entityId);
 
     if (auto mobileEntity = as<MobileEntity>(entity))
-        return mobileEntity->movementController()->velocity();
+        return mobileEntity->movementController().velocity();
 
     return {};
   }
 
-  std::expected<std::optional<std::uint64_t>, StarException> WorldEntityCallbacks::entityCurrency(World* world, EntityId entityId, String const& currencyType) {
-    if (auto player = world->get<Player>(entityId)) {
+  std::expected<std::optional<std::uint64_t>, StarException> WorldEntityCallbacks::entityCurrency(World& world, EntityId entityId, String const& currencyType) {
+    if (auto player = world.get<Player>(entityId)) {
       return player->currency(currencyType);
     } else {
       return {};
     }
   }
 
-  std::expected<std::optional<std::uint64_t>, StarException> WorldEntityCallbacks::entityHasCountOfItem(World* world, EntityId entityId, Json descriptor, std::optional<bool> exactMatch) {
-    if (auto player = world->get<Player>(entityId)) {
+  std::expected<std::optional<std::uint64_t>, StarException> WorldEntityCallbacks::entityHasCountOfItem(World& world, EntityId entityId, Json descriptor, std::optional<bool> exactMatch) {
+    if (auto player = world.get<Player>(entityId)) {
       auto itemDescriptorResult = ItemDescriptor::create(descriptor);
       if (!itemDescriptorResult)
         return std::unexpected(std::move(itemDescriptorResult.error()));
@@ -2428,8 +2436,8 @@ namespace LuaBindings {
     }
   }
 
-  std::expected<std::optional<Vec2F>, StarException> WorldEntityCallbacks::entityHealth(World* world, EntityId entityId) {
-    if (auto entity = world->get<DamageBarEntity>(entityId)) {
+  std::expected<std::optional<Vec2F>, StarException> WorldEntityCallbacks::entityHealth(World& world, EntityId entityId) {
+    if (auto entity = world.get<DamageBarEntity>(entityId)) {
       auto maximumResult = entity->maxHealth();
       if (!maximumResult)
         return std::unexpected(std::move(maximumResult.error()));
@@ -2439,21 +2447,21 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::entitySpecies(World* world, EntityId entityId) {
-    if (auto player = world->get<Player>(entityId)) {
+  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::entitySpecies(World& world, EntityId entityId) {
+    if (auto player = world.get<Player>(entityId)) {
       return player->species();
-    } else if (auto npc = world->get<Npc>(entityId)) {
+    } else if (auto npc = world.get<Npc>(entityId)) {
       return npc->species();
     } else {
       return {};
     }
   }
 
-  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::entityGender(World* world, EntityId entityId) {
+  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::entityGender(World& world, EntityId entityId) {
     std::optional<Gender> gender;
-    if (auto player = world->get<Player>(entityId))
+    if (auto player = world.get<Player>(entityId))
       gender = player->gender();
-    else if (auto npc = world->get<Npc>(entityId))
+    else if (auto npc = world.get<Npc>(entityId))
       gender = npc->gender();
     if (!gender)
       return {};
@@ -2463,12 +2471,12 @@ namespace LuaBindings {
     if (!namePointerResult)
       return std::unexpected(std::move(namePointerResult.error()));
     auto namePointer = std::move(*namePointerResult);
-    auto name = *namePointer;
+    auto const& name = namePointer.get();
     return name;
   }
 
-  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::entityName(World* world, EntityId entityId) {
-    if (auto entity = world->entity(entityId)) {
+  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::entityName(World& world, EntityId entityId) {
+    if (auto entity = world.entity(entityId)) {
       auto nameResult = entity->name();
       if (!nameResult)
         return std::unexpected(std::move(nameResult.error()));
@@ -2478,8 +2486,8 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<std::optional<Json>, StarException> WorldEntityCallbacks::entityNametag(World* world, EntityId entityId) {
-    auto entity = world->entity(entityId);
+  std::expected<std::optional<Json>, StarException> WorldEntityCallbacks::entityNametag(World& world, EntityId entityId) {
+    auto entity = world.entity(entityId);
 
     Json result;
     if (auto nametagEntity = as<NametagEntity>(entity)) {
@@ -2510,8 +2518,8 @@ namespace LuaBindings {
     return result;
   }
 
-  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::entityDescription(World* world, EntityId entityId, std::optional<String> const& species) {
-    if (auto entity = world->entity(entityId)) {
+  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::entityDescription(World& world, EntityId entityId, std::optional<String> const& species) {
+    if (auto entity = world.entity(entityId)) {
       if (auto inspectableEntity = as<InspectableEntity>(entity)) {
         if (species)
           {
@@ -2533,15 +2541,15 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<LuaNullTermWrapper<std::optional<List<Drawable>>>, StarException> WorldEntityCallbacks::entityPortrait(World* world, EntityId entityId, String const& portraitMode) {
-    if (auto entity = as<PortraitEntity>(world->entity(entityId))) {
+  std::expected<LuaNullTermWrapper<std::optional<List<Drawable>>>, StarException> WorldEntityCallbacks::entityPortrait(World& world, EntityId entityId, String const& portraitMode) {
+    if (auto entity = as<PortraitEntity>(world.entity(entityId))) {
       if (!PortraitModeNames)
         return std::unexpected(PortraitModeNames.error());
       auto modePointerResult = PortraitModeNames->getLeft(portraitMode);
       if (!modePointerResult)
         return std::unexpected(std::move(modePointerResult.error()));
       auto modePointer = std::move(*modePointerResult);
-      auto mode = *modePointer;
+      auto mode = modePointer.get();
       auto portraitResult = entity->portrait(mode);
       if (!portraitResult)
         return std::unexpected(std::move(portraitResult.error()));
@@ -2551,7 +2559,7 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::entityHandItem(World* world, EntityId entityId, String const& handName) {
+  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::entityHandItem(World& world, EntityId entityId, String const& handName) {
     ToolHand toolHand;
     if (handName == "primary") {
       toolHand = ToolHand::Primary;
@@ -2561,7 +2569,7 @@ namespace LuaBindings {
       return std::unexpected(StarException(strf("Unknown tool hand {}", handName)));
     }
 
-    if (auto entity = world->get<ToolUserEntity>(entityId)) {
+    if (auto entity = world.get<ToolUserEntity>(entityId)) {
       if (auto item = entity->handItem(toolHand)) {
         return item->name();
       }
@@ -2570,7 +2578,7 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::entityHandItemDescriptor(World* world, EntityId entityId, String const& handName) {
+  std::expected<Json, StarException> WorldEntityCallbacks::entityHandItemDescriptor(World& world, EntityId entityId, String const& handName) {
     ToolHand toolHand;
     if (handName == "primary") {
       toolHand = ToolHand::Primary;
@@ -2580,7 +2588,7 @@ namespace LuaBindings {
       return std::unexpected(StarException(strf("Unknown tool hand {}", handName)));
     }
 
-    if (auto entity = world->get<ToolUserEntity>(entityId)) {
+    if (auto entity = world.get<ToolUserEntity>(entityId)) {
       if (auto item = entity->handItem(toolHand)) {
         return item->descriptor().toJson();
       }
@@ -2589,16 +2597,16 @@ namespace LuaBindings {
     return Json();
   }
 
-  std::expected<LuaNullTermWrapper<std::optional<String>>, StarException> WorldEntityCallbacks::entityUniqueId(World* world, EntityId entityId) {
-    if (auto entity = world->entity(entityId))
+  std::expected<LuaNullTermWrapper<std::optional<String>>, StarException> WorldEntityCallbacks::entityUniqueId(World& world, EntityId entityId) {
+    if (auto entity = world.entity(entityId))
       return entity->uniqueId();
     return {};
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::getObjectParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue) {
+  std::expected<Json, StarException> WorldEntityCallbacks::getObjectParameter(World& world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue) {
     Json val = Json();
 
-    if (auto objectEntity = as<Object>(world->entity(entityId))) {
+    if (auto objectEntity = as<Object>(world.entity(entityId))) {
       auto parameterResult = objectEntity->configValue(parameterName);
       if (!parameterResult)
         return std::unexpected(std::move(parameterResult.error()));
@@ -2611,10 +2619,10 @@ namespace LuaBindings {
     return val;
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::getNpcScriptParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue) {
+  std::expected<Json, StarException> WorldEntityCallbacks::getNpcScriptParameter(World& world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue) {
     Json val = Json();
 
-    if (auto npcEntity = as<Npc>(world->entity(entityId))) {
+    if (auto npcEntity = as<Npc>(world.entity(entityId))) {
       auto parameterResult = npcEntity->scriptConfigParameter(parameterName);
       if (!parameterResult)
         return std::unexpected(std::move(parameterResult.error()));
@@ -2627,29 +2635,29 @@ namespace LuaBindings {
     return val;
   }
 
-  std::expected<List<Vec2I>, StarException> WorldEntityCallbacks::objectSpaces(World* world, EntityId entityId) {
-    if (auto tileEntity = as<TileEntity>(world->entity(entityId)))
+  std::expected<List<Vec2I>, StarException> WorldEntityCallbacks::objectSpaces(World& world, EntityId entityId) {
+    if (auto tileEntity = as<TileEntity>(world.entity(entityId)))
       return tileEntity->spaces();
     return {};
   }
 
-  std::expected<std::optional<int>, StarException> WorldEntityCallbacks::farmableStage(World* world, EntityId entityId) {
-    if (auto farmable = world->get<FarmableObject>(entityId)) {
+  std::expected<std::optional<int>, StarException> WorldEntityCallbacks::farmableStage(World& world, EntityId entityId) {
+    if (auto farmable = world.get<FarmableObject>(entityId)) {
       return farmable->stage();
     }
 
     return {};
   }
 
-  std::expected<std::optional<int>, StarException> WorldEntityCallbacks::containerSize(World* world, EntityId entityId) {
-    if (auto container = world->get<ContainerObject>(entityId))
+  std::expected<std::optional<int>, StarException> WorldEntityCallbacks::containerSize(World& world, EntityId entityId) {
+    if (auto container = world.get<ContainerObject>(entityId))
       return container->containerSize();
 
     return {};
   }
 
-  std::expected<bool, StarException> WorldEntityCallbacks::containerClose(World* world, EntityId entityId) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
+  std::expected<bool, StarException> WorldEntityCallbacks::containerClose(World& world, EntityId entityId) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
       if (auto operation = container->containerClose(); !operation)
         return std::unexpected(std::move(operation.error()));
       return true;
@@ -2658,8 +2666,8 @@ namespace LuaBindings {
     return false;
   }
 
-  std::expected<bool, StarException> WorldEntityCallbacks::containerOpen(World* world, EntityId entityId) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
+  std::expected<bool, StarException> WorldEntityCallbacks::containerOpen(World& world, EntityId entityId) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
       if (auto operation = container->containerOpen(); !operation)
         return std::unexpected(std::move(operation.error()));
       return true;
@@ -2668,10 +2676,10 @@ namespace LuaBindings {
     return false;
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerItems(World* world, EntityId entityId) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
+  std::expected<Json, StarException> WorldEntityCallbacks::containerItems(World& world, EntityId entityId) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
       JsonArray res;
-      auto itemDbResult = world->root().itemDatabase();
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -2683,9 +2691,9 @@ namespace LuaBindings {
     return Json();
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerItemAt(World* world, EntityId entityId, std::size_t offset) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDbResult = world->root().itemDatabase();
+  std::expected<Json, StarException> WorldEntityCallbacks::containerItemAt(World& world, EntityId entityId, std::size_t offset) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -2698,8 +2706,8 @@ namespace LuaBindings {
     return Json();
   }
 
-  std::expected<std::optional<bool>, StarException> WorldEntityCallbacks::containerConsume(World* world, EntityId entityId, Json const& items) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
+  std::expected<std::optional<bool>, StarException> WorldEntityCallbacks::containerConsume(World& world, EntityId entityId, Json const& items) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
       auto toConsumeResult = ItemDescriptor::create(items);
       if (!toConsumeResult)
         return std::unexpected(std::move(toConsumeResult.error()));
@@ -2714,8 +2722,8 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<std::optional<bool>, StarException> WorldEntityCallbacks::containerConsumeAt(World* world, EntityId entityId, std::size_t offset, int count) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
+  std::expected<std::optional<bool>, StarException> WorldEntityCallbacks::containerConsumeAt(World& world, EntityId entityId, std::size_t offset, int count) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
       if (offset < container->containerSize()) {
         auto promiseResult = container->consumeItems(offset, count);
         if (!promiseResult)
@@ -2728,8 +2736,8 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<std::optional<std::size_t>, StarException> WorldEntityCallbacks::containerAvailable(World* world, EntityId entityId, Json const& items) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
+  std::expected<std::optional<std::size_t>, StarException> WorldEntityCallbacks::containerAvailable(World& world, EntityId entityId, Json const& items) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
       auto itemBag = container->itemBag();
       auto toCheckResult = ItemDescriptor::create(items);
       if (!toCheckResult)
@@ -2741,12 +2749,12 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerTakeAll(World* world, EntityId entityId) {
-    auto itemDbResult = world->root().itemDatabase();
+  std::expected<Json, StarException> WorldEntityCallbacks::containerTakeAll(World& world, EntityId entityId) {
+    auto itemDbResult = world.root().itemDatabase();
     if (!itemDbResult)
       return std::unexpected(std::move(itemDbResult.error()));
     auto itemDb = std::move(*itemDbResult);
-    if (auto container = world->get<ContainerObject>(entityId)) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
       auto promiseResult = container->clearContainer();
       if (!promiseResult)
         return std::unexpected(std::move(promiseResult.error()));
@@ -2765,9 +2773,9 @@ namespace LuaBindings {
     return Json();
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerTakeAt(World* world, EntityId entityId, std::size_t offset) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDbResult = world->root().itemDatabase();
+  std::expected<Json, StarException> WorldEntityCallbacks::containerTakeAt(World& world, EntityId entityId, std::size_t offset) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -2787,9 +2795,9 @@ namespace LuaBindings {
     return Json();
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerTakeNumItemsAt(World* world, EntityId entityId, std::size_t offset, int const& count) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDbResult = world->root().itemDatabase();
+  std::expected<Json, StarException> WorldEntityCallbacks::containerTakeNumItemsAt(World& world, EntityId entityId, std::size_t offset, int const& count) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -2809,9 +2817,9 @@ namespace LuaBindings {
     return Json();
   }
 
-  std::expected<std::optional<std::size_t>, StarException> WorldEntityCallbacks::containerItemsCanFit(World* world, EntityId entityId, Json const& items) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDbResult = world->root().itemDatabase();
+  std::expected<std::optional<std::size_t>, StarException> WorldEntityCallbacks::containerItemsCanFit(World& world, EntityId entityId, Json const& items) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -2820,15 +2828,15 @@ namespace LuaBindings {
       if (!toSearchResult)
         return std::unexpected(std::move(toSearchResult.error()));
       auto toSearch = std::move(*toSearchResult);
-      return itemBag->itemsCanFit(toSearch);
+      return itemBag->itemsCanFit(optionalRef(toSearch));
     }
 
     return {};
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerItemsFitWhere(World* world, EntityId entityId, Json const& items) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDbResult = world->root().itemDatabase();
+  std::expected<Json, StarException> WorldEntityCallbacks::containerItemsFitWhere(World& world, EntityId entityId, Json const& items) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -2837,7 +2845,7 @@ namespace LuaBindings {
       if (!toSearchResult)
         return std::unexpected(std::move(toSearchResult.error()));
       auto toSearch = std::move(*toSearchResult);
-      auto res = itemBag->itemsFitWhere(toSearch);
+      auto res = itemBag->itemsFitWhere(optionalRef(toSearch));
 auto slotsResult = jsonFromList<std::size_t>(res.slots);
       if (!slotsResult)
         return std::unexpected(std::move(slotsResult.error()));
@@ -2848,9 +2856,9 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     return Json();
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerAddItems(World* world, EntityId entityId, Json const& items) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDbResult = world->root().itemDatabase();
+  std::expected<Json, StarException> WorldEntityCallbacks::containerAddItems(World& world, EntityId entityId, Json const& items) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -2872,9 +2880,9 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     return items;
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerStackItems(World* world, EntityId entityId, Json const& items) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDbResult = world->root().itemDatabase();
+  std::expected<Json, StarException> WorldEntityCallbacks::containerStackItems(World& world, EntityId entityId, Json const& items) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -2896,9 +2904,9 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     return items;
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerPutItemsAt(World* world, EntityId entityId, Json const& items, std::size_t offset) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDbResult = world->root().itemDatabase();
+  std::expected<Json, StarException> WorldEntityCallbacks::containerPutItemsAt(World& world, EntityId entityId, Json const& items, std::size_t offset) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -2922,9 +2930,9 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     return items;
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerSwapItems(World* world, EntityId entityId, Json const& items, std::size_t offset) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDbResult = world->root().itemDatabase();
+  std::expected<Json, StarException> WorldEntityCallbacks::containerSwapItems(World& world, EntityId entityId, Json const& items, std::size_t offset) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -2948,9 +2956,9 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     return items;
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerSwapItemsNoCombine(World* world, EntityId entityId, Json const& items, std::size_t offset) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDbResult = world->root().itemDatabase();
+  std::expected<Json, StarException> WorldEntityCallbacks::containerSwapItemsNoCombine(World& world, EntityId entityId, Json const& items, std::size_t offset) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -2974,9 +2982,9 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     return items;
   }
 
-  std::expected<Json, StarException> WorldEntityCallbacks::containerItemApply(World* world, EntityId entityId, Json const& items, std::size_t offset) {
-    if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDbResult = world->root().itemDatabase();
+  std::expected<Json, StarException> WorldEntityCallbacks::containerItemApply(World& world, EntityId entityId, Json const& items, std::size_t offset) {
+    if (auto container = world.get<ContainerObject>(entityId)) {
+      auto itemDbResult = world.root().itemDatabase();
       if (!itemDbResult)
         return std::unexpected(std::move(itemDbResult.error()));
       auto itemDb = std::move(*itemDbResult);
@@ -3000,35 +3008,35 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     return items;
   }
 
-  std::expected<std::optional<LuaValue>, StarException> WorldEntityCallbacks::callScriptedEntity(World* world, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args) {
-    auto entity = as<ScriptedEntity>(world->entity(entityId));
+  std::expected<std::optional<LuaValue>, StarException> WorldEntityCallbacks::callScriptedEntity(World& world, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args) {
+    auto entity = as<ScriptedEntity>(world.entity(entityId));
     if (!entity || !entity->isMaster())
       return std::unexpected(StarException::format("Entity {} does not exist or is not a local master scripted entity", entityId));
     return entity->callScript(function, args);
   }
 
-  std::expected<RpcPromise<Vec2F>, StarException> WorldEntityCallbacks::findUniqueEntity(World* world, String const& uniqueId) {
-    return world->findUniqueEntity(uniqueId);
+  std::expected<RpcPromise<Vec2F>, StarException> WorldEntityCallbacks::findUniqueEntity(World& world, String const& uniqueId) {
+    return world.findUniqueEntity(uniqueId);
   }
 
-  std::expected<RpcPromise<Json>, StarException> WorldEntityCallbacks::sendEntityMessage(World* world, LuaEngine& engine, LuaValue entityId, String const& message, LuaVariadic<Json> args) {
+  std::expected<RpcPromise<Json>, StarException> WorldEntityCallbacks::sendEntityMessage(World& world, LuaEngine& engine, LuaValue entityId, String const& message, LuaVariadic<Json> args) {
     auto arguments = JsonArray::from(std::move(args));
     if (std::holds_alternative<LuaString>(entityId)) {
       auto idResult = engine.luaTo<String>(entityId);
       if (!idResult)
         return std::unexpected(std::move(idResult.error()));
       auto id = std::move(*idResult);
-      return world->sendEntityMessage(id, message, std::move(arguments));
+      return world.sendEntityMessage(id, message, std::move(arguments));
     }
     auto idResult = engine.luaTo<EntityId>(entityId);
     if (!idResult)
       return std::unexpected(std::move(idResult.error()));
     auto id = std::move(*idResult);
-    return world->sendEntityMessage(id, message, std::move(arguments));
+    return world.sendEntityMessage(id, message, std::move(arguments));
   }
 
-  std::expected<std::optional<List<EntityId>>, StarException> WorldEntityCallbacks::loungingEntities(World* world, EntityId entityId, std::optional<std::size_t> anchorIndex) {
-    if (auto entity = world->get<LoungeableEntity>(entityId)) {
+  std::expected<std::optional<List<EntityId>>, StarException> WorldEntityCallbacks::loungingEntities(World& world, EntityId entityId, std::optional<std::size_t> anchorIndex) {
+    if (auto entity = world.get<LoungeableEntity>(entityId)) {
       auto entitiesResult = entity->entitiesLoungingIn(anchorIndex.value_or(std::size_t{}));
       if (!entitiesResult)
         return std::unexpected(std::move(entitiesResult.error()));
@@ -3038,8 +3046,8 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     return {};
   }
 
-  std::expected<std::optional<bool>, StarException> WorldEntityCallbacks::loungeableOccupied(World* world, EntityId entityId, std::optional<std::size_t> anchorIndex) {
-    auto entity = world->get<LoungeableEntity>(entityId);
+  std::expected<std::optional<bool>, StarException> WorldEntityCallbacks::loungeableOccupied(World& world, EntityId entityId, std::optional<std::size_t> anchorIndex) {
+    auto entity = world.get<LoungeableEntity>(entityId);
     auto anchor = anchorIndex.value_or(std::size_t{});
     if (entity && entity->anchorCount() > anchor) {
       auto entitiesResult = entity->entitiesLoungingIn(anchor);
@@ -3051,65 +3059,65 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     return {};
   }
 
-  std::expected<std::optional<std::size_t>, StarException> WorldEntityCallbacks::loungeableAnchorCount(World* world, EntityId entityId) {
-    if (auto entity = world->get<LoungeableEntity>(entityId))
+  std::expected<std::optional<std::size_t>, StarException> WorldEntityCallbacks::loungeableAnchorCount(World& world, EntityId entityId) {
+    if (auto entity = world.get<LoungeableEntity>(entityId))
       return entity->anchorCount();
     return {};
   }
 
-  std::expected<bool, StarException> WorldEntityCallbacks::isMonster(World* world, EntityId entityId, std::optional<bool> const& aggressive) {
-    if (auto entity = world->get<Monster>(entityId))
+  std::expected<bool, StarException> WorldEntityCallbacks::isMonster(World& world, EntityId entityId, std::optional<bool> const& aggressive) {
+    if (auto entity = world.get<Monster>(entityId))
       return !aggressive || *aggressive == entity->aggressive();
 
     return false;
   }
 
-  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::monsterType(World* world, EntityId entityId) {
-    if (auto monster = world->get<Monster>(entityId))
+  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::monsterType(World& world, EntityId entityId) {
+    if (auto monster = world.get<Monster>(entityId))
       return monster->typeName();
 
     return {};
   }
 
-  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::npcType(World* world, EntityId entityId) {
-    if (auto npc = world->get<Npc>(entityId))
+  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::npcType(World& world, EntityId entityId) {
+    if (auto npc = world.get<Npc>(entityId))
       return npc->npcType();
 
     return {};
   }
 
-  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::stagehandType(World* world, EntityId entityId) {
-    if (auto stagehand = world->get<Stagehand>(entityId))
+  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::stagehandType(World& world, EntityId entityId) {
+    if (auto stagehand = world.get<Stagehand>(entityId))
       return stagehand->typeName();
 
     return {};
   }
 
-  std::expected<bool, StarException> WorldEntityCallbacks::isNpc(World* world, EntityId entityId, std::optional<int> const& damageTeam) {
-    if (auto entity = world->get<Npc>(entityId)) {
+  std::expected<bool, StarException> WorldEntityCallbacks::isNpc(World& world, EntityId entityId, std::optional<int> const& damageTeam) {
+    if (auto entity = world.get<Npc>(entityId)) {
       return !damageTeam || *damageTeam == entity->getTeam().team;
     }
 
     return false;
   }
 
-  std::expected<float, StarException> WorldEnvironmentCallbacks::lightLevel(World* world, Vec2F const& position) {
-    return world->lightLevel(position);
+  std::expected<float, StarException> WorldEnvironmentCallbacks::lightLevel(World& world, Vec2F const& position) {
+    return world.lightLevel(position);
   }
 
-  std::expected<float, StarException> WorldEnvironmentCallbacks::windLevel(World* world, Vec2F const& position) {
-    return world->windLevel(position);
+  std::expected<float, StarException> WorldEnvironmentCallbacks::windLevel(World& world, Vec2F const& position) {
+    return world.windLevel(position);
   }
 
-  std::expected<bool, StarException> WorldEnvironmentCallbacks::breathable(World* world, Vec2F const& position) {
-    return world->breathable(position);
+  std::expected<bool, StarException> WorldEnvironmentCallbacks::breathable(World& world, Vec2F const& position) {
+    return world.breathable(position);
   }
 
-  std::expected<bool, StarException> WorldEnvironmentCallbacks::underground(World* world, Vec2F const& position) {
-    return world->isUnderground(position);
+  std::expected<bool, StarException> WorldEnvironmentCallbacks::underground(World& world, Vec2F const& position) {
+    return world.isUnderground(position);
   }
 
-  std::expected<LuaValue, StarException> WorldEnvironmentCallbacks::material(World* world, LuaEngine& engine, Vec2F const& position, String const& layerName) {
+  std::expected<LuaValue, StarException> WorldEnvironmentCallbacks::material(World& world, LuaEngine& engine, Vec2F const& position, String const& layerName) {
     TileLayer layer;
     if (layerName == "foreground") {
       layer = TileLayer::Foreground;
@@ -3119,13 +3127,13 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
       return std::unexpected(StarException(strf("Unsupported material layer {}", layerName)));
     }
 
-    auto materialId = world->material(Vec2I::floor(position), layer);
+    auto materialId = world.material(Vec2I::floor(position), layer);
     if (materialId == NullMaterialId) {
       return LuaNil;
     } else if (materialId == EmptyMaterialId) {
       return false;
     } else {
-      auto materialDatabaseResult = world->root().materialDatabase();
+      auto materialDatabaseResult = world.root().materialDatabase();
       if (!materialDatabaseResult)
         return std::unexpected(std::move(materialDatabaseResult.error()));
       auto materialDatabase = std::move(*materialDatabaseResult);
@@ -3137,7 +3145,7 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     }
   }
 
-  std::expected<LuaValue, StarException> WorldEnvironmentCallbacks::mod(World* world, LuaEngine& engine, Vec2F const& position, String const& layerName) {
+  std::expected<LuaValue, StarException> WorldEnvironmentCallbacks::mod(World& world, LuaEngine& engine, Vec2F const& position, String const& layerName) {
     TileLayer layer;
     if (layerName == "foreground") {
       layer = TileLayer::Foreground;
@@ -3147,23 +3155,23 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
       return std::unexpected(StarException(strf("Unsupported mod layer {}", layerName)));
     }
 
-    auto modId = world->mod(Vec2I::floor(position), layer);
+    auto modId = world.mod(Vec2I::floor(position), layer);
     if (isRealMod(modId)) {
-      auto materialDatabaseResult = world->root().materialDatabase();
+      auto materialDatabaseResult = world.root().materialDatabase();
       if (!materialDatabaseResult)
         return std::unexpected(std::move(materialDatabaseResult.error()));
       auto materialDatabase = std::move(*materialDatabaseResult);
       auto nameResult = materialDatabase->modName(modId);
       if (!nameResult)
         return std::unexpected(std::move(nameResult.error()));
-      auto const& name = **nameResult;
+      auto const& name = nameResult->get();
       return engine.createString(name);
     }
 
     return LuaNil;
   }
 
-  std::expected<float, StarException> WorldEnvironmentCallbacks::materialHueShift(World* world, Vec2F const& position, String const& layerName) {
+  std::expected<float, StarException> WorldEnvironmentCallbacks::materialHueShift(World& world, Vec2F const& position, String const& layerName) {
     TileLayer layer;
     if (layerName == "foreground") {
       layer = TileLayer::Foreground;
@@ -3173,10 +3181,10 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
       return std::unexpected(StarException(strf("Unsupported material layer {}", layerName)));
     }
 
-    return world->materialHueShift(Vec2I::floor(position), layer);
+    return world.materialHueShift(Vec2I::floor(position), layer);
   }
 
-  std::expected<float, StarException> WorldEnvironmentCallbacks::modHueShift(World* world, Vec2F const& position, String const& layerName) {
+  std::expected<float, StarException> WorldEnvironmentCallbacks::modHueShift(World& world, Vec2F const& position, String const& layerName) {
     TileLayer layer;
     if (layerName == "foreground") {
       layer = TileLayer::Foreground;
@@ -3186,10 +3194,10 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
       return std::unexpected(StarException(strf("Unsupported material layer {}", layerName)));
     }
 
-    return world->modHueShift(Vec2I::floor(position), layer);
+    return world.modHueShift(Vec2I::floor(position), layer);
   }
 
-  std::expected<MaterialColorVariant, StarException> WorldEnvironmentCallbacks::materialColor(World* world, Vec2F const& position, String const& layerName) {
+  std::expected<MaterialColorVariant, StarException> WorldEnvironmentCallbacks::materialColor(World& world, Vec2F const& position, String const& layerName) {
     TileLayer layer;
     if (layerName == "foreground") {
       layer = TileLayer::Foreground;
@@ -3199,10 +3207,10 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
       return std::unexpected(StarException(strf("Unsupported material layer {}", layerName)));
     }
 
-    return world->colorVariant(Vec2I::floor(position), layer);
+    return world.colorVariant(Vec2I::floor(position), layer);
   }
 
-  std::expected<void, StarException> WorldEnvironmentCallbacks::setMaterialColor(World* world, Vec2F const& position, String const& layerName, MaterialColorVariant color) {
+  std::expected<void, StarException> WorldEnvironmentCallbacks::setMaterialColor(World& world, Vec2F const& position, String const& layerName, MaterialColorVariant color) {
     TileLayer layer;
     if (layerName == "foreground") {
       layer = TileLayer::Foreground;
@@ -3212,12 +3220,12 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
       return std::unexpected(StarException(strf("Unsupported material layer {}", layerName)));
     }
 
-    if (auto operation = world->modifyTile(Vec2I::floor(position), PlaceMaterialColor{layer, color}, true); !operation)
+    if (auto operation = world.modifyTile(Vec2I::floor(position), PlaceMaterialColor{layer, color}, true); !operation)
       return std::unexpected(std::move(operation.error()));
     return {};
   }
 
-  std::expected<bool, StarException> WorldEnvironmentCallbacks::damageTiles(World* world,
+  std::expected<bool, StarException> WorldEnvironmentCallbacks::damageTiles(World& world,
       List<Vec2I> const& arg1,
       String const& arg2,
       Vec2F const& arg3,
@@ -3247,16 +3255,16 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     if (!damageTypePointerResult)
       return std::unexpected(std::move(damageTypePointerResult.error()));
     auto damageTypePointer = std::move(*damageTypePointerResult);
-    auto damageType = *damageTypePointer;
+    auto damageType = damageTypePointer.get();
     auto tileDamage = TileDamage(damageType, arg5, harvestLevel);
-    auto resResult = world->damageTiles(tilePositions, layer, arg3, tileDamage, sourceEntity);
+    auto resResult = world.damageTiles(tilePositions, layer, arg3, tileDamage, sourceEntity);
     if (!resResult)
       return std::unexpected(std::move(resResult.error()));
     auto res = std::move(*resResult);
     return res != TileDamageResult::None;
   }
 
-  std::expected<bool, StarException> WorldEnvironmentCallbacks::damageTileArea(World* world,
+  std::expected<bool, StarException> WorldEnvironmentCallbacks::damageTileArea(World& world,
       Vec2F center,
       float radius,
       String layer,
@@ -3269,7 +3277,7 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     return damageTiles(world, tiles, layer, sourcePosition, damageType, damage, harvestLevel, sourceEntity);
   }
 
-  std::expected<bool, StarException> WorldEnvironmentCallbacks::placeMaterial(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5) {
+  std::expected<bool, StarException> WorldEnvironmentCallbacks::placeMaterial(World& world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5) {
     auto tilePosition = arg1;
 
     PlaceMaterial placeMaterial;
@@ -3297,7 +3305,7 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
       return std::unexpected(StarException(strf("Unsupported tile layer {}", layerName)));
 
     auto materialName = arg3;
-    auto materialDatabaseResult = world->root().materialDatabase();
+    auto materialDatabaseResult = world.root().materialDatabase();
       if (!materialDatabaseResult)
         return std::unexpected(std::move(materialDatabaseResult.error()));
       auto materialDatabase = std::move(*materialDatabaseResult);
@@ -3314,10 +3322,10 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
 
     bool allowOverlap = arg5;
 
-    return world->modifyTile(tilePosition, placeMaterial, allowOverlap);
+    return world.modifyTile(tilePosition, placeMaterial, allowOverlap);
   }
 
-  std::expected<bool, StarException> WorldEnvironmentCallbacks::replaceMaterials(World* world,
+  std::expected<bool, StarException> WorldEnvironmentCallbacks::replaceMaterials(World& world,
       List<Vec2I> const& tilePositions,
       String const& layer,
       String const& materialName,
@@ -3347,7 +3355,7 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     else
       return std::unexpected(StarException(strf("Unsupported tile layer {}", layerName)));
 
-    auto materialDatabaseResult = world->root().materialDatabase();
+    auto materialDatabaseResult = world.root().materialDatabase();
       if (!materialDatabaseResult)
         return std::unexpected(std::move(materialDatabaseResult.error()));
       auto materialDatabase = std::move(*materialDatabaseResult);
@@ -3364,7 +3372,7 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
 
     TileModificationList modifications;
     for (auto pos : tilePositions) {
-      auto connectableResult = world->isTileConnectable(pos, placeMaterial.layer, true);
+      auto connectableResult = world.isTileConnectable(pos, placeMaterial.layer, true);
       if (!connectableResult)
         return std::unexpected(std::move(connectableResult.error()));
       auto connectable = std::move(*connectableResult);
@@ -3384,14 +3392,14 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
       damage.amount = -1.0f;
     }
 
-    auto failedResult = world->replaceTiles(modifications, damage);
+    auto failedResult = world.replaceTiles(modifications, damage);
     if (!failedResult)
       return std::unexpected(std::move(failedResult.error()));
     auto failed = std::move(*failedResult);
     return failed.empty();
   }
 
-  std::expected<bool, StarException> WorldEnvironmentCallbacks::replaceMaterialArea(World* world,
+  std::expected<bool, StarException> WorldEnvironmentCallbacks::replaceMaterialArea(World& world,
       Vec2F center,
       float radius,
       String const& layer,
@@ -3402,7 +3410,7 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     return replaceMaterials(world, tiles, layer, materialName, hueShift, enableDrops);
   }
 
-  std::expected<bool, StarException> WorldEnvironmentCallbacks::placeMod(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5) {
+  std::expected<bool, StarException> WorldEnvironmentCallbacks::placeMod(World& world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5) {
     auto tilePosition = arg1;
 
     PlaceMod placeMod;
@@ -3417,7 +3425,7 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
     }
 
     auto modName = arg3;
-    auto materialDatabaseResult = world->root().materialDatabase();
+    auto materialDatabaseResult = world.root().materialDatabase();
       if (!materialDatabaseResult)
         return std::unexpected(std::move(materialDatabaseResult.error()));
       auto materialDatabase = std::move(*materialDatabaseResult);
@@ -3434,7 +3442,7 @@ auto slotsResult = jsonFromList<std::size_t>(res.slots);
 
     bool allowOverlap = arg5;
 
-    return world->modifyTile(tilePosition, placeMod, allowOverlap);
+    return world.modifyTile(tilePosition, placeMod, allowOverlap);
   }
 }
 

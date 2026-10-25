@@ -173,7 +173,7 @@ PredictedTile::operator bool() const {
   || collision;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, NetTile& tile) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, NetTile& tile) {
   auto background = ds.read(tile.background);
   if (!background)
     return std::unexpected(std::move(background.error()));
@@ -231,10 +231,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, NetTile& ti
   auto dungeon = ds.vuread(tile.dungeonId);
   if (!dungeon)
     return std::unexpected(std::move(dungeon.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, NetTile const& tile) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, NetTile const& tile) {
   if (tile.background == EmptyMaterialId) {
     auto empty = ds.cwrite<MaterialId>(0);
     if (!empty)
@@ -282,10 +282,10 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, NetTile con
   auto dungeon = ds.vuwrite(tile.dungeonId);
   if (!dungeon)
     return std::unexpected(std::move(dungeon.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, RenderTile& tile) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RenderTile& tile) {
   return ds >> tile.foreground >> tile.foregroundHueShift >> tile.foregroundMod
       >> tile.foregroundModHueShift >> tile.foregroundColorVariant
       >> tile.foregroundDamageLevel >> tile.foregroundDamageType
@@ -295,7 +295,7 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, RenderTile&
       >> tile.liquidId >> tile.liquidLevel;
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, RenderTile const& tile) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RenderTile const& tile) {
   return ds << tile.foreground << tile.foregroundHueShift << tile.foregroundMod
       << tile.foregroundModHueShift << tile.foregroundColorVariant
       << tile.foregroundDamageLevel << tile.foregroundDamageType

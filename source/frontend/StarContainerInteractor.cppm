@@ -29,13 +29,11 @@ import star.container_entity;
 
 namespace Star {
 
-class Root;
-
 typedef List<std::shared_ptr<Item>> ContainerResult;
 
 class ContainerInteractor {
 public:
-  ContainerInteractor(Root& root);
+  ContainerInteractor() = default;
 
   [[nodiscard]] std::expected<void, StarException> openContainer(std::shared_ptr<ContainerEntity> containerEntity);
   [[nodiscard]] std::expected<void, StarException> closeContainer();
@@ -63,7 +61,6 @@ public:
 private:
   [[nodiscard]] static std::expected<ContainerResult, StarException> resultFromItem(std::shared_ptr<Item> const& items);
 
-  Root* m_root;
   mutable std::shared_ptr<ContainerEntity> m_openContainer;
   List<RpcPromise<ContainerResult>> m_pendingResults;
 };

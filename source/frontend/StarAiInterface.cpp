@@ -220,12 +220,12 @@ import star.client_context;
 
 namespace Star {
 
-AiInterface::AiInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager, Animation staticAnimation, Animation scanlineAnimation, Animation faceAnimation)
-  : Pane(guiContext), m_currentPage(AiPages::StatusPage), m_client(std::move(client)), m_cinematic(std::move(cinematic)), m_paneManager(paneManager),
+AiInterface::AiInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, Animation staticAnimation, Animation scanlineAnimation, Animation faceAnimation)
+  : Pane(guiContext), m_currentPage(AiPages::StatusPage), m_client(std::move(client)), m_cinematic(std::move(cinematic)),
     m_sourceEntityId(NullEntityId), m_staticAnimation(std::move(staticAnimation)), m_scanlineAnimation(std::move(scanlineAnimation)),
     m_faceAnimation("", std::move(faceAnimation)), m_textLength(0), m_textMaxLength(0) {}
 
-std::expected<std::shared_ptr<AiInterface>, StarException> AiInterface::create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager) {
+std::expected<std::shared_ptr<AiInterface>, StarException> AiInterface::create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic) {
   auto database = guiContext.root().aiDatabase();
   if (!database)
     return std::unexpected(std::move(database.error()));
@@ -235,7 +235,7 @@ std::expected<std::shared_ptr<AiInterface>, StarException> AiInterface::create(G
   auto faceAnimation = Animation::create(guiContext.root());
   if (!faceAnimation)
     return std::unexpected(std::move(faceAnimation.error()));
-  auto pane = std::shared_ptr<AiInterface>(new AiInterface(guiContext, std::move(client), std::move(cinematic), paneManager,
+  auto pane = std::shared_ptr<AiInterface>(new AiInterface(guiContext, std::move(client), std::move(cinematic),
       std::move(*staticAnimation), (*database)->scanlineAnimation(), std::move(*faceAnimation)));
   pane->m_aiDatabase = std::move(*database);
   auto initialized = pane->initializePane();
@@ -248,26 +248,26 @@ std::expected<std::shared_ptr<AiInterface>, StarException> AiInterface::create(G
 }
 
 std::expected<void, StarException> AiInterface::initialize() {
-  auto assetsResult = context()->root().assets();
+  auto assetsResult = context().root().assets();
   if (!assetsResult)
     return std::unexpected(std::move(assetsResult.error()));
   auto assets = *assetsResult;
   auto config = assets->json("/interface/ai/ai.config");
   if (!config)
     return std::unexpected(std::move(config.error()));
-  GuiReader reader(*context());
-  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { dismiss(); return {}; });
-  reader.registerCallback("missionItemList", [this](Widget*) { return selectMission(); });
-  reader.registerCallback("startMission", [this](Widget*) { return startMission(); });
-  reader.registerCallback("crewItemList", [this](Widget*) { return selectRecruit(); });
-  reader.registerCallback("dismissRecruit", [this](Widget*) { return dismissRecruit(); });
-  reader.registerCallback("showMissions", [this](Widget*) { return showMissions(); });
-  reader.registerCallback("showCrew", [this](Widget*) { return showCrew(); });
-  reader.registerCallback("goBack", [this](Widget*) { return goBack(); });
+  GuiReader reader(context());
+  reader.registerCallback("close", [this](Widget&) -> std::expected<void, StarException> { dismiss(); return {}; });
+  reader.registerCallback("missionItemList", [this](Widget&) { return selectMission(); });
+  reader.registerCallback("startMission", [this](Widget&) { return startMission(); });
+  reader.registerCallback("crewItemList", [this](Widget&) { return selectRecruit(); });
+  reader.registerCallback("dismissRecruit", [this](Widget&) { return dismissRecruit(); });
+  reader.registerCallback("showMissions", [this](Widget&) { return showMissions(); });
+  reader.registerCallback("showCrew", [this](Widget&) { return showCrew(); });
+  reader.registerCallback("goBack", [this](Widget&) { return goBack(); });
   auto layout = config->get("guiConfig");
   if (!layout)
     return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, this);
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed)
     return std::unexpected(std::move(constructed.error()));
 
@@ -383,7 +383,7 @@ std::expected<void, StarException> AiInterface::update(float dt) {
     if (!result) return std::unexpected(std::move(result.error()));
     if (m_textLength < m_textMaxLength) {
       if (!m_chatterSound || m_chatterSound->finished()) {
-        auto assets = context()->root().assets();
+        auto assets = context().root().assets();
         if (!assets) return std::unexpected(std::move(assets.error()));
         auto soundConfig = (*assets)->json("/interface/ai/ai.config:chatterSound");
         if (!soundConfig) return std::unexpected(std::move(soundConfig.error()));
@@ -395,7 +395,7 @@ std::expected<void, StarException> AiInterface::update(float dt) {
         if (!chatter) return std::unexpected(std::move(chatter.error()));
         m_chatterSound = std::move(*chatter);
         m_chatterSound->setLoops(-1);
-        auto played = context()->playAudio(m_chatterSound);
+        auto played = context().playAudio(m_chatterSound);
         if (!played)
           return std::unexpected(std::move(played.error()));
       }

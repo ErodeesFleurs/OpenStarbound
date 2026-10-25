@@ -14,7 +14,7 @@ namespace Star {
 class Root;
 
 struct WorldStructureExceptionTag {
-  static constexpr char const* name() { return "WorldStructureException"; }
+  static constexpr std::string_view name() { return "WorldStructureException"; }
 };
 using WorldStructureException = StarError<WorldStructureExceptionTag, StarException>;
 

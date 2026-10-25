@@ -30,7 +30,7 @@ namespace Star {
 
 SteamUserGeneratedContentService::SteamUserGeneratedContentService(std::shared_ptr<PcPlatformServicesState> state)
   : m_state(std::move(state)),
-    m_callbackDownloadResult(m_state->steamDispatch, this, &SteamUserGeneratedContentService::onDownloadResult),
+    m_callbackDownloadResult(m_state->steamDispatch, *this, &SteamUserGeneratedContentService::onDownloadResult),
     m_checkedUGC(false) {};
 
 StringList SteamUserGeneratedContentService::subscribedContentIds() const {
@@ -110,10 +110,10 @@ std::expected<UserGeneratedContentService::UGCState, StarException> SteamUserGen
   }
 }
 
-std::expected<void, StarException> SteamUserGeneratedContentService::onDownloadResult(DownloadItemResult_t* result) {
-  PublishedFileId_t file = result->m_nPublishedFileId;
-  if (result->m_eResult != k_EResultOK) {
-    m_downloadError = ApplicationException::format("Steam download of content {} failed with code {}", file, (int)result->m_eResult);
+std::expected<void, StarException> SteamUserGeneratedContentService::onDownloadResult(DownloadItemResult_t& result) {
+  PublishedFileId_t file = result.m_nPublishedFileId;
+  if (result.m_eResult != k_EResultOK) {
+    m_downloadError = ApplicationException::format("Steam download of content {} failed with code {}", file, (int)result.m_eResult);
     return {};
   }
   m_currentDownloadState[file] = true;

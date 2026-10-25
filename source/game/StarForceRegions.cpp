@@ -38,11 +38,11 @@ bool PhysicsCategoryFilter::operator==(PhysicsCategoryFilter const& rhs) const {
   return std::tie(type, categories) == std::tie(rhs.type, rhs.categories);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, PhysicsCategoryFilter& pcf) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PhysicsCategoryFilter& pcf) {
   return ds >> pcf.type >> pcf.categories;
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, PhysicsCategoryFilter const& pcf) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PhysicsCategoryFilter const& pcf) {
   return ds << pcf.type << pcf.categories;
 }
 
@@ -111,11 +111,11 @@ bool DirectionalForceRegion::operator==(DirectionalForceRegion const& rhs) const
       == std::tie(rhs.region, rhs.xTargetVelocity, rhs.yTargetVelocity, rhs.controlForce, rhs.categoryFilter);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, DirectionalForceRegion& dfr) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, DirectionalForceRegion& dfr) {
   return ds >> dfr.region >> dfr.xTargetVelocity >> dfr.yTargetVelocity >> dfr.controlForce >> dfr.categoryFilter;
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, DirectionalForceRegion const& dfr) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, DirectionalForceRegion const& dfr) {
   return ds << dfr.region << dfr.xTargetVelocity << dfr.yTargetVelocity << dfr.controlForce << dfr.categoryFilter;
 }
 
@@ -161,11 +161,11 @@ bool RadialForceRegion::operator==(RadialForceRegion const& rhs) const {
       == std::tie(rhs.center, rhs.outerRadius, rhs.innerRadius, rhs.targetRadialVelocity, rhs.controlForce, rhs.categoryFilter);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, RadialForceRegion& rfr) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RadialForceRegion& rfr) {
   return ds >> rfr.center >> rfr.outerRadius >> rfr.innerRadius >> rfr.targetRadialVelocity >> rfr.controlForce >> rfr.categoryFilter;
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, RadialForceRegion const& rfr) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RadialForceRegion const& rfr) {
   return ds << rfr.center << rfr.outerRadius << rfr.innerRadius << rfr.targetRadialVelocity << rfr.controlForce << rfr.categoryFilter;
 }
 
@@ -217,11 +217,11 @@ bool GradientForceRegion::operator==(GradientForceRegion const& rhs) const {
       == std::tie(rhs.region, rhs.gradient, rhs.baseTargetVelocity, rhs.baseControlForce, rhs.categoryFilter);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, GradientForceRegion& gfr) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, GradientForceRegion& gfr) {
   return ds >> gfr.region >> gfr.gradient >> gfr.baseTargetVelocity >> gfr.baseControlForce >> gfr.categoryFilter;
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, GradientForceRegion const& gfr) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, GradientForceRegion const& gfr) {
   return ds << gfr.region << gfr.gradient << gfr.baseTargetVelocity << gfr.baseControlForce << gfr.categoryFilter;
 }
 

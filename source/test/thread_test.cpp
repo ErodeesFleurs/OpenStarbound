@@ -58,12 +58,12 @@ TEST(Thread, MoveOnlyCallableAndMemberInvocation) {
 
 TEST(Thread, UniqueCallableOwnershipAlignmentAndEmptyState) {
   struct Witness {
-    int* deaths;
-    ~Witness() { ++*deaths; }
+    std::reference_wrapper<int> deaths;
+    ~Witness() { ++deaths.get(); }
   };
   int deaths = 0;
   {
-    UniqueFunction<int()> small([owner = std::unique_ptr<Witness>(new Witness{&deaths})] { return 42; });
+    UniqueFunction<int()> small([owner = std::unique_ptr<Witness>(new Witness{std::ref(deaths)})] { return 42; });
     UniqueFunction<int()> moved(std::move(small));
     EXPECT_FALSE(small);
     auto initial = moved();
@@ -77,7 +77,7 @@ TEST(Thread, UniqueCallableOwnershipAlignmentAndEmptyState) {
         return reinterpret_cast<std::uintptr_t>(this) % alignof(Aligned) == 0 ? 7 : -1;
       }
     };
-    UniqueFunction<int()> large(Aligned{std::unique_ptr<Witness>(new Witness{&deaths})});
+    UniqueFunction<int()> large(Aligned{std::unique_ptr<Witness>(new Witness{std::ref(deaths)})});
     auto aligned = large();
     ASSERT_TRUE(aligned);
     EXPECT_EQ(*aligned, 7);
@@ -98,7 +98,7 @@ TEST(Thread, UniqueCallableOwnershipAlignmentAndEmptyState) {
     UniqueFunction<int&()> reference([&]() -> int& { return referenced; });
     auto referenceResult = reference();
     ASSERT_TRUE(referenceResult);
-    **referenceResult = 17;
+    referenceResult->get() = 17;
     EXPECT_EQ(referenced, 17);
     struct ReferenceSource {
       std::string text;

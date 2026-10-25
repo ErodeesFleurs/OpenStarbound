@@ -99,7 +99,7 @@ namespace Star {
     // Recover all key value pairs possible, reporting node errors during scan and
     // reading as much data as possible.  Visitor is called as visitor(key, data),
     // ErrorHandler returns expected<void, StarException> as
-    // error(char const*, ExceptionDiagnostic const&).
+    // error(std::string_view, ExceptionDiagnostic const&).
     template <typename Visitor, typename ErrorHandler>
     [[nodiscard]] std::expected<void, StarException> recoverAll(Visitor&& visitor, ErrorHandler&& error);
 
@@ -143,7 +143,7 @@ namespace Star {
       [[nodiscard]] std::expected<bool, StarException> operator()(Index const& index);
       [[nodiscard]] std::expected<bool, StarException> operator()(Leaf const& leaf);
 
-      BTree* parent;
+      BTree& parent;
       std::uint64_t count;
     };
 
@@ -151,7 +151,7 @@ namespace Star {
       [[nodiscard]] std::expected<bool, StarException> operator()(Index const& index);
       [[nodiscard]] std::expected<bool, StarException> operator()(Leaf const&);
 
-      BTree* parent;
+      BTree& parent;
       std::uint64_t count;
     };
 
@@ -159,7 +159,7 @@ namespace Star {
       [[nodiscard]] std::expected<bool, StarException> operator()(Index const& index);
       [[nodiscard]] std::expected<bool, StarException> operator()(Leaf const&);
 
-      BTree* parent;
+      BTree& parent;
       std::uint64_t count;
     };
 
@@ -361,7 +361,7 @@ namespace Star {
 
   template <BTreeStorage Storage>
   [[nodiscard]] std::expected<std::uint64_t, StarException> BTree<Storage>::indexCount() {
-    IndexCounter counter = {this, 0};
+    IndexCounter counter = {*this, 0};
     auto result77 = forAllNodes(counter);
     if (!result77) return std::unexpected(std::move(result77.error()));
 
@@ -370,7 +370,7 @@ namespace Star {
 
   template <BTreeStorage Storage>
   [[nodiscard]] std::expected<std::uint64_t, StarException> BTree<Storage>::leafCount() {
-    LeafCounter counter = {this, 0};
+    LeafCounter counter = {*this, 0};
     auto result76 = forAllNodes(counter);
     if (!result76) return std::unexpected(std::move(result76.error()));
 
@@ -379,7 +379,7 @@ namespace Star {
 
   template <BTreeStorage Storage>
   [[nodiscard]] std::expected<std::uint64_t, StarException> BTree<Storage>::recordCount() {
-    RecordCounter counter = {this, 0};
+    RecordCounter counter = {*this, 0};
     auto result75 = forAllNodes(counter);
     if (!result75) return std::unexpected(std::move(result75.error()));
 
@@ -417,14 +417,14 @@ namespace Star {
 
   template <BTreeStorage Storage>
   [[nodiscard]] std::expected<bool, StarException> BTree<Storage>::RecordCounter::operator()(Leaf const& leaf) {
-    count += parent->m_storage.leafElementCount(leaf);
+    count += parent.m_storage.leafElementCount(leaf);
     return true;
   }
 
   template <BTreeStorage Storage>
   [[nodiscard]] std::expected<bool, StarException> BTree<Storage>::IndexCounter::operator()(Index const& index) {
     ++count;
-    if (parent->m_storage.indexLevel(index) == 0) {
+    if (parent.m_storage.indexLevel(index) == 0) {
       return false;
     } else {
       return true;
@@ -438,9 +438,9 @@ namespace Star {
 
   template <BTreeStorage Storage>
   [[nodiscard]] std::expected<bool, StarException> BTree<Storage>::LeafCounter::operator()(Index const& index) {
-    if (parent->m_storage.indexLevel(index) == 0) {
+    if (parent.m_storage.indexLevel(index) == 0) {
 
-      count += parent->m_storage.indexPointerCount(index);
+      count += parent.m_storage.indexPointerCount(index);
       return false;
     } else {
 

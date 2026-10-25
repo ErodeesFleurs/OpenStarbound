@@ -49,12 +49,12 @@ std::expected<std::shared_ptr<StoredFunction>, StarException> StoredFunction::cr
     auto next = data.value(i + 1);
     if (!next)
       return std::unexpected(std::move(next.error()));
-    if (**current < **next) {
+    if (current->get() < next->get()) {
       if (monotonicity == Monotonicity::Flat)
         monotonicity = Monotonicity::Increasing;
       else if (monotonicity == Monotonicity::Decreasing)
         monotonicity = Monotonicity::None;
-    } else if (**next < **current) {
+    } else if (next->get() < current->get()) {
       if (monotonicity == Monotonicity::Flat)
         monotonicity = Monotonicity::Decreasing;
       else if (monotonicity == Monotonicity::Increasing)
@@ -87,10 +87,10 @@ std::expected<StoredFunction::SearchResult, StarException> StoredFunction::searc
   auto lastValue = m_function.value(m_function.size() - 1);
   if (!lastValue)
     return std::unexpected(std::move(lastValue.error()));
-  double minIndex = **firstIndex;
-  double minValue = **firstValue;
-  double maxIndex = **lastIndex;
-  double maxValue = **lastValue;
+  double minIndex = firstIndex->get();
+  double minValue = firstValue->get();
+  double maxIndex = lastIndex->get();
+  double maxValue = lastValue->get();
   if (maxValue < minValue) {
     std::swap(minIndex, maxIndex);
     std::swap(minValue, maxValue);
@@ -146,7 +146,7 @@ std::expected<Json, StarException> StoredConfigFunction::get(double value) const
   auto result = m_data.get(value);
   if (!result)
     return std::unexpected(std::move(result.error()));
-  return **result;
+  return result->get();
 }
 
 std::expected<std::shared_ptr<FunctionDatabase>, StarException> FunctionDatabase::create(std::shared_ptr<Assets const> const& assets) {
@@ -160,16 +160,16 @@ std::expected<std::shared_ptr<FunctionDatabase>, StarException> FunctionDatabase
   auto configFunctions = assets->scanExtension("configfunctions");
   if (!configFunctions)
     return std::unexpected(std::move(configFunctions.error()));
-  auto queuedFunctions = assets->queueJsons(**functions);
+  auto queuedFunctions = assets->queueJsons(functions->get());
   if (!queuedFunctions)
     return std::unexpected(std::move(queuedFunctions.error()));
-  auto queuedFunctions2 = assets->queueJsons(**functions2);
+  auto queuedFunctions2 = assets->queueJsons(functions2->get());
   if (!queuedFunctions2)
     return std::unexpected(std::move(queuedFunctions2.error()));
-  auto queuedConfigFunctions = assets->queueJsons(**configFunctions);
+  auto queuedConfigFunctions = assets->queueJsons(configFunctions->get());
   if (!queuedConfigFunctions)
     return std::unexpected(std::move(queuedConfigFunctions.error()));
-  for (auto const& assetFile : **functions) {
+  for (auto const& assetFile : functions->get()) {
     auto const& file = assetFile.string();
     auto config = assets->json(file);
     if (!config)
@@ -189,7 +189,7 @@ std::expected<std::shared_ptr<FunctionDatabase>, StarException> FunctionDatabase
       result->m_functions[entry.first] = std::move(*function);
     }
   }
-  for (auto const& assetFile : **functions2) {
+  for (auto const& assetFile : functions2->get()) {
     auto const& file = assetFile.string();
     auto config = assets->json(file);
     if (!config)
@@ -206,7 +206,7 @@ std::expected<std::shared_ptr<FunctionDatabase>, StarException> FunctionDatabase
       result->m_functions2[entry.first] = std::make_shared<StoredFunction2>(std::move(*data));
     }
   }
-  for (auto const& assetFile : **configFunctions) {
+  for (auto const& assetFile : configFunctions->get()) {
     auto const& file = assetFile.string();
     auto config = assets->json(file);
     if (!config)
@@ -246,7 +246,7 @@ std::expected<std::shared_ptr<StoredFunction>, StarException> FunctionDatabase::
     auto value = m_functions.get(*name);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    return **value;
+    return value->get();
   }
   auto data = parametricFunctionFromConfig(configOrName);
   if (!data)
@@ -262,7 +262,7 @@ std::expected<std::shared_ptr<StoredFunction2>, StarException> FunctionDatabase:
     auto value = m_functions2.get(*name);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    return **value;
+    return value->get();
   }
   auto data = multiTable2DFromConfig(configOrName);
   if (!data)
@@ -278,7 +278,7 @@ std::expected<std::shared_ptr<StoredConfigFunction>, StarException> FunctionData
     auto value = m_configFunctions.get(*name);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    return **value;
+    return value->get();
   }
   auto data = parametricTableFromConfig(configOrName);
   if (!data)

@@ -35,7 +35,7 @@ public:
     return Star::typeName<MobileEntity>();
   }
 
-  virtual MovementController* movementController() = 0;
+  virtual MovementController& movementController() = 0;
 };
 }
 

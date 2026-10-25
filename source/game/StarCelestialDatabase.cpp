@@ -469,7 +469,7 @@ std::expected<CelestialResponse, StarException> CelestialMasterDatabase::respond
     auto loaded = getChunk(*location);
     if (!loaded)
       return std::unexpected(std::move(loaded.error()));
-    auto chunk = **loaded;
+    auto chunk = loaded->get();
     // System objects are sent by separate system requests.
     chunk.systemObjects.clear();
     return makeLeft(std::move(chunk));
@@ -477,10 +477,10 @@ std::expected<CelestialResponse, StarException> CelestialMasterDatabase::respond
     auto chunk = getChunk(chunkIndexFor(*location));
     if (!chunk)
       return std::unexpected(std::move(chunk.error()));
-    auto planets = (*chunk)->systemObjects.get(*location);
+    auto planets = chunk->get().systemObjects.get(*location);
     if (!planets)
       return std::unexpected(std::move(planets.error()));
-    return makeRight(CelestialSystemObjects{*location, **planets});
+    return makeRight(CelestialSystemObjects{*location, planets->get()});
   }
   return CelestialResponse();
 }
@@ -514,7 +514,7 @@ std::expected<bool, StarException> CelestialMasterDatabase::coordinateValid(Cele
   auto chunk = getChunk(chunkIndexFor(coordinate));
   if (!chunk)
     return std::unexpected(std::move(chunk.error()));
-  auto system = (*chunk)->systemObjects.ptr(coordinate.location());
+  auto system = chunk->get().systemObjects.maybeRef(coordinate.location());
   if (!system)
     return false;
   if (coordinate.isSystem())
@@ -525,7 +525,7 @@ std::expected<bool, StarException> CelestialMasterDatabase::coordinateValid(Cele
   auto planetaryOrbit = planetCoordinate->orbitNumber();
   if (!planetaryOrbit)
     return std::unexpected(std::move(planetaryOrbit.error()));
-  auto planet = system->ptr(*planetaryOrbit);
+  auto planet = system->get().maybeRef(*planetaryOrbit);
   if (!planet)
     return false;
   if (coordinate.isPlanetaryBody())
@@ -533,7 +533,7 @@ std::expected<bool, StarException> CelestialMasterDatabase::coordinateValid(Cele
   auto orbit = coordinate.orbitNumber();
   if (!orbit)
     return std::unexpected(std::move(orbit.error()));
-  return planet->satelliteParameters.contains(*orbit);
+  return planet->get().satelliteParameters.contains(*orbit);
 }
 
 std::expected<std::optional<CelestialCoordinate>, StarException> CelestialMasterDatabase::findRandomWorld(
@@ -565,7 +565,7 @@ std::expected<std::optional<CelestialCoordinate>, StarException> CelestialMaster
       auto selected = random.randFrom(*planets);
       if (!selected)
         return std::unexpected(std::move(selected.error()));
-      auto world = **selected;
+      auto world = selected->get();
       auto worldHasChildren = hasChildren(world);
       if (!worldHasChildren)
         return std::unexpected(std::move(worldHasChildren.error()));
@@ -577,7 +577,7 @@ std::expected<std::optional<CelestialCoordinate>, StarException> CelestialMaster
         auto selectedSatellite = random.randFrom(*satellites);
         if (!selectedSatellite)
           return std::unexpected(std::move(selectedSatellite.error()));
-        world = **selectedSatellite;
+        world = selectedSatellite->get();
       }
       if (filter) {
         auto accepted = filter(world);
@@ -604,12 +604,12 @@ std::expected<std::optional<CelestialParameters>, StarException> CelestialMaster
   if (!chunk)
     return std::unexpected(std::move(chunk.error()));
   if (coordinate.isSystem()) {
-    auto parameters = (*chunk)->systemParameters.get(coordinate.location());
+    auto parameters = chunk->get().systemParameters.get(coordinate.location());
     if (!parameters)
       return std::unexpected(std::move(parameters.error()));
-    return **parameters;
+    return parameters->get();
   }
-  auto system = (*chunk)->systemObjects.get(coordinate.location());
+  auto system = chunk->get().systemObjects.get(coordinate.location());
   if (!system)
     return std::unexpected(std::move(system.error()));
   auto planetCoordinate = coordinate.planet();
@@ -618,18 +618,18 @@ std::expected<std::optional<CelestialParameters>, StarException> CelestialMaster
   auto planetaryOrbit = planetCoordinate->orbitNumber();
   if (!planetaryOrbit)
     return std::unexpected(std::move(planetaryOrbit.error()));
-  auto planet = (*system)->get(*planetaryOrbit);
+  auto planet = system->get().get(*planetaryOrbit);
   if (!planet)
     return std::unexpected(std::move(planet.error()));
   if (coordinate.isPlanetaryBody())
-    return (*planet)->planetParameters;
+    return planet->get().planetParameters;
   auto orbit = coordinate.orbitNumber();
   if (!orbit)
     return std::unexpected(std::move(orbit.error()));
-  auto satellite = (*planet)->satelliteParameters.get(*orbit);
+  auto satellite = planet->get().satelliteParameters.get(*orbit);
   if (!satellite)
     return std::unexpected(std::move(satellite.error()));
-  return **satellite;
+  return satellite->get();
 }
 
 std::expected<std::optional<String>, StarException> CelestialMasterDatabase::name(CelestialCoordinate const& coordinate) {
@@ -652,19 +652,19 @@ std::expected<std::optional<bool>, StarException> CelestialMasterDatabase::hasCh
   auto chunk = getChunk(chunkIndexFor(coordinate));
   if (!chunk)
     return std::unexpected(std::move(chunk.error()));
-  auto system = (*chunk)->systemObjects.get(coordinate.location());
+  auto system = chunk->get().systemObjects.get(coordinate.location());
   if (!system)
     return std::unexpected(std::move(system.error()));
   if (coordinate.isSystem())
-    return !(*system)->empty();
+    return !system->get().empty();
   if (coordinate.isPlanetaryBody()) {
     auto orbit = coordinate.orbitNumber();
     if (!orbit)
       return std::unexpected(std::move(orbit.error()));
-    auto planet = (*system)->get(*orbit);
+    auto planet = system->get().get(*orbit);
     if (!planet)
       return std::unexpected(std::move(planet.error()));
-    return !(*planet)->satelliteParameters.empty();
+    return !planet->get().satelliteParameters.empty();
   }
   return false;
 }
@@ -694,19 +694,19 @@ std::expected<List<int>, StarException> CelestialMasterDatabase::childOrbits(Cel
   auto chunk = getChunk(chunkIndexFor(coordinate));
   if (!chunk)
     return std::unexpected(std::move(chunk.error()));
-  auto system = (*chunk)->systemObjects.get(coordinate.location());
+  auto system = chunk->get().systemObjects.get(coordinate.location());
   if (!system)
     return std::unexpected(std::move(system.error()));
   if (coordinate.isSystem())
-    return (*system)->keys();
+    return system->get().keys();
   if (coordinate.isPlanetaryBody()) {
     auto orbit = coordinate.orbitNumber();
     if (!orbit)
       return std::unexpected(std::move(orbit.error()));
-    auto planet = (*system)->get(*orbit);
+    auto planet = system->get().get(*orbit);
     if (!planet)
       return std::unexpected(std::move(planet.error()));
-    return (*planet)->satelliteParameters.keys();
+    return planet->get().satelliteParameters.keys();
   }
   return std::unexpected(CelestialException("CelestialMasterDatabase::childOrbits called on improper type!"));
 }
@@ -725,8 +725,7 @@ std::expected<List<CelestialCoordinate>, StarException> CelestialMasterDatabase:
     });
     if (!chunk)
       return std::unexpected(std::move(chunk.error()));
-    locker.unlock();
-    for (auto const& pair : (*chunk)->systemParameters) {
+    for (auto const& pair : chunk->get().systemParameters) {
       if (region.contains(pair.first.vec2())) {
         if (includedTypes) {
           auto type = pair.second.getParameter("typeName", "").and_then([](Json const& value) { return value.toString(); });
@@ -738,7 +737,6 @@ std::expected<List<CelestialCoordinate>, StarException> CelestialMasterDatabase:
         systems.append(CelestialCoordinate(pair.first));
       }
     }
-    lockWithDiagnostics(locker);
   }
   return systems;
 }
@@ -751,7 +749,7 @@ std::expected<List<std::pair<Vec2I, Vec2I>>, StarException> CelestialMasterDatab
     auto chunk = getChunk(location);
     if (!chunk)
       return std::unexpected(std::move(chunk.error()));
-    for (auto const& constellation : (*chunk)->constellations)
+    for (auto const& constellation : chunk->get().constellations)
       for (auto const& line : constellation)
         if (region.intersects(Line2I(line.first, line.second)))
           lines.append(line);
@@ -776,7 +774,7 @@ std::expected<void, StarException> CelestialMasterDatabase::updateParameters(
   auto loaded = getChunk(index);
   if (!loaded)
     return std::unexpected(std::move(loaded.error()));
-  auto chunk = **loaded;
+  auto chunk = loaded->get();
   bool updated = false;
   if (coordinate.isSatelliteBody() || coordinate.isPlanetaryBody()) {
     auto system = chunk.systemObjects.get(coordinate.location());
@@ -788,16 +786,16 @@ std::expected<void, StarException> CelestialMasterDatabase::updateParameters(
     auto planetOrbit = planetCoordinate->orbitNumber();
     if (!planetOrbit)
       return std::unexpected(std::move(planetOrbit.error()));
-    auto planet = (*system)->get(*planetOrbit);
+    auto planet = system->get().get(*planetOrbit);
     if (!planet)
       return std::unexpected(std::move(planet.error()));
     if (coordinate.isSatelliteBody()) {
       auto orbit = coordinate.orbitNumber();
       if (!orbit)
         return std::unexpected(std::move(orbit.error()));
-      (*planet)->satelliteParameters.set(*orbit, parameters);
+      planet->get().satelliteParameters.set(*orbit, parameters);
     } else {
-      (*planet)->planetParameters = parameters;
+      planet->get().planetParameters = parameters;
     }
     updated = true;
   }
@@ -834,13 +832,13 @@ std::expected<void, StarException> CelestialMasterDatabase::markPersistent(Celes
   auto loaded = getChunk(index);
   if (!loaded)
     return std::unexpected(std::move(loaded.error()));
-  if ((*loaded)->persistent)
+  if (loaded->get().persistent)
     return {};
   if (m_database.isOpen()) {
     auto versioning = m_root.versioningDatabase();
     if (!versioning)
       return std::unexpected(std::move(versioning.error()));
-    auto versioned = (*loaded)->toJson().and_then([&](Json const& value) {
+    auto versioned = loaded->get().toJson().and_then([&](Json const& value) {
       return (*versioning)->makeCurrentVersionedJson("CelestialChunk", value);
     });
     if (!versioned)
@@ -873,17 +871,17 @@ std::expected<void, StarException> CelestialMasterDatabase::storeVersionedChunk(
   return {};
 }
 
-std::expected<CelestialChunk const*, StarException> CelestialMasterDatabase::getChunk(
+std::expected<std::reference_wrapper<CelestialChunk const>, StarException> CelestialMasterDatabase::getChunk(
     Vec2I const& chunkIndex, UnlockDuringFunction unlockDuring) {
-  auto cached = m_chunkCache.get(chunkIndex, [&](Vec2I const& index) -> std::expected<CelestialChunk, StarException> {
-    auto versioning = m_root.versioningDatabase();
+  auto cached = m_chunkCache.get(chunkIndex, [&, &database = *this](Vec2I const& index) -> std::expected<CelestialChunk, StarException> {
+    auto versioning = database.m_root.versioningDatabase();
     if (!versioning)
       return std::unexpected(std::move(versioning.error()));
-    if (m_database.isOpen()) {
+    if (database.m_database.isOpen()) {
       auto key = DataStreamBuffer::serialize(index);
       if (!key)
         return std::unexpected(std::move(key.error()));
-      auto data = m_database.find(*key);
+      auto data = database.m_database.find(*key);
       if (!data)
         return std::unexpected(std::move(data.error()));
       if (*data) {
@@ -901,7 +899,7 @@ std::expected<CelestialChunk const*, StarException> CelestialMasterDatabase::get
           if (!upgraded)
             return std::unexpected(std::move(upgraded.error()));
           versioned = std::move(upgraded);
-          auto stored = storeVersionedChunk(index, *versioned);
+          auto stored = database.storeVersionedChunk(index, *versioned);
           if (!stored)
             return std::unexpected(std::move(stored.error()));
         }
@@ -910,7 +908,7 @@ std::expected<CelestialChunk const*, StarException> CelestialMasterDatabase::get
     }
     CelestialChunk chunk;
     auto producer = [&]() -> std::expected<void, StarException> {
-      auto produced = produceChunk(index);
+      auto produced = database.produceChunk(index);
       if (!produced)
         return std::unexpected(std::move(produced.error()));
       chunk = std::move(*produced);
@@ -919,13 +917,13 @@ std::expected<CelestialChunk const*, StarException> CelestialMasterDatabase::get
     auto produced = unlockDuring ? unlockDuring(producer) : producer();
     if (!produced)
       return std::unexpected(std::move(produced.error()));
-    if (m_chunksAlwaysPersistent && m_database.isOpen()) {
+    if (database.m_chunksAlwaysPersistent && database.m_database.isOpen()) {
       auto versioned = chunk.toJson().and_then([&](Json const& value) {
         return (*versioning)->makeCurrentVersionedJson("CelestialChunk", value);
       });
       if (!versioned)
         return std::unexpected(std::move(versioned.error()));
-      auto stored = storeVersionedChunk(index, *versioned);
+      auto stored = database.storeVersionedChunk(index, *versioned);
       if (!stored)
         return std::unexpected(std::move(stored.error()));
       chunk.persistent = true;
@@ -934,7 +932,7 @@ std::expected<CelestialChunk const*, StarException> CelestialMasterDatabase::get
   });
   if (!cached)
     return std::unexpected(std::move(cached.error()));
-  return *cached;
+  return std::cref(cached->get());
 }
 
 std::expected<CelestialChunk, StarException> CelestialMasterDatabase::produceChunk(Vec2I const& chunkIndex) const {
@@ -992,7 +990,7 @@ CelestialMasterDatabase::produceSystem(RandomSource& random, Vec3I const& locati
   auto typeResult = m_generationInformation.systemTypes.get(*typeName);
   if (!typeResult)
     return std::unexpected(std::move(typeResult.error()));
-  auto const& type = **typeResult;
+  auto const& type = typeResult->get();
   CelestialCoordinate systemCoordinate(location);
   std::uint64_t systemSeed = random.randu64();
   String prefix = m_generationInformation.systemPrefixNames.select(random);
@@ -1027,14 +1025,14 @@ CelestialMasterDatabase::produceSystem(RandomSource& random, Vec3I const& locati
   for (auto [planetIndex, planetOrbit] : std::views::enumerate(planetaryOrbits)) {
     auto region = orbitRegion(type.orbitRegions, planetOrbit);
     auto planetaryTypeName = region->planetaryTypes.select(random);
-    if (auto planetType = m_generationInformation.planetaryTypes.ptr(planetaryTypeName)) {
-      auto planetaryParameters = jsonMerge(planetType->baseParameters, random.randValueFrom(planetType->variationParameters));
+    if (auto planetType = m_generationInformation.planetaryTypes.maybeRef(planetaryTypeName)) {
+      auto planetaryParameters = jsonMerge(planetType->get().baseParameters, random.randValueFrom(planetType->get().variationParameters));
       CelestialCoordinate planetCoordinate(location, planetOrbit);
       std::uint64_t planetSeed = random.randu64();
       auto planetarySuffix = m_generationInformation.planetarySuffixes.at(static_cast<std::size_t>(planetIndex));
       if (!planetarySuffix)
         return std::unexpected(std::move(planetarySuffix.error()));
-      String planetName = strf("{} {}", *systemName, **planetarySuffix);
+      String planetName = strf("{} {}", *systemName, planetarySuffix->get());
       auto parameters = CelestialParameters::create(m_root, planetCoordinate, planetSeed, planetName, planetaryParameters);
       if (!parameters)
         return std::unexpected(std::move(parameters.error()));
@@ -1042,22 +1040,22 @@ CelestialMasterDatabase::produceSystem(RandomSource& random, Vec3I const& locati
       planet.planetParameters = std::move(*parameters);
       List<int> satelliteOrbits;
       for (int i = 1; i <= m_baseInformation.satelliteOrbitalLevels; ++i)
-        if (satelliteOrbits.size() < planetType->maxSatelliteCount && random.randf() < planetType->satelliteProbability)
+        if (satelliteOrbits.size() < planetType->get().maxSatelliteCount && random.randf() < planetType->get().satelliteProbability)
           satelliteOrbits.append(i);
       for (auto [satelliteIndex, satelliteOrbit] : std::views::enumerate(satelliteOrbits)) {
         auto satelliteTypeName = region->satelliteTypes.select(random);
-        if (auto satelliteType = m_generationInformation.satelliteTypes.ptr(satelliteTypeName)) {
-          auto variation = random.randValueFrom(satelliteType->variationParameters);
-          auto orbitParameters = satelliteType->orbitParameters.value(region->regionName, JsonArray()).toArray();
+        if (auto satelliteType = m_generationInformation.satelliteTypes.maybeRef(satelliteTypeName)) {
+          auto variation = random.randValueFrom(satelliteType->get().variationParameters);
+          auto orbitParameters = satelliteType->get().orbitParameters.value(region->regionName, JsonArray()).toArray();
           if (!orbitParameters)
             return std::unexpected(std::move(orbitParameters.error()));
-          auto satelliteParameters = jsonMerge(satelliteType->baseParameters, variation, random.randValueFrom(*orbitParameters));
+          auto satelliteParameters = jsonMerge(satelliteType->get().baseParameters, variation, random.randValueFrom(*orbitParameters));
           CelestialCoordinate satelliteCoordinate(location, planetOrbit, satelliteOrbit);
           std::uint64_t satelliteSeed = random.randu64();
           auto satelliteSuffix = m_generationInformation.satelliteSuffixes.at(static_cast<std::size_t>(satelliteIndex));
           if (!satelliteSuffix)
             return std::unexpected(std::move(satelliteSuffix.error()));
-          String satelliteName = strf("{} {}", planetName, **satelliteSuffix);
+          String satelliteName = strf("{} {}", planetName, satelliteSuffix->get());
           auto parameters = CelestialParameters::create(m_root, satelliteCoordinate, satelliteSeed, satelliteName, satelliteParameters);
           if (!parameters)
             return std::unexpected(std::move(parameters.error()));
@@ -1174,7 +1172,7 @@ std::expected<void, StarException> CelestialSlaveDatabase::signalRegion(RectI co
   std::unique_lock locker(m_mutex, std::defer_lock);
   lockWithDiagnostics(locker);
   for (auto const& location : chunkIndexesFor(region)) {
-    auto chunk = m_chunkCache.ptr(location);
+    auto chunk = m_chunkCache.maybeRef(location);
     if (!chunk)
       return std::unexpected(std::move(chunk.error()));
     if (!*chunk && !m_pendingChunkRequests.contains(location))
@@ -1186,11 +1184,11 @@ std::expected<void, StarException> CelestialSlaveDatabase::signalRegion(RectI co
 std::expected<void, StarException> CelestialSlaveDatabase::signalSystem(CelestialCoordinate const& system) {
   std::unique_lock locker(m_mutex, std::defer_lock);
   lockWithDiagnostics(locker);
-  auto chunk = m_chunkCache.ptr(chunkIndexFor(system));
+  auto chunk = m_chunkCache.maybeRef(chunkIndexFor(system));
   if (!chunk)
     return std::unexpected(std::move(chunk.error()));
   if (*chunk) {
-    if (!(*chunk)->systemObjects.contains(system.location()))
+    if (!(*chunk)->get().systemObjects.contains(system.location()))
       m_pendingSystemRequests[system.location()] = Timer();
     return {};
   }
@@ -1236,18 +1234,18 @@ std::expected<void, StarException> CelestialSlaveDatabase::pushResponses(List<Ce
   std::unique_lock locker(m_mutex, std::defer_lock);
   lockWithDiagnostics(locker);
   for (auto& response : responses) {
-    if (auto chunk = response.leftPtr()) {
-      m_pendingChunkRequests.remove(chunk->chunkIndex);
-      auto stored = m_chunkCache.set(chunk->chunkIndex, std::move(*chunk));
+    if (auto chunk = response.maybeLeftRef()) {
+      m_pendingChunkRequests.remove(chunk->get().chunkIndex);
+      auto stored = m_chunkCache.set(chunk->get().chunkIndex, std::move(chunk->get()));
       if (!stored)
         return std::unexpected(std::move(stored.error()));
-    } else if (auto objects = response.rightPtr()) {
-      m_pendingSystemRequests.remove(objects->systemLocation);
-      auto chunk = m_chunkCache.ptr(chunkIndexFor(objects->systemLocation));
+    } else if (auto objects = response.maybeRightRef()) {
+      m_pendingSystemRequests.remove(objects->get().systemLocation);
+      auto chunk = m_chunkCache.maybeRef(chunkIndexFor(objects->get().systemLocation));
       if (!chunk)
         return std::unexpected(std::move(chunk.error()));
       if (*chunk)
-        (*chunk)->systemObjects[objects->systemLocation] = std::move(objects->planets);
+        (*chunk)->get().systemObjects[objects->get().systemLocation] = std::move(objects->get().planets);
     }
   }
   return {};
@@ -1268,31 +1266,31 @@ std::expected<std::optional<CelestialParameters>, StarException> CelestialSlaveD
       ? signalRegion(RectI::withSize(coordinate.location().vec2(), {1, 1})) : signalSystem(coordinate);
   if (!signaled)
     return std::unexpected(std::move(signaled.error()));
-  auto chunk = m_chunkCache.ptr(chunkIndexFor(coordinate));
+  auto chunk = m_chunkCache.maybeRef(chunkIndexFor(coordinate));
   if (!chunk)
     return std::unexpected(std::move(chunk.error()));
   if (*chunk) {
     if (coordinate.isSystem())
-      return (*chunk)->systemParameters.maybe(coordinate.location());
-    if (auto system = (*chunk)->systemObjects.ptr(coordinate.location())) {
+      return (*chunk)->get().systemParameters.maybe(coordinate.location());
+    if (auto system = (*chunk)->get().systemObjects.maybeRef(coordinate.location())) {
       auto planetCoordinate = coordinate.planet();
       if (!planetCoordinate)
         return std::unexpected(std::move(planetCoordinate.error()));
       auto planetOrbit = planetCoordinate->orbitNumber();
       if (!planetOrbit)
         return std::unexpected(std::move(planetOrbit.error()));
-      auto planet = system->get(*planetOrbit);
+      auto planet = system->get().get(*planetOrbit);
       if (!planet)
         return std::unexpected(std::move(planet.error()));
       if (coordinate.isPlanetaryBody())
-        return (*planet)->planetParameters;
+        return planet->get().planetParameters;
       auto orbit = coordinate.orbitNumber();
       if (!orbit)
         return std::unexpected(std::move(orbit.error()));
-      auto satellite = (*planet)->satelliteParameters.get(*orbit);
+      auto satellite = planet->get().satelliteParameters.get(*orbit);
       if (!satellite)
         return std::unexpected(std::move(satellite.error()));
-      return **satellite;
+      return satellite->get();
     }
   }
   return std::optional<CelestialParameters>();
@@ -1315,21 +1313,21 @@ std::expected<std::optional<bool>, StarException> CelestialSlaveDatabase::hasChi
   auto signaled = signalSystem(coordinate);
   if (!signaled)
     return std::unexpected(std::move(signaled.error()));
-  auto chunk = m_chunkCache.ptr(chunkIndexFor(coordinate));
+  auto chunk = m_chunkCache.maybeRef(chunkIndexFor(coordinate));
   if (!chunk)
     return std::unexpected(std::move(chunk.error()));
   if (*chunk) {
-    if (auto system = (*chunk)->systemObjects.ptr(coordinate.location())) {
+    if (auto system = (*chunk)->get().systemObjects.maybeRef(coordinate.location())) {
       if (coordinate.isSystem())
-        return !system->empty();
+        return !system->get().empty();
       if (coordinate.isPlanetaryBody()) {
         auto orbit = coordinate.orbitNumber();
         if (!orbit)
           return std::unexpected(std::move(orbit.error()));
-        auto planet = system->get(*orbit);
+        auto planet = system->get().get(*orbit);
         if (!planet)
           return std::unexpected(std::move(planet.error()));
-        return !(*planet)->satelliteParameters.empty();
+        return !planet->get().satelliteParameters.empty();
       }
     }
   }
@@ -1360,21 +1358,21 @@ std::expected<List<int>, StarException> CelestialSlaveDatabase::childOrbits(Cele
   auto signaled = signalSystem(coordinate);
   if (!signaled)
     return std::unexpected(std::move(signaled.error()));
-  auto chunk = m_chunkCache.ptr(chunkIndexFor(coordinate));
+  auto chunk = m_chunkCache.maybeRef(chunkIndexFor(coordinate));
   if (!chunk)
     return std::unexpected(std::move(chunk.error()));
   if (*chunk) {
-    if (auto system = (*chunk)->systemObjects.ptr(coordinate.location())) {
+    if (auto system = (*chunk)->get().systemObjects.maybeRef(coordinate.location())) {
       if (coordinate.isSystem())
-        return system->keys();
+        return system->get().keys();
       if (coordinate.isPlanetaryBody()) {
         auto orbit = coordinate.orbitNumber();
         if (!orbit)
           return std::unexpected(std::move(orbit.error()));
-        auto planet = system->get(*orbit);
+        auto planet = system->get().get(*orbit);
         if (!planet)
           return std::unexpected(std::move(planet.error()));
-        return (*planet)->satelliteParameters.keys();
+        return planet->get().satelliteParameters.keys();
       }
     }
   }
@@ -1390,11 +1388,11 @@ std::expected<List<CelestialCoordinate>, StarException> CelestialSlaveDatabase::
     return std::unexpected(std::move(signaled.error()));
   List<CelestialCoordinate> systems;
   for (auto const& location : chunkIndexesFor(region)) {
-    auto chunk = m_chunkCache.ptr(location);
+    auto chunk = m_chunkCache.maybeRef(location);
     if (!chunk)
       return std::unexpected(std::move(chunk.error()));
     if (*chunk) {
-      for (auto const& pair : (*chunk)->systemParameters) {
+      for (auto const& pair : (*chunk)->get().systemParameters) {
         if (region.contains(pair.first.vec2())) {
           if (includedTypes) {
             auto type = pair.second.getParameter("typeName", "").and_then([](Json const& value) { return value.toString(); });
@@ -1419,11 +1417,11 @@ std::expected<List<std::pair<Vec2I, Vec2I>>, StarException> CelestialSlaveDataba
     return std::unexpected(std::move(signaled.error()));
   List<std::pair<Vec2I, Vec2I>> lines;
   for (auto const& location : chunkIndexesFor(region)) {
-    auto chunk = m_chunkCache.ptr(location);
+    auto chunk = m_chunkCache.maybeRef(location);
     if (!chunk)
       return std::unexpected(std::move(chunk.error()));
     if (*chunk)
-      for (auto const& constellation : (*chunk)->constellations)
+      for (auto const& constellation : (*chunk)->get().constellations)
         for (auto const& line : constellation)
           if (region.intersects(Line2I(line.first, line.second)))
             lines.append(line);
@@ -1438,7 +1436,7 @@ std::expected<bool, StarException> CelestialSlaveDatabase::scanRegionFullyLoaded
   if (!signaled)
     return std::unexpected(std::move(signaled.error()));
   for (auto const& location : chunkIndexesFor(region)) {
-    auto chunk = m_chunkCache.ptr(location);
+    auto chunk = m_chunkCache.maybeRef(location);
     if (!chunk)
       return std::unexpected(std::move(chunk.error()));
     if (!*chunk)

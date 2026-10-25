@@ -1000,8 +1000,8 @@ auto Box<T, N>::edgeIntersection(Line const& l) const -> Enable2D<P, LineInterse
   // if there are 4 candidates then the only possible case is false (cutting
   // through both corners
   if (numCandidates != 0) {
-    std::sort(candidates.ptr(),
-        candidates.ptr() + numCandidates,
+    std::sort(candidates.begin(),
+        candidates.begin() + numCandidates,
         [&](LineIntersectResult const& a, LineIntersectResult const& b) { return a.t < b.t; });
     if (numCandidates == 1) {
       if (contains(l.min(), false) || contains(l.max(), false)) {

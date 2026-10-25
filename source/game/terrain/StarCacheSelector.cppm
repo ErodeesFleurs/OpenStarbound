@@ -14,9 +14,9 @@ import star.terrain_database;
 export namespace Star {
 
 struct CacheSelector : TerrainSelector {
-  static char const* const Name;
+  static std::string_view const Name;
 
-  [[nodiscard]] static std::expected<std::shared_ptr<CacheSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+  [[nodiscard]] static std::expected<std::shared_ptr<CacheSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database);
 private:
   struct ConstructionKey { explicit ConstructionKey() = default; };
 public:
@@ -32,10 +32,10 @@ public:
 
 namespace Star {
 
-char const* const CacheSelector::Name = "cache";
+std::string_view const CacheSelector::Name = "cache";
 
 std::expected<std::shared_ptr<CacheSelector>, StarException> CacheSelector::create(
-    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database) {
+    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database) {
   auto result = std::make_shared<CacheSelector>(ConstructionKey{}, config, parameters);
   auto sourceConfig = config.get("source");
   if (!sourceConfig)
@@ -48,7 +48,7 @@ std::expected<std::shared_ptr<CacheSelector>, StarException> CacheSelector::crea
     return std::unexpected(std::move(seedBias.error()));
   TerrainSelectorParameters sourceParameters = parameters;
   sourceParameters.seed += *seedBias;
-  auto source = database->createSelectorType(result->type, *sourceConfig, sourceParameters);
+  auto source = database.createSelectorType(result->type, *sourceConfig, sourceParameters);
   if (!source)
     return std::unexpected(std::move(source.error()));
   result->m_source = std::move(*source);
@@ -65,7 +65,7 @@ std::expected<float, StarException> CacheSelector::get(int x, int y) const {
   });
   if (!value)
     return std::unexpected(std::move(value.error()));
-  return **value;
+  return value->get();
 }
 
 }

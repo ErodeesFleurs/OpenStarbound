@@ -48,7 +48,8 @@ Lightmap& Lightmap::operator=(Lightmap&& lightMap) noexcept {
 
 Lightmap::operator ImageView() {
   ImageView view;
-  view.data = (std::uint8_t*)m_data.get();
+  auto pixels = data();
+  view.data = {reinterpret_cast<std::uint8_t const*>(pixels.data()), pixels.size_bytes()};
   view.size = size();
   view.format = PixelFormat::RGB_F;
   return view;
@@ -98,20 +99,20 @@ std::expected<void, StarException> CellularLightingCalculator::setParameters(Jso
   if (!additive) return std::unexpected(std::move(additive.error()));
   m_config = config;
   if (m_monochrome)
-    m_lightArray.rightPtr()->setParameters(*passes, *spreadAir, *spreadObstacle, *pointAir, *pointObstacle, *boost, *additive);
+    m_lightArray.rightRef().setParameters(*passes, *spreadAir, *spreadObstacle, *pointAir, *pointObstacle, *boost, *additive);
   else
-    m_lightArray.leftPtr()->setParameters(*passes, *spreadAir, *spreadObstacle, *pointAir, *pointObstacle, *boost, *additive);
+    m_lightArray.leftRef().setParameters(*passes, *spreadAir, *spreadObstacle, *pointAir, *pointObstacle, *boost, *additive);
   return {};
 }
 
 void CellularLightingCalculator::begin(RectI const& queryRegion) {
   m_queryRegion = queryRegion;
   if (m_monochrome) {
-    m_calculationRegion = RectI(queryRegion).padded((int)m_lightArray.rightPtr()->borderCells());
-    m_lightArray.rightPtr()->begin(m_calculationRegion.width(), m_calculationRegion.height());
+    m_calculationRegion = RectI(queryRegion).padded((int)m_lightArray.rightRef().borderCells());
+    m_lightArray.rightRef().begin(m_calculationRegion.width(), m_calculationRegion.height());
   } else {
-    m_calculationRegion = RectI(queryRegion).padded((int)m_lightArray.leftPtr()->borderCells());
-    m_lightArray.leftPtr()->begin(m_calculationRegion.width(), m_calculationRegion.height());
+    m_calculationRegion = RectI(queryRegion).padded((int)m_lightArray.leftRef().borderCells());
+    m_lightArray.leftRef().begin(m_calculationRegion.width(), m_calculationRegion.height());
   }
 }
 
@@ -122,17 +123,17 @@ RectI CellularLightingCalculator::calculationRegion() const {
 void CellularLightingCalculator::addSpreadLight(Vec2F const& position, Vec3F const& light) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
   if (m_monochrome)
-    m_lightArray.rightPtr()->addSpreadLight({arrayPosition, light.max()});
+    m_lightArray.rightRef().addSpreadLight({arrayPosition, light.max()});
   else
-    m_lightArray.leftPtr()->addSpreadLight({arrayPosition, light});
+    m_lightArray.leftRef().addSpreadLight({arrayPosition, light});
 }
 
 void CellularLightingCalculator::addPointLight(Vec2F const& position, Vec3F const& light, float beam, float beamAngle, float beamAmbience, bool asSpread) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
   if (m_monochrome)
-    m_lightArray.rightPtr()->addPointLight({arrayPosition, light.max(), beam, beamAngle, beamAmbience, asSpread});
+    m_lightArray.rightRef().addPointLight({arrayPosition, light.max(), beam, beamAngle, beamAmbience, asSpread});
   else
-    m_lightArray.leftPtr()->addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience, asSpread});
+    m_lightArray.leftRef().addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience, asSpread});
 }
 
 void CellularLightingCalculator::calculate(Image& output) {
@@ -140,22 +141,22 @@ void CellularLightingCalculator::calculate(Image& output) {
   Vec2S arrayMax = Vec2S(m_queryRegion.max() - m_calculationRegion.min());
 
   if (m_monochrome)
-    m_lightArray.rightPtr()->calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
+    m_lightArray.rightRef().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
   else
-    m_lightArray.leftPtr()->calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
+    m_lightArray.leftRef().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
 
   output.reset(arrayMax[0] - arrayMin[0], arrayMax[1] - arrayMin[1], PixelFormat::RGB24);
 
   if (m_monochrome) {
     for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
       for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        output.set24(x - arrayMin[0], y - arrayMin[1], Color::grayf(m_lightArray.rightPtr()->getLight(x, y)).toRgb());
+        output.set24(x - arrayMin[0], y - arrayMin[1], Color::grayf(m_lightArray.rightRef().getLight(x, y)).toRgb());
       }
     }
   } else {
     for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
       for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        output.set24(x - arrayMin[0], y - arrayMin[1], Color::v3fToByte(m_lightArray.leftPtr()->getLight(x, y)));
+        output.set24(x - arrayMin[0], y - arrayMin[1], Color::v3fToByte(m_lightArray.leftRef().getLight(x, y)));
       }
     }
   }
@@ -166,9 +167,9 @@ std::expected<void, StarException> CellularLightingCalculator::calculate(Lightma
   Vec2S arrayMax = Vec2S(m_queryRegion.max() - m_calculationRegion.min());
 
   if (m_monochrome)
-    m_lightArray.rightPtr()->calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
+    m_lightArray.rightRef().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
   else
-    m_lightArray.leftPtr()->calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
+    m_lightArray.leftRef().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
 
   output = Lightmap(arrayMax[0] - arrayMin[0], arrayMax[1] - arrayMin[1]);
 
@@ -178,7 +179,7 @@ std::expected<void, StarException> CellularLightingCalculator::calculate(Lightma
   if (m_monochrome) {
     for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
       for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        auto light = std::min(m_lightArray.rightPtr()->getLight(x, y), *brightnessLimit);
+        auto light = std::min(m_lightArray.rightRef().getLight(x, y), *brightnessLimit);
         auto set = output.set(x - arrayMin[0], y - arrayMin[1], light);
         if (!set) return std::unexpected(std::move(set.error()));
       }
@@ -186,7 +187,7 @@ std::expected<void, StarException> CellularLightingCalculator::calculate(Lightma
   } else {
     for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
       for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        auto light = m_lightArray.leftPtr()->getLight(x, y);
+        auto light = m_lightArray.leftRef().getLight(x, y);
         float intensity = ColoredLightTraits::maxIntensity(light);
         if (intensity > *brightnessLimit)
           light *= *brightnessLimit / intensity;
@@ -237,12 +238,12 @@ RectI CellularLightIntensityCalculator::calculationRegion() const {
 }
 
 void CellularLightIntensityCalculator::setCell(Vec2I const& position, Cell const& cell) {
-  setCellColumn(position, &cell, 1);
+  setCellColumn(position, std::span<Cell const>{&cell, 1});
 }
 
-void CellularLightIntensityCalculator::setCellColumn(Vec2I const& position, Cell const* cells, std::size_t count) {
+void CellularLightIntensityCalculator::setCellColumn(Vec2I const& position, std::span<Cell const> cells) {
   std::size_t baseIndex = (position[0] - m_calculationRegion.xMin()) * m_calculationRegion.height() + position[1] - m_calculationRegion.yMin();
-  for (std::size_t i = 0; i < count; ++i)
+  for (std::size_t i = 0; i < cells.size(); ++i)
     m_lightArray.cellAtIndex(baseIndex + i) = cells[i];
 }
 

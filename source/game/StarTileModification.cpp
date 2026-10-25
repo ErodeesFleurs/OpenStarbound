@@ -10,7 +10,7 @@ import star.tile_modification;
 
 namespace Star {
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement) {
   std::uint8_t layer;
   if (auto r = ds.read(layer); !r) return std::unexpected(std::move(r.error()));
   if (layer > 1) {
@@ -23,10 +23,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceMateri
   }
   if (auto r = ds.read(tileMaterialPlacement.material); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileMaterialPlacement.materialHueShift); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement) {
   if (tileMaterialPlacement.collisionOverride != TileCollisionOverride::None
     && tileMaterialPlacement.layer == TileLayer::Foreground) {
     std::uint8_t layer = (std::uint8_t)tileMaterialPlacement.collisionOverride;
@@ -36,45 +36,45 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceMateri
   }
   if (auto r = ds.write(tileMaterialPlacement.material); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileMaterialPlacement.materialHueShift); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceMod& tileModPlacement) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceMod& tileModPlacement) {
   if (auto r = ds.read(tileModPlacement.layer); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileModPlacement.mod); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileModPlacement.modHueShift); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceMod const& tileModPlacement) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceMod const& tileModPlacement) {
   if (auto r = ds.write(tileModPlacement.layer); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileModPlacement.mod); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileModPlacement.modHueShift); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceMaterialColor& tileMaterialColorPlacement) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceMaterialColor& tileMaterialColorPlacement) {
   if (auto r = ds.read(tileMaterialColorPlacement.layer); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileMaterialColorPlacement.color); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceMaterialColor const& tileMaterialColorPlacement) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceMaterialColor const& tileMaterialColorPlacement) {
   if (auto r = ds.write(tileMaterialColorPlacement.layer); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileMaterialColorPlacement.color); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement) {
   if (auto r = ds.read(tileLiquidPlacement.liquid); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileLiquidPlacement.liquidLevel); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement) {
   if (auto r = ds.write(tileLiquidPlacement.liquid); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileLiquidPlacement.liquidLevel); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 }

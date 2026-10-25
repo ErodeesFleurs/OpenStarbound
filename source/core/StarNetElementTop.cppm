@@ -23,7 +23,7 @@ public:
         && (!std::same_as<std::remove_cvref_t<Params>, NetElementTop> && ...))
   explicit NetElementTop(Params&&... params)
     : BaseNetElement(std::forward<Params>(params)...) {
-    BaseNetElement::initNetVersion(&m_netVersion);
+    BaseNetElement::initNetVersion(std::cref(m_netVersion));
   }
 
   template <typename... Params>
@@ -54,7 +54,7 @@ private:
   template <typename... Params>
   NetElementTop(InitializeTag, Params&&... params)
     : BaseNetElement(std::forward<Params>(params)...) {
-    BaseNetElement::initNetVersion(&m_netVersion);
+    BaseNetElement::initNetVersion(std::cref(m_netVersion));
   }
 
   using BaseNetElement::initNetVersion;
@@ -70,7 +70,7 @@ private:
 
 template <typename BaseNetElement>
 NetElementTop<BaseNetElement>::NetElementTop() requires std::default_initializable<BaseNetElement> {
-  BaseNetElement::initNetVersion(&m_netVersion);
+  BaseNetElement::initNetVersion(std::cref(m_netVersion));
 }
 
 template <typename BaseNetElement>

@@ -32,15 +32,17 @@ struct QuestIndicator {
 
 class QuestManager {
 public:
-  [[nodiscard]] static std::expected<std::shared_ptr<QuestManager>, StarException> create(Root& root, Player* player);
+  [[nodiscard]] static std::expected<std::shared_ptr<QuestManager>, StarException> create(Root& root, Player& player);
 
   [[nodiscard]] std::expected<void, StarException> diskLoad(Json const& quests);
   [[nodiscard]] std::expected<Json, StarException> diskStore();
 
-  void setUniverseClient(UniverseClient* client);
+  void setUniverseClient(std::optional<std::reference_wrapper<UniverseClient>> client);
 
-  [[nodiscard]] std::expected<void, StarException> init(World* world);
+  [[nodiscard]] std::expected<void, StarException> init(Player& player, World& world);
   [[nodiscard]] std::expected<void, StarException> uninit();
+  // Terminal borrow clearing after world/script uninitialization.
+  void detachPlayer();
 
   [[nodiscard]] std::expected<bool, StarException> canStart(QuestArcDescriptor const& questArc) const;
 
@@ -84,15 +86,15 @@ public:
   [[nodiscard]] std::expected<void, StarException> update(float dt);
 
 private:
-  QuestManager(Root& root, Player* player);
+  QuestManager(Root& root, Player& player);
   Root& m_root;
   [[nodiscard]] std::expected<void, StarException> startInitialQuests();
   void setMostRecentQuestCurrent();
   bool questValidOnServer(std::shared_ptr<Quest> quest) const;
 
-  Player* m_player;
-  World* m_world;
-  UniverseClient* m_client;
+  std::optional<std::reference_wrapper<Player>> m_player;
+  std::optional<std::reference_wrapper<World>> m_world;
+  std::optional<std::reference_wrapper<UniverseClient>> m_client;
 
   StringMap<std::shared_ptr<Quest>> m_quests;
 

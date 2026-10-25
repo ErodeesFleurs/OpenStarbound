@@ -96,8 +96,8 @@ std::expected<std::shared_ptr<Codex const>, StarException> PlayerCodexes::learnC
 }
 
 bool PlayerCodexes::codexRead(String const& codexId) const {
-  auto entry = m_codexes.ptr(codexId);
-  return entry && entry->second;
+  auto entry = m_codexes.maybeRef(codexId);
+  return entry && entry->get().second;
 }
 
 bool PlayerCodexes::markCodexRead(String const& codexId) {

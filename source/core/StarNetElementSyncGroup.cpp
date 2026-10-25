@@ -37,7 +37,7 @@ std::expected<void, StarException> NetElementSyncGroup::tickNetInterpolation(flo
 
 std::expected<void, StarException> NetElementSyncGroup::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return {};
-  { auto result = const_cast<NetElementSyncGroup*>(this)->netElementsNeedStore(); if (!result) return std::unexpected(std::move(result.error())); }
+  { auto result = const_cast<NetElementSyncGroup&>(*this).netElementsNeedStore(); if (!result) return std::unexpected(std::move(result.error())); }
   return NetElementGroup::netStore(ds, rules);
 }
 
@@ -50,7 +50,7 @@ std::expected<void, StarException> NetElementSyncGroup::netLoad(DataStream& ds, 
 
 std::expected<bool, StarException> NetElementSyncGroup::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
-  { auto result = const_cast<NetElementSyncGroup*>(this)->netElementsNeedStore(); if (!result) return std::unexpected(std::move(result.error())); }
+  { auto result = const_cast<NetElementSyncGroup&>(*this).netElementsNeedStore(); if (!result) return std::unexpected(std::move(result.error())); }
   return NetElementGroup::writeNetDelta(ds, fromVersion, rules);
 }
 

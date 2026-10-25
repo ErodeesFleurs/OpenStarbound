@@ -30,7 +30,7 @@ public:
 
   Matrix3(Vec3 const& r1, Vec3 const& r2, Vec3 const& r3);
 
-  Matrix3(T const* ptr);
+  explicit Matrix3(std::span<T const, 9> values);
   template <typename T2>
   Matrix3(Matrix3<T2> const& m);
 
@@ -46,7 +46,7 @@ public:
   T const* ptr() const requires (sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3));
 
   // Copy to an existing array
-  void copy(T* loc) const;
+  void copy(std::span<T, 9> destination) const;
 
   Vec3 row(std::size_t i) const;
   template <typename T2>
@@ -157,8 +157,8 @@ Matrix3<T>::Matrix3(const Vec3& r1, const Vec3& r2, const Vec3& r3)
   : m_rows{r1, r2, r3} {}
 
 template <typename T>
-Matrix3<T>::Matrix3(T const* ptr)
-  : m_rows{Vec3(ptr), Vec3(ptr + 3), Vec3(ptr + 6)} {}
+Matrix3<T>::Matrix3(std::span<T const, 9> values)
+  : m_rows{Vec3(values[0], values[1], values[2]), Vec3(values[3], values[4], values[5]), Vec3(values[6], values[7], values[8])} {}
 
 template <typename T>
 template <typename T2>
@@ -194,10 +194,9 @@ T const* Matrix3<T>::ptr() const requires (sizeof(Vec3) == 3 * sizeof(T) && size
 }
 
 template <typename T>
-void Matrix3<T>::copy(T* loc) const {
-  m_rows[0].copyFrom(loc);
-  m_rows[1].copyFrom(loc + 3);
-  m_rows[2].copyFrom(loc + 6);
+void Matrix3<T>::copy(std::span<T, 9> destination) const {
+  for (std::size_t row = 0; row < 3; ++row)
+    std::ranges::copy(m_rows[row], destination.begin() + row * 3);
 }
 
 template <typename T>

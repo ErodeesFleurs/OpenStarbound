@@ -100,110 +100,110 @@ import star.world;
 module star.entity_lua_bindings;
 
 namespace Star::LuaBindings::EntityCallbacks {
-  EntityId id(Entity const* entity);
-  [[nodiscard]] std::expected<LuaTable, StarException> damageTeam(Entity const* entity, LuaEngine& engine);
-  [[nodiscard]] std::expected<bool, StarException> isValidTarget(Entity const* entity, EntityId entityId);
-  [[nodiscard]] std::expected<Vec2F, StarException> distanceToEntity(Entity const* entity, EntityId entityId);
-  [[nodiscard]] std::expected<bool, StarException> entityInSight(Entity const* entity, EntityId entityId);
+  EntityId id(Entity const& entity);
+  [[nodiscard]] std::expected<LuaTable, StarException> damageTeam(Entity const& entity, LuaEngine& engine);
+  [[nodiscard]] std::expected<bool, StarException> isValidTarget(Entity const& entity, EntityId entityId);
+  [[nodiscard]] std::expected<Vec2F, StarException> distanceToEntity(Entity const& entity, EntityId entityId);
+  [[nodiscard]] std::expected<bool, StarException> entityInSight(Entity const& entity, EntityId entityId);
 }
 
 namespace Star {
 
-std::expected<LuaCallbacks, StarException> LuaBindings::makeEntityCallbacks(Entity const* entity) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeEntityCallbacks(Entity const& entity) {
   LuaCallbacks callbacks;
 
-  if (auto registration = callbacks.registerCallbackWithSignature<EntityId>("id", std::bind(EntityCallbacks::id, entity)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<EntityId>("id", std::bind(EntityCallbacks::id, std::ref(entity))); !registration)
     return std::unexpected(std::move(registration.error()));
   if (auto registration = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&>(
-      "damageTeam", std::bind(EntityCallbacks::damageTeam, entity, std::placeholders::_1)); !registration)
+      "damageTeam", std::bind(EntityCallbacks::damageTeam, std::ref(entity), std::placeholders::_1)); !registration)
     return std::unexpected(std::move(registration.error()));
   if (auto registration = callbacks.registerCallbackWithSignature<bool, EntityId>(
-      "isValidTarget", std::bind(EntityCallbacks::isValidTarget, entity, std::placeholders::_1)); !registration)
+      "isValidTarget", std::bind(EntityCallbacks::isValidTarget, std::ref(entity), std::placeholders::_1)); !registration)
     return std::unexpected(std::move(registration.error()));
   if (auto registration = callbacks.registerCallbackWithSignature<Vec2F, EntityId>(
-      "distanceToEntity", std::bind(EntityCallbacks::distanceToEntity, entity, std::placeholders::_1)); !registration)
+      "distanceToEntity", std::bind(EntityCallbacks::distanceToEntity, std::ref(entity), std::placeholders::_1)); !registration)
     return std::unexpected(std::move(registration.error()));
   if (auto registration = callbacks.registerCallbackWithSignature<bool, EntityId>(
-      "entityInSight", std::bind(EntityCallbacks::entityInSight, entity, std::placeholders::_1)); !registration)
+      "entityInSight", std::bind(EntityCallbacks::entityInSight, std::ref(entity), std::placeholders::_1)); !registration)
     return std::unexpected(std::move(registration.error()));
 
-  if (auto registration = callbacks.registerCallback("position", [entity]() { return entity->position(); }); !registration)
+  if (auto registration = callbacks.registerCallback("position", [&entity]() { return entity.position(); }); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallback("entityType", [entity]() -> std::expected<String, StarException> {
+  if (auto registration = callbacks.registerCallback("entityType", [&entity]() -> std::expected<String, StarException> {
     if (!EntityTypeNames)
       return std::unexpected(EntityTypeNames.error());
-    auto name = EntityTypeNames->getRight(entity->entityType());
+    auto name = EntityTypeNames->getRight(entity.entityType());
     if (!name)
       return std::unexpected(std::move(name.error()));
-    return **name;
+    return name->get();
   }); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallback("uniqueId", [entity]() { return entity->uniqueId(); }); !registration)
+  if (auto registration = callbacks.registerCallback("uniqueId", [&entity]() { return entity.uniqueId(); }); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallback("persistent", [entity]() { return entity->persistent(); }); !registration)
+  if (auto registration = callbacks.registerCallback("persistent", [&entity]() { return entity.persistent(); }); !registration)
     return std::unexpected(std::move(registration.error()));
 
   return callbacks;
 }
 
-EntityId LuaBindings::EntityCallbacks::id(Entity const* entity) {
-  return entity->entityId();
+EntityId LuaBindings::EntityCallbacks::id(Entity const& entity) {
+  return entity.entityId();
 }
 
-std::expected<LuaTable, StarException> LuaBindings::EntityCallbacks::damageTeam(Entity const* entity, LuaEngine& engine) {
+std::expected<LuaTable, StarException> LuaBindings::EntityCallbacks::damageTeam(Entity const& entity, LuaEngine& engine) {
   auto table = engine.createTable();
   if (!table)
     return std::unexpected(std::move(table.error()));
-  auto team = entity->getTeam();
+  auto team = entity.getTeam();
   if (!TeamTypeNames)
     return std::unexpected(TeamTypeNames.error());
   auto type = TeamTypeNames->getRight(team.type);
   if (!type)
     return std::unexpected(std::move(type.error()));
-  if (auto result = table->set("type", **type); !result)
+  if (auto result = table->set("type", type->get()); !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = table->set("team", team.team); !result)
     return std::unexpected(std::move(result.error()));
   return table;
 }
 
-std::expected<bool, StarException> LuaBindings::EntityCallbacks::isValidTarget(Entity const* entity, EntityId entityId) {
-  auto world = entity->world();
+std::expected<bool, StarException> LuaBindings::EntityCallbacks::isValidTarget(Entity const& entity, EntityId entityId) {
+  auto world = entity.world();
   if (!world)
     return std::unexpected(std::move(world.error()));
-  auto target = (*world)->entity(entityId);
+  auto target = world->get().entity(entityId);
 
-  if (!target || !entity->getTeam().canDamage(target->getTeam(), false))
+  if (!target || !entity.getTeam().canDamage(target->getTeam(), false))
     return false;
 
   if (auto monster = as<Monster>(target))
     return monster->aggressive();
 
   if (auto npc = as<Npc>(target)) {
-    if (auto attackerNpc = as<Npc>(entity))
-      return npc->aggressive() || attackerNpc->aggressive();
+    if (auto attackerNpc = asRef<Npc>(entity))
+      return npc->aggressive() || attackerNpc->get().aggressive();
     return true;
   }
 
   return is<Player>(target);
 }
 
-std::expected<Vec2F, StarException> LuaBindings::EntityCallbacks::distanceToEntity(Entity const* entity, EntityId entityId) {
-  auto world = entity->world();
+std::expected<Vec2F, StarException> LuaBindings::EntityCallbacks::distanceToEntity(Entity const& entity, EntityId entityId) {
+  auto world = entity.world();
   if (!world)
     return std::unexpected(std::move(world.error()));
   Vec2F dist;
-  if (auto target = (*world)->entity(entityId))
-    dist = (*world)->geometry().diff(target->position(), entity->position());
+  if (auto target = world->get().entity(entityId))
+    dist = world->get().geometry().diff(target->position(), entity.position());
   return dist;
 }
 
-std::expected<bool, StarException> LuaBindings::EntityCallbacks::entityInSight(Entity const* entity, EntityId entityId) {
-  auto world = entity->world();
+std::expected<bool, StarException> LuaBindings::EntityCallbacks::entityInSight(Entity const& entity, EntityId entityId) {
+  auto world = entity.world();
   if (!world)
     return std::unexpected(std::move(world.error()));
-  if (auto target = (*world)->entity(entityId)) {
-    auto collision = (*world)->lineTileCollision(target->position(), entity->position());
+  if (auto target = world->get().entity(entityId)) {
+    auto collision = world->get().lineTileCollision(target->position(), entity.position());
     if (!collision)
       return std::unexpected(std::move(collision.error()));
     return !*collision;

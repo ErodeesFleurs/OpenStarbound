@@ -33,7 +33,7 @@ TEST(HostAddressWithPort, All) {
   ASSERT_TRUE(zero);
   EXPECT_EQ(HostAddressWithPort().address(), *zero);
   EXPECT_EQ(HostAddressWithPort().port(), 0);
-  for (String const& text : {"*:80", ":::80", "[::]:80"}) {
+  for (String const& text : {String("*:80"), String(":::80"), String("[::]:80")}) {
     auto address = HostAddressWithPort::create(text);
     ASSERT_TRUE(address);
     EXPECT_EQ(address->port(), 80);

@@ -15,7 +15,7 @@ import star.compression;
 namespace Star {
 namespace {
 
-IOException zstdError(char const* operation, std::size_t status) {
+IOException zstdError(std::string_view operation, std::size_t status) {
   return IOException::format("ZSTD {} error ({}): {}", operation, status, ZSTD_getErrorName(status));
 }
 
@@ -46,9 +46,9 @@ std::expected<std::unique_ptr<CompressionStream>, StarException> CompressionStre
 
 CompressionStream::~CompressionStream() = default;
 
-std::expected<void, StarException> CompressionStream::compress(const char* in, std::size_t inLen, ByteArray& out) {
+std::expected<void, StarException> CompressionStream::compress(std::span<char const> in, ByteArray& out) {
   auto const chunkSize = ZSTD_CStreamOutSize();
-  ZSTD_inBuffer input = {in, inLen, 0};
+  ZSTD_inBuffer input = {in.data(), in.size(), 0};
   auto const originalSize = out.size();
   std::size_t written = originalSize;
   for (;;) {
@@ -72,19 +72,19 @@ std::expected<void, StarException> CompressionStream::compress(const char* in, s
 }
 
 std::expected<void, StarException> CompressionStream::compress(ByteArray const& in, ByteArray& out) {
-  return compress(in.ptr(), in.size(), out);
+  return compress(in.span(), out);
 }
 
-std::expected<ByteArray, StarException> CompressionStream::compress(const char* in, std::size_t inLen) {
+std::expected<ByteArray, StarException> CompressionStream::compress(std::span<char const> in) {
   ByteArray out;
-  auto result = compress(in, inLen, out);
+  auto result = compress(in, out);
   if (!result)
     return std::unexpected(std::move(result.error()));
   return out;
 }
 
 std::expected<ByteArray, StarException> CompressionStream::compress(ByteArray const& in) {
-  return compress(in.ptr(), in.size());
+  return compress(in.span());
 }
 
 void DecompressionStream::StreamDeleter::operator()(ZSTD_DStream* stream) const noexcept {
@@ -109,9 +109,9 @@ std::expected<std::unique_ptr<DecompressionStream>, StarException> Decompression
 
 DecompressionStream::~DecompressionStream() = default;
 
-std::expected<void, StarException> DecompressionStream::decompress(const char* in, std::size_t inLen, ByteArray& out) {
+std::expected<void, StarException> DecompressionStream::decompress(std::span<char const> in, ByteArray& out) {
   auto const chunkSize = ZSTD_DStreamOutSize();
-  ZSTD_inBuffer input = {in, inLen, 0};
+  ZSTD_inBuffer input = {in.data(), in.size(), 0};
   auto const originalSize = out.size();
   std::size_t written = originalSize;
   for (;;) {
@@ -140,37 +140,38 @@ std::expected<void, StarException> DecompressionStream::decompress(const char* i
 }
 
 std::expected<void, StarException> DecompressionStream::decompress(ByteArray const& in, ByteArray& out) {
-  return decompress(in.ptr(), in.size(), out);
+  return decompress(in.span(), out);
 }
 
-std::expected<ByteArray, StarException> DecompressionStream::decompress(const char* in, std::size_t inLen) {
+std::expected<ByteArray, StarException> DecompressionStream::decompress(std::span<char const> in) {
   ByteArray out;
-  auto result = decompress(in, inLen, out);
+  auto result = decompress(in, out);
   if (!result)
     return std::unexpected(std::move(result.error()));
   return out;
 }
 
 std::expected<ByteArray, StarException> DecompressionStream::decompress(ByteArray const& in) {
-  return decompress(in.ptr(), in.size());
+  return decompress(in.span());
 }
 
-std::expected<ByteArray, StarException> ZstdCompression::compress(const char* in, std::size_t inLen, int compressionLevel) {
+std::expected<ByteArray, StarException> ZstdCompression::compress(std::span<char const> in, int compressionLevel) {
+  auto inLen = in.size();
   if (!inLen)
     return ByteArray();
   auto maxOutSize = ZSTD_compressBound(inLen);
   if (ZSTD_isError(maxOutSize))
     return std::unexpected(zstdError("compression bound", maxOutSize));
   ByteArray out(maxOutSize, 0);
-  auto compressedSize = ZSTD_compress(out.ptr(), maxOutSize, in, inLen, compressionLevel);
+  auto compressedSize = ZSTD_compress(out.ptr(), maxOutSize, in.data(), inLen, compressionLevel);
   if (ZSTD_isError(compressedSize))
     return std::unexpected(zstdError("compression", compressedSize));
   out.resize(compressedSize);
   return out;
 }
 
-std::expected<void, StarException> ZstdCompression::compress(const char* in, std::size_t inLen, ByteArray& out, int compressionLevel) {
-  auto result = compress(in, inLen, compressionLevel);
+std::expected<void, StarException> ZstdCompression::compress(std::span<char const> in, ByteArray& out, int compressionLevel) {
+  auto result = compress(in, compressionLevel);
   if (!result)
     return std::unexpected(std::move(result.error()));
   out = std::move(*result);
@@ -178,15 +179,15 @@ std::expected<void, StarException> ZstdCompression::compress(const char* in, std
 }
 
 std::expected<ByteArray, StarException> ZstdCompression::compress(ByteArray const& in, int compressionLevel) {
-  return compress(in.ptr(), in.size(), compressionLevel);
+  return compress(in.span(), compressionLevel);
 }
 
 std::expected<void, StarException> ZstdCompression::compress(ByteArray const& in, ByteArray& out, int compressionLevel) {
-  return compress(in.ptr(), in.size(), out, compressionLevel);
+  return compress(in.span(), out, compressionLevel);
 }
 
-std::expected<ByteArray, StarException> ZstdCompression::decompress(const char* in, std::size_t inLen) {
-  auto frameContentSize = ZSTD_getFrameContentSize(in, inLen);
+std::expected<ByteArray, StarException> ZstdCompression::decompress(std::span<char const> in) {
+  auto frameContentSize = ZSTD_getFrameContentSize(in.data(), in.size());
   if (frameContentSize == ZSTD_CONTENTSIZE_ERROR)
     return std::unexpected(IOException("Invalid ZSTD frame header"));
   if (frameContentSize == ZSTD_CONTENTSIZE_UNKNOWN)
@@ -194,15 +195,15 @@ std::expected<ByteArray, StarException> ZstdCompression::decompress(const char* 
   if (frameContentSize > MaxUncompressedSize)
     return std::unexpected(IOException::format("ZSTD frame declares {} bytes, above the {} byte limit", frameContentSize, MaxUncompressedSize));
   ByteArray out(frameContentSize, 0);
-  auto result = ZSTD_decompress(out.ptr(), frameContentSize, in, inLen);
+  auto result = ZSTD_decompress(out.ptr(), frameContentSize, in.data(), in.size());
   if (ZSTD_isError(result))
     return std::unexpected(zstdError("decompression", result));
   out.resize(result);
   return out;
 }
 
-std::expected<void, StarException> ZstdCompression::decompress(const char* in, std::size_t inLen, ByteArray& out) {
-  auto result = decompress(in, inLen);
+std::expected<void, StarException> ZstdCompression::decompress(std::span<char const> in, ByteArray& out) {
+  auto result = decompress(in);
   if (!result)
     return std::unexpected(std::move(result.error()));
   out = std::move(*result);
@@ -210,11 +211,11 @@ std::expected<void, StarException> ZstdCompression::decompress(const char* in, s
 }
 
 std::expected<ByteArray, StarException> ZstdCompression::decompress(ByteArray const& in) {
-  return decompress(in.ptr(), in.size());
+  return decompress(in.span());
 }
 
 std::expected<void, StarException> ZstdCompression::decompress(ByteArray const& in, ByteArray& out) {
-  return decompress(in.ptr(), in.size(), out);
+  return decompress(in.span(), out);
 }
 
 }

@@ -159,7 +159,7 @@ static std::expected<void, StarException> run(int argc, char** argv) {
     auto text = repetitionsOption->first();
     if (!text)
       return std::unexpected(std::move(text.error()));
-    auto parsed = lexicalCast<unsigned>(**text);
+    auto parsed = lexicalCast<unsigned>(text->get());
     if (!parsed)
       return std::unexpected(std::move(parsed.error()));
     repetitions = *parsed;
@@ -168,7 +168,7 @@ static std::expected<void, StarException> run(int argc, char** argv) {
     auto text = reportEveryOption->first();
     if (!text)
       return std::unexpected(std::move(text.error()));
-    auto parsed = lexicalCast<unsigned>(**text);
+    auto parsed = lexicalCast<unsigned>(text->get());
     if (!parsed)
       return std::unexpected(std::move(parsed.error()));
     reportEvery = *parsed;
@@ -177,7 +177,7 @@ static std::expected<void, StarException> run(int argc, char** argv) {
     auto text = dungeonWorldOption->first();
     if (!text)
       return std::unexpected(std::move(text.error()));
-    dungeonWorldName = **text;
+    dungeonWorldName = text->get();
   }
 
   double start = Time::monotonicTime();

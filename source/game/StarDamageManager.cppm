@@ -23,8 +23,8 @@ class World;
 class Entity;
 
 struct RemoteHitRequest {
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, RemoteHitRequest const& hitRequest);
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, RemoteHitRequest& hitRequest);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RemoteHitRequest const& hitRequest);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RemoteHitRequest& hitRequest);
 
   ConnectionId destinationConnection() const;
 
@@ -33,12 +33,12 @@ struct RemoteHitRequest {
   DamageRequest damageRequest;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, RemoteHitRequest const& hitRequest);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, RemoteHitRequest& hitRequest);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RemoteHitRequest const& hitRequest);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RemoteHitRequest& hitRequest);
 
 struct RemoteDamageRequest {
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest);
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, RemoteDamageRequest& damageRequest);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RemoteDamageRequest& damageRequest);
 
   ConnectionId destinationConnection() const;
 
@@ -47,25 +47,25 @@ struct RemoteDamageRequest {
   DamageRequest damageRequest;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, RemoteDamageRequest& damageRequest);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RemoteDamageRequest& damageRequest);
 
 struct RemoteDamageNotification {
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, RemoteDamageNotification const& damageNotification);
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, RemoteDamageNotification& damageNotification);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RemoteDamageNotification const& damageNotification);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RemoteDamageNotification& damageNotification);
 
   EntityId sourceEntityId;
   DamageNotification damageNotification;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, RemoteDamageNotification const& damageNotification);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, RemoteDamageNotification& damageNotification);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RemoteDamageNotification const& damageNotification);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RemoteDamageNotification& damageNotification);
 
 // Right now, handles entity -> entity damage and ensures that no repeat damage
 // is applied within the damage cutoff time from the same causing entity.
 class DamageManager {
 public:
-  DamageManager(World* world, ConnectionId connectionId);
+  DamageManager(World& world, ConnectionId connectionId);
 
   // Notify entities that they have caused damage, apply damage to master
   // entities, produce damage notifications, and run down damage timeouts.
@@ -102,7 +102,7 @@ private:
   [[nodiscard]] std::expected<void, StarException> addDamageRequest(RemoteDamageRequest remoteDamageRequest);
   [[nodiscard]] std::expected<void, StarException> addDamageNotification(RemoteDamageNotification remoteDamageNotification);
 
-  World* m_world;
+  std::reference_wrapper<World> m_world;
   ConnectionId m_connectionId;
 
   // Maps target entity to all of the recent damage events that entity has

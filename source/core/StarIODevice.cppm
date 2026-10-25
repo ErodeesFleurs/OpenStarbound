@@ -10,7 +10,7 @@ using StreamOffset = std::int64_t;
 
 
 struct EofExceptionTag {
-  static constexpr char const* name() { return "EofException"; }
+  static constexpr std::string_view name() { return "EofException"; }
 };
 using EofException = StarError<EofExceptionTag, IOException>;
 

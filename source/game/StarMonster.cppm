@@ -131,7 +131,7 @@ public:
   EntityType entityType() const override;
   ClientEntityMode clientEntityMode() const override;
 
-  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> init(World& world, EntityId entityId, EntityMode mode) override;
   [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   Vec2F position() const override;
@@ -170,13 +170,13 @@ public:
   [[nodiscard]] std::expected<void, StarException> knockout();
 
   [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
-  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) override;
 
   [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback) override;
 
-  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback& renderCallback) override;
 
   void setPosition(Vec2F const& pos);
 
@@ -215,8 +215,8 @@ public:
 
   [[nodiscard]] std::expected<Vec2F, StarException> questIndicatorPosition() const override;
 
-  ActorMovementController* movementController() override;
-  StatusController* statusController() override;
+  ActorMovementController& movementController() override;
+  StatusController& statusController() override;
 
   using Entity::setKeepAlive;
   using Entity::setUniqueId;

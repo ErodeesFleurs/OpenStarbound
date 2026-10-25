@@ -8,6 +8,8 @@ import star.list;
 import star.data_stream_extra;
 import star.byte_array;
 import star.multi_array;
+import star.bytes;
+import star.io_device;
 
 #include "gtest/gtest.h"
 
@@ -42,17 +44,17 @@ TEST(DataStreamTest, SequenceWireBytesAndTruncatedPrefix) {
   List<std::uint8_t> values{0x10, 0x20};
   auto encoded = DataStreamBuffer::serialize(values);
   ASSERT_TRUE(encoded);
-  EXPECT_EQ(*encoded, ByteArray("\x02\x10\x20", 3));
+  EXPECT_EQ(*encoded, ByteArray({"\x02\x10\x20", 3}));
 
   List<std::uint8_t> decoded{0x7f};
-  auto read = DataStreamBuffer::deserialize(decoded, ByteArray("\x03\x10\x20", 3));
+  auto read = DataStreamBuffer::deserialize(decoded, ByteArray({"\x03\x10\x20", 3}));
   ASSERT_FALSE(read);
   EXPECT_EQ(decoded, values);
 }
 
 TEST(DataStreamTest, BoundedDecodeRetainsAcceptedPrefixOnCapacityError) {
   StaticList<std::uint8_t, 2> decoded;
-  auto read = DataStreamBuffer::deserialize(decoded, ByteArray("\x03\x10\x20\x30", 4));
+  auto read = DataStreamBuffer::deserialize(decoded, ByteArray({"\x03\x10\x20\x30", 4}));
   ASSERT_FALSE(read);
   ASSERT_EQ(decoded.size(), 2u);
   EXPECT_EQ(decoded[0], 0x10);
@@ -63,15 +65,74 @@ TEST(DataStreamTest, OrderedMapWireBytesAndDuplicateKeys) {
   Map<std::uint8_t, std::uint8_t> values{{2, 0x22}, {1, 0x11}};
   auto encoded = DataStreamBuffer::serialize(values);
   ASSERT_TRUE(encoded);
-  EXPECT_EQ(*encoded, ByteArray("\x02\x01\x11\x02\x22", 5));
+  EXPECT_EQ(*encoded, ByteArray({"\x02\x01\x11\x02\x22", 5}));
 
   Map<std::uint8_t, std::uint8_t> decoded{{9, 9}};
-  auto read = DataStreamBuffer::deserialize(decoded, ByteArray("\x02\x07\x0b\x07\x16", 5));
+  auto read = DataStreamBuffer::deserialize(decoded, ByteArray({"\x02\x07\x0b\x07\x16", 5}));
   ASSERT_TRUE(read);
   ASSERT_EQ(decoded.size(), 1u);
   auto value = decoded.get(7);
   ASSERT_TRUE(value);
-  EXPECT_EQ(**value, 0x0b);
+  EXPECT_EQ(value->get(), 0x0b);
+}
+
+TEST(DataStreamTest, OwnedBufferMovePreservesBytesCursorAndWireSettings) {
+  DataStreamBuffer source;
+  source.setByteOrder(ByteOrder::LittleEndian);
+  source.setNullTerminatedStrings(true);
+  source.setStreamCompatibilityVersion(17);
+  ASSERT_TRUE(source.write<std::uint16_t>(0x1234));
+  ASSERT_TRUE(source.writeData({"ab", 2}));
+  ASSERT_TRUE(source.seek(2));
+
+  DataStreamBuffer moved(std::move(source));
+  source.reset(ByteArray({"x", 1}));
+  EXPECT_EQ(moved.data(), ByteArray({"\x34\x12" "ab", 4}));
+  EXPECT_EQ(moved.pos(), 2u);
+  EXPECT_EQ(moved.byteOrder(), ByteOrder::LittleEndian);
+  EXPECT_TRUE(moved.nullTerminatedStrings());
+  EXPECT_EQ(moved.streamCompatibilityVersion(), 17u);
+
+  DataStreamBuffer destination(ByteArray({"old", 3}));
+  destination = std::move(moved);
+  moved.reset(ByteArray({"y", 1}));
+  EXPECT_EQ(destination.pos(), 2u);
+  EXPECT_EQ(destination.byteOrder(), ByteOrder::LittleEndian);
+  EXPECT_TRUE(destination.nullTerminatedStrings());
+  EXPECT_EQ(destination.streamCompatibilityVersion(), 17u);
+  char output[3]{};
+  auto read = destination.readData(output);
+  ASSERT_FALSE(read);
+  EXPECT_TRUE(read.error().is<EofException>());
+  EXPECT_EQ(ByteArray(std::span(output).first(2)), ByteArray({"ab", 2}));
+  EXPECT_EQ(destination.pos(), 4u);
+  auto atEnd = destination.atEnd();
+  ASSERT_TRUE(atEnd);
+  EXPECT_TRUE(*atEnd);
+  EXPECT_EQ(destination.takeData(), ByteArray({"\x34\x12" "ab", 4}));
+  EXPECT_TRUE(destination.empty());
+  EXPECT_EQ(destination.pos(), 0u);
+}
+
+TEST(DataStreamTest, IODeviceAdapterSharesCursorWithoutOwningDevice) {
+  Buffer device(ByteArray({"abc", 3}));
+  {
+    DataStreamIODevice stream(device);
+    ASSERT_TRUE(stream.seek(1));
+    EXPECT_EQ(device.pos(), 1);
+    char output[3]{};
+    auto read = stream.readData(output);
+    ASSERT_FALSE(read);
+    EXPECT_TRUE(read.error().is<EofException>());
+    EXPECT_EQ(ByteArray(std::span(output).first(2)), ByteArray({"bc", 2}));
+    EXPECT_EQ(stream.pos(), 3);
+    EXPECT_EQ(device.pos(), 3);
+    ASSERT_TRUE(stream.seek(0));
+    ASSERT_TRUE(stream.writeData({"z", 1}));
+  }
+  EXPECT_TRUE(device.isOpen());
+  EXPECT_EQ(device.data(), ByteArray({"zbc", 3}));
+  EXPECT_EQ(device.pos(), 1);
 }
 
 TEST(ExternalBufferTest, ClosedDeviceRejectsZeroLengthRead) {
@@ -86,7 +147,7 @@ TEST(ExternalBufferTest, ClosedDeviceRejectsZeroLengthRead) {
 }
 
 TEST(BufferTest, SpanTransfersRespectSlicesShortReadsAndAbsolutePositions) {
-  Buffer buffer(ByteArray("abc", 3));
+  Buffer buffer(ByteArray({"abc", 3}));
   std::array<char, 6> output{'!', '!', '!', '!', '!', '!'};
   auto read = buffer.read(std::span(output).subspan(1, 4));
   ASSERT_TRUE(read);
@@ -148,7 +209,7 @@ TEST(DataStreamTest, MultiArrayPreservesDimensionsAndLastIndexContiguousWireOrde
 
   auto encoded = DataStreamBuffer::serialize(array);
   ASSERT_TRUE(encoded);
-  EXPECT_EQ(*encoded, ByteArray("\x02\x03\x10\x11\x12\x20\x21\x22", 8));
+  EXPECT_EQ(*encoded, ByteArray({"\x02\x03\x10\x11\x12\x20\x21\x22", 8}));
   auto decoded = DataStreamBuffer::deserialize<MultiArray<std::uint8_t, 2>>(*encoded);
   ASSERT_TRUE(decoded);
   auto const view = std::as_const(*decoded).view();

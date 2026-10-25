@@ -124,9 +124,12 @@ namespace Star {
 namespace {
 
 template <typename T, typename Function>
-[[nodiscard]] auto withWidget(Widget* parent, String const& name, Function&& function)
+[[nodiscard]] auto withWidget(std::weak_ptr<Widget> const& parent, String const& name, Function&& function)
     -> std::invoke_result_t<Function, std::shared_ptr<T>> {
-  auto widget = parent->fetchChild<T>(name);
+  auto owner = parent.lock();
+  if (!owner)
+    return std::unexpected(GuiException("Widget callback target no longer exists"));
+  auto widget = owner->fetchChild<T>(name);
   if (!widget)
     return std::unexpected(std::move(widget.error()));
   if (!*widget)
@@ -154,7 +157,7 @@ std::expected<LuaMethods<std::shared_ptr<CanvasWidget>>, StarException> LuaUserD
   }); !registered)
     return std::unexpected(std::move(registered.error()));
   if (auto registered = methods.registerMethod("drawJsonDrawable", [](std::shared_ptr<CanvasWidget> canvas, Json config, std::optional<Vec2F> position) -> std::expected<void, StarException> {
-    auto metadata = canvas->context()->root().imageMetadataDatabase();
+    auto metadata = canvas->context().root().imageMetadataDatabase();
     if (!metadata)
       return std::unexpected(std::move(metadata.error()));
     auto drawable = Drawable::create(**metadata, config);
@@ -165,7 +168,7 @@ std::expected<LuaMethods<std::shared_ptr<CanvasWidget>>, StarException> LuaUserD
   }); !registered)
     return std::unexpected(std::move(registered.error()));
   if (auto registered = methods.registerMethod("drawJsonDrawables", [](std::shared_ptr<CanvasWidget> canvas, JsonArray configs, std::optional<Vec2F> position) -> std::expected<void, StarException> {
-    auto metadata = canvas->context()->root().imageMetadataDatabase();
+    auto metadata = canvas->context().root().imageMetadataDatabase();
     if (!metadata)
       return std::unexpected(std::move(metadata.error()));
     for (auto const& config : configs) {
@@ -185,16 +188,16 @@ std::expected<LuaMethods<std::shared_ptr<CanvasWidget>>, StarException> LuaUserD
   }); !registered)
     return std::unexpected(std::move(registered.error()));
   if (auto registered = methods.registerMethod("drawImageDrawable", [](std::shared_ptr<CanvasWidget> canvas, String image, Vec2F position, std::variant<std::monostate, Vec2F, float> scale, std::optional<Color> color, std::optional<float> rotation) -> std::expected<void, StarException> {
-    auto metadata = canvas->context()->root().imageMetadataDatabase();
+    auto metadata = canvas->context().root().imageMetadataDatabase();
     if (!metadata)
       return std::unexpected(std::move(metadata.error()));
     auto drawable = Drawable::makeImage(**metadata, image, 1.0, true, {0.0, 0.0}, color.value_or(Color::White));
     if (!drawable)
       return std::unexpected(std::move(drawable.error()));
-    if (auto value = std::get_if<Vec2F>(&scale))
-      drawable->transform(Mat3F::scaling(*value));
-    else if (auto value = std::get_if<float>(&scale))
-      drawable->transform(Mat3F::scaling(*value));
+    if (std::holds_alternative<Vec2F>(scale))
+      drawable->transform(Mat3F::scaling(std::get<Vec2F>(scale)));
+    else if (std::holds_alternative<float>(scale))
+      drawable->transform(Mat3F::scaling(std::get<float>(scale)));
     if (rotation)
       drawable->rotate(*rotation);
     canvas->drawDrawable(std::move(*drawable), position);
@@ -246,12 +249,19 @@ std::expected<LuaMethods<std::shared_ptr<CanvasWidget>>, StarException> LuaUserD
 
 namespace LuaBindings {
 
-std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& context, Widget* parentWidget, std::shared_ptr<GuiReader> reader) {
+std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& context, Widget& widget, std::shared_ptr<GuiReader> reader) {
+  auto parentWidget = widget.weak_from_this();
   if (!reader)
     reader = std::make_shared<GuiReader>(context);
   LuaCallbacks callbacks;
-  if (auto registered = callbacks.registerCallback("playSound", [parentWidget](String const& audio, std::optional<int> loops, std::optional<float> volume) {
-    return parentWidget->context()->playAudio(audio, loops.value_or(0), volume.value_or(1.0f));
+  if (auto registered = callbacks.registerCallback("playSound", [parentWidget](String const& audio, std::optional<int> loops, std::optional<float> volume) -> std::expected<void, StarException> {
+    auto owner = parentWidget.lock();
+    if (!owner)
+      return std::unexpected(GuiException("Widget callback target no longer exists"));
+    auto played = owner->context().playAudio(audio, loops.value_or(0), volume.value_or(1.0f));
+    if (!played)
+      return std::unexpected(std::move(played.error()));
+    return {};
   }); !registered)
     return std::unexpected(std::move(registered.error()));
   if (auto registered = callbacks.registerCallback("bindCanvas", [parentWidget](String const& widgetName) -> std::expected<std::optional<std::shared_ptr<CanvasWidget>>, StarException> {
@@ -332,8 +342,11 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
     });
   }); !registered)
     return std::unexpected(std::move(registered.error()));
-  if (auto registered = callbacks.registerCallback("getChildAt", [parentWidget](Vec2I const& position) -> std::optional<String> {
-    if (auto widget = parentWidget->getChildAt(position))
+  if (auto registered = callbacks.registerCallback("getChildAt", [parentWidget](Vec2I const& position) -> std::expected<std::optional<String>, StarException> {
+    auto owner = parentWidget.lock();
+    if (!owner)
+      return std::unexpected(GuiException("Widget callback target no longer exists"));
+    if (auto widget = owner->getChildAt(position))
       return widget->fullName();
     return {};
   }); !registered)
@@ -346,7 +359,7 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
     return std::unexpected(std::move(registered.error()));
   if (auto registered = callbacks.registerCallback("addChild", [parentWidget, reader](String const& widgetName, Json const& config, std::optional<String> const& childName) -> std::expected<void, StarException> {
     return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
-      String name = childName.value_or(toString(parentWidget->context()->root().random().randu64()));
+      String name = childName.value_or(toString(widget->context().root().random().randu64()));
       auto child = reader->makeSingle(name, config);
       if (!child)
         return std::unexpected(std::move(child.error()));
@@ -530,7 +543,7 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
   if (auto registered = callbacks.registerCallback("getSelectedData", [parentWidget](String const& widgetName) -> std::expected<Json, StarException> {
     return withWidget<ButtonGroupWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonGroupWidget> widget) -> std::expected<Json, StarException> {
       if (auto button = widget->checkedButton())
-        return button->data();
+        return button->get().data();
       return {};
     });
   }); !registered)
@@ -544,7 +557,7 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
   if (auto registered = callbacks.registerCallback("setOptionEnabled", [parentWidget](String const& widgetName, int index, bool enabled) -> std::expected<void, StarException> {
     return withWidget<ButtonGroupWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonGroupWidget> widget) -> std::expected<void, StarException> {
       if (auto button = widget->button(index))
-        button->setEnabled(enabled);
+        button->get().setEnabled(enabled);
       return {};
     });
   }); !registered)
@@ -552,7 +565,7 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
   if (auto registered = callbacks.registerCallback("setOptionVisible", [parentWidget](String const& widgetName, int index, bool visible) -> std::expected<void, StarException> {
     return withWidget<ButtonGroupWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonGroupWidget> widget) -> std::expected<void, StarException> {
       if (auto button = widget->button(index))
-        return button->setVisibility(visible);
+        return button->get().setVisibility(visible);
       return {};
     });
   }); !registered)
@@ -637,8 +650,8 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
     return std::unexpected(std::move(registered.error()));
   if (auto registered = callbacks.registerCallback("registerMemberCallback", [parentWidget](String const& widgetName, String const& name, LuaFunction callback) -> std::expected<void, StarException> {
     return withWidget<ListWidget>(parentWidget, widgetName, [&](std::shared_ptr<ListWidget> widget) -> std::expected<void, StarException> {
-      widget->registerMemberCallback(name, [callback](Widget* member) -> std::expected<void, StarException> {
-        return callback.invoke<void>(member->name(), member->data());
+      widget->registerMemberCallback(name, [callback](Widget& member) -> std::expected<void, StarException> {
+        return callback.invoke<void>(member.name(), member.data());
       });
       return {};
     });
@@ -660,7 +673,7 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
     return std::unexpected(std::move(registered.error()));
   if (auto registered = callbacks.registerCallback("setItemSlotItem", [parentWidget](String const& widgetName, Json const& config) -> std::expected<void, StarException> {
     return withWidget<ItemSlotWidget>(parentWidget, widgetName, [&](std::shared_ptr<ItemSlotWidget> widget) -> std::expected<void, StarException> {
-      auto database = parentWidget->context()->root().itemDatabase();
+      auto database = widget->context().root().itemDatabase();
       if (!database)
         return std::unexpected(std::move(database.error()));
       auto item = (*database)->fromJson(config);
@@ -680,7 +693,7 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
     return std::unexpected(std::move(registered.error()));
   if (auto registered = callbacks.registerCallback("addFlowImage", [parentWidget](String const& widgetName, String const& name, String const& image) -> std::expected<void, StarException> {
     return withWidget<FlowLayout>(parentWidget, widgetName, [&](std::shared_ptr<FlowLayout> widget) -> std::expected<void, StarException> {
-      auto child = ImageWidget::create(*parentWidget->context(), image);
+      auto child = ImageWidget::create(widget->context(), image);
       if (!child)
         return std::unexpected(std::move(child.error()));
       return widget->addChild(name, std::move(*child));

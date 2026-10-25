@@ -168,16 +168,16 @@ std::expected<List<LightSource>, StarException> Flashlight::lightSources() const
   auto handResult = hand();
   if (!handResult)
     return std::unexpected(std::move(handResult.error()));
-  auto ownerHandPosition = (*ownerResult)->handPosition(*handResult, (m_lightPosition - m_handPosition) / TilePixels);
+  auto ownerHandPosition = ownerResult->get().handPosition(*handResult, (m_lightPosition - m_handPosition) / TilePixels);
   if (!ownerHandPosition)
     return std::unexpected(std::move(ownerHandPosition.error()));
-  auto aimPosition = (*ownerResult)->aimPosition();
+  auto aimPosition = ownerResult->get().aimPosition();
   if (!aimPosition)
     return std::unexpected(std::move(aimPosition.error()));
-  float angle = (*worldResult)->geometry().diff(*aimPosition, (*ownerResult)->position()).angle();
+  float angle = worldResult->get().geometry().diff(*aimPosition, ownerResult->get().position()).angle();
   LightSource lightSource;
   lightSource.type = LightType::Point;
-  lightSource.position = (*ownerResult)->position() + *ownerHandPosition;
+  lightSource.position = ownerResult->get().position() + *ownerHandPosition;
   lightSource.color = m_lightColor.toRgbF();
   lightSource.pointBeam = m_beamWidth;
   lightSource.beamAngle = angle;

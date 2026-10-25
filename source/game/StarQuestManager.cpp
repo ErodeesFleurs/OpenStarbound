@@ -22,9 +22,9 @@ import star.interactive_entity;
 import star.universe_client;
 import star.world;
 namespace Star {
-QuestManager::QuestManager(Root& root, Player* player)
-  : m_root(root), m_player(player), m_world(nullptr), m_client(nullptr), m_trackOnWorldQuests(false) {}
-std::expected<std::shared_ptr<QuestManager>, StarException> QuestManager::create(Root& root, Player* player) {
+QuestManager::QuestManager(Root& root, Player& player)
+  : m_root(root), m_player(player), m_trackOnWorldQuests(false) {}
+std::expected<std::shared_ptr<QuestManager>, StarException> QuestManager::create(Root& root, Player& player) {
   return std::shared_ptr<QuestManager>(new QuestManager(root, player));
 }
 [[nodiscard]] std::expected<StringMap<std::shared_ptr<Quest>>, StarException> readQuests(Root& root, Json const& json) {
@@ -74,48 +74,67 @@ std::expected<Json, StarException> QuestManager::diskStore() {
   if (!quests) return std::unexpected(std::move(quests.error()));
   return JsonObject{{"quests", *quests}, {"currentQuest", jsonFromOptional(m_trackedQuestId)}};
 }
-void QuestManager::setUniverseClient(UniverseClient* client) { m_client = client; }
-std::expected<void, StarException> QuestManager::init(World* world) {
+void QuestManager::setUniverseClient(std::optional<std::reference_wrapper<UniverseClient>> client) { m_client = client; }
+std::expected<void, StarException> QuestManager::init(Player& player, World& world) {
+  m_player = player;
   m_world = world;
+  m_client = player.universeClient();
   for (auto const& quest : m_quests.values()) {
     if (!questValidOnServer(quest)) continue;
-    auto initialized = quest->init(m_player, world, m_client);
-    if (!initialized) return std::unexpected(std::move(initialized.error()));
+    auto initialized = quest->init(player, world, m_client);
+    if (!initialized) {
+      auto error = std::move(initialized.error());
+      auto shutdown = uninit();
+      if (!shutdown) error = error.withContext(strf("Error rolling back quest manager: {}", outputException(shutdown.error(), true)));
+      return std::unexpected(std::move(error));
+    }
   }
   m_trackOnWorldQuests = true;
   if (m_trackedQuestId) {
-    if (auto quest = m_quests.maybe(*m_trackedQuestId)) {
-      if ((*quest)->hideCrossServer() && (*quest)->serverUuid() && *(*quest)->serverUuid() != m_player->clientContext()->serverUuid()) m_trackedQuestId.reset();
+    if (auto quest = m_quests.maybeRef(*m_trackedQuestId)) {
+      if (quest->get()->hideCrossServer() && quest->get()->serverUuid() && *quest->get()->serverUuid() != m_player->get().clientContext()->serverUuid()) m_trackedQuestId.reset();
     }
   }
   return {};
 }
 std::expected<void, StarException> QuestManager::uninit() {
+  std::optional<StarException> error;
   for (auto const& quest : m_quests.values()) {
     auto result = quest->uninit();
-    if (!result) return std::unexpected(std::move(result.error()));
+    if (!result && !error) error = std::move(result.error());
   }
-  m_world = nullptr;
+  detachPlayer();
+  if (error) return std::unexpected(std::move(*error));
   return {};
 }
+void QuestManager::detachPlayer() {
+  for (auto const& quest : m_quests.values())
+    quest->detachPlayer();
+  m_world.reset();
+  m_player.reset();
+  m_client.reset();
+  m_trackOnWorldQuests = false;
+}
 std::expected<bool, StarException> QuestManager::canStart(QuestArcDescriptor const& arc) const {
-  if (arc.quests.empty()) return false;
+  if (!m_player || arc.quests.empty()) return false;
   for (auto const& descriptor : arc.quests) {
     auto database = m_root.questTemplateDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     auto config = (*database)->questTemplate(descriptor.templateId);
     if (!config) return std::unexpected(std::move(config.error()));
     if (!*config) return false;
-    if (auto quest = m_quests.maybe(descriptor.questId)) if ((*quest)->state() != QuestState::Failed) return false;
+    if (auto quest = m_quests.maybeRef(descriptor.questId)) if (quest->get()->state() != QuestState::Failed) return false;
     for (auto const& prerequisite : (*config)->prerequisiteQuests) if (!hasCompleted(prerequisite)) return false;
-    for (auto const& item : (*config)->requiredItems) if (!m_player->inventory()->hasItem(item)) return false;
-    if ((*config)->requiredShipLevel && m_player->shipUpgrades().shipLevel < *(*config)->requiredShipLevel) return false;
+    for (auto const& item : (*config)->requiredItems) if (!m_player->get().inventory()->hasItem(item)) return false;
+    if ((*config)->requiredShipLevel && m_player->get().shipUpgrades().shipLevel < *(*config)->requiredShipLevel) return false;
   }
   return true;
 }
 std::expected<void, StarException> QuestManager::offer(std::shared_ptr<Quest> const& quest) {
+  if (!m_player || !m_world)
+    return std::unexpected(StarException("Cannot offer a quest without an attached player world"));
   m_quests[quest->questId()] = quest;
-  auto initialized = quest->init(m_player, m_world, m_client);
+  auto initialized = quest->init(m_player->get(), m_world->get(), m_client);
   if (!initialized) return std::unexpected(std::move(initialized.error()));
   return quest->offer();
 }
@@ -128,16 +147,16 @@ StringMap<std::shared_ptr<Quest>> QuestManager::serverQuests() const {
 std::expected<std::shared_ptr<Quest>, StarException> QuestManager::getQuest(String const& id) const {
   auto result = m_quests.get(id);
   if (!result) return std::unexpected(std::move(result.error()));
-  return **result;
+  return result->get();
 }
 bool QuestManager::hasQuest(String const& id) const { return m_quests.contains(id); }
 bool QuestManager::hasAcceptedQuest(String const& id) const {
-  auto quest = m_quests.maybe(id);
-  return quest && (*quest)->state() != QuestState::New && (*quest)->state() != QuestState::Offer;
+  auto quest = m_quests.maybeRef(id);
+  return quest && quest->get()->state() != QuestState::New && quest->get()->state() != QuestState::Offer;
 }
 bool QuestManager::isActive(String const& id) const {
-  auto quest = m_quests.maybe(id);
-  return quest && (*quest)->state() == QuestState::Active;
+  auto quest = m_quests.maybeRef(id);
+  return quest && quest->get()->state() == QuestState::Active;
 }
 bool QuestManager::isCurrent(String const& id) const { return (m_onWorldQuestId ? m_onWorldQuestId : m_trackedQuestId) == id; }
 bool QuestManager::isTracked(String const& id) const { return m_trackedQuestId == id; }
@@ -147,14 +166,14 @@ void QuestManager::setAsTracked(std::optional<String> const& id) {
     if (m_onWorldQuestId) { m_onWorldQuestId.reset(); m_trackOnWorldQuests = false; }
   } else { m_trackedQuestId.reset(); m_trackOnWorldQuests = true; }
 }
-void QuestManager::markAsRead(String const& id) { if (auto quest = m_quests.maybe(id)) (*quest)->markAsRead(); }
+void QuestManager::markAsRead(String const& id) { if (auto quest = m_quests.maybeRef(id)) quest->get()->markAsRead(); }
 bool QuestManager::hasCompleted(String const& id) const {
-  auto quest = m_quests.maybe(id);
-  return quest && (*quest)->state() == QuestState::Complete;
+  auto quest = m_quests.maybeRef(id);
+  return quest && quest->get()->state() == QuestState::Complete;
 }
 bool QuestManager::canTurnIn(String const& id) const {
-  auto quest = m_quests.maybe(id);
-  return quest && (*quest)->state() == QuestState::Active && (*quest)->canTurnIn();
+  auto quest = m_quests.maybeRef(id);
+  return quest && quest->get()->state() == QuestState::Active && quest->get()->canTurnIn();
 }
 std::optional<std::shared_ptr<Quest>> QuestManager::getFirstNewQuest() {
   for (auto const& q : m_quests) if (questValidOnServer(q.second) && q.second->state() == QuestState::Offer) return q.second;
@@ -199,14 +218,14 @@ std::optional<String> QuestManager::currentQuestId() const { return m_trackedQue
 std::optional<std::shared_ptr<Quest>> QuestManager::currentQuest() const {
   auto id = m_onWorldQuestId ? m_onWorldQuestId : m_trackedQuestId;
   if (id && isActive(*id)) {
-    if (auto quest = m_quests.maybe(*id)) if ((*quest)->showInLog()) return *quest;
+    if (auto quest = m_quests.maybeRef(*id)) if (quest->get()->showInLog()) return quest->get();
   }
   return {};
 }
 std::optional<String> QuestManager::trackedQuestId() const { return m_trackedQuestId; }
 std::optional<std::shared_ptr<Quest>> QuestManager::trackedQuest() const {
   if (m_trackedQuestId && isActive(*m_trackedQuestId)) {
-    if (auto quest = m_quests.maybe(*m_trackedQuestId)) if ((*quest)->showInLog()) return *quest;
+    if (auto quest = m_quests.maybeRef(*m_trackedQuestId)) if (quest->get()->showInLog()) return quest->get();
   }
   return {};
 }
@@ -283,8 +302,8 @@ std::expected<StringSet, StarException> QuestManager::interestingObjects() {
     auto response = quest->receiveMessage("interestingObjects", true, JsonArray());
     if (!response) return std::unexpected(std::move(response.error()));
     if (*response) {
-      if (auto json = std::get_if<Json>(&**response)) {
-        auto objects = jsonToStringSet(*json);
+      if (std::holds_alternative<Json>(**response)) {
+        auto objects = jsonToStringSet(std::get<Json>(**response));
         if (!objects) return std::unexpected(std::move(objects.error()));
         result.addAll(*objects);
       }
@@ -302,6 +321,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> QuestM
   return result;
 }
 std::expected<void, StarException> QuestManager::update(float dt) {
+  if (!m_player || !m_world) return {};
   auto initial = startInitialQuests();
   if (!initial) return std::unexpected(std::move(initial.error()));
   if (m_trackedQuestId && !isActive(*m_trackedQuestId)) m_trackedQuestId.reset();
@@ -311,11 +331,11 @@ std::expected<void, StarException> QuestManager::update(float dt) {
       auto quest = getQuest(*m_onWorldQuestId);
       if (!quest) return std::unexpected(std::move(quest.error()));
       auto world = (*quest)->worldId();
-      if (!world || m_player->clientContext()->playerWorldId() != *world) active = false;
+      if (!world || m_player->get().clientContext()->playerWorldId() != *world) active = false;
     }
     if (!active) m_onWorldQuestId.reset();
-  } else if (m_trackOnWorldQuests) {
-    auto playerWorld = m_client->clientContext()->playerWorldId();
+  } else if (m_trackOnWorldQuests && m_client) {
+    auto playerWorld = m_client->get().clientContext()->playerWorldId();
     auto trackedWorld = currentQuest().and_then([](std::shared_ptr<Quest> const& quest) { return quest->worldId(); });
     if (!trackedWorld || playerWorld != *trackedWorld) {
       for (auto const& quest : listActiveQuests()) {
@@ -345,7 +365,7 @@ std::expected<void, StarException> QuestManager::update(float dt) {
 std::expected<void, StarException> QuestManager::startInitialQuests() {
   auto assets = m_root.assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
-  auto json = (*assets)->json(strf("/quests/quests.config:initialquests.{}", m_player->species()));
+  auto json = (*assets)->json(strf("/quests/quests.config:initialquests.{}", m_player->get().species()));
   if (!json) return std::unexpected(std::move(json.error()));
   auto initial = json->toArray();
   if (!initial) return std::unexpected(std::move(initial.error()));
@@ -355,7 +375,7 @@ std::expected<void, StarException> QuestManager::startInitialQuests() {
     auto start = canStart(*arc);
     if (!start) return std::unexpected(std::move(start.error()));
     if (*start) {
-      auto quest = Quest::create(m_root, *arc, 0, m_player);
+      auto quest = Quest::create(m_root, *arc, 0, m_player->get());
       if (!quest) return std::unexpected(std::move(quest.error()));
       auto offered = offer(*quest);
       if (!offered) return std::unexpected(std::move(offered.error()));
@@ -368,6 +388,7 @@ void QuestManager::setMostRecentQuestCurrent() {
   if (!active.empty()) setAsTracked(active[active.size() - 1]->questId());
 }
 bool QuestManager::questValidOnServer(std::shared_ptr<Quest> q) const {
-  return !(q->hideCrossServer() && q->serverUuid() && *q->serverUuid() != m_player->clientContext()->serverUuid());
+  return !(q->hideCrossServer() && q->serverUuid()
+      && (!m_player || *q->serverUuid() != m_player->get().clientContext()->serverUuid()));
 }
 }

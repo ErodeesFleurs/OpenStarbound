@@ -26,8 +26,8 @@ TEST(NetElements, DataRounding) {
   NetElementFloat masterField2;
 
   NetElementTop<NetElementGroup> master;
-  ASSERT_TRUE(master.addNetElement(&masterField1));
-  ASSERT_TRUE(master.addNetElement(&masterField2));
+  ASSERT_TRUE(master.addNetElement(masterField1));
+  ASSERT_TRUE(master.addNetElement(masterField2));
 
   masterField1.setFixedPointBase(0.1f);
   masterField2.setFixedPointBase(0.5);
@@ -42,8 +42,8 @@ TEST(NetElements, DataRounding) {
   NetElementFloat slaveField2;
 
   NetElementTop<NetElementGroup> slave;
-  ASSERT_TRUE(slave.addNetElement(&slaveField1));
-  ASSERT_TRUE(slave.addNetElement(&slaveField2));
+  ASSERT_TRUE(slave.addNetElement(slaveField1));
+  ASSERT_TRUE(slave.addNetElement(slaveField2));
 
   slaveField1.setFixedPointBase(0.1f);
   slaveField2.setFixedPointBase(0.5);
@@ -87,10 +87,10 @@ TEST(NetElements, DirectWriteRead) {
   NetElementUInt masterField4;
 
   NetElementTop<NetElementGroup> master;
-  ASSERT_TRUE(master.addNetElement(&masterField1));
-  ASSERT_TRUE(master.addNetElement(&masterField2));
-  ASSERT_TRUE(master.addNetElement(&masterField3));
-  ASSERT_TRUE(master.addNetElement(&masterField4));
+  ASSERT_TRUE(master.addNetElement(masterField1));
+  ASSERT_TRUE(master.addNetElement(masterField2));
+  ASSERT_TRUE(master.addNetElement(masterField3));
+  ASSERT_TRUE(master.addNetElement(masterField4));
 
   masterField1.set(1);
   masterField2.set(2);
@@ -103,10 +103,10 @@ TEST(NetElements, DirectWriteRead) {
   NetElementUInt slaveField4;
 
   NetElementTop<NetElementGroup> slave;
-  ASSERT_TRUE(slave.addNetElement(&slaveField1));
-  ASSERT_TRUE(slave.addNetElement(&slaveField2));
-  ASSERT_TRUE(slave.addNetElement(&slaveField3));
-  ASSERT_TRUE(slave.addNetElement(&slaveField4));
+  ASSERT_TRUE(slave.addNetElement(slaveField1));
+  ASSERT_TRUE(slave.addNetElement(slaveField2));
+  ASSERT_TRUE(slave.addNetElement(slaveField3));
+  ASSERT_TRUE(slave.addNetElement(slaveField4));
 
   auto masterUpdate1 = master.writeNetState();
   ASSERT_TRUE(masterUpdate1);
@@ -149,10 +149,10 @@ TEST(NetElements, DeltaSize) {
   NetElementSize masterField4;
 
   NetElementTop<NetElementGroup> master;
-  ASSERT_TRUE(master.addNetElement(&masterField1));
-  ASSERT_TRUE(master.addNetElement(&masterField2));
-  ASSERT_TRUE(master.addNetElement(&masterField3));
-  ASSERT_TRUE(master.addNetElement(&masterField4));
+  ASSERT_TRUE(master.addNetElement(masterField1));
+  ASSERT_TRUE(master.addNetElement(masterField2));
+  ASSERT_TRUE(master.addNetElement(masterField3));
+  ASSERT_TRUE(master.addNetElement(masterField4));
 
   NetElementInt slaveField1;
   NetElementUInt slaveField2;
@@ -160,10 +160,10 @@ TEST(NetElements, DeltaSize) {
   NetElementSize slaveField4;
 
   NetElementTop<NetElementGroup> slave;
-  ASSERT_TRUE(slave.addNetElement(&slaveField1));
-  ASSERT_TRUE(slave.addNetElement(&slaveField2));
-  ASSERT_TRUE(slave.addNetElement(&slaveField3));
-  ASSERT_TRUE(slave.addNetElement(&slaveField4));
+  ASSERT_TRUE(slave.addNetElement(slaveField1));
+  ASSERT_TRUE(slave.addNetElement(slaveField2));
+  ASSERT_TRUE(slave.addNetElement(slaveField3));
+  ASSERT_TRUE(slave.addNetElement(slaveField4));
 
   masterField1.set(10);
   masterField2.set(20);
@@ -205,22 +205,22 @@ TEST(NetElements, Forwarding) {
   NetElementData<String> masterField2;
 
   NetElementTop<NetElementGroup> master;
-  ASSERT_TRUE(master.addNetElement(&masterField1));
-  ASSERT_TRUE(master.addNetElement(&masterField2));
+  ASSERT_TRUE(master.addNetElement(masterField1));
+  ASSERT_TRUE(master.addNetElement(masterField2));
 
   NetElementInt forwarderField1;
   NetElementData<String> forwarderField2;
 
   NetElementTop<NetElementGroup> forwarder;
-  ASSERT_TRUE(forwarder.addNetElement(&forwarderField1));
-  ASSERT_TRUE(forwarder.addNetElement(&forwarderField2));
+  ASSERT_TRUE(forwarder.addNetElement(forwarderField1));
+  ASSERT_TRUE(forwarder.addNetElement(forwarderField2));
 
   NetElementInt slaveField1;
   NetElementData<String> slaveField2;
 
   NetElementTop<NetElementGroup> slave;
-  ASSERT_TRUE(slave.addNetElement(&slaveField1));
-  ASSERT_TRUE(slave.addNetElement(&slaveField2));
+  ASSERT_TRUE(slave.addNetElement(slaveField1));
+  ASSERT_TRUE(slave.addNetElement(slaveField2));
 
   masterField1.set(413);
   masterField2.set("foo");
@@ -244,22 +244,22 @@ TEST(NetElements, StepForwarding) {
   NetElementInt masterField2;
 
   NetElementTop<NetElementGroup> master;
-  ASSERT_TRUE(master.addNetElement(&masterField1));
-  ASSERT_TRUE(master.addNetElement(&masterField2));
+  ASSERT_TRUE(master.addNetElement(masterField1));
+  ASSERT_TRUE(master.addNetElement(masterField2));
 
   NetElementInt forwarderField1;
   NetElementInt forwarderField2;
 
   NetElementTop<NetElementGroup> forwarder;
-  ASSERT_TRUE(forwarder.addNetElement(&forwarderField1));
-  ASSERT_TRUE(forwarder.addNetElement(&forwarderField2));
+  ASSERT_TRUE(forwarder.addNetElement(forwarderField1));
+  ASSERT_TRUE(forwarder.addNetElement(forwarderField2));
 
   NetElementInt slaveField1;
   NetElementInt slaveField2;
 
   NetElementTop<NetElementGroup> slave;
-  ASSERT_TRUE(slave.addNetElement(&slaveField1));
-  ASSERT_TRUE(slave.addNetElement(&slaveField2));
+  ASSERT_TRUE(slave.addNetElement(slaveField1));
+  ASSERT_TRUE(slave.addNetElement(slaveField2));
 
   // First emulate store / load that would happen in entity initialization.
 
@@ -307,27 +307,27 @@ TEST(NetElements, InterpolationForwarding) {
   NetElementData<String> masterField3;
 
   NetElementTop<NetElementGroup> master;
-  ASSERT_TRUE(master.addNetElement(&masterField1));
-  ASSERT_TRUE(master.addNetElement(&masterField2));
-  ASSERT_TRUE(master.addNetElement(&masterField3));
+  ASSERT_TRUE(master.addNetElement(masterField1));
+  ASSERT_TRUE(master.addNetElement(masterField2));
+  ASSERT_TRUE(master.addNetElement(masterField3));
 
   NetElementInt forwarderField1;
   NetElementFloat forwarderField2;
   NetElementData<String> forwarderField3;
 
   NetElementTop<NetElementGroup> forwarder;
-  ASSERT_TRUE(forwarder.addNetElement(&forwarderField1));
-  ASSERT_TRUE(forwarder.addNetElement(&forwarderField2));
-  ASSERT_TRUE(forwarder.addNetElement(&forwarderField3));
+  ASSERT_TRUE(forwarder.addNetElement(forwarderField1));
+  ASSERT_TRUE(forwarder.addNetElement(forwarderField2));
+  ASSERT_TRUE(forwarder.addNetElement(forwarderField3));
 
   NetElementInt slaveField1;
   NetElementFloat slaveField2;
   NetElementData<String> slaveField3;
 
   NetElementTop<NetElementGroup> slave;
-  ASSERT_TRUE(slave.addNetElement(&slaveField1));
-  ASSERT_TRUE(slave.addNetElement(&slaveField2));
-  ASSERT_TRUE(slave.addNetElement(&slaveField3));
+  ASSERT_TRUE(slave.addNetElement(slaveField1));
+  ASSERT_TRUE(slave.addNetElement(slaveField2));
+  ASSERT_TRUE(slave.addNetElement(slaveField3));
 
   ASSERT_TRUE(forwarder.enableNetInterpolation());
   ASSERT_TRUE(slave.enableNetInterpolation());
@@ -399,9 +399,9 @@ TEST(NetElements, MasterSetGet) {
   NetElementEvent masterField3;
 
   NetElementTop<NetElementGroup> master;
-  ASSERT_TRUE(master.addNetElement(&masterField1));
-  ASSERT_TRUE(master.addNetElement(&masterField2));
-  ASSERT_TRUE(master.addNetElement(&masterField3));
+  ASSERT_TRUE(master.addNetElement(masterField1));
+  ASSERT_TRUE(master.addNetElement(masterField2));
+  ASSERT_TRUE(master.addNetElement(masterField3));
 
   EXPECT_EQ(masterField3.pullOccurrences(), 0u);
 
@@ -454,15 +454,15 @@ TEST(NetElements, EventTest) {
   NetElementEvent masterField2;
 
   NetElementTop<NetElementGroup> master;
-  ASSERT_TRUE(master.addNetElement(&masterField1));
-  ASSERT_TRUE(master.addNetElement(&masterField2));
+  ASSERT_TRUE(master.addNetElement(masterField1));
+  ASSERT_TRUE(master.addNetElement(masterField2));
 
   NetElementData<String> slaveField1;
   NetElementEvent slaveField2;
 
   NetElementTop<NetElementGroup> slave;
-  ASSERT_TRUE(slave.addNetElement(&slaveField1));
-  ASSERT_TRUE(slave.addNetElement(&slaveField2));
+  ASSERT_TRUE(slave.addNetElement(slaveField1));
+  ASSERT_TRUE(slave.addNetElement(slaveField2));
 
   // Events should always start with occurred false.
   EXPECT_EQ(slaveField1.pullUpdated(), false);
@@ -508,10 +508,10 @@ TEST(NetElements, FieldUpdated) {
   NetElementEvent masterField4;
 
   NetElementTop<NetElementGroup> master;
-  ASSERT_TRUE(master.addNetElement(&masterField1));
-  ASSERT_TRUE(master.addNetElement(&masterField2));
-  ASSERT_TRUE(master.addNetElement(&masterField3));
-  ASSERT_TRUE(master.addNetElement(&masterField4));
+  ASSERT_TRUE(master.addNetElement(masterField1));
+  ASSERT_TRUE(master.addNetElement(masterField2));
+  ASSERT_TRUE(master.addNetElement(masterField3));
+  ASSERT_TRUE(master.addNetElement(masterField4));
 
   NetElementData<String> slaveField1;
   NetElementInt slaveField2;
@@ -519,10 +519,10 @@ TEST(NetElements, FieldUpdated) {
   NetElementEvent slaveField4;
 
   NetElementTop<NetElementGroup> slave;
-  ASSERT_TRUE(slave.addNetElement(&slaveField1));
-  ASSERT_TRUE(slave.addNetElement(&slaveField2));
-  ASSERT_TRUE(slave.addNetElement(&slaveField3));
-  ASSERT_TRUE(slave.addNetElement(&slaveField4));
+  ASSERT_TRUE(slave.addNetElement(slaveField1));
+  ASSERT_TRUE(slave.addNetElement(slaveField2));
+  ASSERT_TRUE(slave.addNetElement(slaveField3));
+  ASSERT_TRUE(slave.addNetElement(slaveField4));
 
   slaveField4.setIgnoreOccurrencesOnNetLoad(true);
 
@@ -619,8 +619,8 @@ TEST(NetElements, Interpolation) {
   NetElementData<String> masterField2;
 
   NetElementTop<NetElementGroup> master;
-  ASSERT_TRUE(master.addNetElement(&masterField1));
-  ASSERT_TRUE(master.addNetElement(&masterField2));
+  ASSERT_TRUE(master.addNetElement(masterField1));
+  ASSERT_TRUE(master.addNetElement(masterField2));
 
   masterField1.set(1.0f);
   masterField2.set("yes");
@@ -629,8 +629,8 @@ TEST(NetElements, Interpolation) {
   NetElementData<String> slaveField2;
 
   NetElementTop<NetElementGroup> slave;
-  ASSERT_TRUE(slave.addNetElement(&slaveField1));
-  ASSERT_TRUE(slave.addNetElement(&slaveField2));
+  ASSERT_TRUE(slave.addNetElement(slaveField1));
+  ASSERT_TRUE(slave.addNetElement(slaveField2));
 
   slaveField1.setInterpolator(lerp<double, double>);
 
@@ -715,17 +715,17 @@ TEST(NetElements, AllTypes) {
   NetElementData<Vec2F> masterField11;
 
   NetElementTop<NetElementGroup> master;
-  ASSERT_TRUE(master.addNetElement(&masterField1));
-  ASSERT_TRUE(master.addNetElement(&masterField2));
-  ASSERT_TRUE(master.addNetElement(&masterField3));
-  ASSERT_TRUE(master.addNetElement(&masterField4));
-  ASSERT_TRUE(master.addNetElement(&masterField5));
-  ASSERT_TRUE(master.addNetElement(&masterField6));
-  ASSERT_TRUE(master.addNetElement(&masterField7));
-  ASSERT_TRUE(master.addNetElement(&masterField8));
-  ASSERT_TRUE(master.addNetElement(&masterField9));
-  ASSERT_TRUE(master.addNetElement(&masterField10));
-  ASSERT_TRUE(master.addNetElement(&masterField11));
+  ASSERT_TRUE(master.addNetElement(masterField1));
+  ASSERT_TRUE(master.addNetElement(masterField2));
+  ASSERT_TRUE(master.addNetElement(masterField3));
+  ASSERT_TRUE(master.addNetElement(masterField4));
+  ASSERT_TRUE(master.addNetElement(masterField5));
+  ASSERT_TRUE(master.addNetElement(masterField6));
+  ASSERT_TRUE(master.addNetElement(masterField7));
+  ASSERT_TRUE(master.addNetElement(masterField8));
+  ASSERT_TRUE(master.addNetElement(masterField9));
+  ASSERT_TRUE(master.addNetElement(masterField10));
+  ASSERT_TRUE(master.addNetElement(masterField11));
 
   masterField1.set(567);
   masterField2.set(17000);
@@ -766,17 +766,17 @@ TEST(NetElements, AllTypes) {
   NetElementData<Vec2F> slaveField11;
 
   NetElementTop<NetElementGroup> slave;
-  ASSERT_TRUE(slave.addNetElement(&slaveField1));
-  ASSERT_TRUE(slave.addNetElement(&slaveField2));
-  ASSERT_TRUE(slave.addNetElement(&slaveField3));
-  ASSERT_TRUE(slave.addNetElement(&slaveField4));
-  ASSERT_TRUE(slave.addNetElement(&slaveField5));
-  ASSERT_TRUE(slave.addNetElement(&slaveField6));
-  ASSERT_TRUE(slave.addNetElement(&slaveField7));
-  ASSERT_TRUE(slave.addNetElement(&slaveField8));
-  ASSERT_TRUE(slave.addNetElement(&slaveField9));
-  ASSERT_TRUE(slave.addNetElement(&slaveField10));
-  ASSERT_TRUE(slave.addNetElement(&slaveField11));
+  ASSERT_TRUE(slave.addNetElement(slaveField1));
+  ASSERT_TRUE(slave.addNetElement(slaveField2));
+  ASSERT_TRUE(slave.addNetElement(slaveField3));
+  ASSERT_TRUE(slave.addNetElement(slaveField4));
+  ASSERT_TRUE(slave.addNetElement(slaveField5));
+  ASSERT_TRUE(slave.addNetElement(slaveField6));
+  ASSERT_TRUE(slave.addNetElement(slaveField7));
+  ASSERT_TRUE(slave.addNetElement(slaveField8));
+  ASSERT_TRUE(slave.addNetElement(slaveField9));
+  ASSERT_TRUE(slave.addNetElement(slaveField10));
+  ASSERT_TRUE(slave.addNetElement(slaveField11));
 
   auto state = master.writeNetState();
   ASSERT_TRUE(state);
@@ -800,7 +800,7 @@ TEST(NetElements, NetElementDynamicGroup) {
   public:
     [[nodiscard]] static std::expected<std::shared_ptr<TestElement>, StarException> create(int value = 0) {
       auto element = std::shared_ptr<TestElement>(new TestElement());
-      auto added = element->addNetElement(&element->dataState);
+      auto added = element->addNetElement(element->dataState);
       if (!added)
         return std::unexpected(std::move(added.error()));
       element->dataState.set(value);
@@ -1133,12 +1133,12 @@ TEST(NetElements, NetElementMap) {
   {
     auto value = slaveMap.get("foo");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "bar");
+    EXPECT_EQ(value->get(), "bar");
   }
   {
     auto value = slaveMap.get("baz");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "bof");
+    EXPECT_EQ(value->get(), "bof");
   }
 
   ASSERT_TRUE(masterMap.add("bif", "fob"));
@@ -1150,7 +1150,7 @@ TEST(NetElements, NetElementMap) {
   {
     auto value = slaveMap.get("bif");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "fob");
+    EXPECT_EQ(value->get(), "fob");
   }
 
   masterMap.clear();
@@ -1162,7 +1162,7 @@ TEST(NetElements, NetElementMap) {
   {
     auto value = slaveMap.get("fib");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "fab");
+    EXPECT_EQ(value->get(), "fab");
   }
 
   masterMap.set("fib", "fab");
@@ -1177,17 +1177,17 @@ TEST(NetElements, NetElementMap) {
   {
     auto value = slaveMap.get("a");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "b");
+    EXPECT_EQ(value->get(), "b");
   }
   {
     auto value = slaveMap.get("c");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "d");
+    EXPECT_EQ(value->get(), "d");
   }
   {
     auto value = slaveMap.get("e");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "f");
+    EXPECT_EQ(value->get(), "f");
   }
 }
 
@@ -1236,12 +1236,12 @@ TEST(NetElements, NetElementMapInterpolated) {
   {
     auto value = slaveMap.get("foo");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "bar");
+    EXPECT_EQ(value->get(), "bar");
   }
   {
     auto value = slaveMap.get("baz");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "bof");
+    EXPECT_EQ(value->get(), "bof");
   }
 
   ASSERT_TRUE(masterMap.add("bif", "fob"));
@@ -1255,12 +1255,12 @@ TEST(NetElements, NetElementMapInterpolated) {
   {
     auto value = slaveMap.get("foo");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "bar");
+    EXPECT_EQ(value->get(), "bar");
   }
   {
     auto value = slaveMap.get("baz");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "bof");
+    EXPECT_EQ(value->get(), "bof");
   }
 
   ASSERT_TRUE(slaveMap.tickNetInterpolation(1.0f));
@@ -1269,17 +1269,17 @@ TEST(NetElements, NetElementMapInterpolated) {
   {
     auto value = slaveMap.get("baz");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "bof");
+    EXPECT_EQ(value->get(), "bof");
   }
   {
     auto value = slaveMap.get("bif");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "fob");
+    EXPECT_EQ(value->get(), "fob");
   }
   {
     auto value = slaveMap.get("qux");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "qux");
+    EXPECT_EQ(value->get(), "qux");
   }
 
   masterMap.clear();
@@ -1297,7 +1297,7 @@ TEST(NetElements, NetElementMapInterpolated) {
   {
     auto value = slaveMap.get("fib");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "fab");
+    EXPECT_EQ(value->get(), "fab");
   }
 
   masterMap.set("fob", "fub");
@@ -1311,12 +1311,12 @@ TEST(NetElements, NetElementMapInterpolated) {
   {
     auto value = slaveMap.get("fib");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "fab");
+    EXPECT_EQ(value->get(), "fab");
   }
   {
     auto value = slaveMap.get("fob");
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, "fub");
+    EXPECT_EQ(value->get(), "fub");
   }
 }
 
@@ -1325,15 +1325,15 @@ TEST(NetElements, NetElementSignal) {
   NetElementSignal<int> masterSignal2;
 
   NetElementTopGroup masterGroup;
-  ASSERT_TRUE(masterGroup.addNetElement(&masterSignal1));
-  ASSERT_TRUE(masterGroup.addNetElement(&masterSignal2));
+  ASSERT_TRUE(masterGroup.addNetElement(masterSignal1));
+  ASSERT_TRUE(masterGroup.addNetElement(masterSignal2));
 
   NetElementSignal<int> slaveSignal1;
   NetElementSignal<int> slaveSignal2;
 
   NetElementTopGroup slaveGroup;
-  ASSERT_TRUE(slaveGroup.addNetElement(&slaveSignal1));
-  ASSERT_TRUE(slaveGroup.addNetElement(&slaveSignal2));
+  ASSERT_TRUE(slaveGroup.addNetElement(slaveSignal1));
+  ASSERT_TRUE(slaveGroup.addNetElement(slaveSignal2));
 
   // No signals are supposed to be sent for the initial write
   auto masterUpdate1 = masterGroup.writeNetState();

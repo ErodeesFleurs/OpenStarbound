@@ -83,7 +83,7 @@ import star.byte_array;
 import star.algorithm;
 namespace Star {
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, ShipUpgrades& upgrades) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ShipUpgrades& upgrades) {
   auto level = ds.read(upgrades.shipLevel);
   if (!level)
     return std::unexpected(std::move(level.error()));
@@ -102,10 +102,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, ShipUpgrade
   auto capabilities = ds.read(upgrades.capabilities);
   if (!capabilities)
     return std::unexpected(std::move(capabilities.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, ShipUpgrades const& upgrades) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ShipUpgrades const& upgrades) {
   auto level = ds.write(upgrades.shipLevel);
   if (!level)
     return std::unexpected(std::move(level.error()));
@@ -124,7 +124,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, ShipUpgrade
   auto capabilities = ds.write(upgrades.capabilities);
   if (!capabilities)
     return std::unexpected(std::move(capabilities.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 ClientContext::ClientContext(Root& root, Uuid serverUuid, Uuid playerUuid)
@@ -144,9 +144,9 @@ std::expected<std::shared_ptr<ClientContext>, StarException> ClientContext::crea
 }
 
 std::expected<void, StarException> ClientContext::initialize() {
-  for (auto* element : std::initializer_list<NetElement*>{
-      &m_orbitWarpActionNetState, &m_playerWorldIdNetState, &m_isAdminNetState,
-      &m_teamNetState, &m_shipUpgrades, &m_shipCoordinate}) {
+  for (auto element : std::initializer_list<std::reference_wrapper<NetElement>>{
+      m_orbitWarpActionNetState, m_playerWorldIdNetState, m_isAdminNetState,
+      m_teamNetState, m_shipUpgrades, m_shipCoordinate}) {
     auto added = m_netGroup.addNetElement(element);
     if (!added)
       return std::unexpected(std::move(added.error()));

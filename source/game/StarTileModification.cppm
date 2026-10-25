@@ -14,8 +14,8 @@ import star.collision_block;
 namespace Star {
 
 struct PlaceMaterial {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement);
   TileLayer layer;
   MaterialId material;
   // If the material hue shift is not set it will get the natural hue shift for
@@ -23,12 +23,12 @@ struct PlaceMaterial {
   std::optional<MaterialHue> materialHueShift;
   TileCollisionOverride collisionOverride = TileCollisionOverride::None;
 };
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement);
 
 struct PlaceMod {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceMod& tileModPlacement);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceMod const& tileModPlacement);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceMod& tileModPlacement);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceMod const& tileModPlacement);
   TileLayer layer;
   ModId mod;
 
@@ -36,26 +36,26 @@ struct PlaceMod {
   // environment.
   std::optional<MaterialHue> modHueShift;
 };
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceMod& tileModPlacement);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceMod const& tileModPlacement);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceMod& tileModPlacement);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceMod const& tileModPlacement);
 
 struct PlaceMaterialColor {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceMaterialColor& tileMaterialColorPlacement);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceMaterialColor const& tileMaterialColorPlacement);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceMaterialColor& tileMaterialColorPlacement);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceMaterialColor const& tileMaterialColorPlacement);
   TileLayer layer;
   MaterialColorVariant color;
 };
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceMaterialColor& tileMaterialColorPlacement);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceMaterialColor const& tileMaterialColorPlacement);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceMaterialColor& tileMaterialColorPlacement);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceMaterialColor const& tileMaterialColorPlacement);
 
 struct PlaceLiquid {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement);
   LiquidId liquid;
   float liquidLevel;
 };
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement);
 
 typedef std::variant<std::monostate, PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid> TileModification;
 typedef List<std::pair<Vec2I, TileModification>> TileModificationList;

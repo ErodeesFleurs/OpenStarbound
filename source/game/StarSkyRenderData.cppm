@@ -17,8 +17,8 @@ import star.sky_parameters;
 namespace Star {
 
 struct SkyRenderData {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyRenderData& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyRenderData const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, SkyRenderData& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, SkyRenderData const& value);
   Json settings;
   SkyParameters skyParameters;
 
@@ -55,8 +55,8 @@ struct SkyRenderData {
   [[nodiscard]] std::expected<List<SkyOrbiter>, StarException> frontOrbiters(Vec2F const& viewSize) const;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyRenderData& skyRenderData);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyRenderData const& skyRenderData);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, SkyRenderData& skyRenderData);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, SkyRenderData const& skyRenderData);
 }
 
 export module star.sky_render_data;

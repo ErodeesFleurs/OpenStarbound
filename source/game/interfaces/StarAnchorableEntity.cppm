@@ -41,16 +41,16 @@ struct EntityAnchor {
 };
 
 struct EntityAnchorState {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityAnchorState& anchorState);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityAnchorState const& anchorState);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EntityAnchorState& anchorState);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EntityAnchorState const& anchorState);
   EntityId entityId;
   std::size_t positionIndex;
 
   bool operator==(EntityAnchorState const& eas) const;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityAnchorState& anchorState);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityAnchorState const& anchorState);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EntityAnchorState& anchorState);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EntityAnchorState const& anchorState);
 
 class AnchorableEntity : public virtual Entity {
 public:

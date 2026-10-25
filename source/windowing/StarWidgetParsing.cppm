@@ -50,7 +50,7 @@ class Widget;
 class Pane;
 
 struct WidgetParserExceptionTag {
-  static constexpr char const* name() { return "WidgetParserException"; }
+  static constexpr std::string_view name() { return "WidgetParserException"; }
 };
 using WidgetParserException = StarError<WidgetParserExceptionTag, StarException>;
 
@@ -70,12 +70,12 @@ public:
   WidgetParser(GuiContext& context);
   virtual ~WidgetParser() {}
 
-  [[nodiscard]] virtual std::expected<void, StarException> construct(Json const& config, Widget* widget = nullptr);
+  [[nodiscard]] virtual std::expected<void, StarException> construct(Json const& config, Widget& widget);
   void registerCallback(String const& name, WidgetCallbackFunc callback);
   [[nodiscard]] std::expected<std::shared_ptr<Widget>, StarException> makeSingle(String const& name, Json const& config);
 
 protected:
-  [[nodiscard]] std::expected<void, StarException> constructImpl(Json const& config, Widget* widget);
+  [[nodiscard]] std::expected<void, StarException> constructImpl(Json const& config, Widget& widget);
   [[nodiscard]] std::expected<List<WidgetConstructResult>, StarException> constructor(Json const& config);
 
   // Parents
@@ -110,8 +110,8 @@ protected:
   [[nodiscard]] std::expected<void, StarException> common(std::shared_ptr<Widget> widget, Json const& config, bool getChildren = true);
   [[nodiscard]] std::expected<ImageStretchSet, StarException> parseImageStretchSet(Json const& config);
 
-  GuiContext* m_context;
-  Pane* m_pane;
+  GuiContext& m_context;
+  std::weak_ptr<Pane> m_pane;
   StringMap<ConstuctorFunc> m_constructors;
   StringMap<WidgetCallbackFunc> m_callbacks;
 };

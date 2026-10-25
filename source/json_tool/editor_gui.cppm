@@ -6,6 +6,7 @@ module;
 #include <QPushButton>
 #include <QScrollBar>
 #include <QTextEdit>
+#include <QTextDocument>
 
 import star.json_tool;
 import std;
@@ -37,15 +38,15 @@ private:
   void updateValueEditor();
   void updateImagePreview();
 
-  QLabel* m_statusLabel;
-  QLabel* m_pathLabel;
-  QLabel* m_imageLabel;
-  QTextEdit* m_jsonPreview;
-  QTextDocument* m_jsonDocument;
-  QLineEdit* m_valueEditor;
-  QErrorMessage* m_errorDialog;
-  QPushButton* m_backButton;
-  QPushButton* m_nextButton;
+  std::unique_ptr<QLabel> m_statusLabel;
+  std::unique_ptr<QLabel> m_pathLabel;
+  std::unique_ptr<QLabel> m_imageLabel;
+  std::unique_ptr<QTextDocument> m_jsonDocument;
+  std::unique_ptr<QTextEdit> m_jsonPreview;
+  std::unique_ptr<QLineEdit> m_valueEditor;
+  std::unique_ptr<QErrorMessage> m_errorDialog;
+  std::unique_ptr<QPushButton> m_backButton;
+  std::unique_ptr<QPushButton> m_nextButton;
 
   std::shared_ptr<JsonPath::Path> m_path;
   std::shared_ptr<JsonInputFormat> m_editFormat;

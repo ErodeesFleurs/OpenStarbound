@@ -37,8 +37,6 @@ std::expected<String, StarException> String::joinWith(String const& join, String
 String::String() = default;
 String::String(String const& s) = default;
 String::String(String&& s) noexcept = default;
-String::String(char const* s) : m_string(s) {}
-String::String(char const* s, std::size_t n) : m_string(s, n) {}
 String::String(std::string const& s) : m_string(s) {}
 String::String(std::string&& s) noexcept : m_string(std::move(s)) {}
 std::expected<String, StarException> String::create(std::wstring const& text) {
@@ -50,16 +48,10 @@ std::expected<String, StarException> String::create(std::wstring const& text) {
   }
   return result;
 }
-std::expected<String, StarException> String::create(Char const* text) {
+std::expected<String, StarException> String::create(std::u32string_view text) {
   String result;
+  result.reserve(text.size());
   auto appended = result.append(text);
-  if (!appended) return std::unexpected(std::move(appended.error()));
-  return result;
-}
-std::expected<String, StarException> String::create(Char const* text, std::size_t count) {
-  String result;
-  result.reserve(count);
-  auto appended = result.append(text, count);
   if (!appended) return std::unexpected(std::move(appended.error()));
   return result;
 }
@@ -70,13 +62,13 @@ std::expected<String, StarException> String::create(Char point, std::size_t coun
   if (!length) return std::unexpected(std::move(length.error()));
   String result;
   result.reserve(count);
-  for (std::size_t i = 0; i != count; ++i) result.append(bytes, *length);
+  for (std::size_t i = 0; i != count; ++i) result.append(std::string_view(bytes, *length));
   return result;
 }
 std::expected<String, StarException> String::create(Char point) { return create(point, 1); }
 std::string const& String::utf8() const { return m_string; }
 std::string String::takeUtf8() { return take(m_string); }
-ByteArray String::utf8Bytes() const { return ByteArray(m_string.data(), m_string.size()); }
+ByteArray String::utf8Bytes() const { return ByteArray(std::span<char const>(m_string)); }
 char const* String::utf8Ptr() const { return m_string.c_str(); }
 std::size_t String::utf8Size() const { return m_string.size(); }
 std::expected<std::wstring, StarException> String::wstring() const {
@@ -231,7 +223,7 @@ std::expected<StringList, StarException> String::split(String const& pattern, st
   std::size_t start = 0;
   for (;;) {
     auto stop = result.size() == maxSplit ? NPos : m_string.find(pattern.m_string, start);
-    result.append(String(m_string.data() + start, stop == NPos ? m_string.size() - start : stop - start));
+    result.append(String(std::string_view(m_string).substr(start, stop == NPos ? NPos : stop - start)));
     if (stop == NPos) return result;
     start = stop + pattern.m_string.size();
   }
@@ -333,7 +325,7 @@ std::expected<String, StarException> String::replace(String const& pattern, Stri
       auto moved = cursor.advance(); if (!moved) return std::unexpected(std::move(moved.error()));
       ++position;
     }
-    result.append(m_string.data() + start, cursor.offset() - start);
+    result.append(std::string_view(m_string).substr(start, cursor.offset() - start));
     if (*found == NPos) return result;
     result.append(value);
     for (std::size_t i = 0; i != *patternLength; ++i) {
@@ -353,7 +345,7 @@ std::expected<String, StarException> String::trimEnd(String const& pattern) cons
     if (!*match) break;
     stop = previous;
   }
-  return String(m_string.data(), static_cast<std::size_t>(std::distance(m_string.begin(), stop.base())));
+  return String(std::string_view(m_string).substr(0, static_cast<std::size_t>(std::distance(m_string.begin(), stop.base()))));
 }
 std::expected<String, StarException> String::trimBeg(String const& pattern) const {
   auto first = begin();
@@ -366,7 +358,7 @@ std::expected<String, StarException> String::trimBeg(String const& pattern) cons
     ++start;
   }
   auto offset = static_cast<std::size_t>(std::distance(m_string.begin(), start.base()));
-  return String(m_string.data() + offset, m_string.size() - offset);
+  return String(std::string_view(m_string).substr(offset));
 }
 std::expected<String, StarException> String::trim(String const& pattern) const {
   auto result = trimEnd(pattern);
@@ -384,20 +376,15 @@ std::expected<String, StarException> String::slice(SliceIndex a, SliceIndex b, i
   auto wide = wideString();
   if (!wide) return std::unexpected(std::move(wide.error()));
   auto sliced = Star::slice(*wide, a, b, step);
-  return create(sliced.c_str());
+  return create(std::u32string_view(sliced));
 }
 void String::append(String const& s) { m_string.append(s.m_string); }
 void String::append(std::string const& s) { m_string.append(s); }
-std::expected<void, StarException> String::append(Char const* s) {
-  while (*s) { auto result = append(*s++); if (!result) return std::unexpected(std::move(result.error())); }
+std::expected<void, StarException> String::append(std::u32string_view s) {
+  for (auto point : s) { auto result = append(point); if (!result) return std::unexpected(std::move(result.error())); }
   return {};
 }
-std::expected<void, StarException> String::append(Char const* s, std::size_t count) {
-  for (std::size_t i = 0; i != count; ++i) { auto result = append(s[i]); if (!result) return std::unexpected(std::move(result.error())); }
-  return {};
-}
-void String::append(char const* s) { m_string.append(s); }
-void String::append(char const* s, std::size_t count) { m_string.append(s, count); }
+void String::append(std::string_view s) { m_string.append(s); }
 std::expected<void, StarException> String::append(Char point) {
   char bytes[4];
   auto count = utf8EncodeChar(bytes, point, sizeof(bytes));
@@ -407,15 +394,9 @@ std::expected<void, StarException> String::append(Char point) {
 }
 void String::prepend(String const& s) { m_string.insert(0, s.m_string); }
 void String::prepend(std::string const& s) { m_string.insert(0, s); }
-void String::prepend(char const* s) { m_string.insert(0, s); }
-void String::prepend(char const* s, std::size_t count) { m_string.insert(0, s, count); }
-std::expected<void, StarException> String::prepend(Char const* s) {
+void String::prepend(std::string_view s) { m_string.insert(0, s); }
+std::expected<void, StarException> String::prepend(std::u32string_view s) {
   auto prefix = create(s);
-  if (!prefix) return std::unexpected(std::move(prefix.error()));
-  prepend(*prefix); return {};
-}
-std::expected<void, StarException> String::prepend(Char const* s, std::size_t count) {
-  auto prefix = create(s, count);
   if (!prefix) return std::unexpected(std::move(prefix.error()));
   prepend(*prefix); return {};
 }
@@ -463,7 +444,7 @@ std::expected<void, StarException> String::erase(std::size_t pos, std::size_t co
   if (pos > *length) return std::unexpected(OutOfRangeException("Out of range in String::erase"));
   auto view = StringView(*this).substr(pos, count);
   if (!view) return std::unexpected(std::move(view.error()));
-  auto offset = static_cast<std::size_t>(view->utf8Ptr() - m_string.data());
+  auto offset = static_cast<std::size_t>(view->utf8().data() - m_string.data());
   m_string.erase(offset, view->utf8Size());
   return {};
 }
@@ -493,30 +474,27 @@ String& String::operator=(String const& s) = default;
 String& String::operator=(String&& s) noexcept = default;
 String& String::operator+=(String const& s) { append(s); return *this; }
 String& String::operator+=(std::string const& s) { append(s); return *this; }
-String& String::operator+=(char const* s) { append(s); return *this; }
-std::expected<String*, StarException> String::operator+=(Char const* s) { auto result = append(s); if (!result) return std::unexpected(std::move(result.error())); return this; }
-std::expected<String*, StarException> String::operator+=(Char point) { auto result = append(point); if (!result) return std::unexpected(std::move(result.error())); return this; }
+std::expected<std::reference_wrapper<String>, StarException> String::operator+=(std::u32string_view s) { auto result = append(s); if (!result) return std::unexpected(std::move(result.error())); return std::ref(*this); }
+std::expected<std::reference_wrapper<String>, StarException> String::operator+=(Char point) { auto result = append(point); if (!result) return std::unexpected(std::move(result.error())); return std::ref(*this); }
 bool operator==(String const& a, String const& b) { return a.m_string == b.m_string; }
 bool operator==(String const& a, std::string const& b) { return a.m_string == b; }
-bool operator==(String const& a, char const* b) { return a.m_string == b; }
 bool operator==(std::string const& a, String const& b) { return a == b.m_string; }
-bool operator==(char const* a, String const& b) { return a == b.m_string; }
-std::expected<bool, StarException> operator==(String const& a, String::Char const* b) { auto text = String::create(b); if (!text) return std::unexpected(std::move(text.error())); return a == *text; }
-std::expected<bool, StarException> operator==(String::Char const* a, String const& b) { return b == a; }
+std::expected<bool, StarException> operator==(String const& a, std::u32string_view b) { auto text = String::create(b); if (!text) return std::unexpected(std::move(text.error())); return a == *text; }
+std::expected<bool, StarException> operator==(std::u32string_view a, String const& b) { return b == a; }
 std::strong_ordering operator<=>(String const& a, String const& b) { return a.m_string <=> b.m_string; }
 std::strong_ordering operator<=>(String const& a, std::string const& b) { return a.m_string <=> b; }
-std::strong_ordering operator<=>(String const& a, char const* b) { return a.m_string <=> b; }
+std::strong_ordering operator<=>(String const& a, std::string_view b) { return std::string_view(a.m_string) <=> b; }
 std::strong_ordering operator<=>(std::string const& a, String const& b) { return a <=> b.m_string; }
-std::strong_ordering operator<=>(char const* a, String const& b) { return a <=> b.m_string; }
-std::expected<std::strong_ordering, StarException> operator<=>(String const& a, String::Char const* b) { auto text = String::create(b); if (!text) return std::unexpected(std::move(text.error())); return a <=> *text; }
-std::expected<std::strong_ordering, StarException> operator<=>(String::Char const* a, String const& b) { auto text = String::create(a); if (!text) return std::unexpected(std::move(text.error())); return *text <=> b; }
+std::strong_ordering operator<=>(std::string_view a, String const& b) { return a <=> std::string_view(b.m_string); }
+std::expected<std::strong_ordering, StarException> operator<=>(String const& a, std::u32string_view b) { auto text = String::create(b); if (!text) return std::unexpected(std::move(text.error())); return a <=> *text; }
+std::expected<std::strong_ordering, StarException> operator<=>(std::u32string_view a, String const& b) { auto text = String::create(a); if (!text) return std::unexpected(std::move(text.error())); return *text <=> b; }
 String operator+(String a, String const& b) { a.append(b); return a; }
 String operator+(String a, std::string const& b) { a.append(b); return a; }
-String operator+(String a, char const* b) { a.append(b); return a; }
+String operator+(String a, std::string_view b) { a.append(b); return a; }
 String operator+(std::string const& a, String const& b) { return String(a + b.m_string); }
-String operator+(char const* a, String const& b) { return String(a + b.m_string); }
-std::expected<String, StarException> operator+(String a, String::Char const* b) { auto result = a.append(b); if (!result) return std::unexpected(std::move(result.error())); return a; }
-std::expected<String, StarException> operator+(String::Char const* a, String const& b) { auto text = String::create(a); if (!text) return std::unexpected(std::move(text.error())); text->append(b); return std::move(*text); }
+String operator+(std::string_view a, String const& b) { String result(a); result.append(b); return result; }
+std::expected<String, StarException> operator+(String a, std::u32string_view b) { auto result = a.append(b); if (!result) return std::unexpected(std::move(result.error())); return a; }
+std::expected<String, StarException> operator+(std::u32string_view a, String const& b) { auto text = String::create(a); if (!text) return std::unexpected(std::move(text.error())); text->append(b); return std::move(*text); }
 std::expected<String, StarException> operator+(String a, String::Char point) { auto result = a.append(point); if (!result) return std::unexpected(std::move(result.error())); return a; }
 std::expected<String, StarException> operator+(String::Char point, String const& b) { auto text = String::create(point); if (!text) return std::unexpected(std::move(text.error())); text->append(b); return std::move(*text); }
 String operator*(String const& text, unsigned times) { String result; for (unsigned i = 0; i != times; ++i) result.append(text); return result; }
@@ -528,12 +506,12 @@ StringList::StringList(Base const& list) : Base(list) {}
 StringList::StringList(Base&& list) : Base(std::move(list)) {}
 StringList::StringList(StringList const& list) : Base(list) {}
 StringList::StringList(StringList&& list) : Base(std::move(list)) {}
-std::expected<StringList, StarException> StringList::create(std::size_t count, String::Char const* const* strings) {
+std::expected<StringList, StarException> StringList::create(std::span<std::u32string_view const> strings) {
   StringList result;
-  for (std::size_t i = 0; i != count; ++i) { auto text = String::create(strings[i]); if (!text) return std::unexpected(std::move(text.error())); result.append(std::move(*text)); }
+  for (auto source : strings) { auto text = String::create(source); if (!text) return std::unexpected(std::move(text.error())); result.append(std::move(*text)); }
   return result;
 }
-StringList::StringList(std::size_t count, char const* const* strings) { for (std::size_t i = 0; i != count; ++i) append(String(strings[i])); }
+StringList::StringList(std::span<std::string_view const> strings) { for (auto source : strings) append(String(source)); }
 StringList::StringList(std::size_t count, String const& text) : Base(count, text) {}
 StringList::StringList(std::initializer_list<String> list) : Base(list) {}
 StringList& StringList::operator=(Base const& list) { Base::operator=(list); return *this; }

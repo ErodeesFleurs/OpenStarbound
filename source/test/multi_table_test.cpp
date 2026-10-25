@@ -76,7 +76,7 @@ TEST(MultiArrayTest, ViewsPreserveLayoutConstnessAndCheckedOwnerAccess) {
     EXPECT_EQ((constView[1, 2, 3]), 123);
     auto checked = std::as_const(array).at(1, 2, 3);
     ASSERT_TRUE(checked);
-    EXPECT_EQ(*checked, (&constView[1, 2, 3]));
+    EXPECT_EQ(std::addressof(checked->get()), std::addressof(constView[1, 2, 3]));
   }
 
   EXPECT_FALSE(array.at(2, 0, 0));

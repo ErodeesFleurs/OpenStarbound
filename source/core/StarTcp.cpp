@@ -103,7 +103,7 @@ std::expected<void, StarException> TcpSocket::setNoDelay(bool noDelay) {
   return m_impl->setSockOpt(IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
 }
 
-std::expected<std::size_t, StarException> TcpSocket::receive(char* data, std::size_t size) {
+std::expected<std::size_t, StarException> TcpSocket::receive(std::span<char> data) {
   ReadLocker locker(m_mutex);
   if (auto status = checkOpen("TcpSocket::receive"); !status)
     return std::unexpected(std::move(status.error()));
@@ -114,7 +114,7 @@ std::expected<std::size_t, StarException> TcpSocket::receive(char* data, std::si
   flags |= MSG_NOSIGNAL;
 #endif
 
-  auto r = ::recv(m_impl->socketDesc, data, size, flags);
+  auto r = ::recv(m_impl->socketDesc, data.data(), data.size(), flags);
   if (r < 0) {
     if (m_socketMode == SocketMode::Shutdown) {
       return std::unexpected(SocketClosedException("Connection closed"));
@@ -126,14 +126,14 @@ std::expected<std::size_t, StarException> TcpSocket::receive(char* data, std::si
     } else {
       return std::unexpected(NetworkException(strf("tcp recv error: {}", netErrorString())));
     }
-  } else if (r == 0 && size != 0) {
+  } else if (r == 0 && !data.empty()) {
     doShutdown();
   }
 
   return r;
 }
 
-std::expected<std::size_t, StarException> TcpSocket::send(char const* data, std::size_t size) {
+std::expected<std::size_t, StarException> TcpSocket::send(std::span<char const> data) {
   ReadLocker locker(m_mutex);
   if (auto status = checkOpen("TcpSocket::send"); !status)
     return std::unexpected(std::move(status.error()));
@@ -144,7 +144,7 @@ std::expected<std::size_t, StarException> TcpSocket::send(char const* data, std:
   flags |= MSG_NOSIGNAL;
 #endif
 
-  auto w = ::send(m_impl->socketDesc, data, size, flags);
+  auto w = ::send(m_impl->socketDesc, data.data(), data.size(), flags);
   if (w < 0) {
     if (m_socketMode == SocketMode::Shutdown) {
       return std::unexpected(SocketClosedException("Connection closed"));

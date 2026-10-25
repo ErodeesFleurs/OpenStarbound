@@ -26,8 +26,20 @@ class Root;
 
 class FontTextureGroup {
 public:
-  // Font* is only included for key uniqueness and should not be dereferenced
-  typedef std::tuple<String::Char, unsigned, std::size_t, Font*> GlyphDescriptor;
+  using GlyphDescriptor = std::tuple<String::Char, unsigned, std::size_t, std::reference_wrapper<Font>>;
+  struct GlyphDescriptorHash {
+    std::size_t operator()(GlyphDescriptor const& descriptor) const {
+      return hashOf(std::get<0>(descriptor), std::get<1>(descriptor), std::get<2>(descriptor),
+          std::addressof(std::get<3>(descriptor).get()));
+    }
+  };
+  struct GlyphDescriptorEqual {
+    bool operator()(GlyphDescriptor const& lhs, GlyphDescriptor const& rhs) const {
+      return std::get<0>(lhs) == std::get<0>(rhs) && std::get<1>(lhs) == std::get<1>(rhs)
+          && std::get<2>(lhs) == std::get<2>(rhs)
+          && std::addressof(std::get<3>(lhs).get()) == std::addressof(std::get<3>(rhs).get());
+    }
+  };
 
   struct GlyphTexture {
     TexturePtr texture;
@@ -38,10 +50,10 @@ public:
 
   FontTextureGroup(Root& root, std::shared_ptr<TextureGroup> textureGroup);
 
-  [[nodiscard]] std::expected<GlyphTexture const*, StarException> glyphTexture(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
+  [[nodiscard]] std::expected<std::reference_wrapper<GlyphTexture const>, StarException> glyphTexture(String::Char, unsigned fontSize, std::optional<std::reference_wrapper<Directives const>> processingDirectives = std::nullopt);
 
   [[nodiscard]] std::expected<TexturePtr, StarException> glyphTexturePtr(String::Char, unsigned fontSize);
-  [[nodiscard]] std::expected<TexturePtr, StarException> glyphTexturePtr(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
+  [[nodiscard]] std::expected<TexturePtr, StarException> glyphTexturePtr(String::Char, unsigned fontSize, std::optional<std::reference_wrapper<Directives const>> processingDirectives);
 
   [[nodiscard]] std::expected<unsigned, StarException> glyphWidth(String::Char c, unsigned fontSize);
 
@@ -55,7 +67,7 @@ public:
   void clearFonts();
   [[nodiscard]] std::expected<void, StarException> setFixedFonts(String const& defaultFontName, String const& fallbackFontName, String const& emojiFontName);
 private:
-  [[nodiscard]] std::expected<Font*, StarException> getFontForCharacter(String::Char);
+  [[nodiscard]] std::expected<std::reference_wrapper<Font>, StarException> getFontForCharacter(String::Char);
 
   Root& m_root;
   CaseInsensitiveStringMap<std::shared_ptr<Font>> m_fonts;
@@ -66,7 +78,7 @@ private:
   std::shared_ptr<Font> m_emojiFont;
 
   std::shared_ptr<TextureGroup> m_textureGroup;
-  HashMap<GlyphDescriptor, GlyphTexture> m_glyphs;
+  HashMap<GlyphDescriptor, GlyphTexture, GlyphDescriptorHash, GlyphDescriptorEqual> m_glyphs;
 };
 
 }

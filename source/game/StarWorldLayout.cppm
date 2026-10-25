@@ -99,7 +99,7 @@ public:
   struct RegionWeighting {
     float weight;
     int xValue;
-    WorldRegion const* region;
+    std::reference_wrapper<WorldRegion const> region;
   };
 
   [[nodiscard]] static std::expected<WorldLayout, StarException> buildTerrestrialLayout(Root& root, TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed);
@@ -116,8 +116,8 @@ public:
 
   List<RectI> playerStartSearchRegions() const;
 
-  [[nodiscard]] std::expected<std::shared_ptr<Biome const> const*, StarException> getBiome(BiomeIndex index) const;
-  [[nodiscard]] std::expected<std::shared_ptr<TerrainSelector const> const*, StarException> getTerrainSelector(TerrainSelectorIndex index) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<std::shared_ptr<Biome const> const>, StarException> getBiome(BiomeIndex index) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<std::shared_ptr<TerrainSelector const> const>, StarException> getTerrainSelector(TerrainSelectorIndex index) const;
 
   // Will return region weighting in order of greatest to least weighting.
   [[nodiscard]] std::expected<List<RegionWeighting>, StarException> getWeighting(int x, int y) const;
@@ -187,16 +187,16 @@ private:
 };
 
 
-[[nodiscard]] inline std::expected<std::shared_ptr<Biome const> const*, StarException> WorldLayout::getBiome(BiomeIndex index) const {
+[[nodiscard]] inline std::expected<std::reference_wrapper<std::shared_ptr<Biome const> const>, StarException> WorldLayout::getBiome(BiomeIndex index) const {
   if (index == NullBiomeIndex || index > m_biomes.size())
     return std::unexpected(StarException("WorldLayout::getTerrainSelector called with null or out of range BiomeIndex"));
-  return &m_biomes[index - 1];
+  return std::cref(m_biomes[index - 1]);
 }
 
-[[nodiscard]] inline std::expected<std::shared_ptr<TerrainSelector const> const*, StarException> WorldLayout::getTerrainSelector(TerrainSelectorIndex index) const {
+[[nodiscard]] inline std::expected<std::reference_wrapper<std::shared_ptr<TerrainSelector const> const>, StarException> WorldLayout::getTerrainSelector(TerrainSelectorIndex index) const {
   if (index == NullBiomeIndex || index > m_terrainSelectors.size())
     return std::unexpected(StarException("WorldLayout::getTerrainSelector called with null or out of range TerrainSelectorIndex"));
-  return &m_terrainSelectors[index - 1];
+  return std::cref(m_terrainSelectors[index - 1]);
 }
 
 }

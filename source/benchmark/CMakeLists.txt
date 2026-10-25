@@ -53,6 +53,16 @@ target_link_libraries(game_benchmarks PRIVATE
   $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 set_target_properties(game_benchmarks PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
+add_executable(ownership_benchmarks ownership_benchmarks.cpp
+  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>)
+target_include_directories(ownership_benchmarks PRIVATE
+  ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_BASE_INCLUDES}
+  ${STAR_PLATFORM_INCLUDES} ${STAR_GAME_INCLUDES})
+target_link_libraries(ownership_benchmarks PRIVATE
+  benchmark::benchmark star_base_modules star_game_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
+set_target_properties(ownership_benchmarks PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
 if(STAR_BUILD_GUI)
   add_executable(frontend_benchmarks frontend_benchmarks.cpp
     $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>)

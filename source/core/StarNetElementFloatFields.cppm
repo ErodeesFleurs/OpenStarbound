@@ -13,7 +13,7 @@ import star.math_common;
 namespace Star {
 
 struct StepStreamExceptionTag {
-  static constexpr char const* name() { return "StepStreamException"; }
+  static constexpr std::string_view name() { return "StepStreamException"; }
 };
 using StepStreamException = StarError<StepStreamExceptionTag, StarException>;
 
@@ -42,7 +42,7 @@ public:
   // functions at all.
   void setInterpolator(std::function<T(T, T, T)> interpolator);
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version = std::nullopt) override;
 
   // Values are never interpolated, but they will be delayed for the given
   // interpolationTime.
@@ -64,7 +64,7 @@ private:
   T interpolate() const;
 
   std::optional<T> m_fixedPointBase;
-  NetElementVersion const* m_netVersion = nullptr;
+  std::optional<std::reference_wrapper<NetElementVersion const>> m_netVersion = std::nullopt;
   std::uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
 
@@ -119,7 +119,7 @@ void NetElementFloating<T>::set(T value) {
     // Only mark the step as updated here if it actually would change the
     // transmitted value.
     if (!m_fixedPointBase || std::round(m_value / *m_fixedPointBase) != std::round(value / *m_fixedPointBase))
-      m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
+      m_latestUpdateVersion = m_netVersion ? m_netVersion->get().current() : 0;
 
     m_value = value;
 
@@ -141,7 +141,7 @@ void NetElementFloating<T>::setInterpolator(std::function<T(T, T, T)> interpolat
 }
 
 template <typename T>
-void NetElementFloating<T>::initNetVersion(NetElementVersion const* version) {
+void NetElementFloating<T>::initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version) {
   m_netVersion = version;
   m_latestUpdateVersion = 0;
 }
@@ -194,7 +194,7 @@ template <typename T>
   auto result = readValue(ds);
   if (!result) return std::unexpected(std::move(result.error()));
   m_value = *result;
-  m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
+  m_latestUpdateVersion = m_netVersion ? m_netVersion->get().current() : 0;
   if (m_interpolationDataPoints) {
     m_interpolationDataPoints->clear();
     m_interpolationDataPoints->append({0.0f, m_value});
@@ -222,7 +222,7 @@ template <typename T>
   if (!result) return std::unexpected(std::move(result.error()));
   T t = *result;
 
-  m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
+  m_latestUpdateVersion = m_netVersion ? m_netVersion->get().current() : 0;
   if (m_interpolationDataPoints) {
     if (interpolationTime < m_interpolationDataPoints->back().first)
       m_interpolationDataPoints->clear();

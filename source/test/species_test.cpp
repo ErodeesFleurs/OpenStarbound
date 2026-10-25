@@ -36,9 +36,9 @@ const GameTestRegistration speciesGenderCoverage("SpeciesTest", "NameGenAndOuchN
   ASSERT_TRUE(assets);
   auto speciesFiles = (*assets)->scanExtension("species");
   ASSERT_TRUE(speciesFiles);
-  ASSERT_FALSE((*speciesFiles)->empty());
+  ASSERT_FALSE(speciesFiles->get().empty());
 
-  auto config = (*assets)->json((*speciesFiles)->begin()->string());
+  auto config = (*assets)->json(speciesFiles->get().begin()->string());
   ASSERT_TRUE(config);
   auto valid = SpeciesDefinition::create(fixture.root(), *config);
   ASSERT_TRUE(valid);

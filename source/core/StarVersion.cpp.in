@@ -1,10 +1,11 @@
+import std;
 import star.version;
 
 namespace Star {
 
-extern char const* const OpenStarVersionString = "0.1.15.1";
-extern char const* const StarVersionString = "1.4.4";
-extern char const* const StarSourceIdentifierString = "${STAR_SOURCE_IDENTIFIER}";
-extern char const* const StarArchitectureString = "${STAR_SYSTEM} ${STAR_ARCHITECTURE}";
+extern std::string_view const OpenStarVersionString = "0.1.15.1";
+extern std::string_view const StarVersionString = "1.4.4";
+extern std::string_view const StarSourceIdentifierString = "${STAR_SOURCE_IDENTIFIER}";
+extern std::string_view const StarArchitectureString = "${STAR_SYSTEM} ${STAR_ARCHITECTURE}";
 
 }

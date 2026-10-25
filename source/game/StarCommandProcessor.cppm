@@ -21,14 +21,14 @@ class Root;
 
 class CommandProcessor {
 public:
-  [[nodiscard]] static std::expected<std::shared_ptr<CommandProcessor>, StarException> create(Root& root, UniverseServer* universe);
+  [[nodiscard]] static std::expected<std::shared_ptr<CommandProcessor>, StarException> create(Root& root, UniverseServer& universe);
   [[nodiscard]] std::expected<void, StarException> close();
 
   [[nodiscard]] std::expected<ServerCommandResult, StarException> adminCommand(String const& command, String const& argumentString);
   [[nodiscard]] std::expected<ServerCommandResult, StarException> userCommand(ConnectionId clientId, String const& command, String const& argumentString);
 private:
-  CommandProcessor(Root& root, UniverseServer* universe);
-  [[nodiscard]] static std::expected<std::optional<ConnectionId>, StarException> playerCidFromCommand(String const& player, UniverseServer* universe);
+  CommandProcessor(Root& root, UniverseServer& universe);
+  [[nodiscard]] static std::expected<std::optional<ConnectionId>, StarException> playerCidFromCommand(String const& player, UniverseServer& universe);
 
   [[nodiscard]] std::expected<String, StarException> help(ConnectionId connectionId, String const& argumentString);
   [[nodiscard]] std::expected<String, StarException> admin(ConnectionId connectionId, String const& argumentString);
@@ -84,7 +84,7 @@ private:
   [[nodiscard]] std::expected<LuaCallbacks, StarException> makeCommandCallbacks();
 
   Root& m_root;
-  UniverseServer* m_universe;
+  UniverseServer& m_universe;
   ShellParser m_parser;
 
   // CommandProcessor can be accessed from multiple threads.

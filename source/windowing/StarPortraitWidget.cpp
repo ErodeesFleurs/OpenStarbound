@@ -135,14 +135,14 @@ RectI PortraitWidget::getScissorRect() const {
 }
 
 std::expected<void, StarException> PortraitWidget::renderImpl() {
-  auto metadata = context()->root().imageMetadataDatabase();
+  auto metadata = context().root().imageMetadataDatabase();
   if (!metadata) return std::unexpected(std::move(metadata.error()));
   Vec2I offset;
   if (m_iconMode) {
     auto imageSize = (*metadata)->imageSize(m_iconImage);
     if (!imageSize) return std::unexpected(std::move(imageSize.error()));
     offset = Vec2I(m_scale * Vec2F(*imageSize) / 2) + m_iconOffset;
-    auto result = context()->drawInterfaceQuad(m_iconImage, Vec2F(screenPosition()), m_scale);
+    auto result = context().drawInterfaceQuad(m_iconImage, Vec2F(screenPosition()), m_scale);
     if (!result) return std::unexpected(std::move(result.error()));
   }
   if (m_entity) {
@@ -154,7 +154,7 @@ std::expected<void, StarException> PortraitWidget::renderImpl() {
     if (!portrait) return std::unexpected(std::move(portrait.error()));
     for (auto& drawable : *portrait) {
       drawable.scale(humanoid ? m_scale * 8.0f : m_scale);
-      auto result = context()->drawInterfaceDrawable(drawable, Vec2F(screenPosition() + offset));
+      auto result = context().drawInterfaceDrawable(drawable, Vec2F(screenPosition() + offset));
       if (!result) return std::unexpected(std::move(result.error()));
     }
   } else {
@@ -162,13 +162,13 @@ std::expected<void, StarException> PortraitWidget::renderImpl() {
     auto imageSize = (*metadata)->imageSize(image);
     if (!imageSize) return std::unexpected(std::move(imageSize.error()));
     auto pos = offset - Vec2I(m_scale * Vec2F(*imageSize) * 0.5);
-    return context()->drawInterfaceQuad(image, Vec2F(screenPosition() + pos), m_scale);
+    return context().drawInterfaceQuad(image, Vec2F(screenPosition() + pos), m_scale);
   }
   return {};
 }
 
 std::expected<void, StarException> PortraitWidget::init() {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto fullJson = (*assets)->json("/interface.config:portraitNullPlayerImageFull");
   if (!fullJson) return std::unexpected(std::move(fullJson.error()));
@@ -222,7 +222,7 @@ std::expected<bool, StarException> PortraitWidget::sendEvent(InputEvent const&) 
 }
 
 std::expected<void, StarException> PortraitWidget::updateSize() {
-  auto metadata = context()->root().imageMetadataDatabase();
+  auto metadata = context().root().imageMetadataDatabase();
   if (!metadata) return std::unexpected(std::move(metadata.error()));
   if (!m_iconMode && m_entity) {
     auto portrait = m_entity->portrait(m_portraitMode);

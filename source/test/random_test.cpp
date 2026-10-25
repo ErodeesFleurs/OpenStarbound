@@ -19,7 +19,7 @@ TEST(StaticRandomTest, FromEmptyContainerReturnsError) {
   std::vector<int> const one{7};
   auto selected = staticRandomFrom(one, 1);
   ASSERT_TRUE(selected);
-  EXPECT_EQ(**selected, 7);
+  EXPECT_EQ(selected->get(), 7);
 }
 
 TEST(RandTest, All) {

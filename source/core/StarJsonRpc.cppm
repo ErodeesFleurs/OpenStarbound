@@ -12,7 +12,7 @@ import star.logging;
 namespace Star {
 
 struct JsonRpcExceptionTag {
-  static constexpr char const* name() { return "JsonRpcException"; }
+  static constexpr std::string_view name() { return "JsonRpcException"; }
 };
 using JsonRpcException = StarError<JsonRpcExceptionTag, StarException>;
 

@@ -11,7 +11,7 @@ import star.type_identity;
 namespace Star {
 
 struct AssetSourceExceptionTag {
-  static constexpr char const* name() { return "AssetSourceException"; }
+  static constexpr std::string_view name() { return "AssetSourceException"; }
 };
 using AssetSourceException = StarError<AssetSourceExceptionTag, StarException>;
 

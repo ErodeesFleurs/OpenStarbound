@@ -130,7 +130,7 @@ void PacketStatCollector::mix(HashMap<PacketType, std::size_t> const& sizes, boo
 }
 
 PacketStats PacketStatCollector::stats() const {
-  const_cast<PacketStatCollector*>(this)->calculate();
+  const_cast<PacketStatCollector&>(*this).calculate();
   return m_stats;
 }
 
@@ -344,12 +344,12 @@ std::expected<void, StarException> TcpPacketSocket::sendPackets(List<std::shared
       auto lengthWritten = outBuffer.writeVlqI((int)packetBuffer.size());
       if (!lengthWritten)
         return std::unexpected(std::move(lengthWritten.error()));
-      auto bodyWritten = outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
+      auto bodyWritten = outBuffer.writeData(packetBuffer.span());
       if (!bodyWritten)
         return std::unexpected(std::move(bodyWritten.error()));
       m_outgoingStats.mix(packetType, packetBuffer.size(), false);
     }
-    m_outputBuffer.append(outBuffer.ptr(), outBuffer.size());
+    m_outputBuffer.append(outBuffer.span());
   } else {
     while (it != packets.end()) {
       PacketType currentType = (*it)->type();
@@ -391,7 +391,7 @@ std::expected<void, StarException> TcpPacketSocket::sendPackets(List<std::shared
         auto lengthWritten = outBuffer.writeVlqI(-(int)(compressedPackets.size()));
         if (!lengthWritten)
           return std::unexpected(std::move(lengthWritten.error()));
-        auto bodyWritten = outBuffer.writeData(compressedPackets.ptr(), compressedPackets.size());
+        auto bodyWritten = outBuffer.writeData(compressedPackets.span());
         if (!bodyWritten)
           return std::unexpected(std::move(bodyWritten.error()));
         m_outgoingStats.mix(currentType, compressedPackets.size(), true);
@@ -399,7 +399,7 @@ std::expected<void, StarException> TcpPacketSocket::sendPackets(List<std::shared
         auto lengthWritten = outBuffer.writeVlqI((int)(packetBuffer.size()));
         if (!lengthWritten)
           return std::unexpected(std::move(lengthWritten.error()));
-        auto bodyWritten = outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
+        auto bodyWritten = outBuffer.writeData(packetBuffer.span());
         if (!bodyWritten)
           return std::unexpected(std::move(bodyWritten.error()));
         m_outgoingStats.mix(currentType, packetBuffer.size(), true);
@@ -445,7 +445,7 @@ std::expected<List<std::shared_ptr<Packet>>, StarException> TcpPacketSocket::rec
         auto name = PacketTypeNames->getRight(*type);
         if (!name)
           return std::unexpected(std::move(name.error()));
-        return **name;
+        return name->get();
       };
       if (packetSize > PacketSizeLimit) {
         auto name = packetName();
@@ -462,15 +462,15 @@ std::expected<List<std::shared_ptr<Packet>>, StarException> TcpPacketSocket::rec
       auto position = ds.pos();
       if (!position)
         return std::unexpected(std::move(position.error()));
-      DataStreamExternalBuffer packetStream(std::span<char const>(ds.ptr(), ds.size()).subspan(*position, packetSize));
+      DataStreamExternalBuffer packetStream(ds.span().subspan(*position, packetSize));
       packetStream.setStreamCompatibilityVersion(netRules());
       ByteArray uncompressed;
       if (packetCompressed) {
-        auto decoded = uncompressData(packetStream.ptr(), packetSize, PacketSizeLimit);
+        auto decoded = uncompressData(packetStream.span(), PacketSizeLimit);
         if (!decoded)
           return std::unexpected(std::move(decoded.error()));
         uncompressed = std::move(*decoded);
-        packetStream.reset(std::span<char const>(uncompressed.ptr(), uncompressed.size()));
+        packetStream.reset(uncompressed.span());
       }
       auto advanced = ds.seek(packetSize, IOSeek::Relative);
       if (!advanced)
@@ -537,7 +537,7 @@ std::expected<bool, StarException> TcpPacketSocket::writeData() {
     }
     // Drain any previously compressed tail even after a mode change.
     while (!m_compressedOutputBuffer.empty()) {
-      auto written = m_socket->send(m_compressedOutputBuffer.ptr(), m_compressedOutputBuffer.size());
+      auto written = m_socket->send(m_compressedOutputBuffer.span());
       if (!written)
         return std::unexpected(std::move(written.error()));
       if (*written == 0)
@@ -547,7 +547,7 @@ std::expected<bool, StarException> TcpPacketSocket::writeData() {
       m_outgoingStats.mix(*written);
     }
     while (!m_outputBuffer.empty()) {
-      auto written = m_socket->send(m_outputBuffer.ptr(), m_outputBuffer.size());
+      auto written = m_socket->send(m_outputBuffer.span());
       if (!written)
         return std::unexpected(std::move(written.error()));
       if (*written == 0)
@@ -584,7 +584,7 @@ std::expected<bool, StarException> TcpPacketSocket::readData() {
   auto read = [&]() -> std::expected<void, StarException> {
     char readBuffer[1024];
     while (true) {
-      auto readAmount = m_socket->receive(readBuffer, sizeof(readBuffer));
+      auto readAmount = m_socket->receive(readBuffer);
       if (!readAmount)
         return std::unexpected(std::move(readAmount.error()));
       if (*readAmount == 0)
@@ -592,11 +592,11 @@ std::expected<bool, StarException> TcpPacketSocket::readData() {
       dataReceived = true;
       if (compressionStreamEnabled()) {
         m_incomingStats.mix(*readAmount);
-        auto decompressed = m_decompressionStream->decompress(readBuffer, *readAmount, m_inputBuffer);
+        auto decompressed = m_decompressionStream->decompress(std::span<char const>(readBuffer).first(*readAmount), m_inputBuffer);
         if (!decompressed)
           return std::unexpected(std::move(decompressed.error()));
       } else {
-        m_inputBuffer.append(readBuffer, *readAmount);
+        m_inputBuffer.append(std::span<char const>(readBuffer).first(*readAmount));
       }
     }
     return {};
@@ -675,7 +675,7 @@ std::expected<void, StarException> P2PPacketSocket::sendPackets(List<std::shared
       auto modeWritten = outBuffer.write<bool>(false);
       if (!modeWritten)
         return std::unexpected(std::move(modeWritten.error()));
-      auto bodyWritten = outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
+      auto bodyWritten = outBuffer.writeData(packetBuffer.span());
       if (!bodyWritten)
         return std::unexpected(std::move(bodyWritten.error()));
       m_outgoingStats.mix(currentType, packetBuffer.size(), false);
@@ -725,7 +725,7 @@ std::expected<void, StarException> P2PPacketSocket::sendPackets(List<std::shared
         auto modeWritten = outBuffer.write<bool>(true);
         if (!modeWritten)
           return std::unexpected(std::move(modeWritten.error()));
-        auto bodyWritten = outBuffer.writeData(compressedPackets.ptr(), compressedPackets.size());
+        auto bodyWritten = outBuffer.writeData(compressedPackets.span());
         if (!bodyWritten)
           return std::unexpected(std::move(bodyWritten.error()));
         m_outgoingStats.mix(currentType, compressedPackets.size(), true);
@@ -733,7 +733,7 @@ std::expected<void, StarException> P2PPacketSocket::sendPackets(List<std::shared
         auto modeWritten = outBuffer.write<bool>(false);
         if (!modeWritten)
           return std::unexpected(std::move(modeWritten.error()));
-        auto bodyWritten = outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
+        auto bodyWritten = outBuffer.writeData(packetBuffer.span());
         if (!bodyWritten)
           return std::unexpected(std::move(bodyWritten.error()));
         m_outgoingStats.mix(currentType, packetBuffer.size(), true);
@@ -813,7 +813,7 @@ std::expected<bool, StarException> P2PPacketSocket::writeData() {
     auto front = m_outputMessages.first();
     if (!front)
       return std::unexpected(std::move(front.error()));
-    auto sent = m_socket->sendMessage(**front);
+    auto sent = m_socket->sendMessage(front->get());
     if (!sent) {
       m_socket.reset();
       auto logged = m_logger.warn("Exception in P2PPacketSocket::writeData, closing: {}", outputException(sent.error(), false));
@@ -823,7 +823,7 @@ std::expected<bool, StarException> P2PPacketSocket::writeData() {
     }
     if (!*sent)
       break;
-    m_outgoingStats.mix((*front)->size());
+    m_outgoingStats.mix(front->get().size());
     auto removed = m_outputMessages.removeFirst();
     if (!removed)
       return std::unexpected(std::move(removed.error()));

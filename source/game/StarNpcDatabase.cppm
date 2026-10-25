@@ -50,7 +50,7 @@ class Item;
 class Npc;
 
 struct NpcExceptionTag {
-  static constexpr char const* name() { return "NpcException"; }
+  static constexpr std::string_view name() { return "NpcException"; }
 };
 using NpcException = StarError<NpcExceptionTag, StarException>;
 
@@ -98,8 +98,8 @@ class NpcDatabase {
 public:
   [[nodiscard]] static std::expected<std::shared_ptr<NpcDatabase>, StarException> create(Root& root);
 
-  [[nodiscard]] std::expected<NpcVariant, StarException> generateNpcVariant(String const& species, String const& typeName, float level, ItemDatabase const* itemCatalog = nullptr) const;
-  [[nodiscard]] std::expected<NpcVariant, StarException> generateNpcVariant(String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides, ItemDatabase const* itemCatalog = nullptr) const;
+  [[nodiscard]] std::expected<NpcVariant, StarException> generateNpcVariant(String const& species, String const& typeName, float level, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog = std::nullopt) const;
+  [[nodiscard]] std::expected<NpcVariant, StarException> generateNpcVariant(String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog = std::nullopt) const;
 
   [[nodiscard]] std::expected<ByteArray, StarException> writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules = {}) const;
   [[nodiscard]] std::expected<NpcVariant, StarException> readNpcVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
@@ -111,7 +111,7 @@ public:
   [[nodiscard]] std::expected<std::shared_ptr<Npc>, StarException> diskLoadNpc(Json const& diskStore) const;
   [[nodiscard]] std::expected<std::shared_ptr<Npc>, StarException> netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  [[nodiscard]] std::expected<List<Drawable>, StarException> npcPortrait(NpcVariant const& npcVariant, PortraitMode mode, ItemDatabase const* itemCatalog = nullptr) const;
+  [[nodiscard]] std::expected<List<Drawable>, StarException> npcPortrait(NpcVariant const& npcVariant, PortraitMode mode, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog = std::nullopt) const;
 
   [[nodiscard]] std::expected<Json, StarException> buildConfig(String const& typeName, Json const& overrides = Json()) const;
 

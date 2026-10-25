@@ -88,7 +88,7 @@ TEST(StringTest, FilteredEmptyInputDoesNotInvokePredicates) {
 
 TEST(StringTest, substr) {
   EXPECT_EQ(String("barbazbaffoo").substr(4, 4), String("azba"));
-  EXPECT_EQ(String("\0asdf", 5).substr(1, 2), String("as"));
+  EXPECT_EQ(String(std::string_view("\0asdf", 5)).substr(1, 2), String("as"));
 }
 
 TEST(StringTest, find) {
@@ -97,7 +97,7 @@ TEST(StringTest, find) {
   EXPECT_EQ(String("xxFooxx").find("foo", 0, String::CaseInsensitive), 2u);
   EXPECT_EQ(String("xxFooxx").find("bar", 0, String::CaseInsensitive), NPos);
   EXPECT_EQ(String("BAR baz baf BAR").find("bar", 1, String::CaseInsensitive), 12u);
-  EXPECT_EQ(String("\0asdf", 5).find("df"), 3u);
+  EXPECT_EQ(String(std::string_view("\0asdf", 5)).find("df"), 3u);
 }
 
 TEST(StringTest, split_join) {
@@ -116,8 +116,8 @@ TEST(StringTest, split_join) {
   EXPECT_EQ(String("x").rsplitAny("x"), StringList());
   EXPECT_EQ(String("x").splitAny("x", 1), StringList());
   EXPECT_EQ(String("").splitAny("x", 1), StringList());
-  EXPECT_EQ(String("asdf\0asdf", 9).splitAny(String("\0", 1)), StringList(2, "asdf"));
-  EXPECT_EQ(String("asdf\0asdf", 9).splitAny("a"), StringList({String("sdf\0", 4), String("sdf")}));
+  EXPECT_EQ(String(std::string_view("asdf\0asdf", 9)).splitAny(String(std::string_view("\0", 1))), StringList(2, "asdf"));
+  EXPECT_EQ(String(std::string_view("asdf\0asdf", 9)).splitAny("a"), StringList({String(std::string_view("sdf\0", 4)), String("sdf")}));
 }
 
 TEST(StringTest, replace) {
@@ -125,8 +125,8 @@ TEST(StringTest, replace) {
   EXPECT_EQ(String("cdcdcdc").replace("cdc", "foo"), "foodfoo");
   EXPECT_EQ(String("").replace("cdc", "foo"), String());
   EXPECT_EQ(String("xxx").replace("x", "xx"), "xxxxxx");
-  EXPECT_EQ(String("/bin/bash\0aaa:123123:123", 24).replace(String("\0", 1), ""), String("/bin/bashaaa:123123:123"));
-  EXPECT_EQ(String("/bin/bash\0aaa:123123:123", 24).replace(String(), ""), String("/bin/bash\0aaa:123123:123", 24));
+  EXPECT_EQ(String(std::string_view("/bin/bash\0aaa:123123:123", 24)).replace(String(std::string_view("\0", 1)), ""), String("/bin/bashaaa:123123:123"));
+  EXPECT_EQ(String(std::string_view("/bin/bash\0aaa:123123:123", 24)).replace(String(), ""), String(std::string_view("/bin/bash\0aaa:123123:123", 24)));
 }
 
 TEST(StringTest, endsWith) {
@@ -137,9 +137,9 @@ TEST(StringTest, endsWith) {
   EXPECT_EQ(String("something.com").endsWith('M', String::CaseInsensitive), true);
   EXPECT_EQ(String("something.com").endsWith('F', String::CaseInsensitive), false);
   EXPECT_EQ(String("").endsWith('f'), false);
-  EXPECT_EQ(String("something.com\0", 14).endsWith("m"), false);
-  EXPECT_EQ(String("s\0omething.com", 14).endsWith("m"), true);
-  EXPECT_EQ(String("s\0omething.com", 14).endsWith("s"), false);
+  EXPECT_EQ(String(std::string_view("something.com\0", 14)).endsWith("m"), false);
+  EXPECT_EQ(String(std::string_view("s\0omething.com", 14)).endsWith("m"), true);
+  EXPECT_EQ(String(std::string_view("s\0omething.com", 14)).endsWith("s"), false);
 }
 
 TEST(StringTest, beginsWith) {
@@ -150,7 +150,7 @@ TEST(StringTest, beginsWith) {
   EXPECT_EQ(String("something.com").beginsWith('S', String::CaseInsensitive), true);
   EXPECT_EQ(String("something.com").beginsWith('F', String::CaseInsensitive), false);
   EXPECT_EQ(String("").beginsWith('s'), false);
-  EXPECT_EQ(String("\0something.com", 14).beginsWith(String("\0", 1)), true);
+  EXPECT_EQ(String(std::string_view("\0something.com", 14)).beginsWith(String(std::string_view("\0", 1))), true);
 }
 
 TEST(StringTest, trim) {
@@ -164,7 +164,7 @@ TEST(StringTest, trim) {
   EXPECT_EQ(String("thththsomethingthththt").trim("th"), "something");
   EXPECT_EQ(String("mmmmmmsomethingmmmmmmm").trim("m"), "something");
   EXPECT_EQ(String("\tsomething\t\t\t").trim("\t"), "something");
-  EXPECT_EQ(String("\0something\0\0\0", 13).trim(String("\0", 1)), "something");
+  EXPECT_EQ(String(std::string_view("\0something\0\0\0", 13)).trim(String(std::string_view("\0", 1))), "something");
 }
 
 TEST(StringTest, extract) {
@@ -194,7 +194,7 @@ TEST(StringTest, contains) {
 
 TEST(StringTest, format) {
   EXPECT_EQ(strf("({}, {}, {})", 1, "foo", 3.2), "(1, foo, 3.2)");
-  EXPECT_EQ(strf("{} ({}, {}, {})", String("asdf\0", 5), 1, "foo", 3.2), String("asdf\0 (1, foo, 3.2)", 19));
+  EXPECT_EQ(strf("{} ({}, {}, {})", String(std::string_view("asdf\0", 5)), 1, "foo", 3.2), String(std::string_view("asdf\0 (1, foo, 3.2)", 19)));
 }
 
 TEST(StringTest, CompileTimeFormattingPreservesByteLengths) {
@@ -280,8 +280,8 @@ TEST(StringTest, prepend) {
 }
 
 TEST(StringTest, utf8) {
-  char const* utf8String = "This is a [日本語] Unicode String. (日本語)";
-  EXPECT_EQ(utf8Length(utf8String, std::strlen(utf8String)), 37u);
+  std::string_view utf8String = "This is a [日本語] Unicode String. (日本語)";
+  EXPECT_EQ(utf8Length(utf8String.data(), utf8String.size()), 37u);
 
   String s1 = utf8String;
   EXPECT_EQ(s1.utf8(), std::string(utf8String));
@@ -290,7 +290,7 @@ TEST(StringTest, utf8) {
   EXPECT_EQ("This is a [日本語] Unicode String. (日本語)", s1);
   EXPECT_EQ(s1.size(), 37u);
   EXPECT_EQ(s1.utf8().size(), 49u);
-  EXPECT_EQ(String(s1.utf8Ptr()), String(utf8String));
+  EXPECT_EQ(String(std::string_view(s1.utf8Ptr())), String(utf8String));
 
   EXPECT_EQ(String("abcdefghijkl").slice(1, 6, 2), String("bdf"));
   auto shorter = String("aa").compare("aaaa");
@@ -402,7 +402,7 @@ TEST(StringTest, CaseInsensitive) {
   EXPECT_FALSE(map.contains(*two));
   auto found = map.get(*lowerOne);
   ASSERT_TRUE(found);
-  EXPECT_EQ(**found, 2);
+  EXPECT_EQ(found->get(), 2);
 
   StringSet keys;
   for (auto const& p : map)
@@ -504,7 +504,7 @@ TEST(StringTest, RegexSearch) {
 }
 
 TEST(StringTest, InvalidUnicodeIsRecoverableAndDoesNotModifyTheSource) {
-  String malformed("\xff", 1);
+  String malformed(std::string_view("\xff", 1));
   auto length = malformed.size();
   ASSERT_FALSE(length);
   EXPECT_TRUE(length.error().is<UnicodeException>());

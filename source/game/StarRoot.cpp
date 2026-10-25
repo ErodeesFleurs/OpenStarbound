@@ -994,15 +994,15 @@ std::expected<StringList, StarException> Root::scanForAssetSources(StringList co
     workingSet.add(source);
 
     for (auto const& includeName : source->includes) {
-      if (auto include = namedSources.ptr(includeName)) {
-        auto visited = dependencySortVisit(*include);
+      if (auto include = namedSources.maybeRef(includeName)) {
+        auto visited = dependencySortVisit(include->get());
         if (!visited) return std::unexpected(std::move(visited.error()));
       }
     }
 
     for (auto const& requirementName : source->requires_) {
-      if (auto requirement = namedSources.ptr(requirementName)) {
-        auto visited = dependencySortVisit(*requirement);
+      if (auto requirement = namedSources.maybeRef(requirementName)) {
+        auto visited = dependencySortVisit(requirement->get());
         if (!visited) return std::unexpected(std::move(visited.error()));
       } else {
         return std::unexpected(AssetSourceException(strf("Asset source '{}' is missing dependency '{}'{}", source->name ? *source->name : "<unnamed>", requirementName,
@@ -1054,17 +1054,17 @@ std::expected<void, StarException> Root::writeConfig() {
   return {};
 }
 
-std::expected<WorkerPool*, StarException> Root::workers() {
+std::expected<std::reference_wrapper<WorkerPool>, StarException> Root::workers() {
   std::lock_guard locker(m_workersStartMutex);
   if (!m_workersStarted) {
     auto started = m_workers.start(std::max(1u, std::thread::hardware_concurrency()));
     if (!started) return std::unexpected(std::move(started.error()));
     m_workersStarted = true;
   }
-  return &m_workers;
+  return std::ref(m_workers);
 }
 
-std::expected<bool*, StarException> Root::humanoidHeadRotation() {
+std::expected<std::reference_wrapper<bool>, StarException> Root::humanoidHeadRotation() {
   std::lock_guard locker(m_headRotationMutex);
   if (!m_headRotationInitialized) {
     auto config = configuration();
@@ -1076,18 +1076,18 @@ std::expected<bool*, StarException> Root::humanoidHeadRotation() {
     m_humanoidHeadRotation = value->value_or(true);
     m_headRotationInitialized = true;
   }
-  return &m_humanoidHeadRotation;
+  return std::ref(m_humanoidHeadRotation);
 }
 
 template <typename T, typename... Params>
-[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> Root::loadMember(std::shared_ptr<T>& ptr, std::mutex& mutex, char const* name, Params&&... params) {
+[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> Root::loadMember(std::shared_ptr<T>& ptr, std::mutex& mutex, std::string_view name, Params&&... params) {
   return loadMemberFunction<T>(ptr, mutex, name, [&]() {
       return T::create(std::forward<Params>(params)...);
     });
 }
 
 template <typename T>
-[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> Root::loadMemberFunction(std::shared_ptr<T>& ptr, std::mutex& mutex, char const* name, std::function<std::expected<std::shared_ptr<T>, StarException>()> loadFunction) {
+[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> Root::loadMemberFunction(std::shared_ptr<T>& ptr, std::mutex& mutex, std::string_view name, std::function<std::expected<std::shared_ptr<T>, StarException>()> loadFunction) {
   std::lock_guard locker(mutex);
   if (!ptr) {
     auto startSeconds = Time::monotonicTime();

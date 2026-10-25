@@ -248,7 +248,7 @@ static std::expected<void, StarException> runServer(int argc, char** argv) {
       auto address = bindAddress("queryServerBind", "queryServerPort");
       if (!address)
         return std::unexpected(std::move(address.error()));
-      auto query = ServerQueryThread::create(server.get(), *address);
+      auto query = ServerQueryThread::create(*server, *address);
       if (!query)
         return std::unexpected(std::move(query.error()));
       queryServer = std::move(*query);
@@ -267,7 +267,7 @@ static std::expected<void, StarException> runServer(int argc, char** argv) {
       auto address = bindAddress("rconServerBind", "rconServerPort");
       if (!address)
         return std::unexpected(std::move(address.error()));
-      auto rcon = ServerRconThread::create(server.get(), *address);
+      auto rcon = ServerRconThread::create(*server, *address);
       if (!rcon)
         return std::unexpected(std::move(rcon.error()));
       rconServer = std::move(*rcon);

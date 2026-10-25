@@ -36,8 +36,8 @@ import star.collision_block;
 namespace Star {
 
 struct MaterialSpace {
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, MaterialSpace const& materialSpace);
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, MaterialSpace& materialSpace);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, MaterialSpace const& materialSpace);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, MaterialSpace& materialSpace);
   MaterialSpace();
   MaterialSpace(Vec2I space, MaterialId material);
 
@@ -47,8 +47,8 @@ struct MaterialSpace {
   MaterialId material;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, MaterialSpace const& materialSpace);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, MaterialSpace& materialSpace);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, MaterialSpace const& materialSpace);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, MaterialSpace& materialSpace);
 
 // Entities that derive from TileEntity are those that can be placed in the
 // tile grid, and occupy tile spaces, possibly affecting collision.

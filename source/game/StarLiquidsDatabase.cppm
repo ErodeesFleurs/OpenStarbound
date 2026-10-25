@@ -24,7 +24,7 @@ class Assets;
 class MaterialDatabase;
 
 struct LiquidExceptionTag {
-  static constexpr char const* name() { return "LiquidException"; }
+  static constexpr std::string_view name() { return "LiquidException"; }
 };
 using LiquidException = StarError<LiquidExceptionTag, StarException>;
 

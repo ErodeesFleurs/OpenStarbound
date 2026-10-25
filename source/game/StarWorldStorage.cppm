@@ -77,7 +77,7 @@ namespace Star {
 class Logger;
 
 struct WorldStorageExceptionTag {
-  static constexpr char const* name() { return "WorldStorageException"; }
+  static constexpr std::string_view name() { return "WorldStorageException"; }
 };
 using WorldStorageException = StarError<WorldStorageExceptionTag, StarException>;
 
@@ -113,28 +113,28 @@ struct WorldGeneratorFacade {
   virtual ~WorldGeneratorFacade() {}
 
   // Should bring a given sector from generationLevel - 1 to generationLevel.
-  [[nodiscard]] virtual std::expected<void, StarException> generateSectorLevel(WorldStorage* storage, Sector const& sector, SectorGenerationLevel generationLevel) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> generateSectorLevel(WorldStorage& storage, Sector const& sector, SectorGenerationLevel generationLevel) = 0;
 
-  [[nodiscard]] virtual std::expected<void, StarException> sectorLoadLevelChanged(WorldStorage* storage, Sector const& sector, SectorLoadLevel loadLevel) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> sectorLoadLevelChanged(WorldStorage& storage, Sector const& sector, SectorLoadLevel loadLevel) = 0;
 
   // Perform terraforming operations (biome reapplication) on the given sector
-  [[nodiscard]] virtual std::expected<void, StarException> terraformSector(WorldStorage* storage, Sector const& sector) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> terraformSector(WorldStorage& storage, Sector const& sector) = 0;
 
   // Called after an entity is loaded, but before the entity is added to the
   // EntityMap.
-  [[nodiscard]] virtual std::expected<void, StarException> initEntity(WorldStorage* storage, EntityId newEntityId, std::shared_ptr<Entity> const& entity) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> initEntity(WorldStorage& storage, EntityId newEntityId, std::shared_ptr<Entity> const& entity) = 0;
 
   // Called after the entity is removed from the entity map but before it is
   // stored.
-  [[nodiscard]] virtual std::expected<void, StarException> destructEntity(WorldStorage* storage, std::shared_ptr<Entity> const& entity) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> destructEntity(WorldStorage& storage, std::shared_ptr<Entity> const& entity) = 0;
 
   // Should return true if this entity should maintain the sector, false
   // otherwise.
-  [[nodiscard]] virtual std::expected<bool, StarException> entityKeepAlive(WorldStorage* storage, std::shared_ptr<Entity> const& entity) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> entityKeepAlive(WorldStorage& storage, std::shared_ptr<Entity> const& entity) const = 0;
 
   // Should return true if this entity should be stored along with the world,
   // false otherwise.
-  [[nodiscard]] virtual std::expected<bool, StarException> entityPersistent(WorldStorage* storage, std::shared_ptr<Entity> const& entity) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> entityPersistent(WorldStorage& storage, std::shared_ptr<Entity> const& entity) const = 0;
 
   // Queues up a microdungeon. Fulfills the rpc promise with the position the
   // microdungeon was placed at
@@ -233,7 +233,7 @@ public:
   // Ticks down the TTL on sectors and generation queue entries, stores old
   // sectors, expires old generation queue entries, and unloads any zombie
   // entities.
-  [[nodiscard]] std::expected<void, StarException> tick(float dt, String const* worldId = nullptr);
+  [[nodiscard]] std::expected<void, StarException> tick(float dt, std::optional<std::reference_wrapper<String const>> worldId = std::nullopt);
 
   // Unload all sectors that can be unloaded (if force is specified, ALWAYS
   // unloads all sectors)

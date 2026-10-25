@@ -83,12 +83,12 @@ public:
 
   [[nodiscard]] static std::expected<std::shared_ptr<ContainerObject>, StarException> create(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters);
 
-  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> init(World& world, EntityId entityId, EntityMode mode) override;
 
   [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback) override;
 
-  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) override;
   [[nodiscard]] std::expected<InteractAction, StarException> interact(InteractRequest const& request) override;
 
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
@@ -128,7 +128,7 @@ protected:
 
 private:
   explicit ContainerObject(Root& rootContext);
-  typedef std::function<void(ContainerObject*)> ContainerCallback;
+  typedef std::function<void(ContainerObject&)> ContainerCallback;
 
   [[nodiscard]] std::expected<ItemRecipe, StarException> recipeForMaterials(List<std::shared_ptr<Item>> const& inputItems);
   [[nodiscard]] std::expected<void, StarException> tickCrafting(float dt);

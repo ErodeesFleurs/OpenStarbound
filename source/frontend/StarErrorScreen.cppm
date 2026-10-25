@@ -53,7 +53,7 @@ private:
   [[nodiscard]] std::expected<unsigned, StarException> windowHeight() const;
   [[nodiscard]] std::expected<unsigned, StarException> windowWidth() const;
 
-  GuiContext* m_guiContext;
+  std::reference_wrapper<GuiContext> m_guiContext;
   std::shared_ptr<PaneManager> m_paneManager;
   std::shared_ptr<Pane> m_errorPane;
 

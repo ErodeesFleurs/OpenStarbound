@@ -11,7 +11,7 @@ class Root;
 
 
 struct NameGeneratorExceptionTag {
-  static constexpr char const* name() { return "NameGeneratorException"; }
+  static constexpr std::string_view name() { return "NameGeneratorException"; }
 };
 using NameGeneratorException = StarError<NameGeneratorExceptionTag, StarException>;
 

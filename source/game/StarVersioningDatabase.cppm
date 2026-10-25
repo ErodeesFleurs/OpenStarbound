@@ -18,16 +18,16 @@ class ItemDatabase;
 
 
 struct VersionedJsonExceptionTag {
-  static constexpr char const* name() { return "VersionedJsonException"; }
+  static constexpr std::string_view name() { return "VersionedJsonException"; }
 };
 using VersionedJsonException = StarError<VersionedJsonExceptionTag, StarException>;
 struct VersioningDatabaseExceptionTag {
-  static constexpr char const* name() { return "VersioningDatabaseException"; }
+  static constexpr std::string_view name() { return "VersioningDatabaseException"; }
 };
 using VersioningDatabaseException = StarError<VersioningDatabaseExceptionTag, StarException>;
 
 struct VersionedJson {
-  static char const* const Magic;
+  static std::string_view const Magic;
   static std::size_t const MagicStringSize;
   static VersionNumber const SubVersioning;
 
@@ -55,8 +55,8 @@ struct VersionedJson {
   StringMap<VersionNumber> subVersions;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, VersionedJson& versionedJson);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, VersionedJson const& versionedJson);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, VersionedJson& versionedJson);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, VersionedJson const& versionedJson);
 
 class VersioningDatabase {
 public:
@@ -74,12 +74,12 @@ public:
   // Brings versioned JSON up to the configured latest version using scripts.
   // Script and upgrade failures are returned as VersioningDatabaseException.
   [[nodiscard]] std::expected<VersionedJson, StarException> updateVersionedJson(VersionedJson const& versionedJson) const;
-  [[nodiscard]] std::expected<VersionedJson, StarException> updateVersionedJson(VersionedJson const& versionedJson, ItemDatabase const* itemCatalog) const;
+  [[nodiscard]] std::expected<VersionedJson, StarException> updateVersionedJson(VersionedJson const& versionedJson, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const;
 
   // Convenience method, checkts the versionedJson expected identifier and then
   // brings the given versionedJson up to date and returns the content.
   [[nodiscard]] std::expected<Json, StarException> loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier) const;
-  [[nodiscard]] std::expected<Json, StarException> loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier, ItemDatabase const* itemCatalog) const;
+  [[nodiscard]] std::expected<Json, StarException> loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const;
 
 private:
   explicit VersioningDatabase(Root& root) : m_root(root) {}
@@ -90,7 +90,7 @@ private:
     VersionNumber toVersion;
   };
 
-  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeVersioningCallbacks(ItemDatabase const* itemCatalog) const;
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeVersioningCallbacks(std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const;
 
   Root& m_root;
   mutable std::recursive_mutex m_mutex;

@@ -38,6 +38,7 @@ import star.world;
 namespace Star {
 
 class Root;
+class Player;
 
 class RenderCallback;
 
@@ -53,19 +54,18 @@ public:
   bool isDeploying() const;
   bool isDeployed() const;
 
-  [[nodiscard]] std::expected<void, StarException> init(Entity* player, World* world);
+  [[nodiscard]] std::expected<void, StarException> init(Player& player, World& world);
   [[nodiscard]] std::expected<void, StarException> uninit();
 
   [[nodiscard]] std::expected<void, StarException> teleportOut();
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   [[nodiscard]] std::expected<void, StarException> update(float dt);
 
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback, Vec2F const& position);
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback, Vec2F const& position);
 
-  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback);
+  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback& renderCallback);
 private:
   Root& m_root;
-  World* m_world = nullptr;
   Json m_config;
 
   bool m_deploying;

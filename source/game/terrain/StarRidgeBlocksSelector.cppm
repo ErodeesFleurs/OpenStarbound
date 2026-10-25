@@ -13,7 +13,7 @@ import star.terrain_database;
 export namespace Star {
 
 struct RidgeBlocksSelector : TerrainSelector {
-  static char const* const Name;
+  static std::string_view const Name;
 
   [[nodiscard]] static std::expected<std::shared_ptr<RidgeBlocksSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters);
 private:
@@ -41,7 +41,7 @@ public:
 
 namespace Star {
 
-char const* const RidgeBlocksSelector::Name = "ridgeblocks";
+std::string_view const RidgeBlocksSelector::Name = "ridgeblocks";
 
 std::expected<std::shared_ptr<RidgeBlocksSelector>, StarException> RidgeBlocksSelector::create(Json const& config, TerrainSelectorParameters const& parameters) {
   auto result = std::make_shared<RidgeBlocksSelector>(ConstructionKey{}, config, parameters);

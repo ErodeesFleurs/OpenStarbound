@@ -10,20 +10,20 @@ import star.interaction_types;
 
 namespace Star {
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, InteractRequest& ir) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, InteractRequest& ir) {
   if (auto r = ds >> ir.sourceId; !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds >> ir.sourcePosition; !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds >> ir.targetId; !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds >> ir.interactPosition; !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, InteractRequest const& ir) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, InteractRequest const& ir) {
   if (auto r = ds << ir.sourceId; !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds << ir.sourcePosition; !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds << ir.targetId; !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds << ir.interactPosition; !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 extern std::expected<EnumMap<InteractActionType>, StarException> const InteractActionTypeNames = EnumMap<InteractActionType>::create({{InteractActionType::None, "None"},
@@ -51,25 +51,25 @@ std::expected<InteractAction, StarException> InteractAction::create(String const
   if (!InteractActionTypeNames) return std::unexpected(InteractActionTypeNames.error());
   auto type = InteractActionTypeNames->getLeft(typeName);
   if (!type) return std::unexpected(std::move(type.error()));
-  return InteractAction(**type, entityId, std::move(data));
+  return InteractAction(type->get(), entityId, std::move(data));
 }
 
 InteractAction::operator bool() const {
   return type != InteractActionType::None;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, InteractAction& ir) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, InteractAction& ir) {
   if (auto r = ds.read(ir.type); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(ir.entityId); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(ir.data); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, InteractAction const& ir) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, InteractAction const& ir) {
   if (auto r = ds.write(ir.type); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(ir.entityId); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(ir.data); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 }

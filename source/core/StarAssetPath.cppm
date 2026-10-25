@@ -23,8 +23,8 @@ namespace Star {
 // portion of the path starts with a '?', and '?' separates each subsquent
 // directive.
 struct AssetPath {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, AssetPath& path);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, AssetPath const& path);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, AssetPath& path);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, AssetPath const& path);
   friend std::ostream& operator<<(std::ostream& os, AssetPath const& rhs);
   friend struct hash<AssetPath>;
   static AssetPath split(String const& path);
@@ -65,7 +65,9 @@ struct AssetPath {
   AssetPath& operator=(AssetPath const&) = default;
   AssetPath(AssetPath&& path);
   AssetPath& operator=(AssetPath&& path);
-  AssetPath(const char* path);
+  AssetPath(std::string_view path);
+  template <std::size_t Size>
+  AssetPath(char const (&path)[Size]) : AssetPath(std::string_view(path, Size - 1)) {}
   AssetPath(String const& path);
   AssetPath(String&& basePath, std::optional<String>&& subPath, DirectivesGroup&& directives);
   AssetPath(const String& basePath, const std::optional<String>& subPath, const DirectivesGroup& directives);
@@ -76,8 +78,8 @@ struct AssetPath {
   bool operator==(AssetPath const& rhs) const;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, AssetPath& path);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, AssetPath const& path);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, AssetPath& path);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, AssetPath const& path);
 
 std::ostream& operator<<(std::ostream& os, AssetPath const& rhs);
 

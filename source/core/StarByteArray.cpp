@@ -8,14 +8,13 @@ import star.encode;
 import star.algorithm;
 namespace Star {
 
-ByteArray ByteArray::fromCString(char const* str) {
-  return ByteArray(str, std::strlen(str));
+ByteArray ByteArray::fromCString(std::string_view str) {
+  return ByteArray(std::span<char const>(str));
 }
 
-ByteArray ByteArray::fromCStringWithNull(char const* str) {
-  std::size_t len = std::strlen(str);
-  ByteArray ba(str, len + 1);
-  ba[len] = 0;
+ByteArray ByteArray::fromCStringWithNull(std::string_view str) {
+  ByteArray ba{std::span<char const>(str)};
+  ba.appendByte(0);
   return ba;
 }
 
@@ -36,9 +35,9 @@ ByteArray::ByteArray(std::size_t dataSize, char c)
   fill(dataSize, c);
 }
 
-ByteArray::ByteArray(const char* data, std::size_t dataSize)
+ByteArray::ByteArray(std::span<char const> data)
   : ByteArray() {
-  append(data, dataSize);
+  append(data);
 }
 
 ByteArray::ByteArray(ByteArray const& b)
@@ -136,7 +135,7 @@ ByteArray ByteArray::sub(std::size_t b, std::size_t s) const {
   } else {
     // The sub range has to be clamped against what is left *after* the offset;
     // min(m_size, b + s) let the copy read past the end of the buffer.
-    return ByteArray(m_data + b, std::min(s, m_size - b));
+    return ByteArray(span().subspan(b, std::min(s, m_size - b)));
   }
 }
 

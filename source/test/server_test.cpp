@@ -180,7 +180,7 @@ const GameTestRegistration fidelityScheduleIntervalsAndOffsets("ServerTest", "Fi
   auto world = *created;
   auto close = finally([&] { EXPECT_TRUE(world->close()); });
   using Timing = WorldServerTestAccess::Timing;
-  constexpr std::array<char const*, 7> names{
+  constexpr std::array<std::string_view, 7> names{
       "wiringUpdate", "liquidUpdate", "fallingBlocksUpdate", "blockDamageUpdate",
       "worldStorageTick", "worldStorageGenerate", "environmentUpdate"};
   JsonObject medium;
@@ -353,7 +353,7 @@ const GameTestRegistration fidelityScheduleFirstErrorOrder("ServerTest", "Fideli
   auto close = finally([&] { EXPECT_TRUE(world->close()); });
   world->setSpawningEnabled(false);
   unsigned triggered = 0;
-  world->timer(0, [&](World*) -> std::expected<void, StarException> {
+  world->timer(0, [&](World&) -> std::expected<void, StarException> {
     ++triggered;
     return {};
   });

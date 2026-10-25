@@ -51,7 +51,7 @@ TEST(FileTest, FullReadRejectsImpossibleLengths) {
 
 namespace {
   std::filesystem::path fsPath(String const& path) {
-    return std::filesystem::path(std::u8string_view(reinterpret_cast<char8_t const*>(path.utf8Ptr()), path.utf8Size()));
+    return std::filesystem::path(std::u8string_view(reinterpret_cast<char8_t const*>(path.utf8().data()), path.utf8Size()));
   }
 
   // Never follows symlinks, so it is safe even when the removal under test
@@ -129,7 +129,7 @@ TEST(FileTest, DirectoryHelpersPreserveFailureBoundaries) {
   EXPECT_TRUE(existing.error().is<IOException>());
 
   auto file = File::relativeTo(*directory, "regular");
-  ASSERT_TRUE(File::writeFile("kept", file));
+  ASSERT_TRUE(File::writeFile(String("kept"), file));
   EXPECT_FALSE(File::makeDirectory(file));
   EXPECT_FALSE(File::makeDirectoryRecursive(file));
   EXPECT_FALSE(File::makeDirectoryRecursive(File::relativeTo(file, "child")));
@@ -190,7 +190,7 @@ TEST(FileTest, DirectoryListingPreservesDotsAndUtf8Names) {
   String child = "目录-é";
   String file = "данные.txt";
   ASSERT_TRUE(File::makeDirectory(File::relativeTo(*directory, child)));
-  ASSERT_TRUE(File::writeFile("contents", File::relativeTo(*directory, file)));
+  ASSERT_TRUE(File::writeFile(String("contents"), File::relativeTo(*directory, file)));
 
   auto entries = File::dirList(*directory);
   ASSERT_TRUE(entries);
@@ -270,8 +270,8 @@ TEST(FileTest, RemoveDirectoryRecursiveKeepsSymlinkTargets) {
 
   std::error_code ec;
   std::filesystem::create_directories(fsPath(File::relativeTo(outside, "real")), ec);
-  ASSERT_TRUE(File::writeFile("kept", File::relativeTo(File::relativeTo(outside, "real"), "keep.txt")));
-  ASSERT_TRUE(File::writeFile("doomed", File::relativeTo(dir, "file.txt")));
+  ASSERT_TRUE(File::writeFile(String("kept"), File::relativeTo(File::relativeTo(outside, "real"), "keep.txt")));
+  ASSERT_TRUE(File::writeFile(String("doomed"), File::relativeTo(dir, "file.txt")));
   std::filesystem::create_directory_symlink(
       fsPath(File::relativeTo(outside, "real")), fsPath(File::relativeTo(dir, "link")), ec);
   if (ec)
@@ -286,7 +286,7 @@ TEST(FileTest, RemoveDirectoryRecursiveKeepsSymlinkTargets) {
   EXPECT_EQ(File::isFile(File::relativeTo(File::relativeTo(outside, "real"), "keep.txt")), true);
 
   // The root itself can be a link, with or without a trailing separator.
-  for (auto suffix : {"", "/"}) {
+  for (std::string_view suffix : {"", "/"}) {
     std::filesystem::create_directory_symlink(fsPath(File::relativeTo(outside, "real")), fsPath(dir), ec);
     ASSERT_FALSE(ec) << ec.message();
     EXPECT_TRUE(File::removeDirectoryRecursive(dir + suffix));
@@ -309,7 +309,7 @@ TEST(FileTest, RemoveDirectoryRecursiveHandlesSymlinkLoops) {
 
   std::error_code ec;
   std::filesystem::create_directories(fsPath(File::relativeTo(dir, "real")), ec);
-  ASSERT_TRUE(File::writeFile("doomed", File::relativeTo(File::relativeTo(dir, "real"), "file.txt")));
+  ASSERT_TRUE(File::writeFile(String("doomed"), File::relativeTo(File::relativeTo(dir, "real"), "file.txt")));
   std::filesystem::create_directory_symlink(fsPath(dir), fsPath(File::relativeTo(dir, "loop")), ec);
   if (ec)
     GTEST_SKIP() << "cannot create directory symlinks here: " << ec.message();
@@ -319,7 +319,7 @@ TEST(FileTest, RemoveDirectoryRecursiveHandlesSymlinkLoops) {
 }
 
 TEST(FileTest, OggDeviceCallbacksReadAndSeek) {
-  auto device = std::make_shared<Buffer>(ByteArray::fromCString("abcdef"));
+  Buffer device(ByteArray::fromCString("abcdef"));
   auto adapterResult = IODeviceCallbacks::create(device);
   ASSERT_TRUE(adapterResult);
   auto adapter = std::move(*adapterResult);
@@ -329,7 +329,7 @@ TEST(FileTest, OggDeviceCallbacksReadAndSeek) {
   char output[4]{};
   EXPECT_EQ(callbacks.read_func(output, 2, 2, &adapter), 2u);
   EXPECT_FALSE(adapter.takeError());
-  EXPECT_EQ(ByteArray(output, 4), ByteArray::fromCString("abcd"));
+  EXPECT_EQ(ByteArray(std::span(output).first(4)), ByteArray::fromCString("abcd"));
   EXPECT_EQ(callbacks.tell_func(&adapter), 4);
   EXPECT_FALSE(adapter.takeError());
 
@@ -339,7 +339,7 @@ TEST(FileTest, OggDeviceCallbacksReadAndSeek) {
   EXPECT_FALSE(adapter.takeError());
   EXPECT_EQ(callbacks.read_func(output, 2, 2, &adapter), 2u);
   EXPECT_FALSE(adapter.takeError());
-  EXPECT_EQ(ByteArray(output, 4), ByteArray::fromCString("cdef"));
+  EXPECT_EQ(ByteArray(std::span(output).first(4)), ByteArray::fromCString("cdef"));
   EXPECT_EQ(callbacks.read_func(output, 2, 2, &adapter), 0u);
   EXPECT_FALSE(adapter.takeError());
 }

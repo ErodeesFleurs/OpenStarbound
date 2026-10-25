@@ -179,7 +179,7 @@ std::expected<std::shared_ptr<ItemSlotWidget>, StarException> ItemSlotWidget::cr
   auto children = slotConfig->get("config");
   if (!children) return std::unexpected(std::move(children.error()));
   WidgetParser parser(context);
-  auto parsed = parser.construct(*children, widget.get());
+  auto parsed = parser.construct(*children, *widget);
   if (!parsed) return std::unexpected(std::move(parsed.error()));
   auto bar = widget->requireChild<ProgressWidget>("durabilityBar");
   if (!bar) return std::unexpected(std::move(bar.error()));
@@ -199,17 +199,18 @@ std::expected<void, StarException> ItemSlotWidget::update(float dt) {
 
 std::expected<bool, StarException> ItemSlotWidget::sendEvent(InputEvent const& event) {
   if (m_visible) {
-    if (auto mouseButton = std::get_if<MouseButtonDownEvent>(&event)) {
-      if (mouseButton->mouseButton == MouseButton::Left
-        || (m_rightClickCallback && mouseButton->mouseButton == MouseButton::Right)
-        || (m_middleClickCallback && mouseButton->mouseButton == MouseButton::Middle)) {
-        Vec2I mousePos = *context()->mousePosition(event);
+    if (std::holds_alternative<MouseButtonDownEvent>(event)) {
+      auto const& mouseButton = std::get<MouseButtonDownEvent>(event);
+      if (mouseButton.mouseButton == MouseButton::Left
+        || (m_rightClickCallback && mouseButton.mouseButton == MouseButton::Right)
+        || (m_middleClickCallback && mouseButton.mouseButton == MouseButton::Middle)) {
+        Vec2I mousePos = *context().mousePosition(event);
         RectI itemArea = m_itemDraggableArea.translated(screenPosition());
         if (itemArea.contains(mousePos)) {
-          auto const& callback = mouseButton->mouseButton == MouseButton::Right ? m_rightClickCallback
-            : mouseButton->mouseButton == MouseButton::Middle ? m_middleClickCallback : m_callback;
+          auto const& callback = mouseButton.mouseButton == MouseButton::Right ? m_rightClickCallback
+            : mouseButton.mouseButton == MouseButton::Middle ? m_middleClickCallback : m_callback;
           if (!callback) return std::unexpected(GuiException("Item slot has no click callback"));
-          auto result = callback(this);
+          auto result = callback(*this);
           if (!result) return std::unexpected(std::move(result.error()));
           return true;
         }
@@ -288,13 +289,13 @@ void ItemSlotWidget::setHighlightEnabled(bool highlight) {
 }
 
 std::expected<void, StarException> ItemSlotWidget::renderImpl() {
-  auto drawCooldown = [this]() -> std::expected<void, StarException> {
-    int frame = (int)std::roundf(m_progress * 18);
-    return context()->drawInterfaceQuad(AssetPath(String(strf("/interface/cooldown.png:{}", frame))), Vec2F(screenPosition()));
+  auto drawCooldown = [&slot = *this]() -> std::expected<void, StarException> {
+    int frame = (int)std::roundf(slot.m_progress * 18);
+    return slot.context().drawInterfaceQuad(AssetPath(String(strf("/interface/cooldown.png:{}", frame))), Vec2F(slot.screenPosition()));
   };
   if (m_item) {
     if (m_drawBackingImageWhenFull && !m_backingImage.empty()) {
-      auto result = context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
+      auto result = context().drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
       if (!result) return std::unexpected(std::move(result.error()));
     }
     auto icons = m_item->iconDrawables();
@@ -308,27 +309,27 @@ std::expected<void, StarException> ItemSlotWidget::renderImpl() {
       if (!RarityNames) return std::unexpected(RarityNames.error());
       auto rarity = RarityNames->getRight(m_item->rarity());
       if (!rarity) return std::unexpected(std::move(rarity.error()));
-      auto value = m_item->instanceValue("rarityBorder", **rarity);
+      auto value = m_item->instanceValue("rarityBorder", rarity->get());
       if (!value) return std::unexpected(std::move(value.error()));
       auto name = value->toString();
       if (!name) return std::unexpected(std::move(name.error()));
       auto border = rarityBorder(std::move(*name));
       if (!border) return std::unexpected(std::move(border.error()));
-      auto result = context()->drawInterfaceQuad(*border, Vec2F(screenPosition()));
+      auto result = context().drawInterfaceQuad(*border, Vec2F(screenPosition()));
       if (!result) return std::unexpected(std::move(result.error()));
     }
     if (m_showLinkIndicator) {
-      auto result = context()->drawInterfaceQuad("/interface/inventory/itemlinkindicator.png", Vec2F(screenPosition() - Vec2I(1, 1)));
+      auto result = context().drawInterfaceQuad("/interface/inventory/itemlinkindicator.png", Vec2F(screenPosition() - Vec2I(1, 1)));
       if (!result) return std::unexpected(std::move(result.error()));
     }
     for (auto const& icon : *icons) {
-      auto result = context()->drawInterfaceDrawable(icon, Vec2F(screenPosition() + size() / 2));
+      auto result = context().drawInterfaceDrawable(icon, Vec2F(screenPosition() + size() / 2));
       if (!result) return std::unexpected(std::move(result.error()));
     }
     if (!m_newItemIndicator.isComplete()) {
       auto drawable = m_newItemIndicator.drawable(1.0);
       if (!drawable) return std::unexpected(std::move(drawable.error()));
-      auto result = context()->drawInterfaceDrawable(*drawable, Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
+      auto result = context().drawInterfaceDrawable(*drawable, Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
       if (!result) return std::unexpected(std::move(result.error()));
     }
     if (m_showDurability) {
@@ -345,17 +346,17 @@ std::expected<void, StarException> ItemSlotWidget::renderImpl() {
     auto cooldown = drawCooldown();
     if (!cooldown) return std::unexpected(std::move(cooldown.error()));
     if (m_item->count() > 1 && m_showCount) {
-      auto style = context()->setTextStyle(m_textStyle);
+      auto style = context().setTextStyle(m_textStyle);
       if (!style) return std::unexpected(std::move(style.error()));
-      auto mode = context()->setFontMode(m_countFontMode);
+      auto mode = context().setFontMode(m_countFontMode);
       if (!mode) return std::unexpected(std::move(mode.error()));
-      auto text = context()->renderInterfaceText(formatShortSize(m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
-      auto cleared = context()->clearTextStyle();
+      auto text = context().renderInterfaceText(formatShortSize(m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
+      auto cleared = context().clearTextStyle();
       if (!text) return std::unexpected(std::move(text.error()));
       if (!cleared) return std::unexpected(std::move(cleared.error()));
     }
   } else if (m_drawBackingImageWhenEmpty && !m_backingImage.empty()) {
-    auto result = context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
+    auto result = context().drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
     if (!result) return std::unexpected(std::move(result.error()));
     auto cooldown = drawCooldown();
     if (!cooldown) return std::unexpected(std::move(cooldown.error()));
@@ -363,7 +364,7 @@ std::expected<void, StarException> ItemSlotWidget::renderImpl() {
   if (m_highlightEnabled) {
     auto drawable = m_highlightAnimation.drawable(1.0);
     if (!drawable) return std::unexpected(std::move(drawable.error()));
-    auto result = context()->drawInterfaceDrawable(*drawable, Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
+    auto result = context().drawInterfaceDrawable(*drawable, Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
     if (!result) return std::unexpected(std::move(result.error()));
   }
   if (!m_item) return m_durabilityBar->hide();

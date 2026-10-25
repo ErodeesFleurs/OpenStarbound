@@ -37,7 +37,7 @@ class Image;
 class LuaContext;
 
 struct AssetExceptionTag {
-  static constexpr char const* name() { return "AssetException"; }
+  static constexpr std::string_view name() { return "AssetException"; }
 };
 using AssetException = StarError<AssetExceptionTag, StarException>;
 
@@ -262,7 +262,7 @@ public:
   // Scans all assets for files with the given extension, which is specially
   // indexed and much faster than a normal scan.  Extension may contain leading
   // '.' character or it may be omitted.
-  [[nodiscard]] std::expected<CaseInsensitiveStringSet const*, StarException> scanExtension(String const& extension) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<CaseInsensitiveStringSet const>, StarException> scanExtension(String const& extension) const;
 
   // Get json asset with an optional sub-path.  The sub-path portion of the
   // path refers to a key in the top-level object, and may use dot notation
@@ -391,8 +391,24 @@ private:
   mutable StringMap<std::shared_ptr<FramesSpecification const>> m_framesSpecifications;
 
   // Lua
+  struct PatchContextKey {
+    std::reference_wrapper<AssetSource> source;
+    String path;
+
+    bool operator==(PatchContextKey const& other) const {
+      // Native addresses identify sources; asset contents do not define identity.
+      return std::addressof(source.get()) == std::addressof(other.source.get()) && path == other.path;
+    }
+  };
+
+  struct PatchContextKeyHash {
+    std::size_t operator()(PatchContextKey const& key) const {
+      return hashOf(std::addressof(key.source.get()), key.path);
+    }
+  };
+
   RefPtr<RefCounter> m_luaEngine; // dumb but to avoid including Lua.hpp in here...
-  mutable HashMap<std::pair<AssetSource*, String>, std::shared_ptr<LuaContext>> m_patchContexts;
+  mutable HashMap<PatchContextKey, std::shared_ptr<LuaContext>, PatchContextKeyHash> m_patchContexts;
   mutable std::recursive_mutex m_luaMutex;
 
   // Paths of all used asset sources, in load order.

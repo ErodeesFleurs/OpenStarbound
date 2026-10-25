@@ -136,8 +136,8 @@ private:
     float setValue(float v);
   };
 
-  [[nodiscard]] std::expected<Resource const*, StarException> getResource(String const& resourceName) const;
-  [[nodiscard]] std::expected<Resource*, StarException> getResource(String const& resourceName);
+  [[nodiscard]] std::expected<std::reference_wrapper<Resource const>, StarException> getResource(String const& resourceName) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Resource>, StarException> getResource(String const& resourceName);
 
   [[nodiscard]] std::expected<bool, StarException> consumeResourceValue(String const& resourceName, float amount, bool allowOverConsume);
 

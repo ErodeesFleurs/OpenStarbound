@@ -199,10 +199,10 @@ import star.humanoid;
 
 namespace Star {
 
-OptionsMenu::OptionsMenu(GuiContext& guiContext, PaneManager* manager)
-  : Pane(guiContext), m_sfxRange(0, 100), m_musicRange(0, 100), m_paneManager(manager) {}
+OptionsMenu::OptionsMenu(GuiContext& guiContext, PaneManager& manager)
+  : Pane(guiContext), m_sfxRange(0, 100), m_musicRange(0, 100), m_paneManager(std::ref(manager)) {}
 
-std::expected<std::shared_ptr<OptionsMenu>, StarException> OptionsMenu::create(GuiContext& guiContext, PaneManager* manager, std::shared_ptr<UniverseClient> client) {
+std::expected<std::shared_ptr<OptionsMenu>, StarException> OptionsMenu::create(GuiContext& guiContext, PaneManager& manager, std::shared_ptr<UniverseClient> client) {
   auto menu = std::shared_ptr<OptionsMenu>(new OptionsMenu(guiContext, manager));
   if (auto result = menu->initializePane(); !result)
     return std::unexpected(std::move(result.error()));
@@ -210,76 +210,82 @@ std::expected<std::shared_ptr<OptionsMenu>, StarException> OptionsMenu::create(G
     return std::unexpected(std::move(result.error()));
   return menu;
 }
+void OptionsMenu::detachInterface() noexcept {
+  m_paneManager.reset();
+  if (m_graphicsMenu)
+    m_graphicsMenu->detachInterface();
+}
+
 
 std::expected<void, StarException> OptionsMenu::init(std::shared_ptr<UniverseClient> client) {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
-  GuiReader reader(*context());
-  reader.registerCallback("instrumentSlider", [this](Widget*) { return updateInstrumentVol(); });
-  reader.registerCallback("sfxSlider", [this](Widget*) { return updateSFXVol(); });
-  reader.registerCallback("musicSlider", [this](Widget*) { return updateMusicVol(); });
-  reader.registerCallback("acceptButton", [this](Widget*) -> std::expected<void, StarException> {
-    auto configuration = context()->root().configuration();
+  GuiReader reader(context());
+  reader.registerCallback("instrumentSlider", [this](Widget&) { return updateInstrumentVol(); });
+  reader.registerCallback("sfxSlider", [this](Widget&) { return updateSFXVol(); });
+  reader.registerCallback("musicSlider", [this](Widget&) { return updateMusicVol(); });
+  reader.registerCallback("acceptButton", [this](Widget&) -> std::expected<void, StarException> {
+    auto configuration = context().root().configuration();
     if (!configuration)
       return std::unexpected(std::move(configuration.error()));
     for (auto const& key : ConfigKeys) {
       auto value = m_localChanges.get(key);
       if (!value)
         return std::unexpected(std::move(value.error()));
-      if (auto result = (*configuration)->set(key, **value); !result)
+      if (auto result = (*configuration)->set(key, value->get()); !result)
         return std::unexpected(std::move(result.error()));
     }
     dismiss();
     return {};
   });
-  reader.registerCallback("tutorialMessagesCheckbox", [this](Widget*) { return updateTutorialMessages(); });
-  reader.registerCallback("clientIPJoinableCheckbox", [this](Widget*) { return updateClientIPJoinable(); });
-  reader.registerCallback("clientP2PJoinableCheckbox", [this](Widget*) { return updateClientP2PJoinable(); });
-  reader.registerCallback("allowAssetsMismatchCheckbox", [this](Widget*) { return updateAllowAssetsMismatch(); });
-  reader.registerCallback("headRotationCheckbox", [this](Widget*) { return updateHeadRotation(); });
-  reader.registerCallback("backButton", [this](Widget*) -> std::expected<void, StarException> {
+  reader.registerCallback("tutorialMessagesCheckbox", [this](Widget&) { return updateTutorialMessages(); });
+  reader.registerCallback("clientIPJoinableCheckbox", [this](Widget&) { return updateClientIPJoinable(); });
+  reader.registerCallback("clientP2PJoinableCheckbox", [this](Widget&) { return updateClientP2PJoinable(); });
+  reader.registerCallback("allowAssetsMismatchCheckbox", [this](Widget&) { return updateAllowAssetsMismatch(); });
+  reader.registerCallback("headRotationCheckbox", [this](Widget&) { return updateHeadRotation(); });
+  reader.registerCallback("backButton", [this](Widget&) -> std::expected<void, StarException> {
     dismiss();
     return {};
   });
-  reader.registerCallback("showKeybindings", [this](Widget*) { return displayControls(); });
-  reader.registerCallback("showVoiceSettings", [this](Widget*) { return displayVoiceSettings(); });
-  reader.registerCallback("showVoicePlayers", [](Widget*) -> std::expected<void, StarException> { return {}; });
-  reader.registerCallback("showModBindings", [this](Widget*) { return displayModBindings(); });
-  reader.registerCallback("showGraphics", [this](Widget*) { return displayGraphics(); });
+  reader.registerCallback("showKeybindings", [this](Widget&) { return displayControls(); });
+  reader.registerCallback("showVoiceSettings", [this](Widget&) { return displayVoiceSettings(); });
+  reader.registerCallback("showVoicePlayers", [](Widget&) -> std::expected<void, StarException> { return {}; });
+  reader.registerCallback("showModBindings", [this](Widget&) { return displayModBindings(); });
+  reader.registerCallback("showGraphics", [this](Widget&) { return displayGraphics(); });
   auto config = (*assets)->json("/interface/optionsmenu/optionsmenu.config");
   if (!config)
     return std::unexpected(std::move(config.error()));
   auto layout = config->get("paneLayout");
   if (!layout)
     return std::unexpected(std::move(layout.error()));
-  if (auto result = reader.construct(*layout, this); !result)
+  if (auto result = reader.construct(*layout, *this); !result)
     return std::unexpected(std::move(result.error()));
   for (auto const& [name, member] : {
-      std::pair{"instrumentSlider", &OptionsMenu::m_instrumentSlider},
-      std::pair{"sfxSlider", &OptionsMenu::m_sfxSlider},
-      std::pair{"musicSlider", &OptionsMenu::m_musicSlider}}) {
+      std::pair{std::string_view("instrumentSlider"), &OptionsMenu::m_instrumentSlider},
+      std::pair{std::string_view("sfxSlider"), &OptionsMenu::m_sfxSlider},
+      std::pair{std::string_view("musicSlider"), &OptionsMenu::m_musicSlider}}) {
     auto child = requireChild<SliderBarWidget>(name);
     if (!child)
       return std::unexpected(std::move(child.error()));
     this->*member = std::move(*child);
   }
   for (auto const& [name, member] : {
-      std::pair{"tutorialMessagesCheckbox", &OptionsMenu::m_tutorialMessagesButton},
-      std::pair{"clientIPJoinableCheckbox", &OptionsMenu::m_clientIPJoinableButton},
-      std::pair{"clientP2PJoinableCheckbox", &OptionsMenu::m_clientP2PJoinableButton},
-      std::pair{"allowAssetsMismatchCheckbox", &OptionsMenu::m_allowAssetsMismatchButton},
-      std::pair{"headRotationCheckbox", &OptionsMenu::m_headRotationButton}}) {
+      std::pair{std::string_view("tutorialMessagesCheckbox"), &OptionsMenu::m_tutorialMessagesButton},
+      std::pair{std::string_view("clientIPJoinableCheckbox"), &OptionsMenu::m_clientIPJoinableButton},
+      std::pair{std::string_view("clientP2PJoinableCheckbox"), &OptionsMenu::m_clientP2PJoinableButton},
+      std::pair{std::string_view("allowAssetsMismatchCheckbox"), &OptionsMenu::m_allowAssetsMismatchButton},
+      std::pair{std::string_view("headRotationCheckbox"), &OptionsMenu::m_headRotationButton}}) {
     auto child = requireChild<ButtonWidget>(name);
     if (!child)
       return std::unexpected(std::move(child.error()));
     this->*member = std::move(*child);
   }
   for (auto const& [name, member] : {
-      std::pair{"instrumentValueLabel", &OptionsMenu::m_instrumentLabel},
-      std::pair{"sfxValueLabel", &OptionsMenu::m_sfxLabel},
-      std::pair{"musicValueLabel", &OptionsMenu::m_musicLabel},
-      std::pair{"clientP2PJoinableLabel", &OptionsMenu::m_p2pJoinableLabel}}) {
+      std::pair{std::string_view("instrumentValueLabel"), &OptionsMenu::m_instrumentLabel},
+      std::pair{std::string_view("sfxValueLabel"), &OptionsMenu::m_sfxLabel},
+      std::pair{std::string_view("musicValueLabel"), &OptionsMenu::m_musicLabel},
+      std::pair{std::string_view("clientP2PJoinableLabel"), &OptionsMenu::m_p2pJoinableLabel}}) {
     auto child = requireChild<LabelWidget>(name);
     if (!child)
       return std::unexpected(std::move(child.error()));
@@ -309,7 +315,7 @@ std::expected<void, StarException> OptionsMenu::init(std::shared_ptr<UniverseCli
   auto voiceConfig = (*assets)->json(*voicePath);
   if (!voiceConfig)
     return std::unexpected(std::move(voiceConfig.error()));
-  auto voiceMenu = VoiceSettingsMenu::create(*context(), *voiceConfig);
+  auto voiceMenu = VoiceSettingsMenu::create(context(), *voiceConfig);
   if (!voiceMenu)
     return std::unexpected(std::move(voiceMenu.error()));
   m_voiceSettingsMenu = std::move(*voiceMenu);
@@ -319,15 +325,15 @@ std::expected<void, StarException> OptionsMenu::init(std::shared_ptr<UniverseCli
   auto bindingsConfig = (*assets)->json(*bindingsPath);
   if (!bindingsConfig)
     return std::unexpected(std::move(bindingsConfig.error()));
-  auto bindingsMenu = BindingsMenu::create(*context(), *bindingsConfig);
+  auto bindingsMenu = BindingsMenu::create(context(), *bindingsConfig);
   if (!bindingsMenu)
     return std::unexpected(std::move(bindingsMenu.error()));
   m_modBindingsMenu = std::move(*bindingsMenu);
-  auto keybindingsMenu = KeybindingsMenu::create(*context());
+  auto keybindingsMenu = KeybindingsMenu::create(context());
   if (!keybindingsMenu)
     return std::unexpected(std::move(keybindingsMenu.error()));
   m_keybindingsMenu = std::move(*keybindingsMenu);
-  auto graphicsMenu = GraphicsMenu::create(*context(), m_paneManager, std::move(client));
+  auto graphicsMenu = GraphicsMenu::create(context(), m_paneManager->get(), std::move(client));
   if (!graphicsMenu)
     return std::unexpected(std::move(graphicsMenu.error()));
   m_graphicsMenu = std::move(*graphicsMenu);
@@ -360,7 +366,7 @@ StringList const OptionsMenu::ConfigKeys = {
 };
 
 std::expected<void, StarException> OptionsMenu::initConfig() {
-  auto configuration = context()->root().configuration();
+  auto configuration = context().root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   for (auto const& key : ConfigKeys) {
@@ -378,7 +384,7 @@ std::expected<void, StarException> OptionsMenu::initConfig() {
 
 std::expected<void, StarException> OptionsMenu::updateInstrumentVol() {
   m_localChanges.set("instrumentVol", m_instrumentSlider->val());
-  auto configuration = context()->root().configuration();
+  auto configuration = context().root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   if (auto result = (*configuration)->set("instrumentVol", m_instrumentSlider->val()); !result)
@@ -388,7 +394,7 @@ std::expected<void, StarException> OptionsMenu::updateInstrumentVol() {
 
 std::expected<void, StarException> OptionsMenu::updateSFXVol() {
   m_localChanges.set("sfxVol", m_sfxSlider->val());
-  auto configuration = context()->root().configuration();
+  auto configuration = context().root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   if (auto result = (*configuration)->set("sfxVol", m_sfxSlider->val()); !result)
@@ -398,7 +404,7 @@ std::expected<void, StarException> OptionsMenu::updateSFXVol() {
 
 std::expected<void, StarException> OptionsMenu::updateMusicVol() {
   m_localChanges.set("musicVol", {m_musicSlider->val()});
-  auto configuration = context()->root().configuration();
+  auto configuration = context().root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   if (auto result = (*configuration)->set("musicVol", m_musicSlider->val()); !result)
@@ -408,7 +414,7 @@ std::expected<void, StarException> OptionsMenu::updateMusicVol() {
 
 std::expected<void, StarException> OptionsMenu::updateTutorialMessages() {
   m_localChanges.set("tutorialMessages", m_tutorialMessagesButton->isChecked());
-  auto configuration = context()->root().configuration();
+  auto configuration = context().root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   return (*configuration)->set("tutorialMessages", m_tutorialMessagesButton->isChecked());
@@ -416,7 +422,7 @@ std::expected<void, StarException> OptionsMenu::updateTutorialMessages() {
 
 std::expected<void, StarException> OptionsMenu::updateClientIPJoinable() {
   m_localChanges.set("clientIPJoinable", m_clientIPJoinableButton->isChecked());
-  auto configuration = context()->root().configuration();
+  auto configuration = context().root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   return (*configuration)->set("clientIPJoinable", m_clientIPJoinableButton->isChecked());
@@ -424,7 +430,7 @@ std::expected<void, StarException> OptionsMenu::updateClientIPJoinable() {
 
 std::expected<void, StarException> OptionsMenu::updateClientP2PJoinable() {
   m_localChanges.set("clientP2PJoinable", m_clientP2PJoinableButton->isChecked());
-  auto configuration = context()->root().configuration();
+  auto configuration = context().root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   return (*configuration)->set("clientP2PJoinable", m_clientP2PJoinableButton->isChecked());
@@ -432,7 +438,7 @@ std::expected<void, StarException> OptionsMenu::updateClientP2PJoinable() {
 
 std::expected<void, StarException> OptionsMenu::updateAllowAssetsMismatch() {
   m_localChanges.set("allowAssetsMismatch", m_allowAssetsMismatchButton->isChecked());
-  auto configuration = context()->root().configuration();
+  auto configuration = context().root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   return (*configuration)->set("allowAssetsMismatch", m_allowAssetsMismatchButton->isChecked());
@@ -440,55 +446,55 @@ std::expected<void, StarException> OptionsMenu::updateAllowAssetsMismatch() {
 
 std::expected<void, StarException> OptionsMenu::updateHeadRotation() {
   m_localChanges.set("humanoidHeadRotation", m_headRotationButton->isChecked());
-  auto configuration = context()->root().configuration();
+  auto configuration = context().root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   if (auto result = (*configuration)->set("humanoidHeadRotation", m_headRotationButton->isChecked()); !result)
     return std::unexpected(std::move(result.error()));
-  auto headRotation = context()->root().humanoidHeadRotation();
+  auto headRotation = context().root().humanoidHeadRotation();
   if (!headRotation)
     return std::unexpected(std::move(headRotation.error()));
-  **headRotation = m_headRotationButton->isChecked();
+  headRotation->get() = m_headRotationButton->isChecked();
   return {};
 }
 
 std::expected<void, StarException> OptionsMenu::syncGuiToConf() {
   for (auto const& [key, slider, label] : {
-      std::tuple{"instrumentVol", m_instrumentSlider.get(), m_instrumentLabel.get()},
-      std::tuple{"sfxVol", m_sfxSlider.get(), m_sfxLabel.get()},
-      std::tuple{"musicVol", m_musicSlider.get(), m_musicLabel.get()}}) {
+      std::tuple{std::string_view("instrumentVol"), std::ref(*m_instrumentSlider), std::ref(*m_instrumentLabel)},
+      std::tuple{std::string_view("sfxVol"), std::ref(*m_sfxSlider), std::ref(*m_sfxLabel)},
+      std::tuple{std::string_view("musicVol"), std::ref(*m_musicSlider), std::ref(*m_musicLabel)}}) {
     auto setting = m_localChanges.get(key);
     if (!setting)
       return std::unexpected(std::move(setting.error()));
-    auto value = (*setting)->toInt();
+    auto value = setting->get().toInt();
     if (!value)
       return std::unexpected(std::move(value.error()));
-    if (auto result = slider->setVal(*value, false); !result)
+    if (auto result = slider.get().setVal(*value, false); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = label->setText(toString(slider->val())); !result)
+    if (auto result = label.get().setText(toString(slider.get().val())); !result)
       return std::unexpected(std::move(result.error()));
   }
   for (auto const& [key, button] : {
-      std::pair{"tutorialMessages", m_tutorialMessagesButton.get()},
-      std::pair{"clientIPJoinable", m_clientIPJoinableButton.get()},
-      std::pair{"clientP2PJoinable", m_clientP2PJoinableButton.get()},
-      std::pair{"allowAssetsMismatch", m_allowAssetsMismatchButton.get()}}) {
+      std::pair{std::string_view("tutorialMessages"), std::ref(*m_tutorialMessagesButton)},
+      std::pair{std::string_view("clientIPJoinable"), std::ref(*m_clientIPJoinableButton)},
+      std::pair{std::string_view("clientP2PJoinable"), std::ref(*m_clientP2PJoinableButton)},
+      std::pair{std::string_view("allowAssetsMismatch"), std::ref(*m_allowAssetsMismatchButton)}}) {
     auto setting = m_localChanges.get(key);
     if (!setting)
       return std::unexpected(std::move(setting.error()));
-    auto value = (*setting)->toBool();
+    auto value = setting->get().toBool();
     if (!value)
       return std::unexpected(std::move(value.error()));
-    button->setChecked(*value);
+    button.get().setChecked(*value);
   }
   auto headRotationSetting = m_localChanges.get("humanoidHeadRotation");
   if (!headRotationSetting)
     return std::unexpected(std::move(headRotationSetting.error()));
-  auto headRotation = (*headRotationSetting)->optBool();
+  auto headRotation = headRotationSetting->get().optBool();
   if (!headRotation)
     return std::unexpected(std::move(headRotation.error()));
   m_headRotationButton->setChecked(headRotation->value_or(true));
-  if (!context()->applicationController()->p2pNetworkingService()) {
+  if (!context().applicationController()->p2pNetworkingService()) {
     m_p2pJoinableLabel->setColor(Color::DarkGray);
     m_clientP2PJoinableButton->setEnabled(false);
     m_clientP2PJoinableButton->setChecked(false);
@@ -497,19 +503,27 @@ std::expected<void, StarException> OptionsMenu::syncGuiToConf() {
 }
 
 std::expected<void, StarException> OptionsMenu::displayControls() {
-  return m_paneManager->displayPane(PaneLayer::ModalWindow, m_keybindingsMenu);
+  if (!m_paneManager)
+    return std::unexpected(GuiException("Options menu is detached from its pane manager"));
+  return m_paneManager->get().displayPane(PaneLayer::ModalWindow, m_keybindingsMenu);
 }
 
 std::expected<void, StarException> OptionsMenu::displayVoiceSettings() {
-  return m_paneManager->displayPane(PaneLayer::ModalWindow, m_voiceSettingsMenu);
+  if (!m_paneManager)
+    return std::unexpected(GuiException("Options menu is detached from its pane manager"));
+  return m_paneManager->get().displayPane(PaneLayer::ModalWindow, m_voiceSettingsMenu);
 }
 
 std::expected<void, StarException> OptionsMenu::displayModBindings() {
-  return m_paneManager->displayPane(PaneLayer::ModalWindow, m_modBindingsMenu);
+  if (!m_paneManager)
+    return std::unexpected(GuiException("Options menu is detached from its pane manager"));
+  return m_paneManager->get().displayPane(PaneLayer::ModalWindow, m_modBindingsMenu);
 }
 
 std::expected<void, StarException> OptionsMenu::displayGraphics() {
-  return m_paneManager->displayPane(PaneLayer::ModalWindow, m_graphicsMenu);
+  if (!m_paneManager)
+    return std::unexpected(GuiException("Options menu is detached from its pane manager"));
+  return m_paneManager->get().displayPane(PaneLayer::ModalWindow, m_graphicsMenu);
 }
 
 }

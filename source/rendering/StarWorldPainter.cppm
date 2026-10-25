@@ -103,7 +103,7 @@ public:
 
   WorldCamera& camera();
   // Borrowed preview provider, unavailable until renderInit creates the renderer.
-  TileDrawer* tileDrawer() const;
+  std::optional<std::reference_wrapper<TileDrawer>> tileDrawer() const;
 
   void update(float dt);
   [[nodiscard]] std::expected<void, StarException> render(WorldRenderData& renderData, std::function<std::expected<bool, StarException>()> lightWaiter);

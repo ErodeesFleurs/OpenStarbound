@@ -93,7 +93,7 @@ private:
   [[nodiscard]]
   std::expected<void, StarException> spawnWeatherProjectiles(float dt);
 
-  Root* m_root;
+  std::reference_wrapper<Root> m_root;
   WeatherPool m_weatherPool;
   float m_undergroundLevel;
   WorldGeometry m_worldGeometry;
@@ -163,7 +163,7 @@ private:
   [[nodiscard]]
   std::expected<void, StarException> spawnWeatherParticles(RectF newClientRegion, float dt);
 
-  Root* m_root;
+  std::reference_wrapper<Root> m_root;
   WeatherPool m_weatherPool;
   float m_undergroundLevel;
   WorldGeometry m_worldGeometry;

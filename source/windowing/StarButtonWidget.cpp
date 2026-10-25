@@ -86,7 +86,7 @@ std::expected<std::shared_ptr<ButtonWidget>, StarException> ButtonWidget::create
 }
 
 std::expected<void, StarException> ButtonWidget::initialize() {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   auto config = (*assets)->json("/interface.config");
@@ -106,17 +106,17 @@ std::expected<void, StarException> ButtonWidget::initialize() {
   if (!style)
     return std::unexpected(std::move(style.error()));
   m_textStyle = std::move(*style);
-  for (auto entry : {std::pair{"buttonClickSound", &m_clickSounds},
-           std::pair{"buttonReleaseSound", &m_releaseSounds},
-           std::pair{"buttonHoverSound", &m_hoverSounds},
-           std::pair{"buttonHoverOffSound", &m_hoverOffSounds}}) {
+  for (auto entry : {std::pair{std::string_view("buttonClickSound"), std::ref(m_clickSounds)},
+           std::pair{std::string_view("buttonReleaseSound"), std::ref(m_releaseSounds)},
+           std::pair{std::string_view("buttonHoverSound"), std::ref(m_hoverSounds)},
+           std::pair{std::string_view("buttonHoverOffSound"), std::ref(m_hoverOffSounds)}}) {
     auto json = config->get(entry.first);
     if (!json)
       return std::unexpected(std::move(json.error()));
     auto sounds = jsonToStringList(*json);
     if (!sounds)
       return std::unexpected(std::move(sounds.error()));
-    *entry.second = std::move(*sounds);
+    entry.second.get() = std::move(*sounds);
   }
   return {};
 }
@@ -136,11 +136,11 @@ std::expected<std::shared_ptr<ButtonWidget>, StarException> ButtonWidget::create
 
 std::expected<void, StarException> ButtonWidget::renderImpl() {
   if (isPressed() && sustainCallbackOnDownHold() && m_callback) {
-    auto input = context()->input();
+    auto input = context().input();
     if (!input)
       return std::unexpected(std::move(input.error()));
-    auto unlocker = (*input)->unlockClipboard();
-    auto called = m_callback(this);
+    auto unlocker = input->get().unlockClipboard();
+    auto called = m_callback(*this);
     if (!called)
       return std::unexpected(std::move(called.error()));
   }
@@ -161,28 +161,28 @@ std::expected<void, StarException> ButtonWidget::renderImpl() {
     textPosition += Vec2F(m_pressedOffset);
   }
 
-  String const* image = nullptr;
+  std::optional<std::reference_wrapper<String const>> image;
   if (m_hasCheckedImages && m_checked) {
     if (m_disabled)
-      image = &m_disabledImageChecked;
+      image = std::cref(m_disabledImageChecked);
     else if ((m_pressed || m_highlighted) && !m_pressedImageChecked.empty())
-      image = &m_pressedImageChecked;
+      image = std::cref(m_pressedImageChecked);
     else if ((m_pressed || m_hovered || m_highlighted) && !m_hoverImageChecked.empty())
-      image = &m_hoverImageChecked;
+      image = std::cref(m_hoverImageChecked);
     else
-      image = &m_baseImageChecked;
+      image = std::cref(m_baseImageChecked);
   } else {
     if (m_disabled)
-      image = &m_disabledImage;
+      image = std::cref(m_disabledImage);
     else if ((m_pressed || m_highlighted) && !m_pressedImage.empty())
-      image = &m_pressedImage;
+      image = std::cref(m_pressedImage);
     else if ((m_pressed || m_hovered || m_highlighted) && !m_hoverImage.empty())
-      image = &m_hoverImage;
+      image = std::cref(m_hoverImage);
     else if (!m_invisible)
-      image = &m_baseImage;
+      image = std::cref(m_baseImage);
   }
   if (image) {
-    auto drawn = drawButtonPart(*image, position);
+    auto drawn = drawButtonPart(image->get(), position);
     if (!drawn)
       return std::unexpected(std::move(drawn.error()));
   }
@@ -192,7 +192,7 @@ std::expected<void, StarException> ButtonWidget::renderImpl() {
       return std::unexpected(std::move(drawn.error()));
   }
   if (!m_text.empty()) {
-    auto& gui = *context();
+    auto& gui = context();
     auto style = gui.setTextStyle(m_textStyle);
     if (!style)
       return std::unexpected(std::move(style.error()));
@@ -213,11 +213,11 @@ std::expected<void, StarException> ButtonWidget::renderImpl() {
 std::expected<bool, StarException> ButtonWidget::sendEvent(InputEvent const& event) {
   if (m_visible && !m_disabled) {
     if (std::holds_alternative<MouseButtonDownEvent>(event) && std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left) {
-      if (inMember(*context()->mousePosition(event))) {
+      if (inMember(*context().mousePosition(event))) {
         if (!isPressed()) {
-          auto sound = this->context()->root().random().randValueFrom(m_clickSounds, "");
+          auto sound = this->context().root().random().randValueFrom(m_clickSounds, "");
           if (!sound.empty()) {
-            auto played = context()->playAudio(sound);
+            auto played = context().playAudio(sound);
             if (!played)
               return std::unexpected(std::move(played.error()));
           }
@@ -239,9 +239,9 @@ std::expected<bool, StarException> ButtonWidget::sendEvent(InputEvent const& eve
       }
     } else if (std::holds_alternative<MouseButtonUpEvent>(event)) {
       if (isPressed()) {
-        auto sound = context()->root().random().randValueFrom(m_releaseSounds, "");
+        auto sound = context().root().random().randValueFrom(m_releaseSounds, "");
         if (!sound.empty()) {
-          auto played = context()->playAudio(sound);
+          auto played = context().playAudio(sound);
           if (!played)
             return std::unexpected(std::move(played.error()));
         }
@@ -262,9 +262,9 @@ std::expected<void, StarException> ButtonWidget::mouseOver() {
     return std::unexpected(std::move(over.error()));
   if (!m_disabled) {
     if (!m_hovered) {
-      auto sound = context()->root().random().randValueFrom(m_hoverSounds);
+      auto sound = context().root().random().randValueFrom(m_hoverSounds);
       if (!sound.empty()) {
-        auto played = context()->playAudio(sound);
+        auto played = context().playAudio(sound);
         if (!played)
           return std::unexpected(std::move(played.error()));
       }
@@ -279,9 +279,9 @@ std::expected<void, StarException> ButtonWidget::mouseOut() {
   if (!out)
     return std::unexpected(std::move(out.error()));
   if (!m_disabled && m_hovered) {
-    auto sound = context()->root().random().randValueFrom(m_hoverOffSounds);
+    auto sound = context().root().random().randValueFrom(m_hoverOffSounds);
     if (!sound.empty()) {
-      auto played = context()->playAudio(sound);
+      auto played = context().playAudio(sound);
       if (!played)
         return std::unexpected(std::move(played.error()));
     }
@@ -296,9 +296,9 @@ std::expected<void, StarException> ButtonWidget::mouseReturnStillDown() {
   if (!returned)
     return std::unexpected(std::move(returned.error()));
   if (!isPressed()) {
-    auto sound = context()->root().random().randValueFrom(m_clickSounds, "");
+    auto sound = context().root().random().randValueFrom(m_clickSounds, "");
     if (!sound.empty()) {
-      auto played = context()->playAudio(sound);
+      auto played = context().playAudio(sound);
       if (!played)
         return std::unexpected(std::move(played.error()));
     }
@@ -329,19 +329,19 @@ void ButtonWidget::setButtonGroup(std::shared_ptr<ButtonGroup> newGroup, int id)
   if (auto oldGroup = m_buttonGroup.lock()) {
     if (oldGroup == newGroup)
       return;
-    oldGroup->removeButton(this);
+    oldGroup->removeButton(*this);
   }
 
   m_buttonGroup = newGroup;
   if (newGroup) {
     setCheckable(true);
-    newGroup->addButton(this, id);
+    newGroup->addButton(*this, id);
   }
 }
 
 int ButtonWidget::buttonGroupId() {
   if (auto group = m_buttonGroup.lock())
-    return group->id(this);
+    return group->id(*this);
   else
     return ButtonGroup::NoButton;
 }
@@ -361,11 +361,11 @@ std::expected<void, StarException> ButtonWidget::setPressed(bool pressed) {
       if (!checked)
         return std::unexpected(std::move(checked.error()));
       if (m_callback) {
-        auto input = context()->input();
+        auto input = context().input();
         if (!input)
           return std::unexpected(std::move(input.error()));
-        auto unlocker = (*input)->unlockClipboard();
-        auto called = m_callback(this);
+        auto unlocker = input->get().unlockClipboard();
+        auto called = m_callback(*this);
         if (!called)
           return std::unexpected(std::move(called.error()));
       }
@@ -406,7 +406,7 @@ std::expected<void, StarException> ButtonWidget::check() {
     if (auto group = m_buttonGroup.lock()) {
       if (group->toggle() || !isChecked()) {
         setChecked(!group->toggle() || !isChecked());
-        return group->wasChecked(this);
+        return group->wasChecked(*this);
       }
     } else {
       setChecked(!isChecked());
@@ -426,7 +426,7 @@ void ButtonWidget::setSustainCallbackOnDownHold(bool sustain) {
 std::expected<void, StarException> ButtonWidget::setImages(String const& baseImage, String const& hoverImage, String const& pressedImage, String const& disabledImage) {
   String disabled = disabledImage;
   if (disabled.empty() && !baseImage.empty()) {
-    auto assets = context()->root().assets();
+    auto assets = context().root().assets();
     if (!assets)
       return std::unexpected(std::move(assets.error()));
     auto json = (*assets)->json("/interface.config:disabledButton");
@@ -447,7 +447,7 @@ std::expected<void, StarException> ButtonWidget::setImages(String const& baseIma
 std::expected<void, StarException> ButtonWidget::setCheckedImages(String const& baseImage, String const& hoverImage, String const& pressedImage, String const& disabledImage) {
   String disabled = disabledImage;
   if (!baseImage.empty() && disabled.empty()) {
-    auto assets = context()->root().assets();
+    auto assets = context().root().assets();
     if (!assets)
       return std::unexpected(std::move(assets.error()));
     auto json = (*assets)->json("/interface.config:disabledButton");
@@ -545,23 +545,23 @@ RectI ButtonWidget::getScissorRect() const {
 }
 
 std::expected<void, StarException> ButtonWidget::drawButtonPart(String const& image, Vec2F const& position) {
-  auto imageSize = context()->textureSize(image);
+  auto imageSize = context().textureSize(image);
   if (!imageSize)
     return std::unexpected(std::move(imageSize.error()));
-  return context()->drawInterfaceQuad(image, position + Vec2F(m_buttonBoundSize - *imageSize) / 2);
+  return context().drawInterfaceQuad(image, position + Vec2F(m_buttonBoundSize - *imageSize) / 2);
 }
 
 std::expected<void, StarException> ButtonWidget::updateSize() {
   if (m_invisible || m_baseImage.empty())
     return {};
-  auto baseSize = context()->textureSize(m_baseImage);
+  auto baseSize = context().textureSize(m_baseImage);
   if (!baseSize)
     return std::unexpected(std::move(baseSize.error()));
   auto bounds = *baseSize;
-  for (auto image : {&m_hoverImage, &m_pressedImage, &m_baseImageChecked,
-           &m_hoverImageChecked, &m_pressedImageChecked, &m_disabledImageChecked}) {
-    if (!image->empty()) {
-      auto imageSize = context()->textureSize(*image);
+  for (auto image : {std::cref(m_hoverImage), std::cref(m_pressedImage), std::cref(m_baseImageChecked),
+           std::cref(m_hoverImageChecked), std::cref(m_pressedImageChecked), std::cref(m_disabledImageChecked)}) {
+    if (!image.get().empty()) {
+      auto imageSize = context().textureSize(image.get());
       if (!imageSize)
         return std::unexpected(std::move(imageSize.error()));
       bounds = bounds.piecewiseMax(*imageSize);

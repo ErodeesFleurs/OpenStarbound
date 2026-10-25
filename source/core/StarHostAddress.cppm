@@ -9,7 +9,7 @@ import star.either;
 namespace Star {
 
 struct NetworkExceptionTag {
-  static constexpr char const* name() { return "NetworkException"; }
+  static constexpr std::string_view name() { return "NetworkException"; }
 };
 using NetworkException = StarError<NetworkExceptionTag, IOException>;
 
@@ -29,12 +29,12 @@ public:
 
   // The default address is the IPv4 zero address.
   HostAddress();
-  // If address is nullptr, constructs the zero address for the given mode.
-  HostAddress(NetworkMode mode, std::uint8_t* address = nullptr);
+  // An empty address constructs the zero address for the given mode.
+  HostAddress(NetworkMode mode, std::span<std::uint8_t const> address = {});
   [[nodiscard]] static std::expected<HostAddress, StarException> create(String const& address);
 
   NetworkMode mode() const;
-  std::uint8_t const* bytes() const;
+  std::span<std::uint8_t const> bytes() const;
   std::uint8_t octet(std::size_t i) const;
   std::size_t size() const;
 
@@ -45,7 +45,7 @@ public:
 
 private:
   [[nodiscard]] std::expected<void, StarException> set(String const& address);
-  void set(NetworkMode mode, std::uint8_t const* addr);
+  void set(NetworkMode mode, std::span<std::uint8_t const> addr);
 
   NetworkMode m_mode;
   std::uint8_t m_address[16];
@@ -70,7 +70,7 @@ public:
 
   HostAddressWithPort();
   HostAddressWithPort(HostAddress const& address, std::uint16_t port);
-  HostAddressWithPort(NetworkMode mode, std::uint8_t* address, std::uint16_t port);
+  HostAddressWithPort(NetworkMode mode, std::span<std::uint8_t const> address, std::uint16_t port);
   [[nodiscard]] static std::expected<HostAddressWithPort, StarException> create(String const& address, std::uint16_t port);
   [[nodiscard]] static std::expected<HostAddressWithPort, StarException> create(String const& address);
 

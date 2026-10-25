@@ -16,7 +16,7 @@ namespace {
 
 struct PngState {
   Logger& logger;
-  IODevice* device;
+  IODevice& device;
   bool writing;
   png_structp png = nullptr;
   png_infop info = nullptr;
@@ -30,17 +30,17 @@ struct PngState {
       png_destroy_read_struct(&png, &info, &end);
   }
 
-  std::expected<void, StarException> check(bool success, char const* message) {
+  std::expected<void, StarException> check(bool success, std::string_view message) {
     if (error)
       return std::unexpected(std::move(*error));
     if (!success)
-      return std::unexpected(ImageException(message));
+      return std::unexpected(ImageException(std::string(message)));
     return {};
   }
 };
 
-void logPngMessage(PngState& state, char const* kind, png_const_charp message) noexcept {
-  auto name = state.device->deviceName();
+void logPngMessage(PngState& state, std::string_view kind, std::string_view message) noexcept {
+  auto name = state.device.deviceName();
   if (!name) {
     state.error = std::move(name.error());
     return;
@@ -54,7 +54,7 @@ void pngError(png_structp png, png_const_charp message) noexcept {
   auto& state = *static_cast<PngState*>(png_get_error_ptr(png));
   logPngMessage(state, "error", message);
   if (!state.error)
-    state.error = ImageException(message);
+    state.error = ImageException(std::string(message));
   png_longjmp(png, 1);
 }
 
@@ -68,7 +68,7 @@ void pngWarning(png_structp png, png_const_charp message) noexcept {
 void readPngData(png_structp png, png_bytep data, png_size_t length) noexcept {
   auto& state = *static_cast<PngState*>(png_get_io_ptr(png));
   {
-    auto result = state.device->readFull({reinterpret_cast<char*>(data), length});
+    auto result = state.device.readFull({reinterpret_cast<char*>(data), length});
     if (!result)
       state.error = std::move(result.error());
   }
@@ -80,7 +80,7 @@ void readPngData(png_structp png, png_bytep data, png_size_t length) noexcept {
 void writePngData(png_structp png, png_bytep data, png_size_t length) noexcept {
   auto& state = *static_cast<PngState*>(png_get_io_ptr(png));
   {
-    auto result = state.device->writeFull({reinterpret_cast<char*>(data), length});
+    auto result = state.device.writeFull({reinterpret_cast<char*>(data), length});
     if (!result)
       state.error = std::move(result.error());
   }
@@ -208,7 +208,7 @@ std::expected<Image, StarException> Image::readPng(Logger& logger, std::shared_p
   auto signature = readPngSignature(*device);
   if (!signature)
     return std::unexpected(std::move(signature.error()));
-  PngState state{logger, device.get(), false};
+  PngState state{logger, *device, false};
   auto initialized = initializePng(state);
   if (!initialized)
     return std::unexpected(std::move(initialized.error()));
@@ -224,7 +224,7 @@ std::expected<Image, StarException> Image::readPng(Logger& logger, std::shared_p
   auto rows = std::make_unique<png_bytep[]>(metadata.height);
   std::size_t stride = static_cast<std::size_t>(metadata.width) * metadata.channels;
   for (std::size_t i = 0; i < metadata.height; ++i)
-    rows[i] = image.data() + (metadata.height - i - 1) * stride;
+    rows[i] = image.data().data() + (metadata.height - i - 1) * stride;
   auto read = state.check(readPngRows(state, rows.get()), "Internal error reading png.");
   if (!read)
     return std::unexpected(std::move(read.error()));
@@ -235,7 +235,7 @@ std::expected<std::tuple<Vec2U, PixelFormat>, StarException> Image::readPngMetad
   auto signature = readPngSignature(*device);
   if (!signature)
     return std::unexpected(std::move(signature.error()));
-  PngState state{logger, device.get(), false};
+  PngState state{logger, *device, false};
   auto initialized = initializePng(state);
   if (!initialized)
     return std::unexpected(std::move(initialized.error()));
@@ -279,7 +279,7 @@ Image::Image(Image&& image) : Image() {
 
 Image& Image::operator=(Image const& image) {
   reset(image.m_width, image.m_height, image.m_pixelFormat);
-  std::memcpy(data(), image.data(), m_width * m_height * bytesPerPixel());
+  std::memcpy(data().data(), image.data().data(), data().size());
   return *this;
 }
 
@@ -559,7 +559,7 @@ Image Image::convert(PixelFormat pixelFormat) const {
 }
 
 std::expected<void, StarException> Image::writePng(Logger& logger, std::shared_ptr<IODevice> device) const {
-  PngState state{logger, device.get(), true};
+  PngState state{logger, *device, true};
   auto initialized = initializePng(state);
   if (!initialized)
     return std::unexpected(std::move(initialized.error()));

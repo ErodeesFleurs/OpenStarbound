@@ -101,8 +101,8 @@ private:
 // Thread safe mixer class with basic effects support.
 class Mixer {
 public:
-  typedef std::function<std::expected<void, StarException>(std::int16_t* buffer, std::size_t frames, unsigned channels)> ExtraMixFunction;
-  typedef std::function<std::expected<void, StarException>(std::int16_t* buffer, std::size_t frames, unsigned channels)> EffectFunction;
+  typedef std::function<std::expected<void, StarException>(std::span<std::int16_t> buffer, std::size_t frames, unsigned channels)> ExtraMixFunction;
+  typedef std::function<std::expected<void, StarException>(std::span<std::int16_t> buffer, std::size_t frames, unsigned channels)> EffectFunction;
   typedef std::function<std::expected<float, StarException>(unsigned, Vec2F, float)> PositionalAttenuationFunction;
 
   Mixer(Logger& logger, unsigned sampleRate, unsigned channels);
@@ -136,7 +136,7 @@ public:
 
   // Reads pending audio data.  This is thread safe with the other Mixer
   // methods, but only one call to read may be active at a time.
-  [[nodiscard]] std::expected<void, StarException> read(std::int16_t* samples, std::size_t frameCount, ExtraMixFunction extraMixFunction = {});
+  [[nodiscard]] std::expected<void, StarException> read(std::span<std::int16_t> samples, std::size_t frameCount, ExtraMixFunction extraMixFunction = {});
 
   // Call within the main loop of the program using Mixer, calculates
   // positional attenuation of audio and does cleanup.

@@ -232,59 +232,59 @@ ImageOperation imageOperationFromString(StringView string) {
 }
 
 String imageOperationToString(ImageOperation const& operation) {
-  if (auto op = std::get_if<HueShiftImageOperation>(&operation)) {
-    return strf("hueshift={}", op->hueShiftAmount * 360.0f);
-  } else if (auto op = std::get_if<SaturationShiftImageOperation>(&operation)) {
-    return strf("saturation={}", op->saturationShiftAmount * 100.0f);
-  } else if (auto op = std::get_if<BrightnessMultiplyImageOperation>(&operation)) {
-    return strf("brightness={}", (op->brightnessMultiply - 1.0f) * 100.0f);
-  } else if (auto op = std::get_if<FadeToColorImageOperation>(&operation)) {
-    return strf("fade={}={}", Color::rgb(op->color).toHex(), op->amount);
-  } else if (auto op = std::get_if<ScanLinesImageOperation>(&operation)) {
+  if (auto op = (std::holds_alternative<HueShiftImageOperation>(operation) ? std::optional{std::cref(std::get<HueShiftImageOperation>(operation))} : std::nullopt)) {
+    return strf("hueshift={}", op->get().hueShiftAmount * 360.0f);
+  } else if (auto op = (std::holds_alternative<SaturationShiftImageOperation>(operation) ? std::optional{std::cref(std::get<SaturationShiftImageOperation>(operation))} : std::nullopt)) {
+    return strf("saturation={}", op->get().saturationShiftAmount * 100.0f);
+  } else if (auto op = (std::holds_alternative<BrightnessMultiplyImageOperation>(operation) ? std::optional{std::cref(std::get<BrightnessMultiplyImageOperation>(operation))} : std::nullopt)) {
+    return strf("brightness={}", (op->get().brightnessMultiply - 1.0f) * 100.0f);
+  } else if (auto op = (std::holds_alternative<FadeToColorImageOperation>(operation) ? std::optional{std::cref(std::get<FadeToColorImageOperation>(operation))} : std::nullopt)) {
+    return strf("fade={}={}", Color::rgb(op->get().color).toHex(), op->get().amount);
+  } else if (auto op = (std::holds_alternative<ScanLinesImageOperation>(operation) ? std::optional{std::cref(std::get<ScanLinesImageOperation>(operation))} : std::nullopt)) {
     return strf("scanlines={}={}={}={}",
-        Color::rgb(op->fade1.color).toHex(),
-        op->fade1.amount,
-        Color::rgb(op->fade2.color).toHex(),
-        op->fade2.amount);
-  } else if (auto op = std::get_if<SetColorImageOperation>(&operation)) {
-    return strf("setcolor={}", Color::rgb(op->color).toHex());
-  } else if (auto op = std::get_if<ColorReplaceImageOperation>(&operation)) {
+        Color::rgb(op->get().fade1.color).toHex(),
+        op->get().fade1.amount,
+        Color::rgb(op->get().fade2.color).toHex(),
+        op->get().fade2.amount);
+  } else if (auto op = (std::holds_alternative<SetColorImageOperation>(operation) ? std::optional{std::cref(std::get<SetColorImageOperation>(operation))} : std::nullopt)) {
+    return strf("setcolor={}", Color::rgb(op->get().color).toHex());
+  } else if (auto op = (std::holds_alternative<ColorReplaceImageOperation>(operation) ? std::optional{std::cref(std::get<ColorReplaceImageOperation>(operation))} : std::nullopt)) {
     String str = "replace";
-    for (auto const& pair : op->colorReplaceMap)
+    for (auto const& pair : op->get().colorReplaceMap)
       str += strf(";{}={}", Color::rgba(pair.first).toHex(), Color::rgba(pair.second).toHex());
     return str;
-  } else if (auto op = std::get_if<AlphaMaskImageOperation>(&operation)) {
-    if (op->mode == AlphaMaskImageOperation::Additive)
-      return strf("addmask={};{};{}", op->maskImages.join("+"), op->offset[0], op->offset[1]);
-    else if (op->mode == AlphaMaskImageOperation::Subtractive)
-      return strf("submask={};{};{}", op->maskImages.join("+"), op->offset[0], op->offset[1]);
-  } else if (auto op = std::get_if<BlendImageOperation>(&operation)) {
-    if (op->mode == BlendImageOperation::Multiply)
-      return strf("blendmult={};{};{}", op->blendImages.join("+"), op->offset[0], op->offset[1]);
-    else if (op->mode == BlendImageOperation::Screen)
-      return strf("blendscreen={};{};{}", op->blendImages.join("+"), op->offset[0], op->offset[1]);
-  } else if (auto op = std::get_if<MultiplyImageOperation>(&operation)) {
-    return strf("multiply={}", Color::rgba(op->color).toHex());
-  } else if (auto op = std::get_if<BorderImageOperation>(&operation)) {
-    if (op->outlineOnly)
-      return strf("outline={};{};{}", op->pixels, Color::rgba(op->startColor).toHex(), Color::rgba(op->endColor).toHex());
+  } else if (auto op = (std::holds_alternative<AlphaMaskImageOperation>(operation) ? std::optional{std::cref(std::get<AlphaMaskImageOperation>(operation))} : std::nullopt)) {
+    if (op->get().mode == AlphaMaskImageOperation::Additive)
+      return strf("addmask={};{};{}", op->get().maskImages.join("+"), op->get().offset[0], op->get().offset[1]);
+    else if (op->get().mode == AlphaMaskImageOperation::Subtractive)
+      return strf("submask={};{};{}", op->get().maskImages.join("+"), op->get().offset[0], op->get().offset[1]);
+  } else if (auto op = (std::holds_alternative<BlendImageOperation>(operation) ? std::optional{std::cref(std::get<BlendImageOperation>(operation))} : std::nullopt)) {
+    if (op->get().mode == BlendImageOperation::Multiply)
+      return strf("blendmult={};{};{}", op->get().blendImages.join("+"), op->get().offset[0], op->get().offset[1]);
+    else if (op->get().mode == BlendImageOperation::Screen)
+      return strf("blendscreen={};{};{}", op->get().blendImages.join("+"), op->get().offset[0], op->get().offset[1]);
+  } else if (auto op = (std::holds_alternative<MultiplyImageOperation>(operation) ? std::optional{std::cref(std::get<MultiplyImageOperation>(operation))} : std::nullopt)) {
+    return strf("multiply={}", Color::rgba(op->get().color).toHex());
+  } else if (auto op = (std::holds_alternative<BorderImageOperation>(operation) ? std::optional{std::cref(std::get<BorderImageOperation>(operation))} : std::nullopt)) {
+    if (op->get().outlineOnly)
+      return strf("outline={};{};{}", op->get().pixels, Color::rgba(op->get().startColor).toHex(), Color::rgba(op->get().endColor).toHex());
     else
-      return strf("border={};{};{}", op->pixels, Color::rgba(op->startColor).toHex(), Color::rgba(op->endColor).toHex());
-  } else if (auto op = std::get_if<ScaleImageOperation>(&operation)) {
-    if (op->mode == ScaleImageOperation::Nearest)
-      return strf("scalenearest={}", op->scale);
-    else if (op->mode == ScaleImageOperation::Bilinear)
-      return strf("scalebilinear={}", op->scale);
-    else if (op->mode == ScaleImageOperation::Bicubic)
-      return strf("scalebicubic={}", op->scale);
-  } else if (auto op = std::get_if<CropImageOperation>(&operation)) {
-    return strf("crop={};{};{};{}", op->subset.xMin(), op->subset.xMax(), op->subset.yMin(), op->subset.yMax());
-  } else if (auto op = std::get_if<FlipImageOperation>(&operation)) {
-    if (op->mode == FlipImageOperation::FlipX)
+      return strf("border={};{};{}", op->get().pixels, Color::rgba(op->get().startColor).toHex(), Color::rgba(op->get().endColor).toHex());
+  } else if (auto op = (std::holds_alternative<ScaleImageOperation>(operation) ? std::optional{std::cref(std::get<ScaleImageOperation>(operation))} : std::nullopt)) {
+    if (op->get().mode == ScaleImageOperation::Nearest)
+      return strf("scalenearest={}", op->get().scale);
+    else if (op->get().mode == ScaleImageOperation::Bilinear)
+      return strf("scalebilinear={}", op->get().scale);
+    else if (op->get().mode == ScaleImageOperation::Bicubic)
+      return strf("scalebicubic={}", op->get().scale);
+  } else if (auto op = (std::holds_alternative<CropImageOperation>(operation) ? std::optional{std::cref(std::get<CropImageOperation>(operation))} : std::nullopt)) {
+    return strf("crop={};{};{};{}", op->get().subset.xMin(), op->get().subset.xMax(), op->get().subset.yMin(), op->get().subset.yMax());
+  } else if (auto op = (std::holds_alternative<FlipImageOperation>(operation) ? std::optional{std::cref(std::get<FlipImageOperation>(operation))} : std::nullopt)) {
+    if (op->get().mode == FlipImageOperation::FlipX)
       return "flipx";
-    else if (op->mode == FlipImageOperation::FlipY)
+    else if (op->get().mode == FlipImageOperation::FlipY)
       return "flipy";
-    else if (op->mode == FlipImageOperation::FlipXY)
+    else if (op->get().mode == FlipImageOperation::FlipXY)
       return "flipxy";
   }
 
@@ -328,10 +328,10 @@ String printImageOperations(List<ImageOperation> const& list) {
 }
 
 void addImageOperationReferences(ImageOperation const& operation, StringList& out) {
-  if (auto op = std::get_if<AlphaMaskImageOperation>(&operation))
-    out.appendAll(op->maskImages);
-  else if (auto op = std::get_if<BlendImageOperation>(&operation))
-    out.appendAll(op->blendImages);
+  if (auto op = (std::holds_alternative<AlphaMaskImageOperation>(operation) ? std::optional{std::cref(std::get<AlphaMaskImageOperation>(operation))} : std::nullopt))
+    out.appendAll(op->get().maskImages);
+  else if (auto op = (std::holds_alternative<BlendImageOperation>(operation) ? std::optional{std::cref(std::get<BlendImageOperation>(operation))} : std::nullopt))
+    out.appendAll(op->get().blendImages);
 }
 
 StringList imageOperationReferences(List<ImageOperation> const& operations) {
@@ -341,11 +341,11 @@ StringList imageOperationReferences(List<ImageOperation> const& operations) {
   return references;
 }
 
-static void processSaturationShift(Image& image, SaturationShiftImageOperation const* op) {
+static void processSaturationShift(Image& image, SaturationShiftImageOperation const& op) {
   image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
     if (pixel[3] != 0) {
       Color color = Color::rgba(pixel);
-      color.setSaturation(clamp(color.saturation() + op->saturationShiftAmount, 0.0f, 1.0f));
+      color.setSaturation(clamp(color.saturation() + op.saturationShiftAmount, 0.0f, 1.0f));
       pixel = color.toRgba();
     }
   });
@@ -354,144 +354,144 @@ static void processSaturationShift(Image& image, SaturationShiftImageOperation c
 
 
 std::expected<void, StarException> processImageOperation(ImageOperation const& operation, Image& image, ImageReferenceCallback refCallback) {
-  if (auto error = std::get_if<ErrorImageOperation>(&operation))
-    return std::unexpected(error->cause);
+  if (auto error = (std::holds_alternative<ErrorImageOperation>(operation) ? std::optional{std::cref(std::get<ErrorImageOperation>(operation))} : std::nullopt))
+    return std::unexpected(error->get().cause);
   if (image.bytesPerPixel() == 3) {
     // Convert to an image format that has alpha so certain operations function properly
     image = image.convert(image.pixelFormat() == PixelFormat::BGR24 ? PixelFormat::BGRA32 : PixelFormat::RGBA32);
   }
-  if (auto op = std::get_if<HueShiftImageOperation>(&operation)) {
+  if (auto op = (std::holds_alternative<HueShiftImageOperation>(operation) ? std::optional{std::cref(std::get<HueShiftImageOperation>(operation))} : std::nullopt)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0)
-        pixel = Color::hueShiftVec4B(pixel, op->hueShiftAmount);
+        pixel = Color::hueShiftVec4B(pixel, op->get().hueShiftAmount);
     });
-  } else if (auto op = std::get_if<SaturationShiftImageOperation>(&operation)) {
-    processSaturationShift(image, op);
-  } else if (auto op = std::get_if<BrightnessMultiplyImageOperation>(&operation)) {
+  } else if (auto op = (std::holds_alternative<SaturationShiftImageOperation>(operation) ? std::optional{std::cref(std::get<SaturationShiftImageOperation>(operation))} : std::nullopt)) {
+    processSaturationShift(image, op->get());
+  } else if (auto op = (std::holds_alternative<BrightnessMultiplyImageOperation>(operation) ? std::optional{std::cref(std::get<BrightnessMultiplyImageOperation>(operation))} : std::nullopt)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0) {
         Color color = Color::rgba(pixel);
-        color.setValue(clamp(color.value() * op->brightnessMultiply, 0.0f, 1.0f));
+        color.setValue(clamp(color.value() * op->get().brightnessMultiply, 0.0f, 1.0f));
         pixel = color.toRgba();
       }
     });
-  } else if (auto op = std::get_if<FadeToColorImageOperation>(&operation)) {
+  } else if (auto op = (std::holds_alternative<FadeToColorImageOperation>(operation) ? std::optional{std::cref(std::get<FadeToColorImageOperation>(operation))} : std::nullopt)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      pixel[0] = op->rTable[pixel[0]];
-      pixel[1] = op->gTable[pixel[1]];
-      pixel[2] = op->bTable[pixel[2]];
+      pixel[0] = op->get().rTable[pixel[0]];
+      pixel[1] = op->get().gTable[pixel[1]];
+      pixel[2] = op->get().bTable[pixel[2]];
     });
-  } else if (auto op = std::get_if<ScanLinesImageOperation>(&operation)) {
+  } else if (auto op = (std::holds_alternative<ScanLinesImageOperation>(operation) ? std::optional{std::cref(std::get<ScanLinesImageOperation>(operation))} : std::nullopt)) {
     image.forEachPixel([&op](unsigned, unsigned y, Vec4B& pixel) {
       if (y % 2 == 0) {
-        pixel[0] = op->fade1.rTable[pixel[0]];
-        pixel[1] = op->fade1.gTable[pixel[1]];
-        pixel[2] = op->fade1.bTable[pixel[2]];
+        pixel[0] = op->get().fade1.rTable[pixel[0]];
+        pixel[1] = op->get().fade1.gTable[pixel[1]];
+        pixel[2] = op->get().fade1.bTable[pixel[2]];
       } else {
-        pixel[0] = op->fade2.rTable[pixel[0]];
-        pixel[1] = op->fade2.gTable[pixel[1]];
-        pixel[2] = op->fade2.bTable[pixel[2]];
+        pixel[0] = op->get().fade2.rTable[pixel[0]];
+        pixel[1] = op->get().fade2.gTable[pixel[1]];
+        pixel[2] = op->get().fade2.bTable[pixel[2]];
       }
     });
-  } else if (auto op = std::get_if<SetColorImageOperation>(&operation)) {
+  } else if (auto op = (std::holds_alternative<SetColorImageOperation>(operation) ? std::optional{std::cref(std::get<SetColorImageOperation>(operation))} : std::nullopt)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      pixel[0] = op->color[0];
-      pixel[1] = op->color[1];
-      pixel[2] = op->color[2];
+      pixel[0] = op->get().color[0];
+      pixel[1] = op->get().color[1];
+      pixel[2] = op->get().color[2];
     });
-  } else if (auto op = std::get_if<ColorReplaceImageOperation>(&operation)) {
+  } else if (auto op = (std::holds_alternative<ColorReplaceImageOperation>(operation) ? std::optional{std::cref(std::get<ColorReplaceImageOperation>(operation))} : std::nullopt)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      if (auto m = op->colorReplaceMap.maybe(pixel))
+      if (auto m = op->get().colorReplaceMap.maybe(pixel))
         pixel = *m;
     });
 
-  } else if (auto op = std::get_if<AlphaMaskImageOperation>(&operation)) {
-    if (op->maskImages.empty())
+  } else if (auto op = (std::holds_alternative<AlphaMaskImageOperation>(operation) ? std::optional{std::cref(std::get<AlphaMaskImageOperation>(operation))} : std::nullopt)) {
+    if (op->get().maskImages.empty())
       return {};
 
     if (!refCallback)
       return std::unexpected(ImageOperationException("Missing image ref callback during AlphaMaskImageOperation"));
 
-    List<Image const*> maskImages;
-    for (auto const& reference : op->maskImages) {
+    List<std::reference_wrapper<Image const>> maskImages;
+    for (auto const& reference : op->get().maskImages) {
       auto mask = refCallback(reference);
       if (!mask)
         return std::unexpected(std::move(mask.error()));
       if (!*mask)
         return std::unexpected(ImageOperationException::format("Missing mask image '{}'", reference));
-      maskImages.append(*mask);
+      maskImages.append(**mask);
     }
 
     image.forEachPixel([&op, &maskImages](unsigned x, unsigned y, Vec4B& pixel) {
       std::uint8_t maskAlpha = 0;
-      Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
+      Vec2U pos = Vec2U(Vec2I(x, y) + op->get().offset);
       for (auto mask : maskImages) {
-        if (pos[0] < mask->width() && pos[1] < mask->height()) {
-          if (op->mode == AlphaMaskImageOperation::Additive) {
+        if (pos[0] < mask.get().width() && pos[1] < mask.get().height()) {
+          if (op->get().mode == AlphaMaskImageOperation::Additive) {
             // We produce our mask alpha from the maximum alpha of any of
             // the
             // mask images.
-            maskAlpha = std::max(maskAlpha, mask->clamp(Vec2I(pos))[3]);
-          } else if (op->mode == AlphaMaskImageOperation::Subtractive) {
+            maskAlpha = std::max(maskAlpha, mask.get().clamp(Vec2I(pos))[3]);
+          } else if (op->get().mode == AlphaMaskImageOperation::Subtractive) {
             // We produce our mask alpha from the minimum alpha of any of
             // the
             // mask images.
-            maskAlpha = std::min(maskAlpha, mask->clamp(Vec2I(pos))[3]);
+            maskAlpha = std::min(maskAlpha, mask.get().clamp(Vec2I(pos))[3]);
           }
         }
       }
       pixel[3] = std::min(pixel[3], maskAlpha);
     });
 
-  } else if (auto op = std::get_if<BlendImageOperation>(&operation)) {
-    if (op->blendImages.empty())
+  } else if (auto op = (std::holds_alternative<BlendImageOperation>(operation) ? std::optional{std::cref(std::get<BlendImageOperation>(operation))} : std::nullopt)) {
+    if (op->get().blendImages.empty())
       return {};
 
     if (!refCallback)
       return std::unexpected(ImageOperationException("Missing image ref callback during BlendImageOperation"));
 
-    List<Image const*> blendImages;
-    for (auto const& reference : op->blendImages) {
+    List<std::reference_wrapper<Image const>> blendImages;
+    for (auto const& reference : op->get().blendImages) {
       auto blend = refCallback(reference);
       if (!blend)
         return std::unexpected(std::move(blend.error()));
       if (!*blend)
         return std::unexpected(ImageOperationException::format("Missing blend image '{}'", reference));
-      blendImages.append(*blend);
+      blendImages.append(**blend);
     }
 
     image.forEachPixel([&op, &blendImages](unsigned x, unsigned y, Vec4B& pixel) {
-      Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
+      Vec2U pos = Vec2U(Vec2I(x, y) + op->get().offset);
       Vec4F fpixel = Color::v4bToFloat(pixel);
       for (auto blend : blendImages) {
-        if (pos[0] < blend->width() && pos[1] < blend->height()) {
-          Vec4F blendPixel = Color::v4bToFloat(blend->clamp(Vec2I(pos)));
-          if (op->mode == BlendImageOperation::Multiply)
+        if (pos[0] < blend.get().width() && pos[1] < blend.get().height()) {
+          Vec4F blendPixel = Color::v4bToFloat(blend.get().clamp(Vec2I(pos)));
+          if (op->get().mode == BlendImageOperation::Multiply)
             fpixel = fpixel.piecewiseMultiply(blendPixel);
-          else if (op->mode == BlendImageOperation::Screen)
+          else if (op->get().mode == BlendImageOperation::Screen)
             fpixel = Vec4F::filled(1.0f) - (Vec4F::filled(1.0f) - fpixel).piecewiseMultiply(Vec4F::filled(1.0f) - blendPixel);
         }
       }
       pixel = Color::v4fToByte(fpixel);
     });
 
-  } else if (auto op = std::get_if<MultiplyImageOperation>(&operation)) {
+  } else if (auto op = (std::holds_alternative<MultiplyImageOperation>(operation) ? std::optional{std::cref(std::get<MultiplyImageOperation>(operation))} : std::nullopt)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      pixel = pixel.combine(op->color, [](std::uint8_t a, std::uint8_t b) -> std::uint8_t {
+      pixel = pixel.combine(op->get().color, [](std::uint8_t a, std::uint8_t b) -> std::uint8_t {
           return (std::uint8_t)(((int)a * (int)b) / 255);
         });
     });
 
-  } else if (auto op = std::get_if<BorderImageOperation>(&operation)) {
-    Image borderImage(image.size() + Vec2U::filled(op->pixels * 2), PixelFormat::RGBA32);
-    auto copied = borderImage.copyInto(Vec2U::filled(op->pixels), image);
+  } else if (auto op = (std::holds_alternative<BorderImageOperation>(operation) ? std::optional{std::cref(std::get<BorderImageOperation>(operation))} : std::nullopt)) {
+    Image borderImage(image.size() + Vec2U::filled(op->get().pixels * 2), PixelFormat::RGBA32);
+    auto copied = borderImage.copyInto(Vec2U::filled(op->get().pixels), image);
     if (!copied)
       return std::unexpected(std::move(copied.error()));
     Vec2I borderImageSize = Vec2I(borderImage.size());
 
     borderImage.forEachPixel([&op, &image, &borderImageSize](int x, int y, Vec4B& pixel) {
-      int pixels = op->pixels;
-      bool includeTransparent = op->includeTransparent;
+      int pixels = op->get().pixels;
+      bool includeTransparent = op->get().includeTransparent;
       if (pixel[3] == 0 || (includeTransparent && pixel[3] != 255)) {
         int dist = std::numeric_limits<int>::max();
         for (int j = -pixels; j < pixels + 1; j++) {
@@ -510,8 +510,8 @@ std::expected<void, StarException> processImageOperation(ImageOperation const& o
         if (dist < std::numeric_limits<int>::max()) {
           float percent = (dist - 1) / (2.0f * pixels - 1);
           if (pixel[3] != 0) {
-            Color color = Color::rgba(op->startColor).mix(Color::rgba(op->endColor), percent);
-            if (op->outlineOnly) {
+            Color color = Color::rgba(op->get().startColor).mix(Color::rgba(op->get().endColor), percent);
+            if (op->get().outlineOnly) {
               float pixelA = byteToFloat(pixel[3]);
               color.setAlphaF((1.0f - pixelA) * std::fminf(pixelA, 0.5f) * 2.0f);
             }
@@ -527,36 +527,36 @@ std::expected<void, StarException> processImageOperation(ImageOperation const& o
             }
             pixel = color.toRgba();
           } else {
-            pixel = Vec4B(Vec4F(op->startColor) * (1 - percent) + Vec4F(op->endColor) * percent);
+            pixel = Vec4B(Vec4F(op->get().startColor) * (1 - percent) + Vec4F(op->get().endColor) * percent);
           }
         }
-      } else if (op->outlineOnly) {
+      } else if (op->get().outlineOnly) {
         pixel = Vec4B(0, 0, 0, 0);
       }
     });
 
     image = borderImage;
 
-  } else if (auto op = std::get_if<ScaleImageOperation>(&operation)) {
-    auto scale = op->scale;
+  } else if (auto op = (std::holds_alternative<ScaleImageOperation>(operation) ? std::optional{std::cref(std::get<ScaleImageOperation>(operation))} : std::nullopt)) {
+    auto scale = op->get().scale;
     if (scale[0] < 0.0f || scale[1] < 0.0f) {
       EmergencyLog::warn("Negative scale in ScaleImageOperation ({})", scale);
       scale = scale.piecewiseMax(Vec2F::filled(0.f));
     }
-    auto scaled = op->mode == ScaleImageOperation::Nearest ? scaleNearest(image, scale)
-      : op->mode == ScaleImageOperation::Bicubic ? scaleBicubic(image, scale) : scaleBilinear(image, scale);
+    auto scaled = op->get().mode == ScaleImageOperation::Nearest ? scaleNearest(image, scale)
+      : op->get().mode == ScaleImageOperation::Bicubic ? scaleBicubic(image, scale) : scaleBilinear(image, scale);
     if (!scaled)
       return std::unexpected(std::move(scaled.error()));
     image = std::move(*scaled);
 
-  } else if (auto op = std::get_if<CropImageOperation>(&operation)) {
-    auto cropped = image.subImage(Vec2U(op->subset.min()), Vec2U(op->subset.size()));
+  } else if (auto op = (std::holds_alternative<CropImageOperation>(operation) ? std::optional{std::cref(std::get<CropImageOperation>(operation))} : std::nullopt)) {
+    auto cropped = image.subImage(Vec2U(op->get().subset.min()), Vec2U(op->get().subset.size()));
     if (!cropped)
       return std::unexpected(std::move(cropped.error()));
     image = std::move(*cropped);
 
-  } else if (auto op = std::get_if<FlipImageOperation>(&operation)) {
-    if (op->mode == FlipImageOperation::FlipX || op->mode == FlipImageOperation::FlipXY) {
+  } else if (auto op = (std::holds_alternative<FlipImageOperation>(operation) ? std::optional{std::cref(std::get<FlipImageOperation>(operation))} : std::nullopt)) {
+    if (op->get().mode == FlipImageOperation::FlipX || op->get().mode == FlipImageOperation::FlipXY) {
       for (std::size_t y = 0; y < image.height(); ++y) {
         for (std::size_t xLeft = 0; xLeft < image.width() / 2; ++xLeft) {
           std::size_t xRight = image.width() - 1 - xLeft;
@@ -570,7 +570,7 @@ std::expected<void, StarException> processImageOperation(ImageOperation const& o
       }
     }
 
-    if (op->mode == FlipImageOperation::FlipY || op->mode == FlipImageOperation::FlipXY) {
+    if (op->get().mode == FlipImageOperation::FlipY || op->get().mode == FlipImageOperation::FlipXY) {
       for (std::size_t x = 0; x < image.width(); ++x) {
         for (std::size_t yTop = 0; yTop < image.height() / 2; ++yTop) {
           std::size_t yBottom = image.height() - 1 - yTop;

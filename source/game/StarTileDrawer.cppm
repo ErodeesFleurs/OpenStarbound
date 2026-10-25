@@ -114,7 +114,7 @@ private:
   static QuadZLevel modZLevel(std::uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant);
   static QuadZLevel damageZLevel();
 
-  [[nodiscard]] static std::expected<bool, StarException> determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, std::shared_ptr<MaterialDatabase const> const& materialDb, MaterialRenderMatchList const& matchList,
+  [[nodiscard]] static std::expected<bool, StarException> determineMatchingPieces(MaterialPieceResultList& resultList, std::optional<std::reference_wrapper<bool>> occlude, std::shared_ptr<MaterialDatabase const> const& materialDb, MaterialRenderMatchList const& matchList,
     WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod);
 
   Root& m_root;

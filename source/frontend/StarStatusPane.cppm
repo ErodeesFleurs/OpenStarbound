@@ -62,7 +62,7 @@ public:
     return Star::typeName<StatusPane>();
   }
 
-  [[nodiscard]] static std::expected<std::shared_ptr<StatusPane>, StarException> create(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] static std::expected<std::shared_ptr<StatusPane>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client);
 
   [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
 
@@ -71,7 +71,7 @@ protected:
   [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
 private:
-  StatusPane(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client);
+  StatusPane(GuiContext& guiContext, std::shared_ptr<UniverseClient> client);
   struct StatusEffectIndicator {
     String icon;
     std::optional<float> durationPercentage;
@@ -79,7 +79,6 @@ private:
     RectF screenRect;
   };
 
-  MainInterfacePaneManager* m_paneManager;
   std::shared_ptr<UniverseClient> m_client;
   std::shared_ptr<Player> m_player;
 

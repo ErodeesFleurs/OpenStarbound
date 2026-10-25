@@ -54,17 +54,17 @@ import star.liquids_database;
 
 namespace Star {
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, MaterialSpace const& materialSpace) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, MaterialSpace const& materialSpace) {
   return ds << materialSpace.space << materialSpace.material;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, MaterialSpace& materialSpace) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, MaterialSpace& materialSpace) {
   MaterialSpace decoded;
   auto read = ds >> decoded.space >> decoded.material;
   if (!read)
     return std::unexpected(std::move(read.error()));
   materialSpace = decoded;
-  return &ds;
+  return std::ref(ds);
 }
 
 TileEntity::TileEntity() {
@@ -127,7 +127,7 @@ std::expected<bool, StarException> TileEntity::anySpacesOccupied(List<Vec2I> con
   Vec2I tp = tilePosition();
   for (auto pos : spaces) {
     pos += tp;
-    if (isConnectableMaterial((*currentWorld)->material(pos, TileLayer::Foreground)))
+    if (isConnectableMaterial(currentWorld->get().material(pos, TileLayer::Foreground)))
       return true;
   }
 
@@ -141,7 +141,7 @@ std::expected<bool, StarException> TileEntity::allSpacesOccupied(List<Vec2I> con
   Vec2I tp = tilePosition();
   for (auto pos : spaces) {
     pos += tp;
-    if (!isConnectableMaterial((*currentWorld)->material(pos, TileLayer::Foreground)))
+    if (!isConnectableMaterial(currentWorld->get().material(pos, TileLayer::Foreground)))
       return false;
   }
 
@@ -155,7 +155,7 @@ std::expected<float, StarException> TileEntity::spacesLiquidFillLevel(List<Vec2I
   float total = 0.0f;
   for (auto pos : relativeSpaces) {
     pos += tilePosition();
-    total += (*currentWorld)->liquidLevel(pos).level;
+    total += currentWorld->get().liquidLevel(pos).level;
   }
   return total / relativeSpaces.size();
 }

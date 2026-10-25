@@ -26,7 +26,7 @@ private:
   Root& m_root;
 };
 
-[[nodiscard]] std::expected<Root*, StarException> luaExecutionRoot(LuaEngine& engine);
+[[nodiscard]] std::expected<std::reference_wrapper<Root>, StarException> luaExecutionRoot(LuaEngine& engine);
 
 // Loads and caches Lua scripts from assets, clearing the cache on root reload.
 // The internal engine and all contexts require single-threaded access.

@@ -192,7 +192,7 @@ std::expected<void, StarException> EnvironmentPainter::renderDebrisFields(float 
       if (!name) return std::unexpected(std::move(name.error()));
       allowedTypes.append(std::move(*name));
     }
-    auto allowed = allowedTypes.contains(**skyType);
+    auto allowed = allowedTypes.contains(skyType->get());
     if (!allowed) return std::unexpected(std::move(allowed.error()));
     if (!*allowed)
       return {};
@@ -232,7 +232,7 @@ std::expected<void, StarException> EnvironmentPainter::renderDebrisFields(float 
         [&](RandomSource& rand) -> std::expected<std::pair<String, float>, StarException> {
           auto option = rand.randFrom(*imageOptions);
           if (!option) return std::unexpected(std::move(option.error()));
-          auto image = (*option)->toString();
+          auto image = option->get().toString();
           if (!image) return std::unexpected(std::move(image.error()));
           auto angularVelocity = rand.randf((*angularRange)[0], (*angularRange)[1]);
           if (!angularVelocity) return std::unexpected(std::move(angularVelocity.error()));
@@ -371,7 +371,7 @@ std::expected<void, StarException> EnvironmentPainter::renderParallaxLayers(
 
     auto firstTexture = layer.textures.first();
     if (!firstTexture) return std::unexpected(std::move(firstTexture.error()));
-    AssetPath first = **firstTexture;
+    AssetPath first = firstTexture->get();
     first.directives += layer.directives;
     if (layer.frameNumber > 1)
       first.subPath.emplace("0");
@@ -601,10 +601,10 @@ std::expected<void, StarException> EnvironmentPainter::drawOrbiter(float pixelRa
 std::uint64_t EnvironmentPainter::starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const {
   XXHash64 hasher;
 
-  hasher.push(reinterpret_cast<char const*>(&viewSize[0]), sizeof(viewSize[0]));
-  hasher.push(reinterpret_cast<char const*>(&viewSize[1]), sizeof(viewSize[1]));
-  hasher.push(reinterpret_cast<char const*>(&sky.skyParameters.seed), sizeof(sky.skyParameters.seed));
-  hasher.push(reinterpret_cast<char const*>(&sky.type), sizeof(sky.type));
+  hasher.push(std::span<char const>(reinterpret_cast<char const*>(&viewSize[0]), sizeof(viewSize[0])));
+  hasher.push(std::span<char const>(reinterpret_cast<char const*>(&viewSize[1]), sizeof(viewSize[1])));
+  hasher.push(std::span<char const>(reinterpret_cast<char const*>(&sky.skyParameters.seed), sizeof(sky.skyParameters.seed)));
+  hasher.push(std::span<char const>(reinterpret_cast<char const*>(&sky.type), sizeof(sky.type)));
 
   return hasher.digest();
 }

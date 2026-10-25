@@ -61,7 +61,7 @@ public:
   [[nodiscard]] virtual std::expected<void, StarException> addNodeConnection(WireNode wireNode, WireConnection nodeConnection) = 0;
   [[nodiscard]] virtual std::expected<void, StarException> removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) = 0;
 
-  [[nodiscard]] virtual std::expected<void, StarException> evaluate(WireCoordinator* coordinator) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> evaluate(WireCoordinator& coordinator) = 0;
 };
 
 }

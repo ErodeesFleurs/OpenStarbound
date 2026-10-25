@@ -30,7 +30,7 @@ class TileEntity;
 class InteractiveEntity;
 
 struct EntityMapExceptionTag {
-  static constexpr char const* name() { return "EntityMapException"; }
+  static constexpr std::string_view name() { return "EntityMapException"; }
 };
 using EntityMapException = StarError<EntityMapExceptionTag, StarException>;
 
@@ -150,7 +150,7 @@ private:
   EntityId m_beginIdSpace;
   EntityId m_endIdSpace;
 
-  List<SpatialMap::Entry const*> m_entrySortBuffer;
+  List<std::reference_wrapper<SpatialMap::Entry const>> m_entrySortBuffer;
 };
 
 template <typename EntityT>

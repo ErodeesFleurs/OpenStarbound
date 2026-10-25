@@ -38,7 +38,7 @@ namespace Dungeon {
   public:
     [[nodiscard]] static std::expected<std::shared_ptr<TMXTilesets>, StarException> create(Root& root, Json const& tmx);
 
-    [[nodiscard]] std::expected<Tiled::Tile const*, StarException> getTile(unsigned gid, TileLayer layer) const;
+    [[nodiscard]] std::expected<std::reference_wrapper<Tiled::Tile const>, StarException> getTile(unsigned gid, TileLayer layer) const;
 
     Tiled::Tile const& nullTile() const {
       return *m_nullTile;
@@ -46,13 +46,6 @@ namespace Dungeon {
 
   private:
     TMXTilesets() = default;
-    struct TilesetInfo {
-      Tiled::Tileset const* tileset;
-      std::size_t firstGid;
-      std::size_t lastGid;
-    };
-
-    static bool tilesetComparator(TilesetInfo const& a, TilesetInfo const& b);
 
     // The default empty background tile has clear=true.  (If you use the pink
     // tile in the background, clear will be false instead.) Analogous to
@@ -65,15 +58,15 @@ namespace Dungeon {
     std::shared_ptr<Tiled::Tile const> m_nullTile;
 
     List<std::shared_ptr<Tiled::Tileset const>> m_tilesets;
-    List<Tiled::Tile const*> m_foregroundTilesByGid;
-    List<Tiled::Tile const*> m_backgroundTilesByGid;
+    List<std::optional<std::reference_wrapper<Tiled::Tile const>>> m_foregroundTilesByGid;
+    List<std::optional<std::reference_wrapper<Tiled::Tile const>>> m_backgroundTilesByGid;
   };
 
   class TMXTileLayer {
   public:
     [[nodiscard]] static std::expected<std::shared_ptr<TMXTileLayer>, StarException> create(Json const& tmx);
 
-    [[nodiscard]] std::expected<Tiled::Tile const*, StarException> getTile(std::shared_ptr<TMXTilesets> const& tilesets, Vec2I pos) const;
+    [[nodiscard]] std::expected<std::reference_wrapper<Tiled::Tile const>, StarException> getTile(std::shared_ptr<TMXTilesets> const& tilesets, Vec2I pos) const;
 
     unsigned width() const {
       return m_rect.xMax() - m_rect.xMin() + 1;
@@ -93,8 +86,8 @@ namespace Dungeon {
       return m_layer;
     }
 
-    [[nodiscard]] std::expected<bool, StarException> forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    [[nodiscard]] std::expected<bool, StarException> forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTile(TMXMap const& map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTileAt(Vec2I pos, TMXMap const& map, TileCallback const& callback) const;
 
   private:
     TMXTileLayer() = default;
@@ -137,8 +130,8 @@ namespace Dungeon {
       return m_kind;
     }
 
-    [[nodiscard]] std::expected<bool, StarException> forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    [[nodiscard]] std::expected<bool, StarException> forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTile(TMXMap const& map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTileAt(Vec2I pos, TMXMap const& map, TileCallback const& callback) const;
 
   private:
     TMXObject() = default;
@@ -176,8 +169,8 @@ namespace Dungeon {
 
     String name() const;
 
-    [[nodiscard]] std::expected<bool, StarException> forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    [[nodiscard]] std::expected<bool, StarException> forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTile(TMXMap const& map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTileAt(Vec2I pos, TMXMap const& map, TileCallback const& callback) const;
 
   private:
     TMXObjectGroup() = default;

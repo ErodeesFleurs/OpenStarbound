@@ -55,8 +55,8 @@ std::expected<void, StarException> PackedAssetSource::build(DirectoryAssetSource
   if (!opened)
     return std::unexpected(std::move(opened.error()));
   auto file = std::move(*opened);
-  DataStreamIODevice ds(file);
-  auto magic = ds.writeData("SBAsset6", 8);
+  DataStreamIODevice ds(*file);
+  auto magic = ds.writeData(std::span("SBAsset6", 8));
   if (!magic)
     return std::unexpected(std::move(magic.error()));
   auto skipped = ds.seek(8, IOSeek::Relative);
@@ -127,7 +127,7 @@ std::expected<void, StarException> PackedAssetSource::build(DirectoryAssetSource
   if (!indexPosition)
     return std::unexpected(std::move(indexPosition.error()));
   std::uint64_t indexStart = *indexPosition;
-  auto header = ds.writeData("INDEX", 5);
+  auto header = ds.writeData(std::span("INDEX", 5));
   if (!header)
     return std::unexpected(std::move(header.error()));
   auto metadata = ds.write(directorySource.metadata());
@@ -151,11 +151,11 @@ std::expected<std::shared_ptr<PackedAssetSource>, StarException> PackedAssetSour
     return std::unexpected(std::move(opened.error()));
   auto source = std::shared_ptr<PackedAssetSource>(new PackedAssetSource());
   source->m_packedFile = std::move(*opened);
-  DataStreamIODevice ds(source->m_packedFile);
+  DataStreamIODevice ds(*source->m_packedFile);
   auto magic = ds.readBytes(8);
   if (!magic)
     return std::unexpected(std::move(magic.error()));
-  if (*magic != ByteArray("SBAsset6", 8))
+  if (*magic != ByteArray(std::span("SBAsset6", 8)))
     return std::unexpected(AssetSourceException("Packed assets file format unrecognized!"));
   auto indexStart = ds.read<std::uint64_t>();
   if (!indexStart)
@@ -171,7 +171,7 @@ std::expected<std::shared_ptr<PackedAssetSource>, StarException> PackedAssetSour
   auto header = ds.readBytes(5);
   if (!header)
     return std::unexpected(std::move(header.error()));
-  if (*header != ByteArray("INDEX", 5))
+  if (*header != ByteArray(std::span("INDEX", 5)))
     return std::unexpected(AssetSourceException("No index header found!"));
   auto metadata = ds.read(source->m_metadata);
   if (!metadata)
@@ -238,16 +238,16 @@ std::expected<std::shared_ptr<IODevice>, StarException> PackedAssetSource::open(
     StreamOffset assetSize;
     StreamOffset assetPos = 0;
   };
-  auto entry = m_index.ptr(path);
+  auto entry = m_index.maybeRef(path);
   if (!entry)
     return std::unexpected(AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path));
   auto fileSize = m_packedFile->size();
   if (!fileSize)
     return std::unexpected(std::move(fileSize.error()));
-  if (*fileSize < 0 || entry->first > static_cast<std::uint64_t>(*fileSize)
-      || entry->second > static_cast<std::uint64_t>(*fileSize) - entry->first)
+  if (*fileSize < 0 || entry->get().first > static_cast<std::uint64_t>(*fileSize)
+      || entry->get().second > static_cast<std::uint64_t>(*fileSize) - entry->get().first)
     return std::unexpected(AssetSourceException::format("Requested file '{}' has an out of range size in the packed assets file", path));
-  return std::make_shared<AssetReader>(m_packedFile, path, entry->first, entry->second);
+  return std::make_shared<AssetReader>(m_packedFile, path, entry->get().first, entry->get().second);
 }
 
 std::expected<ByteArray, StarException> PackedAssetSource::read(String const& path) {

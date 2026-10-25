@@ -398,17 +398,17 @@ std::expected<std::optional<SpawnParameters>, StarException> Spawner::spawnParam
 }
 
 std::expected<std::optional<Vec2F>, StarException> Spawner::adjustSpawnRegion(RectF const& spawnRegion, RectF const& boundBox, SpawnParameters const& spawnParameters) const {
-  auto checkPosition = [&](Vec2F const& position) -> std::expected<bool, StarException> {
+  auto checkPosition = [&self = *this, &boundBox, &spawnParameters](Vec2F const& position) -> std::expected<bool, StarException> {
     RectF region = RectF(boundBox).translated(position);
 
-    auto free = m_facade->isFreeSpace(region);
+    auto free = self.m_facade->isFreeSpace(region);
     if (!free) return std::unexpected(std::move(free.error()));
     if (!*free) return spawnParameters.areas.contains(SpawnParameters::Area::Solid);
 
-    if (m_facade->liquidLevel(Vec2I::floor(region.center())).level >= m_minimumLiquidLevel)
+    if (self.m_facade->liquidLevel(Vec2I::floor(region.center())).level >= self.m_minimumLiquidLevel)
       return spawnParameters.areas.contains(SpawnParameters::Area::Liquid);
 
-    auto prohibited = m_facade->spawningProhibited(region.padded(m_spawnProhibitedCheckPadding));
+    auto prohibited = self.m_facade->spawningProhibited(region.padded(self.m_spawnProhibitedCheckPadding));
     if (!prohibited) return std::unexpected(std::move(prohibited.error()));
     if (*prohibited) return false;
 
@@ -417,8 +417,8 @@ std::expected<std::optional<Vec2F>, StarException> Spawner::adjustSpawnRegion(Re
 
     if (spawnParameters.areas.contains(SpawnParameters::Area::Surface)) {
       Vec2F startCheck = {region.center()[0], region.yMin()};
-      for (int sd = 0; sd <= m_spawnSurfaceCheckDistance; ++sd) {
-        auto collision = m_facade->collision(Vec2I::floor(startCheck - Vec2F(0, sd)));
+      for (int sd = 0; sd <= self.m_spawnSurfaceCheckDistance; ++sd) {
+        auto collision = self.m_facade->collision(Vec2I::floor(startCheck - Vec2F(0, sd)));
         if (!collision) return std::unexpected(std::move(collision.error()));
         if (BlockCollisionSet.contains(*collision) || *collision == CollisionKind::Platform)
           return true;
@@ -426,8 +426,8 @@ std::expected<std::optional<Vec2F>, StarException> Spawner::adjustSpawnRegion(Re
 
     } else if (spawnParameters.areas.contains(SpawnParameters::Area::Ceiling)) {
       Vec2F startCheck = {region.center()[0], region.yMax()};
-      for (int cd = 0; cd <= m_spawnCeilingCheckDistance; ++cd) {
-        auto collision = m_facade->collision(Vec2I::floor(startCheck + Vec2F(0, cd)));
+      for (int cd = 0; cd <= self.m_spawnCeilingCheckDistance; ++cd) {
+        auto collision = self.m_facade->collision(Vec2I::floor(startCheck + Vec2F(0, cd)));
         if (!collision) return std::unexpected(std::move(collision.error()));
         if (BlockCollisionSet.contains(*collision))
           return true;
@@ -475,7 +475,7 @@ std::expected<void, StarException> Spawner::spawnInCell(Vec2I const& cell) {
       if (!groupSize) return std::unexpected(std::move(groupSize.error()));
       for (int i = 0; i < *groupSize; ++i) {
         String monsterType;
-        if (auto pool = std::get_if<WeightedPool<String>>(&type->monsterType)) monsterType = pool->select(root().random());
+        if (std::holds_alternative<WeightedPool<String>>(type->monsterType)) monsterType = std::get<WeightedPool<String>>(type->monsterType).select(root().random());
         else monsterType = std::get<String>(type->monsterType);
         auto variant = (*monsters)->monsterVariant(monsterType, seed, type->monsterParameters);
         if (!variant) return std::unexpected(std::move(variant.error()));
@@ -516,10 +516,10 @@ std::expected<void, StarException> Spawner::spawnInCell(Vec2I const& cell) {
 }
 
 std::expected<void, StarException> Spawner::debugShowSpawnCells() {
-  eraseWhere(m_debugSpawnInfo, [this](auto& p) { return !m_activeSpawnCells.contains(p.first); });
-  auto visible = [this](RectF const& region) -> std::expected<bool, StarException> {
-    for (auto const& window : m_facade->clientWindows()) {
-      auto intersects = m_facade->geometry().rectIntersectsRect(window, region);
+  eraseWhere(m_debugSpawnInfo, [&cells = m_activeSpawnCells](auto& p) { return !cells.contains(p.first); });
+  auto visible = [&facade = *m_facade](RectF const& region) -> std::expected<bool, StarException> {
+    for (auto const& window : facade.clientWindows()) {
+      auto intersects = facade.geometry().rectIntersectsRect(window, region);
       if (!intersects) return std::unexpected(std::move(intersects.error()));
       if (*intersects) return true;
     }
@@ -536,7 +536,7 @@ std::expected<void, StarException> Spawner::debugShowSpawnCells() {
       for (auto area : info.second.spawnParameters.areas) {
         auto name = SpawnParameters::AreaNames->getRight(area);
         if (!name) return std::unexpected(std::move(name.error()));
-        auto shortName = (*name)->slice(0, 3);
+        auto shortName = name->get().slice(0, 3);
         if (!shortName) return std::unexpected(std::move(shortName.error()));
         areas.append(std::move(*shortName));
       }
@@ -544,11 +544,11 @@ std::expected<void, StarException> Spawner::debugShowSpawnCells() {
       if (!SpawnParameters::RegionNames) return std::unexpected(SpawnParameters::RegionNames.error());
       auto regionName = SpawnParameters::RegionNames->getRight(info.second.spawnParameters.region);
       if (!regionName) return std::unexpected(std::move(regionName.error()));
-      root().spatialLogger().logText("world", strf("Region: {}", **regionName), region.min() + Vec2F(0.5, 1.5), {255, 255, 255, 255});
+      root().spatialLogger().logText("world", strf("Region: {}", regionName->get()), region.min() + Vec2F(0.5, 1.5), {255, 255, 255, 255});
       if (!SpawnParameters::TimeNames) return std::unexpected(SpawnParameters::TimeNames.error());
       auto timeName = SpawnParameters::TimeNames->getRight(info.second.spawnParameters.time);
       if (!timeName) return std::unexpected(std::move(timeName.error()));
-      root().spatialLogger().logText("world", strf("Time: {}", **timeName), region.min() + Vec2F(0.5, 0.5), {255, 255, 255, 255});
+      root().spatialLogger().logText("world", strf("Time: {}", timeName->get()), region.min() + Vec2F(0.5, 0.5), {255, 255, 255, 255});
       if (info.second.spawnAttempts > 0)
         root().spatialLogger().logText("world", strf("Spawns: {} / {}", info.second.spawns, info.second.spawnAttempts), region.min() + Vec2F(0.5, 3.5), (info.second.spawnAttempts > info.second.spawns) ? Color::Red.toRgba() : Color::Green.toRgba());
     }

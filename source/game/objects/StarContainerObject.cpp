@@ -131,23 +131,23 @@ std::expected<std::shared_ptr<ContainerObject>, StarException> ContainerObject::
     return std::unexpected(std::move(slotsResult.error()));
   auto slots = std::move(*slotsResult);
   object->m_items = std::make_shared<ItemBag>(rootContext, slots);
-  auto operation2 = object->m_netGroup.addNetElement(&object->m_opened);
+  auto operation2 = object->m_netGroup.addNetElement(object->m_opened);
   if (!operation2)
     return std::unexpected(std::move(operation2.error()));
-  auto operation3 = object->m_netGroup.addNetElement(&object->m_crafting);
+  auto operation3 = object->m_netGroup.addNetElement(object->m_crafting);
   if (!operation3)
     return std::unexpected(std::move(operation3.error()));
-  auto operation4 = object->m_netGroup.addNetElement(&object->m_craftingProgress);
+  auto operation4 = object->m_netGroup.addNetElement(object->m_craftingProgress);
   if (!operation4)
     return std::unexpected(std::move(operation4.error()));
-  auto operation5 = object->m_netGroup.addNetElement(&object->m_itemsNetState);
+  auto operation5 = object->m_netGroup.addNetElement(object->m_itemsNetState);
   if (!operation5)
     return std::unexpected(std::move(operation5.error()));
   object->m_craftingProgress.setInterpolator(lerp<float, float>);
   return object;
 }
 
-std::expected<void, StarException> ContainerObject::init(World* world, EntityId entityId, EntityMode mode) {
+std::expected<void, StarException> ContainerObject::init(World& world, EntityId entityId, EntityMode mode) {
   if (mode == EntityMode::Master)
     m_interactive.set(true);
   auto operation1 = Object::init(world, entityId, mode);
@@ -156,7 +156,7 @@ std::expected<void, StarException> ContainerObject::init(World* world, EntityId 
   auto initialized = [&]() -> std::expected<void, StarException> {
     if (mode == EntityMode::Master && !m_initialized) {
       m_initialized = true;
-      auto levelResult = world->threatLevel();
+      auto levelResult = world.threatLevel();
       if (!levelResult)
         return std::unexpected(std::move(levelResult.error()));
       auto level = std::move(*levelResult);
@@ -270,7 +270,7 @@ std::expected<void, StarException> ContainerObject::update(float dt, std::uint64
       if (!dropResult)
         return std::unexpected(std::move(dropResult.error()));
       auto drop = std::move(*dropResult);
-      auto operation2 = currentWorld->addEntity(drop);
+      auto operation2 = currentWorld.get().addEntity(drop);
       if (!operation2)
         return std::unexpected(std::move(operation2.error()));
     }
@@ -299,7 +299,7 @@ std::expected<void, StarException> ContainerObject::update(float dt, std::uint64
         }
       }
     }
-    m_ageItemsTimer.update(currentWorld->epochTime());
+    m_ageItemsTimer.update(currentWorld.get().epochTime());
     auto ageConfigResult = configValue("ageItemsEvery", 10);
     if (!ageConfigResult)
       return std::unexpected(std::move(ageConfigResult.error()));
@@ -339,13 +339,13 @@ std::expected<void, StarException> ContainerObject::update(float dt, std::uint64
     }
   } else {
     setImageKey("key", toString(m_currentState));
-    setImageKey("state", m_crafting.get() ? "crafting" : "idle");
+    setImageKey("state", m_crafting.get() ? String("crafting") : String("idle"));
     m_animationFrameCooldown -= 1;
   }
   return {};
 }
 
-std::expected<void, StarException> ContainerObject::render(RenderCallback* renderCallback) {
+std::expected<void, StarException> ContainerObject::render(RenderCallback& renderCallback) {
   auto assetsResult = root().assets();
   if (!assetsResult)
     return std::unexpected(std::move(assetsResult.error()));
@@ -381,7 +381,7 @@ std::expected<void, StarException> ContainerObject::render(RenderCallback* rende
           auto instance = std::move(*instanceResult);
           instance->setPosition(position());
           instance->setRangeMultiplier(config()->soundEffectRangeMultiplier);
-          auto operation1 = renderCallback->addAudio(std::move(instance));
+          auto operation1 = renderCallback.addAudio(std::move(instance));
           if (!operation1)
             return std::unexpected(std::move(operation1.error()));
         }
@@ -423,7 +423,7 @@ std::expected<void, StarException> ContainerObject::render(RenderCallback* rende
           auto instance = std::move(*instanceResult);
           instance->setPosition(position());
           instance->setRangeMultiplier(config()->soundEffectRangeMultiplier);
-          auto operation2 = renderCallback->addAudio(std::move(instance));
+          auto operation2 = renderCallback.addAudio(std::move(instance));
           if (!operation2)
             return std::unexpected(std::move(operation2.error()));
         }
@@ -448,7 +448,7 @@ std::expected<void, StarException> ContainerObject::render(RenderCallback* rende
   return Object::render(renderCallback);
 }
 
-std::expected<void, StarException> ContainerObject::destroy(RenderCallback* renderCallback) {
+std::expected<void, StarException> ContainerObject::destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) {
   auto operation1 = Object::destroy(renderCallback);
   if (!operation1)
     return std::unexpected(std::move(operation1.error()));
@@ -462,7 +462,7 @@ std::expected<void, StarException> ContainerObject::destroy(RenderCallback* rend
       if (!dropResult)
         return std::unexpected(std::move(dropResult.error()));
       auto drop = std::move(*dropResult);
-      auto operation2 = currentWorld->addEntity(drop);
+      auto operation2 = currentWorld.get().addEntity(drop);
       if (!operation2)
         return std::unexpected(std::move(operation2.error()));
     }
@@ -514,7 +514,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!itemArgResult)
       return std::unexpected(std::move(itemArgResult.error()));
     auto itemArg = std::move(*itemArgResult);
-    auto itemResult = database->fromJson(*itemArg);
+    auto itemResult = database->fromJson(itemArg.get());
     if (!itemResult)
       return std::unexpected(std::move(itemResult.error()));
     auto item = std::move(*itemResult);
@@ -533,7 +533,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!slotArgResult)
       return std::unexpected(std::move(slotArgResult.error()));
     auto slotArg = std::move(*slotArgResult);
-    auto slotResult = slotArg->toUInt();
+    auto slotResult = slotArg.get().toUInt();
     if (!slotResult)
       return std::unexpected(std::move(slotResult.error()));
     auto slot = std::move(*slotResult);
@@ -541,7 +541,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!itemArgResult)
       return std::unexpected(std::move(itemArgResult.error()));
     auto itemArg = std::move(*itemArgResult);
-    auto itemResult = database->fromJson(*itemArg);
+    auto itemResult = database->fromJson(itemArg.get());
     if (!itemResult)
       return std::unexpected(std::move(itemResult.error()));
     auto item = std::move(*itemResult);
@@ -560,7 +560,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!slotArgResult)
       return std::unexpected(std::move(slotArgResult.error()));
     auto slotArg = std::move(*slotArgResult);
-    auto slotResult = slotArg->toUInt();
+    auto slotResult = slotArg.get().toUInt();
     if (!slotResult)
       return std::unexpected(std::move(slotResult.error()));
     auto slot = std::move(*slotResult);
@@ -568,7 +568,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!countArgResult)
       return std::unexpected(std::move(countArgResult.error()));
     auto countArg = std::move(*countArgResult);
-    auto countResult = countArg->toUInt();
+    auto countResult = countArg.get().toUInt();
     if (!countResult)
       return std::unexpected(std::move(countResult.error()));
     auto count = std::move(*countResult);
@@ -587,7 +587,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!slotArgResult)
       return std::unexpected(std::move(slotArgResult.error()));
     auto slotArg = std::move(*slotArgResult);
-    auto slotResult = slotArg->toUInt();
+    auto slotResult = slotArg.get().toUInt();
     if (!slotResult)
       return std::unexpected(std::move(slotResult.error()));
     auto slot = std::move(*slotResult);
@@ -595,7 +595,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!itemArgResult)
       return std::unexpected(std::move(itemArgResult.error()));
     auto itemArg = std::move(*itemArgResult);
-    auto itemResult = database->fromJson(*itemArg);
+    auto itemResult = database->fromJson(itemArg.get());
     if (!itemResult)
       return std::unexpected(std::move(itemResult.error()));
     auto item = std::move(*itemResult);
@@ -619,7 +619,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!slotArgResult)
       return std::unexpected(std::move(slotArgResult.error()));
     auto slotArg = std::move(*slotArgResult);
-    auto slotResult = slotArg->toUInt();
+    auto slotResult = slotArg.get().toUInt();
     if (!slotResult)
       return std::unexpected(std::move(slotResult.error()));
     auto slot = std::move(*slotResult);
@@ -627,7 +627,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!itemArgResult)
       return std::unexpected(std::move(itemArgResult.error()));
     auto itemArg = std::move(*itemArgResult);
-    auto itemResult = database->fromJson(*itemArg);
+    auto itemResult = database->fromJson(itemArg.get());
     if (!itemResult)
       return std::unexpected(std::move(itemResult.error()));
     auto item = std::move(*itemResult);
@@ -646,7 +646,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!descriptorArgResult)
       return std::unexpected(std::move(descriptorArgResult.error()));
     auto descriptorArg = std::move(*descriptorArgResult);
-    auto descriptorResult = ItemDescriptor::create(*descriptorArg);
+    auto descriptorResult = ItemDescriptor::create(descriptorArg.get());
     if (!descriptorResult)
       return std::unexpected(std::move(descriptorResult.error()));
     auto descriptor = std::move(*descriptorResult);
@@ -665,7 +665,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!slotArgResult)
       return std::unexpected(std::move(slotArgResult.error()));
     auto slotArg = std::move(*slotArgResult);
-    auto slotResult = slotArg->toUInt();
+    auto slotResult = slotArg.get().toUInt();
     if (!slotResult)
       return std::unexpected(std::move(slotResult.error()));
     auto slot = std::move(*slotResult);
@@ -673,7 +673,7 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Contai
     if (!countArgResult)
       return std::unexpected(std::move(countArgResult.error()));
     auto countArg = std::move(*countArgResult);
-    auto countResult = countArg->toUInt();
+    auto countResult = countArg.get().toUInt();
     if (!countResult)
       return std::unexpected(std::move(countResult.error()));
     auto count = std::move(*countResult);
@@ -801,12 +801,12 @@ std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> ContainerObject:
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
     auto currentWorld = std::move(*currentWorldResult);
-    auto promiseResult = currentWorld->sendEntityMessage(entityId(), "addItems", {itemSafeDescriptor(items).toJson()});
+    auto promiseResult = currentWorld.get().sendEntityMessage(entityId(), "addItems", {itemSafeDescriptor(items).toJson()});
     if (!promiseResult)
       return std::unexpected(std::move(promiseResult.error()));
     auto promise = std::move(*promiseResult);
-    return promise.wrap([owner = &root()](Json res) -> std::expected<std::shared_ptr<Item>, StarException> {
-  auto databaseResult = owner->itemDatabase();
+    return promise.wrap([owner = std::ref(root())](Json res) -> std::expected<std::shared_ptr<Item>, StarException> {
+  auto databaseResult = owner.get().itemDatabase();
   if (!databaseResult)
     return std::unexpected(std::move(databaseResult.error()));
   auto database = std::move(*databaseResult);
@@ -830,12 +830,12 @@ std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> ContainerObject:
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
     auto currentWorld = std::move(*currentWorldResult);
-    auto promiseResult = currentWorld->sendEntityMessage(entityId(), "putItems", {itemSafeDescriptor(items).toJson()});
+    auto promiseResult = currentWorld.get().sendEntityMessage(entityId(), "putItems", {itemSafeDescriptor(items).toJson()});
     if (!promiseResult)
       return std::unexpected(std::move(promiseResult.error()));
     auto promise = std::move(*promiseResult);
-    return promise.wrap([owner = &root()](Json res) -> std::expected<std::shared_ptr<Item>, StarException> {
-  auto databaseResult = owner->itemDatabase();
+    return promise.wrap([owner = std::ref(root())](Json res) -> std::expected<std::shared_ptr<Item>, StarException> {
+  auto databaseResult = owner.get().itemDatabase();
   if (!databaseResult)
     return std::unexpected(std::move(databaseResult.error()));
   auto database = std::move(*databaseResult);
@@ -859,12 +859,12 @@ std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> ContainerObject:
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
     auto currentWorld = std::move(*currentWorldResult);
-    auto promiseResult = currentWorld->sendEntityMessage(entityId(), "takeItems", {slot, count});
+    auto promiseResult = currentWorld.get().sendEntityMessage(entityId(), "takeItems", {slot, count});
     if (!promiseResult)
       return std::unexpected(std::move(promiseResult.error()));
     auto promise = std::move(*promiseResult);
-    return promise.wrap([owner = &root()](Json res) -> std::expected<std::shared_ptr<Item>, StarException> {
-  auto databaseResult = owner->itemDatabase();
+    return promise.wrap([owner = std::ref(root())](Json res) -> std::expected<std::shared_ptr<Item>, StarException> {
+  auto databaseResult = owner.get().itemDatabase();
   if (!databaseResult)
     return std::unexpected(std::move(databaseResult.error()));
   auto database = std::move(*databaseResult);
@@ -888,12 +888,12 @@ std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> ContainerObject:
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
     auto currentWorld = std::move(*currentWorldResult);
-    auto promiseResult = currentWorld->sendEntityMessage(entityId(), "swapItems", {slot, itemSafeDescriptor(items).toJson(), tryCombine});
+    auto promiseResult = currentWorld.get().sendEntityMessage(entityId(), "swapItems", {slot, itemSafeDescriptor(items).toJson(), tryCombine});
     if (!promiseResult)
       return std::unexpected(std::move(promiseResult.error()));
     auto promise = std::move(*promiseResult);
-    return promise.wrap([owner = &root()](Json res) -> std::expected<std::shared_ptr<Item>, StarException> {
-  auto databaseResult = owner->itemDatabase();
+    return promise.wrap([owner = std::ref(root())](Json res) -> std::expected<std::shared_ptr<Item>, StarException> {
+  auto databaseResult = owner.get().itemDatabase();
   if (!databaseResult)
     return std::unexpected(std::move(databaseResult.error()));
   auto database = std::move(*databaseResult);
@@ -917,12 +917,12 @@ std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> ContainerObject:
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
     auto currentWorld = std::move(*currentWorldResult);
-    auto promiseResult = currentWorld->sendEntityMessage(entityId(), "applyAugment", {slot, itemSafeDescriptor(augment).toJson()});
+    auto promiseResult = currentWorld.get().sendEntityMessage(entityId(), "applyAugment", {slot, itemSafeDescriptor(augment).toJson()});
     if (!promiseResult)
       return std::unexpected(std::move(promiseResult.error()));
     auto promise = std::move(*promiseResult);
-    return promise.wrap([owner = &root()](Json res) -> std::expected<std::shared_ptr<Item>, StarException> {
-  auto databaseResult = owner->itemDatabase();
+    return promise.wrap([owner = std::ref(root())](Json res) -> std::expected<std::shared_ptr<Item>, StarException> {
+  auto databaseResult = owner.get().itemDatabase();
   if (!databaseResult)
     return std::unexpected(std::move(databaseResult.error()));
   auto database = std::move(*databaseResult);
@@ -946,7 +946,7 @@ std::expected<RpcPromise<bool>, StarException> ContainerObject::consumeItems(Ite
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
     auto currentWorld = std::move(*currentWorldResult);
-    auto promiseResult = currentWorld->sendEntityMessage(entityId(), "consumeItems", {descriptor.toJson()});
+    auto promiseResult = currentWorld.get().sendEntityMessage(entityId(), "consumeItems", {descriptor.toJson()});
     if (!promiseResult)
       return std::unexpected(std::move(promiseResult.error()));
     auto promise = std::move(*promiseResult);
@@ -965,7 +965,7 @@ std::expected<RpcPromise<bool>, StarException> ContainerObject::consumeItems(std
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
     auto currentWorld = std::move(*currentWorldResult);
-    auto promiseResult = currentWorld->sendEntityMessage(entityId(), "consumeItemsAt", {pos, count});
+    auto promiseResult = currentWorld.get().sendEntityMessage(entityId(), "consumeItemsAt", {pos, count});
     if (!promiseResult)
       return std::unexpected(std::move(promiseResult.error()));
     auto promise = std::move(*promiseResult);
@@ -984,12 +984,12 @@ std::expected<RpcPromise<List<std::shared_ptr<Item>>>, StarException> ContainerO
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
     auto currentWorld = std::move(*currentWorldResult);
-    auto promiseResult = currentWorld->sendEntityMessage(entityId(), "clearContainer", {});
+    auto promiseResult = currentWorld.get().sendEntityMessage(entityId(), "clearContainer", {});
     if (!promiseResult)
       return std::unexpected(std::move(promiseResult.error()));
     auto promise = std::move(*promiseResult);
-    return promise.wrap([owner = &root()](Json res) -> std::expected<List<std::shared_ptr<Item>>, StarException> {
-  auto databaseResult = owner->itemDatabase();
+    return promise.wrap([owner = std::ref(root())](Json res) -> std::expected<List<std::shared_ptr<Item>>, StarException> {
+  auto databaseResult = owner.get().itemDatabase();
   if (!databaseResult)
     return std::unexpected(std::move(databaseResult.error()));
   auto database = std::move(*databaseResult);
@@ -1029,7 +1029,7 @@ std::expected<void, StarException> ContainerObject::startCrafting() {
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
     auto currentWorld = std::move(*currentWorldResult);
-    auto operation1 = currentWorld->sendEntityMessage(entityId(), "startCrafting");
+    auto operation1 = currentWorld.get().sendEntityMessage(entityId(), "startCrafting");
     if (!operation1)
       return std::unexpected(std::move(operation1.error()));
   } else {
@@ -1057,7 +1057,7 @@ std::expected<void, StarException> ContainerObject::stopCrafting() {
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
     auto currentWorld = std::move(*currentWorldResult);
-    auto operation1 = currentWorld->sendEntityMessage(entityId(), "stopCrafting");
+    auto operation1 = currentWorld.get().sendEntityMessage(entityId(), "stopCrafting");
     if (!operation1)
       return std::unexpected(std::move(operation1.error()));
   } else {
@@ -1082,14 +1082,14 @@ std::expected<void, StarException> ContainerObject::burnContainerContents() {
     return std::unexpected(std::move(currentWorldResult.error()));
   auto currentWorld = std::move(*currentWorldResult);
   if (isSlave()) {
-    auto operation1 = currentWorld->sendEntityMessage(entityId(), "burnContainerContents");
+    auto operation1 = currentWorld.get().sendEntityMessage(entityId(), "burnContainerContents");
     if (!operation1)
       return std::unexpected(std::move(operation1.error()));
   } else {
     auto operation2 = stopCrafting();
     if (!operation2)
       return std::unexpected(std::move(operation2.error()));
-    auto fuelConfigResult = currentWorld->getProperty("ship.fuel", 0);
+    auto fuelConfigResult = currentWorld.get().getProperty("ship.fuel", 0);
     if (!fuelConfigResult)
       return std::unexpected(std::move(fuelConfigResult.error()));
     auto fuelConfig = std::move(*fuelConfigResult);
@@ -1097,7 +1097,7 @@ std::expected<void, StarException> ContainerObject::burnContainerContents() {
     if (!levelResult)
       return std::unexpected(std::move(levelResult.error()));
     auto level = std::move(*levelResult);
-    auto maxConfigResult = currentWorld->getProperty("ship.maxFuel", 0);
+    auto maxConfigResult = currentWorld.get().getProperty("ship.maxFuel", 0);
     if (!maxConfigResult)
       return std::unexpected(std::move(maxConfigResult.error()));
     auto maxConfig = std::move(*maxConfigResult);
@@ -1132,7 +1132,7 @@ std::expected<void, StarException> ContainerObject::burnContainerContents() {
       }
     }
     itemsUpdated();
-    auto operation3 = currentWorld->setProperty("ship.fuel", level);
+    auto operation3 = currentWorld.get().setProperty("ship.fuel", level);
     if (!operation3)
       return std::unexpected(std::move(operation3.error()));
   }
@@ -1335,7 +1335,7 @@ std::expected<void, StarException> ContainerObject::tickCrafting(float dt) {
       if (!dropResult)
         return std::unexpected(std::move(dropResult.error()));
       auto drop = std::move(*dropResult);
-      auto operation2 = currentWorld->addEntity(drop);
+      auto operation2 = currentWorld.get().addEntity(drop);
       if (!operation2)
         return std::unexpected(std::move(operation2.error()));
     }
@@ -1366,13 +1366,13 @@ std::expected<std::shared_ptr<Item>, StarException> ContainerObject::doSwapItems
 
 std::expected<std::shared_ptr<Item>, StarException> ContainerObject::doApplyAugment(std::size_t slot, std::shared_ptr<Item> const& item) {
   itemsUpdated();
-  if (auto augment = as<AugmentItem>(item)) {
+  if (auto augment = item ? asRef<AugmentItem>(*item) : std::nullopt) {
     auto slotItemResult = m_items->at(slot);
     if (!slotItemResult)
       return std::unexpected(std::move(slotItemResult.error()));
     auto slotItem = std::move(*slotItemResult);
-    if (*slotItem) {
-      auto resultResult = augment->applyTo(*slotItem);
+    if (slotItem.get()) {
+      auto resultResult = augment->get().applyTo(slotItem.get());
       if (!resultResult)
         return std::unexpected(std::move(resultResult.error()));
       auto result = std::move(*resultResult);

@@ -24,18 +24,18 @@ namespace Star {
 std::expected<LuaCallbacks, StarException> LuaBindings::makeInputCallbacks(Input& owner) {
   LuaCallbacks callbacks;
 
-  auto input = &owner;
+  auto& input = owner;
 
-  if (auto registration = callbacks.registerCallbackWithSignature<std::optional<unsigned>, String, String>("bindDown", std::bind(std::mem_fn(&Input::bindDown), input, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::optional<unsigned>, String, String>("bindDown", std::bind(std::mem_fn(&Input::bindDown), std::ref(input), std::placeholders::_1, std::placeholders::_2)); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<bool,            String, String>("bindHeld", std::bind(std::mem_fn(&Input::bindHeld), input, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<bool,            String, String>("bindHeld", std::bind(std::mem_fn(&Input::bindHeld), std::ref(input), std::placeholders::_1, std::placeholders::_2)); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<bool,            String, String>("bind",     std::bind(std::mem_fn(&Input::bindHeld), input, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<bool,            String, String>("bind",     std::bind(std::mem_fn(&Input::bindHeld), std::ref(input), std::placeholders::_1, std::placeholders::_2)); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::optional<unsigned>, String, String>("bindUp",   std::bind(std::mem_fn(&Input::bindUp),   input, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::optional<unsigned>, String, String>("bindUp",   std::bind(std::mem_fn(&Input::bindUp),   std::ref(input), std::placeholders::_1, std::placeholders::_2)); !registration)
     return std::unexpected(std::move(registration.error()));
 
-  if (auto registration = callbacks.registerCallback("keyDown", [input](String const& keyName, std::optional<StringList> const& modNames) -> std::expected<std::optional<unsigned>, StarException> {
+  if (auto registration = callbacks.registerCallback("keyDown", [&input](String const& keyName, std::optional<StringList> const& modNames) -> std::expected<std::optional<unsigned>, StarException> {
     auto key = enumValue<KeyNames>(keyName);
     if (!key)
       return std::unexpected(std::move(key.error()));
@@ -49,65 +49,65 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeInputCallbacks(Input
         *mod |= *modifier;
       }
     }
-    return input->keyDown(*key, mod);
+    return input.keyDown(*key, mod);
   }); !registration)
     return std::unexpected(std::move(registration.error()));
-  auto keyHeld = [input](String const& keyName) -> std::expected<bool, StarException> {
+  auto keyHeld = [&input](String const& keyName) -> std::expected<bool, StarException> {
     auto key = enumValue<KeyNames>(keyName);
     if (!key)
       return std::unexpected(std::move(key.error()));
-    return input->keyHeld(*key);
+    return input.keyHeld(*key);
   };
   if (auto registration = callbacks.registerCallback("keyHeld", keyHeld); !registration)
     return std::unexpected(std::move(registration.error()));
   if (auto registration = callbacks.registerCallback("key",     keyHeld); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallback("keyUp", [input](String const& keyName) -> std::expected<std::optional<unsigned>, StarException> {
+  if (auto registration = callbacks.registerCallback("keyUp", [&input](String const& keyName) -> std::expected<std::optional<unsigned>, StarException> {
     auto key = enumValue<KeyNames>(keyName);
     if (!key)
       return std::unexpected(std::move(key.error()));
-    return input->keyUp(*key);
+    return input.keyUp(*key);
   }); !registration)
     return std::unexpected(std::move(registration.error()));
 
-  if (auto registration = callbacks.registerCallback("mouseDown", [input](String const& buttonName) -> std::expected<std::optional<List<Vec2F>>, StarException> {
+  if (auto registration = callbacks.registerCallback("mouseDown", [&input](String const& buttonName) -> std::expected<std::optional<List<Vec2F>>, StarException> {
     auto button = enumValue<MouseButtonNames>(buttonName);
     if (!button)
       return std::unexpected(std::move(button.error()));
-    return input->mouseDown(*button);
+    return input.mouseDown(*button);
   }); !registration)
     return std::unexpected(std::move(registration.error()));
 
-  auto mouseHeld = [input](String const& buttonName) -> std::expected<bool, StarException> {
+  auto mouseHeld = [&input](String const& buttonName) -> std::expected<bool, StarException> {
     auto button = enumValue<MouseButtonNames>(buttonName);
     if (!button)
       return std::unexpected(std::move(button.error()));
-    return input->mouseHeld(*button);
+    return input.mouseHeld(*button);
   };
   if (auto registration = callbacks.registerCallback("mouseHeld", mouseHeld); !registration)
     return std::unexpected(std::move(registration.error()));
   if (auto registration = callbacks.registerCallback("mouse",     mouseHeld); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallback("mouseUp", [input](String const& buttonName) -> std::expected<std::optional<List<Vec2F>>, StarException> {
+  if (auto registration = callbacks.registerCallback("mouseUp", [&input](String const& buttonName) -> std::expected<std::optional<List<Vec2F>>, StarException> {
     auto button = enumValue<MouseButtonNames>(buttonName);
     if (!button)
       return std::unexpected(std::move(button.error()));
-    return input->mouseUp(*button);
+    return input.mouseUp(*button);
   }); !registration)
     return std::unexpected(std::move(registration.error()));
 
-  if (auto registration = callbacks.registerCallbackWithSignature<void, String, String>("resetBinds",      std::bind(std::mem_fn(&Input::resetBinds),      input, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<void, String, String>("resetBinds",      std::bind(std::mem_fn(&Input::resetBinds),      std::ref(input), std::placeholders::_1, std::placeholders::_2)); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<void, String, String, Json>("setBinds",  std::bind(std::mem_fn(&Input::setBinds),        input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<void, String, String, Json>("setBinds",  std::bind(std::mem_fn(&Input::setBinds),        std::ref(input), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<Json, String, String>("getDefaultBinds", std::bind(std::mem_fn(&Input::getDefaultBinds), input, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<Json, String, String>("getDefaultBinds", std::bind(std::mem_fn(&Input::getDefaultBinds), std::ref(input), std::placeholders::_1, std::placeholders::_2)); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<Json, String, String>("getBinds",        std::bind(std::mem_fn(&Input::getBinds),        input, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<Json, String, String>("getBinds",        std::bind(std::mem_fn(&Input::getBinds),        std::ref(input), std::placeholders::_1, std::placeholders::_2)); !registration)
     return std::unexpected(std::move(registration.error()));
 
-  if (auto registration = callbacks.registerCallback("events", [input]() -> std::expected<Json, StarException> {
+  if (auto registration = callbacks.registerCallback("events", [&input]() -> std::expected<Json, StarException> {
     JsonArray result;
-    for (auto& pair : input->inputEventsThisFrame()) {
+    for (auto& pair : input.inputEventsThisFrame()) {
       auto event = Input::inputEventToJson(pair.first);
       if (!event)
         return std::unexpected(std::move(event.error()));
@@ -122,9 +122,9 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeInputCallbacks(Input
   }); !registration)
     return std::unexpected(std::move(registration.error()));
 
-  if (auto registration = callbacks.registerCallbackWithSignature<Vec2F>("mousePosition", std::bind(std::mem_fn(&Input::mousePosition), input)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<Vec2F>("mousePosition", std::bind(std::mem_fn(&Input::mousePosition), std::ref(input))); !registration)
     return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<unsigned, String>("getTag", std::bind(std::mem_fn(&Input::getTag), input, std::placeholders::_1)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<unsigned, String>("getTag", std::bind(std::mem_fn(&Input::getTag), std::ref(input), std::placeholders::_1)); !registration)
     return std::unexpected(std::move(registration.error()));
 
   return callbacks;

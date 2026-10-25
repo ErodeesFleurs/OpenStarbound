@@ -170,7 +170,7 @@ std::expected<std::shared_ptr<InstrumentItem>, StarException> InstrumentItem::cr
   if (!angle)
     return std::unexpected(std::move(angle.error()));
   item->m_activeAngle = (*angle / 180.0f) * std::numbers::pi;
-  for (auto const& [key, target] : {std::pair{"activeStatusEffects", &item->m_activeStatusEffects}, std::pair{"inactiveStatusEffects", &item->m_inactiveStatusEffects}}) {
+  for (auto const& [key, target] : {std::pair{std::string_view("activeStatusEffects"), std::ref(item->m_activeStatusEffects)}, std::pair{std::string_view("inactiveStatusEffects"), std::ref(item->m_inactiveStatusEffects)}}) {
     auto effects = item->instanceValue(key, JsonArray()).and_then([](Json const& value) { return value.toArray(); });
     if (!effects)
       return std::unexpected(std::move(effects.error()));
@@ -178,7 +178,7 @@ std::expected<std::shared_ptr<InstrumentItem>, StarException> InstrumentItem::cr
       auto effect = jsonToPersistentStatusEffect(value);
       if (!effect)
         return std::unexpected(std::move(effect.error()));
-      target->append(std::move(*effect));
+      target.get().append(std::move(*effect));
     }
   }
   auto activeSources = item->instanceValue("activeEffectSources", JsonArray()).and_then(jsonToStringSet);
@@ -227,12 +227,12 @@ std::expected<void, StarException> InstrumentItem::update(float, FireMode, bool,
       return std::unexpected(std::move(isActive.error()));
     if (*isActive) {
       m_activeCooldown--;
-      auto emitted = (*itemOwner)->addEffectEmitters({"music"});
+      auto emitted = itemOwner->get().addEffectEmitters({"music"});
       if (!emitted)
         return std::unexpected(std::move(emitted.error()));
     }
   }
-  return (*itemOwner)->instrumentEquipped(m_kind);
+  return itemOwner->get().instrumentEquipped(m_kind);
 }
 
 std::expected<bool, StarException> InstrumentItem::active() const {
@@ -243,7 +243,7 @@ std::expected<bool, StarException> InstrumentItem::active() const {
   auto itemOwner = owner();
   if (!itemOwner)
     return std::unexpected(std::move(itemOwner.error()));
-  return (*itemOwner)->instrumentPlaying();
+  return itemOwner->get().instrumentPlaying();
 }
 
 void InstrumentItem::setActive(bool active) {
@@ -261,7 +261,7 @@ std::expected<void, StarException> InstrumentItem::activate() {
   auto itemOwner = owner();
   if (!itemOwner)
     return std::unexpected(std::move(itemOwner.error()));
-  return (*itemOwner)->interact(InteractAction{InteractActionType::OpenSongbookInterface, (*itemOwner)->entityId(), {}});
+  return itemOwner->get().interact(InteractAction{InteractActionType::OpenSongbookInterface, itemOwner->get().entityId(), {}});
 }
 
 std::expected<List<Drawable>, StarException> InstrumentItem::drawables() const {

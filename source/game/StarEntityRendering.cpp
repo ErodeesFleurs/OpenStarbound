@@ -39,8 +39,8 @@ class TileDrawer;
 
 RenderCallback::~RenderCallback() {}
 
-TileDrawer* RenderCallback::tileDrawer() const {
-  return nullptr;
+std::optional<std::reference_wrapper<TileDrawer>> RenderCallback::tileDrawer() const {
+  return std::nullopt;
 }
 
 std::expected<void, StarException> RenderCallback::addDrawables(List<Drawable> drawables, EntityRenderLayer renderLayer, Vec2F translate) {

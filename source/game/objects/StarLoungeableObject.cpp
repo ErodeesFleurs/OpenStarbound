@@ -93,7 +93,7 @@ std::expected<std::shared_ptr<LoungeableObject>, StarException> LoungeableObject
   return object;
 }
 
-std::expected<void, StarException> LoungeableObject::render(RenderCallback* renderCallback) {
+std::expected<void, StarException> LoungeableObject::render(RenderCallback& renderCallback) {
   auto operation2 = Object::render(renderCallback);
   if (!operation2)
     return std::unexpected(std::move(operation2.error()));
@@ -119,7 +119,7 @@ std::expected<void, StarException> LoungeableObject::render(RenderCallback* rend
           auto bounds = std::move(*boundsResult);
           drawable.scale(Vec2F(-1, 1), bounds.center());
         }
-        auto operation3 = renderCallback->addDrawable(std::move(drawable), RenderLayerObject + 2);
+        auto operation3 = renderCallback.addDrawable(std::move(drawable), RenderLayerObject + 2);
         if (!operation3)
           return std::unexpected(std::move(operation3.error()));
       }
@@ -306,7 +306,7 @@ std::expected<void, StarException> LoungeableObject::setOrientationIndex(std::si
     if (!orientationResult)
       return std::unexpected(std::move(orientationResult.error()));
     auto orientation = std::move(*orientationResult);
-    m_sitOrientation = *orientation;
+    m_sitOrientation = orientation.get();
     auto effectsConfigResult = configValue("sitStatusEffects", JsonArray());
     if (!effectsConfigResult)
       return std::unexpected(std::move(effectsConfigResult.error()));

@@ -3,6 +3,7 @@ import std;
 import star.format;
 import star.list;
 import star.json;
+import star.string;
 import star.json_extra;
 
 import star.ordered_map;
@@ -37,7 +38,7 @@ private:
 
 class WormCaveSelector : public TerrainSelector {
 public:
-  static char const* const Name;
+  static std::string_view const Name;
 
   [[nodiscard]] static std::expected<std::shared_ptr<WormCaveSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters);
 private:
@@ -56,7 +57,7 @@ private:
 
 namespace Star {
 
-char const* const WormCaveSelector::Name = "wormcave";
+std::string_view const WormCaveSelector::Name = "wormcave";
 
 std::expected<WormCaveSector, StarException> WormCaveSector::create(int sectorSize, Vec2I sector, Json const& config, std::size_t seed, float commonality) {
   WormCaveSector result(sectorSize, sector);
@@ -70,7 +71,7 @@ std::expected<WormCaveSector, StarException> WormCaveSector::create(int sectorSi
   };
   List<Worm> worms;
 
-  auto readRange = [&](char const* name) -> std::expected<Vec2F, StarException> {
+  auto readRange = [&](String const& name) -> std::expected<Vec2F, StarException> {
     auto value = config.get(name);
     if (!value)
       return std::unexpected(std::move(value.error()));
@@ -265,7 +266,7 @@ std::expected<float, StarException> WormCaveSelector::get(int x, int y) const {
   });
   if (!cached)
     return std::unexpected(std::move(cached.error()));
-  return (*cached)->get(x, y);
+  return cached->get().get(x, y);
 }
 
 }

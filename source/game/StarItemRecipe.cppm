@@ -14,12 +14,12 @@ import star.game_types;
 namespace Star {
 
 struct RecipeExceptionTag {
-  static constexpr char const* name() { return "RecipeException"; }
+  static constexpr std::string_view name() { return "RecipeException"; }
 };
 using RecipeException = StarError<RecipeExceptionTag, StarException>;
 
 struct ItemRecipe {
-  friend std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemRecipe const& recipe);
+  friend std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, ItemRecipe const& recipe);
   [[nodiscard]]
   std::expected<Json, StarException> toJson() const;
 
@@ -45,7 +45,7 @@ struct hash<ItemRecipe> {
 };
 
 [[nodiscard]]
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemRecipe const& recipe);
+std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, ItemRecipe const& recipe);
 }
 
 export module star.item_recipe;

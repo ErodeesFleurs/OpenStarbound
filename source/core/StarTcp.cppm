@@ -22,8 +22,8 @@ public:
   // Must be called after connect.  Sets TCP_NODELAY option.
   [[nodiscard]] std::expected<void, StarException> setNoDelay(bool noDelay);
 
-  [[nodiscard]] std::expected<std::size_t, StarException> receive(char* data, std::size_t len);
-  [[nodiscard]] std::expected<std::size_t, StarException> send(char const* data, std::size_t len);
+  [[nodiscard]] std::expected<std::size_t, StarException> receive(std::span<char> data);
+  [[nodiscard]] std::expected<std::size_t, StarException> send(std::span<char const> data);
 
   HostAddressWithPort localAddress() const;
   HostAddressWithPort remoteAddress() const;

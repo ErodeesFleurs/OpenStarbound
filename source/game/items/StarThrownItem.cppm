@@ -103,7 +103,7 @@ public:
   [[nodiscard]]
   std::expected<List<Drawable>, StarException> drawables() const override;
   [[nodiscard]]
-  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  std::expected<List<Drawable>, StarException> preview(std::optional<std::reference_wrapper<TileDrawer>>, std::shared_ptr<Player> const& viewer = {}) const override;
 
 protected:
   [[nodiscard]]
@@ -162,7 +162,7 @@ std::expected<List<Drawable>, StarException> ThrownItem::drawables() const {
   return m_drawables;
 }
 
-std::expected<List<Drawable>, StarException> ThrownItem::preview(TileDrawer*, std::shared_ptr<Player> const&) const {
+std::expected<List<Drawable>, StarException> ThrownItem::preview(std::optional<std::reference_wrapper<TileDrawer>>, std::shared_ptr<Player> const&) const {
   return iconDrawables();
 }
 
@@ -175,15 +175,15 @@ std::expected<void, StarException> ThrownItem::fireTriggered() {
   auto itemWorld = world();
   if (!itemWorld)
     return std::unexpected(std::move(itemWorld.error()));
-  auto aimPosition = (*itemOwner)->aimPosition();
+  auto aimPosition = itemOwner->get().aimPosition();
   if (!aimPosition)
     return std::unexpected(std::move(aimPosition.error()));
-  Vec2F direction = (*itemWorld)->geometry().diff(*aimPosition, (*itemOwner)->position()).normalized();
+  Vec2F direction = itemWorld->get().geometry().diff(*aimPosition, itemOwner->get().position()).normalized();
   auto relativeFirePosition = ownerFirePosition();
   if (!relativeFirePosition)
     return std::unexpected(std::move(relativeFirePosition.error()));
-  Vec2F firePosition = (*itemOwner)->position() + *relativeFirePosition;
-  auto collision = (*itemWorld)->lineTileCollision((*itemOwner)->position(), firePosition);
+  Vec2F firePosition = itemOwner->get().position() + *relativeFirePosition;
+  auto collision = itemWorld->get().lineTileCollision(itemOwner->get().position(), firePosition);
   if (!collision)
     return std::unexpected(std::move(collision.error()));
   if (*collision)
@@ -197,12 +197,12 @@ std::expected<void, StarException> ThrownItem::fireTriggered() {
       return std::unexpected(std::move(projectile.error()));
     (*projectile)->setInitialPosition(firePosition);
     (*projectile)->setInitialDirection(direction);
-    (*projectile)->setSourceEntity((*itemOwner)->entityId(), false);
-    auto multiplier = (*itemOwner)->powerMultiplier();
+    (*projectile)->setSourceEntity(itemOwner->get().entityId(), false);
+    auto multiplier = itemOwner->get().powerMultiplier();
     if (!multiplier)
       return std::unexpected(std::move(multiplier.error()));
     (*projectile)->setPowerMultiplier(*multiplier);
-    auto added = (*itemWorld)->addEntity(*projectile);
+    auto added = itemWorld->get().addEntity(*projectile);
     if (!added)
       return std::unexpected(std::move(added.error()));
   }

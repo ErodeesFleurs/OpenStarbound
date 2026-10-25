@@ -216,39 +216,39 @@ std::expected<void, StarException> TillingTool::fire(FireMode mode, bool shiftin
   auto database = root().materialDatabase();
   if (!database)
     return std::unexpected(std::move(database.error()));
-  auto aimPosition = (*itemOwner)->aimPosition();
+  auto aimPosition = itemOwner->get().aimPosition();
   if (!aimPosition)
     return std::unexpected(std::move(aimPosition.error()));
   Vec2I pos(aimPosition->floor());
-  if ((*itemWorld)->material(pos + Vec2I(0, 1), TileLayer::Foreground) != EmptyMaterialId)
+  if (itemWorld->get().material(pos + Vec2I(0, 1), TileLayer::Foreground) != EmptyMaterialId)
     return {};
   bool used = false;
   for (auto layer : {TileLayer::Foreground, TileLayer::Background}) {
-    if ((*itemWorld)->material(pos, layer) == EmptyMaterialId)
+    if (itemWorld->get().material(pos, layer) == EmptyMaterialId)
       pos = pos - Vec2I(0, 1);
-    if (layer == TileLayer::Background && (*itemWorld)->material(pos + Vec2I(0, 1), TileLayer::Background) != EmptyMaterialId)
+    if (layer == TileLayer::Background && itemWorld->get().material(pos + Vec2I(0, 1), TileLayer::Background) != EmptyMaterialId)
       continue;
-    bool inRange = (*itemOwner)->isAdmin();
+    bool inRange = itemOwner->get().isAdmin();
     if (!inRange) {
-      auto range = (*itemOwner)->inToolRange();
+      auto range = itemOwner->get().inToolRange();
       if (!range)
         return std::unexpected(std::move(range.error()));
       inRange = *range;
     }
     if (inRange) {
-      auto currentMod = (*itemWorld)->mod(pos, layer);
-      auto material = (*itemWorld)->material(pos, layer);
+      auto currentMod = itemWorld->get().mod(pos, layer);
+      auto material = itemWorld->get().material(pos, layer);
       auto tilledMod = (*database)->tilledModFor(material);
       if (!tilledMod)
         return std::unexpected(std::move(tilledMod.error()));
       if (*tilledMod != NoModId && currentMod == NoModId) {
-        auto modified = (*itemWorld)->modifyTile(pos, PlaceMod{layer, *tilledMod, MaterialHue()}, true);
+        auto modified = itemWorld->get().modifyTile(pos, PlaceMod{layer, *tilledMod, MaterialHue()}, true);
         if (!modified)
           return std::unexpected(std::move(modified.error()));
         if (*modified)
           used = true;
       } else if (currentMod != *tilledMod) {
-        auto damageResult = (*itemWorld)->damageTile(pos, layer, (*itemOwner)->position(), {TileDamageType::Tilling, 1.0f});
+        auto damageResult = itemWorld->get().damageTile(pos, layer, itemOwner->get().position(), {TileDamageType::Tilling, 1.0f});
         if (!damageResult)
           return std::unexpected(std::move(damageResult.error()));
         used = *damageResult != TileDamageResult::None;
@@ -265,7 +265,7 @@ std::expected<void, StarException> TillingTool::fire(FireMode mode, bool shiftin
     }
   }
   if (used) {
-    auto sound = (*itemOwner)->addSound(strikeSound, m_toolVolume);
+    auto sound = itemOwner->get().addSound(strikeSound, m_toolVolume);
     if (!sound)
       return std::unexpected(std::move(sound.error()));
     return SwingableItem::fire(mode, shifting, edgeTriggered);

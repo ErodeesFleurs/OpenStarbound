@@ -53,7 +53,7 @@ class Root;
 class TileEntity;
 class ScriptedEntity;
 
-typedef std::function<std::expected<void, StarException>(World*)> WorldAction;
+typedef std::function<std::expected<void, StarException>(World&)> WorldAction;
 
 class World {
 public:

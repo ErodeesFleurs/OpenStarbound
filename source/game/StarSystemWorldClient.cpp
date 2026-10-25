@@ -150,33 +150,36 @@ std::expected<void, StarException> SystemWorldClient::update(float dt) {
   if (!updated)
     return std::unexpected(std::move(updated.error()));
   auto location = m_ship->systemLocation();
-  if (auto uuid = std::get_if<Uuid>(&location)) {
-    if (auto object = getObject(*uuid)) {
+  if (std::holds_alternative<Uuid>(location)) {
+    auto const& uuid = std::get<Uuid>(location);
+    if (auto object = getObject(uuid)) {
       if (object->permanent()) {
         auto parameters = object->parameters();
         if (!parameters)
           return std::unexpected(std::move(parameters.error()));
-        auto mapped = m_universeMap->addMappedObject(CelestialCoordinate(m_location), *uuid, object->name(), object->orbit(), std::move(*parameters));
+        auto mapped = m_universeMap->addMappedObject(CelestialCoordinate(m_location), uuid, object->name(), object->orbit(), std::move(*parameters));
         if (!mapped)
           return std::unexpected(std::move(mapped.error()));
       } else {
-        auto mapped = m_universeMap->addMappedObject(CelestialCoordinate(m_location), *uuid, object->name());
+        auto mapped = m_universeMap->addMappedObject(CelestialCoordinate(m_location), uuid, object->name());
         if (!mapped)
           return std::unexpected(std::move(mapped.error()));
       }
     }
-  } else if (auto coordinate = std::get_if<CelestialCoordinate>(&location)) {
-    if (coordinate->isPlanetaryBody() || coordinate->isSatelliteBody()) {
-      auto planet = coordinate->planet();
+  } else if (std::holds_alternative<CelestialCoordinate>(location)) {
+    auto const& coordinate = std::get<CelestialCoordinate>(location);
+    if (coordinate.isPlanetaryBody() || coordinate.isSatelliteBody()) {
+      auto planet = coordinate.planet();
       if (!planet)
         return std::unexpected(std::move(planet.error()));
       auto mapped = m_universeMap->addMappedCoordinate(*planet);
       if (!mapped)
         return std::unexpected(std::move(mapped.error()));
     }
-  } else if (auto orbit = std::get_if<CelestialOrbit>(&location)) {
-    if (orbit->target.isPlanetaryBody() || orbit->target.isSatelliteBody()) {
-      auto planet = orbit->target.planet();
+  } else if (std::holds_alternative<CelestialOrbit>(location)) {
+    auto const& orbit = std::get<CelestialOrbit>(location);
+    if (orbit.target.isPlanetaryBody() || orbit.target.isSatelliteBody()) {
+      auto planet = orbit.target.planet();
       if (!planet)
         return std::unexpected(std::move(planet.error()));
       auto mapped = m_universeMap->addMappedCoordinate(*planet);
@@ -288,7 +291,7 @@ std::expected<bool, StarException> SystemWorldClient::handleIncomingPacket(std::
       auto uuid = (*ship)->uuid();
       m_clientShips.set(uuid, std::move(*ship));
     }
-    auto ship = SystemClientShip::create(this, started->clientShip.first, started->clientShip.second);
+    auto ship = SystemClientShip::create(*this, started->clientShip.first, started->clientShip.second);
     if (!ship)
       return std::unexpected(std::move(ship.error()));
     m_ship = std::move(*ship);
@@ -336,7 +339,7 @@ std::expected<std::shared_ptr<SystemClientShip>, StarException> SystemWorldClien
   auto location = ds.read<SystemLocation>();
   if (!location)
     return std::unexpected(std::move(location.error()));
-  return SystemClientShip::create(this, std::move(*uuid), *location);
+  return SystemClientShip::create(*this, std::move(*uuid), *location);
 }
 
 }

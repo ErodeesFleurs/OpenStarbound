@@ -18,9 +18,9 @@ import star.terrain_database;
 export namespace Star {
 
 struct RotateSelector : TerrainSelector {
-  static char const* const Name;
+  static std::string_view const Name;
 
-  [[nodiscard]] static std::expected<std::shared_ptr<RotateSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+  [[nodiscard]] static std::expected<std::shared_ptr<RotateSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database);
 private:
   struct ConstructionKey { explicit ConstructionKey() = default; };
 public:
@@ -37,9 +37,9 @@ public:
 
 
 struct DisplacementSelector : TerrainSelector {
-  static char const* const Name;
+  static std::string_view const Name;
 
-  [[nodiscard]] static std::expected<std::shared_ptr<DisplacementSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+  [[nodiscard]] static std::expected<std::shared_ptr<DisplacementSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database);
 private:
   struct ConstructionKey { explicit ConstructionKey() = default; };
 public:
@@ -68,10 +68,10 @@ public:
 
 namespace Star {
 
-char const* const RotateSelector::Name = "rotate";
+std::string_view const RotateSelector::Name = "rotate";
 
 std::expected<std::shared_ptr<RotateSelector>, StarException> RotateSelector::create(
-    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database) {
+    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database) {
   auto result = std::make_shared<RotateSelector>(ConstructionKey{}, config, parameters);
   auto rotation = config.getFloat("rotation");
   if (!rotation)
@@ -84,7 +84,7 @@ std::expected<std::shared_ptr<RotateSelector>, StarException> RotateSelector::cr
   auto sourceType = sourceConfig->getString("type");
   if (!sourceType)
     return std::unexpected(std::move(sourceType.error()));
-  auto source = database->createSelectorType(*sourceType, *sourceConfig, parameters);
+  auto source = database.createSelectorType(*sourceType, *sourceConfig, parameters);
   if (!source)
     return std::unexpected(std::move(source.error()));
   result->m_source = std::move(*source);
@@ -98,14 +98,14 @@ std::expected<float, StarException> RotateSelector::get(int x, int y) const {
 
 
 
-char const* const DisplacementSelector::Name = "displacement";
+std::string_view const DisplacementSelector::Name = "displacement";
 
 std::expected<std::shared_ptr<DisplacementSelector>, StarException> DisplacementSelector::create(
-    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database) {
+    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database) {
   auto result = std::make_shared<DisplacementSelector>(ConstructionKey{}, config, parameters);
   RandomSource random(parameters.seed);
   auto readFunction = [&](char axis) -> std::expected<PerlinF, StarException> {
-    auto key = [axis](char const* suffix) { return strf("{}{}", axis, suffix); };
+    auto key = [axis](std::string_view suffix) { return strf("{}{}", axis, suffix); };
     auto name = config.getString(key("Type"));
     if (!name)
       return std::unexpected(std::move(name.error()));
@@ -179,7 +179,7 @@ std::expected<std::shared_ptr<DisplacementSelector>, StarException> Displacement
   auto sourceType = sourceConfig->getString("type");
   if (!sourceType)
     return std::unexpected(std::move(sourceType.error()));
-  auto source = database->createSelectorType(*sourceType, *sourceConfig, parameters);
+  auto source = database.createSelectorType(*sourceType, *sourceConfig, parameters);
   if (!source)
     return std::unexpected(std::move(source.error()));
   result->m_source = std::move(*source);

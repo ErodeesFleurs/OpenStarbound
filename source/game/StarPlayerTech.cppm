@@ -15,7 +15,7 @@ namespace Star {
 class Root;
 
 struct PlayerTechExceptionTag {
-  static constexpr char const* name() { return "PlayerTechException"; }
+  static constexpr std::string_view name() { return "PlayerTechException"; }
 };
 using PlayerTechException = StarError<PlayerTechExceptionTag, StarException>;
 

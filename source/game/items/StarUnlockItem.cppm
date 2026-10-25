@@ -125,7 +125,7 @@ public:
   [[nodiscard]]
   std::expected<List<Drawable>, StarException> drawables() const override;
   [[nodiscard]]
-  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  std::expected<List<Drawable>, StarException> preview(std::optional<std::reference_wrapper<TileDrawer>>, std::shared_ptr<Player> const& viewer = {}) const override;
 
 protected:
   [[nodiscard]]
@@ -185,7 +185,7 @@ std::expected<List<Drawable>, StarException> UnlockItem::drawables() const {
   return m_drawables;
 }
 
-std::expected<List<Drawable>, StarException> UnlockItem::preview(TileDrawer*, std::shared_ptr<Player> const&) const {
+std::expected<List<Drawable>, StarException> UnlockItem::preview(std::optional<std::reference_wrapper<TileDrawer>>, std::shared_ptr<Player> const&) const {
   return iconDrawables();
 }
 
@@ -196,15 +196,15 @@ std::expected<void, StarException> UnlockItem::fireTriggered() {
   if (!itemOwner)
     return std::unexpected(std::move(itemOwner.error()));
   // Only players can use unlock items.
-  if (auto player = as<Player>(*itemOwner)) {
+  if (auto player = asRef<Player>(itemOwner->get())) {
     auto shouldConsume = instanceValue("consume", true).and_then([](Json const& value) { return value.toBool(); });
     if (!shouldConsume)
       return std::unexpected(std::move(shouldConsume.error()));
     if (*shouldConsume && !consume(1))
       return {};
-    if (auto clientContext = player->clientContext()) {
+    if (auto clientContext = player->get().clientContext()) {
       if (m_shipUpgrade) {
-        auto applied = player->applyShipUpgrades(JsonObject{{"shipLevel", *m_shipUpgrade}});
+        auto applied = player->get().applyShipUpgrades(JsonObject{{"shipLevel", *m_shipUpgrade}});
         if (!applied)
           return std::unexpected(std::move(applied.error()));
       }
@@ -212,7 +212,7 @@ std::expected<void, StarException> UnlockItem::fireTriggered() {
     if (!m_unlockMessage.empty()) {
       JsonObject message;
       message["message"] = m_unlockMessage;
-      auto interacted = (*itemOwner)->interact(InteractAction(InteractActionType::ShowPopup, (*itemOwner)->entityId(), message));
+      auto interacted = itemOwner->get().interact(InteractAction(InteractActionType::ShowPopup, itemOwner->get().entityId(), message));
       if (!interacted)
         return std::unexpected(std::move(interacted.error()));
     }
@@ -233,7 +233,7 @@ std::expected<void, StarException> UnlockItem::fireTriggered() {
           return std::unexpected(std::move(blueprint.error()));
         blueprints.append(std::move(*blueprint));
       }
-      auto speciesConfig = (*assets)->json(strf("/species/{}.species", player->species()));
+      auto speciesConfig = (*assets)->json(strf("/species/{}.species", player->get().species()));
       if (!speciesConfig)
         return std::unexpected(std::move(speciesConfig.error()));
       auto speciesBlueprints = speciesConfig->get("defaultBlueprints", JsonObject()).and_then([&](Json const& value) { return value.getArray(*m_tierRecipesUnlock, JsonArray()); });
@@ -246,7 +246,7 @@ std::expected<void, StarException> UnlockItem::fireTriggered() {
         blueprints.append(std::move(*blueprint));
       }
       for (auto const& blueprint : blueprints) {
-        auto added = player->addBlueprint(blueprint);
+        auto added = player->get().addBlueprint(blueprint);
         if (!added)
           return std::unexpected(std::move(added.error()));
       }

@@ -12,21 +12,21 @@ import star.game_types;
 namespace Star {
 
 struct InteractActionExceptionTag {
-  static constexpr char const* name() { return "InteractActionException"; }
+  static constexpr std::string_view name() { return "InteractActionException"; }
 };
 using InteractActionException = StarError<InteractActionExceptionTag, StarException>;
 
 struct InteractRequest {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, InteractRequest& ir);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, InteractRequest const& ir);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, InteractRequest& ir);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, InteractRequest const& ir);
   EntityId sourceId;
   Vec2F sourcePosition;
   EntityId targetId;
   Vec2F interactPosition;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, InteractRequest& ir);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, InteractRequest const& ir);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, InteractRequest& ir);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, InteractRequest const& ir);
 
 enum class InteractActionType {
   None,
@@ -45,8 +45,8 @@ enum class InteractActionType {
 extern std::expected<EnumMap<InteractActionType>, StarException> const InteractActionTypeNames;
 
 struct InteractAction {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, InteractAction& ir);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, InteractAction const& ir);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, InteractAction& ir);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, InteractAction const& ir);
   InteractAction();
   InteractAction(InteractActionType type, EntityId entityId, Json data);
   [[nodiscard]] static std::expected<InteractAction, StarException> create(String const& typeName, EntityId entityId, Json data);
@@ -58,8 +58,8 @@ struct InteractAction {
   Json data;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, InteractAction& ir);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, InteractAction const& ir);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, InteractAction& ir);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, InteractAction const& ir);
 
 }
 

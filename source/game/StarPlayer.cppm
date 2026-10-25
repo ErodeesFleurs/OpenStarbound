@@ -133,6 +133,7 @@ class Player :
   public virtual EmoteEntity {
 
 public:
+  ~Player() override;
   void const* queryType(TypeKey key) const noexcept override {
     return queryTypeOf<Player, ToolUserEntity, LoungingEntity, ChattyEntity,
         InspectableEntity, DamageBarEntity, PortraitEntity, NametagEntity,
@@ -164,8 +165,8 @@ public:
 
   [[nodiscard]] std::expected<void, StarException> diskLoad(Json const& diskStore);
 
-  Input* input() const override { return m_input; }
-  void setInput(Input* input) { m_input = input; }
+  std::optional<std::reference_wrapper<Input>> input() const override { return m_input; }
+  void setInput(std::optional<std::reference_wrapper<Input>> input) { m_input = input; }
 
   std::shared_ptr<ClientContext> clientContext() const;
   void setClientContext(std::shared_ptr<ClientContext> clientContext);
@@ -173,8 +174,8 @@ public:
   std::shared_ptr<Statistics> statistics() const;
   void setStatistics(std::shared_ptr<Statistics> statistics);
 
-  void setUniverseClient(UniverseClient* universeClient);
-  UniverseClient* universeClient() const;
+  void setUniverseClient(std::optional<std::reference_wrapper<UniverseClient>> universeClient);
+  std::optional<std::reference_wrapper<UniverseClient>> universeClient() const;
 
   std::shared_ptr<QuestManager> questManager() const;
 
@@ -184,7 +185,7 @@ public:
   EntityType entityType() const override;
   ClientEntityMode clientEntityMode() const override;
 
-  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> init(World& world, EntityId entityId, EntityMode mode) override;
   [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   Vec2F position() const override;
@@ -223,7 +224,7 @@ public:
   [[nodiscard]] std::expected<List<DamageSource>, StarException> damageSources() const override;
 
   [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
-  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) override;
 
   std::optional<EntityAnchorState> loungingIn() const override;
   [[nodiscard]] std::expected<bool, StarException> lounge(EntityId loungeableEntityId, std::size_t anchorIndex);
@@ -290,9 +291,9 @@ public:
 
   [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback) override;
 
-  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback& renderCallback) override;
   
   [[nodiscard]] std::expected<void, StarException> setRenderLayer(std::optional<EntityRenderLayer> layer);
 
@@ -461,7 +462,7 @@ public:
   [[nodiscard]] std::expected<void, StarException> addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) override;
 
   bool wireToolInUse() const;
-  void setWireConnector(WireConnector* wireConnector) const;
+  void setWireConnector(std::optional<std::reference_wrapper<WireConnector>> wireConnector) const;
 
   [[nodiscard]] std::expected<void, StarException> addEphemeralStatusEffects(List<EphemeralStatusEffect> const& statusEffects) override;
   [[nodiscard]] std::expected<ActiveUniqueStatusEffectSummary, StarException> activeUniqueStatusEffectSummary() const override;
@@ -518,8 +519,8 @@ public:
   [[nodiscard]] std::expected<void, StarException> addEffectEmitters(StringSet const& emitters) override;
   [[nodiscard]] std::expected<void, StarException> requestEmote(String const& emote) override;
 
-  ActorMovementController* movementController() override;
-  StatusController* statusController() override;
+  ActorMovementController& movementController() override;
+  StatusController& statusController() override;
 
   [[nodiscard]] std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const override;
 
@@ -597,7 +598,7 @@ public:
 
   // If the secret property exists as a serialized Json string, returns a view to it without deserializing.
   std::optional<StringView> getSecretPropertyView(String const& name) const;
-  String const* getSecretPropertyPtr(String const& name) const;
+  std::optional<std::reference_wrapper<String const>> getSecretPropertyRef(String const& name) const;
   // Gets a secret Json property. It will be de-serialized.
   [[nodiscard]] std::expected<Json, StarException> getSecretProperty(String const& name, Json defaultValue = Json()) const;
   // Sets a secret Json property. It will be serialized.
@@ -638,7 +639,7 @@ private:
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
   NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
 
-  Input* m_input = nullptr;
+  std::optional<std::reference_wrapper<Input>> m_input;
   std::shared_ptr<PlayerConfig> m_config;
 
   NetElementTopGroup m_netGroup;
@@ -656,7 +657,7 @@ private:
   std::shared_ptr<PlayerDeployment> m_deployment;
   std::shared_ptr<PlayerLog> m_log;
 
-  UniverseClient* m_client; // required for celestial callbacks in scripts
+  std::optional<std::reference_wrapper<UniverseClient>> m_client; // required for celestial callbacks in scripts
   StringMap<std::shared_ptr<Player::GenericScriptComponent>> m_genericScriptContexts;
   JsonObject m_genericProperties;
 

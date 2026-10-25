@@ -135,7 +135,7 @@ public:
   EntityType entityType() const override;
   ClientEntityMode clientEntityMode() const override;
 
-  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> init(World& world, EntityId entityId, EntityMode mode) override;
   [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   Vec2F position() const override;
@@ -172,13 +172,13 @@ public:
   [[nodiscard]] std::expected<List<DamageNotification>, StarException> selfDamageNotifications() override;
 
   [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
-  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) override;
 
   [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentVersion) override;
 
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback) override;
 
-  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback& renderCallback) override;
 
   void setPosition(Vec2F const& pos);
 
@@ -247,9 +247,9 @@ public:
   [[nodiscard]] std::expected<void, StarException> interact(InteractAction const& action) override;
   [[nodiscard]] std::expected<void, StarException> addEffectEmitters(StringSet const& emitters) override;
   [[nodiscard]] std::expected<void, StarException> requestEmote(String const& emote) override;
-  ActorMovementController* movementController() override;
-  StatusController* statusController() override;
-  Songbook* songbook();
+  ActorMovementController& movementController() override;
+  StatusController& statusController() override;
+  Songbook& songbook();
   void setCameraFocusEntity(std::optional<EntityId> const& cameraFocusEntity) override;
 
   [[nodiscard]] std::expected<void, StarException> playEmote(HumanoidEmote emote) override;

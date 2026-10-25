@@ -196,7 +196,7 @@ private:
 
 ButtonWidget::~ButtonWidget() {
   if (auto group = m_buttonGroup.lock())
-    group->removeButton(this);
+    group->removeButton(*this);
 }
 
 }

@@ -30,23 +30,25 @@ String const MapFilenameSuffix = ".json";
 [[nodiscard]]
 std::expected<std::optional<String>, StarException> matchTile(SearchParameters const& search, Tiled::Tile const& tile) {
   auto const& properties = tile.properties;
-  if (auto namePattern = std::get_if<TileName>(&search.criteria)) {
+  if (std::holds_alternative<TileName>(search.criteria)) {
+    auto const& namePattern = std::get<TileName>(search.criteria);
     auto tileName = properties.opt<String>("//name");
     if (!tileName)
       return std::unexpected(std::move(tileName.error()));
     if (*tileName) {
-      auto matches = (**tileName).regexMatch(*namePattern);
+      auto matches = (**tileName).regexMatch(namePattern);
       if (!matches)
         return std::unexpected(std::move(matches.error()));
       if (*matches)
         return std::move(*tileName);
     }
-  } else if (auto property = std::get_if<TileProperty>(&search.criteria)) {
-    auto value = properties.opt<String>(property->first);
+  } else if (std::holds_alternative<TileProperty>(search.criteria)) {
+    auto const& property = std::get<TileProperty>(search.criteria);
+    auto value = properties.opt<String>(property.first);
     if (!value)
       return std::unexpected(std::move(value.error()));
     if (*value) {
-      auto matches = (**value).regexMatch(property->second);
+      auto matches = (**value).regexMatch(property.second);
       if (!matches)
         return std::unexpected(std::move(matches.error()));
       if (*matches) {
@@ -62,7 +64,7 @@ std::expected<std::optional<String>, StarException> matchTile(SearchParameters c
 
 [[nodiscard]]
 std::expected<void, StarException> grepTileLayer(SearchParameters const& search, TMXMap const& map, TMXTileLayer const& tileLayer, MatchReporter const& callback) {
-  auto visited = tileLayer.forEachTile(&map, [&](Vec2I pos, Tile const& tile) -> std::expected<bool, StarException> {
+  auto visited = tileLayer.forEachTile(map, [&](Vec2I pos, Tile const& tile) -> std::expected<bool, StarException> {
     auto name = matchTile(search, static_cast<Tiled::Tile const&>(tile));
     if (!name)
       return std::unexpected(std::move(name.error()));

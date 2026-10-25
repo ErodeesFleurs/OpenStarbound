@@ -37,8 +37,8 @@ public:
   [[nodiscard]] static std::expected<std::shared_ptr<Songbook>, StarException> create(Root& root, String const& species);
   ~Songbook();
 
-  [[nodiscard]] std::expected<void, StarException> update(EntityMode mode, World* world);
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback);
+  [[nodiscard]] std::expected<void, StarException> update(EntityMode mode, World& world);
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback);
 
   // instrument needs to tell the songbook what type it is, and needs to keep
   // calling it to signal
@@ -117,7 +117,7 @@ private:
 
   StringMap<Map<int, NoteMapping>> m_noteMapping;
 
-  [[nodiscard]] std::expected<NoteMapping*, StarException> noteMapping(String const& instrument, String const& species, int note);
+  [[nodiscard]] std::expected<std::reference_wrapper<NoteMapping>, StarException> noteMapping(String const& instrument, String const& species, int note);
 
   StringMap<std::shared_ptr<Audio const>> m_uncompressedSamples;
 

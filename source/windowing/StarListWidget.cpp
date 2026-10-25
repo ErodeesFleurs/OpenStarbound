@@ -101,7 +101,7 @@ std::expected<bool, StarException> ListWidget::sendEvent(InputEvent const& event
     if (!handled)
       return std::unexpected(std::move(handled.error()));
     if (*handled || (std::holds_alternative<MouseButtonDownEvent>(event)
-          && child->inMember(*context()->mousePosition(event))
+          && child->inMember(*context().mousePosition(event))
           && std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left)) {
       auto selected = setSelected(i - 1);
       if (!selected)
@@ -109,7 +109,7 @@ std::expected<bool, StarException> ListWidget::sendEvent(InputEvent const& event
       return true;
     }
     auto hovered = setHovered(i - 1, std::holds_alternative<MouseMoveEvent>(event)
-        && child->inMember(*context()->mousePosition(event)));
+        && child->inMember(*context().mousePosition(event)));
     if (!hovered)
       return std::unexpected(std::move(hovered.error()));
   }
@@ -126,15 +126,15 @@ std::expected<void, StarException> ListWidget::setSchema(Json const& schema) {
       return std::unexpected(GuiException("Missing required value in map", ExceptionDiagnostic(error)));
     return std::unexpected(std::move(error));
   };
-  for (auto entry : {std::pair{"selectedBG", &m_selectedBG}, std::pair{"unselectedBG", &m_unselectedBG},
-           std::pair{"hoverBG", &m_hoverBG}, std::pair{"disabledBG", &m_disabledBG}}) {
+  for (auto entry : {std::pair{std::string_view("selectedBG"), std::ref(m_selectedBG)}, std::pair{std::string_view("unselectedBG"), std::ref(m_unselectedBG)},
+           std::pair{std::string_view("hoverBG"), std::ref(m_hoverBG)}, std::pair{std::string_view("disabledBG"), std::ref(m_disabledBG)}}) {
     auto value = schema.getString(entry.first, "");
     if (!value)
       return schemaError(std::move(value.error()));
-    *entry.second = std::move(*value);
+    entry.second.get() = std::move(*value);
   }
   if (m_disabledBG.empty() && !m_unselectedBG.empty()) {
-    auto assets = context()->root().assets();
+    auto assets = context().root().assets();
     if (!assets)
       return std::unexpected(std::move(assets.error()));
     auto json = (*assets)->json("/interface.config:disabledButton");
@@ -174,7 +174,7 @@ std::expected<std::shared_ptr<Widget>, StarException> ListWidget::addItem(std::s
   auto item = constructWidget();
   if (!item)
     return std::unexpected(std::move(item.error()));
-  auto added = addChildAt(toString(context()->root().random().randu64()), *item, at);
+  auto added = addChildAt(toString(context().root().random().randu64()), *item, at);
   if (!added)
     return std::unexpected(std::move(added.error()));
   updateSizeAndPosition();
@@ -187,7 +187,7 @@ std::expected<std::shared_ptr<Widget>, StarException> ListWidget::addItem(std::s
 }
 
 std::expected<std::shared_ptr<Widget>, StarException> ListWidget::addItem(std::shared_ptr<Widget> item) {
-  auto added = addChild(toString(context()->root().random().randu64()), item);
+  auto added = addChild(toString(context().root().random().randu64()), item);
   if (!added)
     return std::unexpected(std::move(added.error()));
   updateSizeAndPosition();
@@ -195,11 +195,11 @@ std::expected<std::shared_ptr<Widget>, StarException> ListWidget::addItem(std::s
 }
 
 std::expected<std::shared_ptr<Widget>, StarException> ListWidget::constructWidget() {
-  auto item = std::make_shared<Widget>(*context());
+  auto item = std::make_shared<Widget>(context());
   auto schema = m_schema.get("listTemplate");
   if (!schema)
     return std::unexpected(std::move(schema.error()));
-  auto constructed = m_reader.construct(*schema, item.get());
+  auto constructed = m_reader.construct(*schema, *item);
   if (!constructed)
     return std::unexpected(std::move(constructed.error()));
   item->setSize(m_memberSize);
@@ -275,7 +275,7 @@ std::expected<void, StarException> ListWidget::setSelected(std::size_t pos) {
   if (!m_disabledItems.contains(pos) && m_selectedItem != pos) {
     m_selectedItem = pos;
     if (m_callback) {
-      auto called = m_callback(this);
+      auto called = m_callback(*this);
       if (!called)
         return std::unexpected(std::move(called.error()));
     }

@@ -54,7 +54,7 @@ namespace {
 
   ByteArray toByteArray(std::uint32_t k) {
     k = toBigEndian(k);
-    return ByteArray((char*)(&k), sizeof(k));
+    return ByteArray({reinterpret_cast<char const*>(std::addressof(k)), sizeof(k)});
   }
 
   ByteArray genBlock(std::uint32_t k) {

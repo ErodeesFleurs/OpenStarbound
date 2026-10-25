@@ -141,9 +141,9 @@ std::expected<std::shared_ptr<QuestTemplateDatabase>, StarException> QuestTempla
   auto database = std::shared_ptr<QuestTemplateDatabase>(new QuestTemplateDatabase(logger));
   auto files = assets->scanExtension("questtemplate");
   if (!files) return std::unexpected(std::move(files.error()));
-  auto queued = assets->queueJsons(**files);
+  auto queued = assets->queueJsons(files->get());
   if (!queued) return std::unexpected(std::move(queued.error()));
-  for (auto const& file : **files) {
+  for (auto const& file : files->get()) {
     auto config = assets->json(file.string());
     if (!config) return std::unexpected(std::move(config.error()));
     auto quest = QuestTemplate::create(*config);
@@ -155,7 +155,7 @@ std::expected<std::shared_ptr<QuestTemplateDatabase>, StarException> QuestTempla
 }
 List<String> QuestTemplateDatabase::allQuestTemplateIds() const { return m_templates.keys(); }
 std::expected<std::shared_ptr<QuestTemplate>, StarException> QuestTemplateDatabase::questTemplate(String const& id) const {
-  if (auto result = m_templates.maybe(id)) return *result;
+  if (auto result = m_templates.maybeRef(id)) return result->get();
   auto logged = m_logger.error("No quest template found for id '{}'", id);
   if (!logged) return std::unexpected(std::move(logged.error()));
   return std::shared_ptr<QuestTemplate>();

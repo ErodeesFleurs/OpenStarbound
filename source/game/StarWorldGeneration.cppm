@@ -94,7 +94,7 @@ namespace Star {
 
 class LiquidWorld : public CellularLiquidWorld<LiquidId> {
 public:
-  [[nodiscard]] static std::expected<std::shared_ptr<LiquidWorld>, StarException> create(WorldServer* world);
+  [[nodiscard]] static std::expected<std::shared_ptr<LiquidWorld>, StarException> create(WorldServer& world);
 
   Vec2I uniqueLocation(Vec2I const& location) const override;
   [[nodiscard]] std::expected<CellularLiquidCell<LiquidId>, StarException> cell(Vec2I const& location) const override;
@@ -104,28 +104,28 @@ public:
   [[nodiscard]] std::expected<void, StarException> liquidCollision(Vec2I const& pos, LiquidId liquid, Vec2I const& blockPos) override;
 
 private:
-  explicit LiquidWorld(WorldServer* world) : m_worldServer(world) {}
-  WorldServer* m_worldServer;
+  explicit LiquidWorld(WorldServer& world) : m_worldServer(world) {}
+  WorldServer& m_worldServer;
   std::shared_ptr<LiquidsDatabase const> m_liquidsDatabase;
   std::shared_ptr<MaterialDatabase const> m_materialDatabase;
 };
 
 class FallingBlocksWorld : public FallingBlocksFacade {
 public:
-  [[nodiscard]] static std::expected<std::shared_ptr<FallingBlocksWorld>, StarException> create(WorldServer* world);
+  [[nodiscard]] static std::expected<std::shared_ptr<FallingBlocksWorld>, StarException> create(WorldServer& world);
 
   [[nodiscard]] std::expected<FallingBlockType, StarException> blockType(Vec2I const& pos) override;
   [[nodiscard]] std::expected<void, StarException> moveBlock(Vec2I const& from, Vec2I const& to) override;
 
 private:
-  explicit FallingBlocksWorld(WorldServer* world) : m_worldServer(world) {}
-  WorldServer* m_worldServer;
+  explicit FallingBlocksWorld(WorldServer& world) : m_worldServer(world) {}
+  WorldServer& m_worldServer;
   std::shared_ptr<MaterialDatabase const> m_materialDatabase;
 };
 
 class DungeonGeneratorWorld : public DungeonGeneratorWorldFacade {
 public:
-  DungeonGeneratorWorld(WorldServer* worldServer, bool markForActivation);
+  DungeonGeneratorWorld(WorldServer& worldServer, bool markForActivation);
 
   [[nodiscard]] std::expected<void, StarException> markRegion(RectI const& region) override;
   [[nodiscard]] std::expected<void, StarException> markTerrain(PolyF const& region) override;
@@ -160,13 +160,13 @@ private:
   [[nodiscard]] std::expected<void, StarException> placePlant(std::shared_ptr<Plant> const& plant, Vec2I const& position);
   [[nodiscard]] std::expected<void, StarException> placeBiomeItems(Vec2I const& pos, List<BiomeItemPlacement>& potentialItems);
 
-  WorldServer* m_worldServer;
+  WorldServer& m_worldServer;
   bool m_markForActivation;
 };
 
 class SpawnerWorld : public SpawnerFacade {
 public:
-  SpawnerWorld(WorldServer* worldServer);
+  SpawnerWorld(WorldServer& worldServer);
 
   WorldGeometry geometry() const override;
   List<RectF> clientWindows() const override;
@@ -185,23 +185,23 @@ public:
   std::shared_ptr<Entity> getEntity(EntityId entityId) const override;
 
 private:
-  WorldServer* m_worldServer;
+  WorldServer& m_worldServer;
 };
 
 class WorldGenerator : public WorldGeneratorFacade {
 public:
-  WorldGenerator(WorldServer* server);
+  WorldGenerator(WorldServer& server);
 
-  [[nodiscard]] std::expected<void, StarException> generateSectorLevel(WorldStorage* worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) override;
-  [[nodiscard]] std::expected<void, StarException> sectorLoadLevelChanged(WorldStorage* worldStorage, Sector const& sector, SectorLoadLevel loadLevel) override;
-  [[nodiscard]] std::expected<void, StarException> terraformSector(WorldStorage* worldStorage, Sector const& sector) override;
-  [[nodiscard]] std::expected<void, StarException> initEntity(WorldStorage* worldStorage, EntityId entityId, std::shared_ptr<Entity> const& entity) override;
-  [[nodiscard]] std::expected<void, StarException> destructEntity(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) override;
-  [[nodiscard]] std::expected<bool, StarException> entityKeepAlive(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) const override;
-  [[nodiscard]] std::expected<bool, StarException> entityPersistent(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) const override;
+  [[nodiscard]] std::expected<void, StarException> generateSectorLevel(WorldStorage& worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) override;
+  [[nodiscard]] std::expected<void, StarException> sectorLoadLevelChanged(WorldStorage& worldStorage, Sector const& sector, SectorLoadLevel loadLevel) override;
+  [[nodiscard]] std::expected<void, StarException> terraformSector(WorldStorage& worldStorage, Sector const& sector) override;
+  [[nodiscard]] std::expected<void, StarException> initEntity(WorldStorage& worldStorage, EntityId entityId, std::shared_ptr<Entity> const& entity) override;
+  [[nodiscard]] std::expected<void, StarException> destructEntity(WorldStorage& worldStorage, std::shared_ptr<Entity> const& entity) override;
+  [[nodiscard]] std::expected<bool, StarException> entityKeepAlive(WorldStorage& worldStorage, std::shared_ptr<Entity> const& entity) const override;
+  [[nodiscard]] std::expected<bool, StarException> entityPersistent(WorldStorage& worldStorage, std::shared_ptr<Entity> const& entity) const override;
   [[nodiscard]] std::expected<RpcPromise<Vec2I>, StarException> enqueuePlacement(List<BiomeItemDistribution> distributions, std::optional<DungeonId> id) override;
 
-  [[nodiscard]] std::expected<void, StarException> replaceBiomeBlocks(ServerTile* tile);
+  [[nodiscard]] std::expected<void, StarException> replaceBiomeBlocks(ServerTile& tile);
 
 private:
   struct QueuedPlacement {
@@ -211,25 +211,25 @@ private:
     bool fulfilled;
   };
 
-  [[nodiscard]] std::expected<void, StarException> prepareTiles(WorldStorage* worldStorage, Sector const& sector);
-  [[nodiscard]] std::expected<void, StarException> generateMicroDungeons(WorldStorage* worldStorage, Sector const& sector);
-  [[nodiscard]] std::expected<void, StarException> generateCaveLiquid(WorldStorage* worldStorage, Sector const& sector);
-  [[nodiscard]] std::expected<void, StarException> prepareSector(WorldStorage* worldStorage, Sector const& sector);
-  [[nodiscard]] std::expected<void, StarException> prepareSectorBiomeBlocks(WorldStorage* worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> prepareTiles(WorldStorage& worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> generateMicroDungeons(WorldStorage& worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> generateCaveLiquid(WorldStorage& worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> prepareSector(WorldStorage& worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> prepareSectorBiomeBlocks(WorldStorage& worldStorage, Sector const& sector);
 
-  [[nodiscard]] std::expected<void, StarException> placeBiomeGrass(WorldStorage* worldStorage, ServerTile* tile, Vec2I const& position);
+  [[nodiscard]] std::expected<void, StarException> placeBiomeGrass(WorldStorage& worldStorage, ServerTile& tile, Vec2I const& position);
 
-  [[nodiscard]] std::expected<void, StarException> reapplyBiome(WorldStorage* worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> reapplyBiome(WorldStorage& worldStorage, Sector const& sector);
 
-  [[nodiscard]] std::expected<Set<Vec2I>, StarException> caveLiquidSeeds(WorldStorage* worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<Set<Vec2I>, StarException> caveLiquidSeeds(WorldStorage& worldStorage, Sector const& sector);
   Map<Vec2I, float> determineLiquidLevel(Set<Vec2I> const& spots, Set<Vec2I> const& filled);
   void levelCluster(Set<Vec2I>& cluster, Set<Vec2I> const& filled, Map<Vec2I, float>& results);
 
   // Special plant placement routine that does slight terrain adjustments to
   // fit plants.
-  [[nodiscard]] std::expected<bool, StarException> placePlant(WorldStorage* worldStorage, std::shared_ptr<Plant> const& plant, Vec2I const& position);
+  [[nodiscard]] std::expected<bool, StarException> placePlant(WorldStorage& worldStorage, std::shared_ptr<Plant> const& plant, Vec2I const& position);
 
-  WorldServer* m_worldServer;
+  WorldServer& m_worldServer;
   std::shared_ptr<MicroDungeonFactory> m_microDungeonFactory;
   List<QueuedPlacement> m_queuedPlacements;
 };

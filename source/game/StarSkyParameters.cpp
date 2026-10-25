@@ -195,7 +195,7 @@ std::expected<SkyParameters, StarException> SkyParameters::create(Json const& co
   if (!SkyTypeNames) return std::unexpected(SkyTypeNames.error());
   auto type = SkyTypeNames->getLeft(*typeName);
   if (!type) return std::unexpected(std::move(type.error()));
-  sky.skyType = **type;
+  sky.skyType = type->get();
   auto colors = config.opt("skyColoring");
   if (!colors) return std::unexpected(std::move(colors.error()));
   if (*colors) {
@@ -246,14 +246,14 @@ std::expected<Json, StarException> SkyParameters::toJson() const {
   for (auto const& horizon : horizonImages)
     horizons.append(JsonObject{{"left", horizon.first}, {"right", horizon.second}});
   Json coloring;
-  if (auto value = skyColoring.leftPtr()) coloring = value->toJson();
+  if (auto value = skyColoring.maybeLeftRef()) coloring = value->get().toJson();
   Json light;
-  if (auto value = skyColoring.rightPtr()) light = jsonFromColor(*value);
+  if (auto value = skyColoring.maybeRightRef()) light = jsonFromColor(value->get());
   return JsonObject{
       {"seed", seed}, {"dayLength", jsonFromOptional<float>(dayLength)},
       {"planet", std::move(planet)}, {"satellites", std::move(satellites)},
       {"horizonImages", std::move(horizons)}, {"horizonClouds", horizonClouds},
-      {"skyType", **typeName}, {"skyColoring", std::move(coloring)},
+      {"skyType", typeName->get()}, {"skyColoring", std::move(coloring)},
       {"ambientLightLevel", std::move(light)}, {"spaceLevel", jsonFromOptional<float>(spaceLevel)},
       {"surfaceLevel", jsonFromOptional<float>(surfaceLevel)}, {"sunType", sunType}, {"settings", settings}};
 }
@@ -310,16 +310,16 @@ void SkyParameters::readVisitableParameters(std::shared_ptr<VisitableWorldParame
   }
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyParameters& sky) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, SkyParameters& sky) {
   auto result = sky.read(ds);
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyParameters const& sky) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, SkyParameters const& sky) {
   auto result = sky.write(ds);
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 }

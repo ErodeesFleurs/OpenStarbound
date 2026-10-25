@@ -10,7 +10,7 @@ import star.json_builder;
 namespace Star {
 
 std::expected<void, StarException> JsonBuilderStream::beginObject() { pushSentry(); return {}; }
-std::expected<void, StarException> JsonBuilderStream::objectKey(char32_t const* s, std::size_t len) { return putString(s, len); }
+std::expected<void, StarException> JsonBuilderStream::objectKey(std::span<char32_t const> s) { return putString(s); }
 std::expected<void, StarException> JsonBuilderStream::endObject() {
   JsonObject object;
   while (!isSentry()) {
@@ -36,22 +36,22 @@ std::expected<void, StarException> JsonBuilderStream::endArray() {
   array.reverse();
   return set(Json(std::move(array)));
 }
-std::expected<void, StarException> JsonBuilderStream::putString(char32_t const* s, std::size_t len) {
-  auto value = Json::create(s, len);
+std::expected<void, StarException> JsonBuilderStream::putString(std::span<char32_t const> s) {
+  auto value = Json::create(s);
   if (!value) return std::unexpected(std::move(value.error()));
   push(std::move(*value));
   return {};
 }
-std::expected<void, StarException> JsonBuilderStream::putDouble(char32_t const* s, std::size_t len) {
-  auto text = String::create(s, len);
+std::expected<void, StarException> JsonBuilderStream::putDouble(std::span<char32_t const> s) {
+  auto text = String::create(std::u32string_view(s.data(), s.size()));
   if (!text) return std::unexpected(std::move(text.error()));
   auto value = lexicalCast<double>(*text);
   if (!value) return std::unexpected(JsonParserException("bad double", ExceptionDiagnostic(value.error())));
   push(Json(*value));
   return {};
 }
-std::expected<void, StarException> JsonBuilderStream::putInteger(char32_t const* s, std::size_t len) {
-  auto text = String::create(s, len);
+std::expected<void, StarException> JsonBuilderStream::putInteger(std::span<char32_t const> s) {
+  auto text = String::create(std::u32string_view(s.data(), s.size()));
   if (!text) return std::unexpected(std::move(text.error()));
   auto value = lexicalCast<long long>(*text);
   if (!value) return std::unexpected(JsonParserException("bad integer", ExceptionDiagnostic(value.error())));
@@ -60,7 +60,7 @@ std::expected<void, StarException> JsonBuilderStream::putInteger(char32_t const*
 }
 std::expected<void, StarException> JsonBuilderStream::putBoolean(bool value) { push(Json(value)); return {}; }
 std::expected<void, StarException> JsonBuilderStream::putNull() { push(Json()); return {}; }
-std::expected<void, StarException> JsonBuilderStream::putWhitespace(char32_t const*, std::size_t) { return {}; }
+std::expected<void, StarException> JsonBuilderStream::putWhitespace(std::span<char32_t const>) { return {}; }
 std::expected<void, StarException> JsonBuilderStream::putColon() { return {}; }
 std::expected<void, StarException> JsonBuilderStream::putComma() { return {}; }
 std::size_t JsonBuilderStream::stackSize() { return m_stack.size(); }
@@ -104,7 +104,7 @@ std::expected<void, StarException> JsonStreamer<Json>::toJsonStream(Json const& 
       auto formatted = std::format_to_n(text.data(), text.size(), "{}", *value);
       if (formatted.size > static_cast<decltype(formatted.size)>(text.size()))
         return std::unexpected(JsonException("JSON floating-point formatting buffer exhausted"));
-      return stream.putDouble(text.data(), static_cast<std::size_t>(formatted.size));
+      return stream.putDouble(std::span<char32_t const>(text.data(), static_cast<std::size_t>(formatted.size)));
     }
     case Json::Type::Int: {
       auto value = val.toInt();
@@ -114,7 +114,7 @@ std::expected<void, StarException> JsonStreamer<Json>::toJsonStream(Json const& 
       auto formatted = std::format_to_n(text.data(), text.size(), "{}", *value);
       if (formatted.size > static_cast<decltype(formatted.size)>(text.size()))
         return std::unexpected(JsonException("JSON integer formatting buffer exhausted"));
-      return stream.putInteger(text.data(), static_cast<std::size_t>(formatted.size));
+      return stream.putInteger(std::span<char32_t const>(text.data(), static_cast<std::size_t>(formatted.size)));
     }
     case Json::Type::String: {
       auto value = val.stringPtr();

@@ -17,7 +17,7 @@ class ItemDatabase;
 class Rebuilder {
 public:
   [[nodiscard]]
-  static std::expected<std::shared_ptr<Rebuilder>, StarException> create(Root& root, String const& id, ItemDatabase const* itemCatalog = nullptr);
+  static std::expected<std::shared_ptr<Rebuilder>, StarException> create(Root& root, String const& id, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog = std::nullopt);
   ~Rebuilder() = default;
 
   typedef std::function<std::expected<void, StarException>(Json const&)> AttemptCallback;

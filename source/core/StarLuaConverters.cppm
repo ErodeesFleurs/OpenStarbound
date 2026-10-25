@@ -56,10 +56,10 @@ struct LuaConverter<std::pair<T1, T2>> {
   }
 
   [[nodiscard]] static std::expected<std::optional<std::pair<T1, T2>>, StarException> to(LuaEngine& engine, LuaValue const& v) {
-    auto table = std::get_if<LuaTable>(&v);
-    if (!table)
+    if (!std::holds_alternative<LuaTable>(v))
       return std::nullopt;
-    auto first = table->get<LuaValue>(1);
+    auto const& table = std::get<LuaTable>(v);
+    auto first = table.get<LuaValue>(1);
     if (!first)
       return std::unexpected(std::move(first.error()));
     auto p1 = engine.luaMaybeTo<T1>(*first);
@@ -67,7 +67,7 @@ struct LuaConverter<std::pair<T1, T2>> {
       return std::unexpected(std::move(p1.error()));
     if (!*p1)
       return std::nullopt;
-    auto second = table->get<LuaValue>(2);
+    auto second = table.get<LuaValue>(2);
     if (!second)
       return std::unexpected(std::move(second.error()));
     auto p2 = engine.luaMaybeTo<T2>(*second);
@@ -89,12 +89,12 @@ struct LuaConverter<Vector<T, N>> {
   }
 
   [[nodiscard]] static std::expected<std::optional<Vector<T, N>>, StarException> to(LuaEngine& engine, LuaValue const& v) {
-    auto table = std::get_if<LuaTable>(&v);
-    if (!table)
+    if (!std::holds_alternative<LuaTable>(v))
       return std::nullopt;
+    auto const& table = std::get<LuaTable>(v);
     Vector<T, N> vec;
     for (std::size_t i = 0; i < N; ++i) {
-      auto value = table->get<LuaValue>(i + 1);
+      auto value = table.get<LuaValue>(i + 1);
       if (!value)
         return std::unexpected(std::move(value.error()));
       auto converted = engine.luaMaybeTo<T>(*value);

@@ -6,7 +6,7 @@ import star.format;
 namespace Star {
 
 struct EitherExceptionTag {
-  static constexpr char const* name() { return "EitherException"; }
+  static constexpr std::string_view name() { return "EitherException"; }
 };
 using EitherException = StarError<EitherExceptionTag, StarException>;
 
@@ -63,25 +63,27 @@ public:
   // Checked side access returns a diagnostic on the inactive alternative.
 
   [[nodiscard]]
-  std::expected<Left const*, StarException> left() const;
+  std::expected<std::reference_wrapper<Left const>, StarException> left() const;
   [[nodiscard]]
-  std::expected<Right const*, StarException> right() const;
+  std::expected<std::reference_wrapper<Right const>, StarException> right() const;
 
   [[nodiscard]]
-  std::expected<Left*, StarException> left();
+  std::expected<std::reference_wrapper<Left>, StarException> left();
   [[nodiscard]]
-  std::expected<Right*, StarException> right();
+  std::expected<std::reference_wrapper<Right>, StarException> right();
 
   std::optional<Left> maybeLeft() const;
   std::optional<Right> maybeRight() const;
 
-  // leftPtr() and rightPtr() do not throw on invalid access
+  Left const& leftRef() const;
+  Right const& rightRef() const;
+  Left& leftRef();
+  Right& rightRef();
 
-  Left const* leftPtr() const;
-  Right const* rightPtr() const;
-
-  Left* leftPtr();
-  Right* rightPtr();
+  std::optional<std::reference_wrapper<Left const>> maybeLeftRef() const;
+  std::optional<std::reference_wrapper<Right const>> maybeRightRef() const;
+  std::optional<std::reference_wrapper<Left>> maybeLeftRef();
+  std::optional<std::reference_wrapper<Right>> maybeRightRef();
 
 private:
   typedef EitherLeftValue<Left> LeftType;
@@ -129,7 +131,7 @@ template <typename Left, typename Right>
 Either<Left, Right>::Either(Either&& rhs)
   : m_value(std::move(rhs.m_value)) {
   std::visit([](auto& side) {
-    if constexpr (requires { optionalPtr(side.value); })
+    if constexpr (requires { optionalRef(side.value); })
       side.value.reset();
   }, rhs.m_value);
 }
@@ -146,7 +148,7 @@ Either<Left, Right>& Either<Left, Right>::operator=(Either&& rhs) {
     return *this;
   m_value = std::move(rhs.m_value);
   std::visit([](auto& side) {
-    if constexpr (requires { optionalPtr(side.value); })
+    if constexpr (requires { optionalRef(side.value); })
       side.value.reset();
   }, rhs.m_value);
   return *this;
@@ -187,73 +189,93 @@ void Either<Left, Right>::setRight(Right right) {
 }
 
 template <typename Left, typename Right>
-std::expected<Left const*, StarException> Either<Left, Right>::left() const {
-  if (auto l = leftPtr())
-    return l;
+std::expected<std::reference_wrapper<Left const>, StarException> Either<Left, Right>::left() const {
+  if (auto l = maybeLeftRef())
+    return *l;
   return std::unexpected(EitherException("Improper access of left side of Either"));
 }
 
 template <typename Left, typename Right>
-std::expected<Right const*, StarException> Either<Left, Right>::right() const {
-  if (auto r = rightPtr())
-    return r;
+std::expected<std::reference_wrapper<Right const>, StarException> Either<Left, Right>::right() const {
+  if (auto r = maybeRightRef())
+    return *r;
   return std::unexpected(EitherException("Improper access of right side of Either"));
 }
 
 template <typename Left, typename Right>
-std::expected<Left*, StarException> Either<Left, Right>::left() {
-  if (auto l = leftPtr())
-    return l;
+std::expected<std::reference_wrapper<Left>, StarException> Either<Left, Right>::left() {
+  if (auto l = maybeLeftRef())
+    return *l;
   return std::unexpected(EitherException("Improper access of left side of Either"));
 }
 
 template <typename Left, typename Right>
-std::expected<Right*, StarException> Either<Left, Right>::right() {
-  if (auto r = rightPtr())
-    return r;
+std::expected<std::reference_wrapper<Right>, StarException> Either<Left, Right>::right() {
+  if (auto r = maybeRightRef())
+    return *r;
   return std::unexpected(EitherException("Improper access of right side of Either"));
 }
 
 template <typename Left, typename Right>
 std::optional<Left> Either<Left, Right>::maybeLeft() const {
-  if (auto l = leftPtr())
-    return std::optional<Left>(std::in_place, *l);
+  if (auto l = maybeLeftRef())
+    return std::optional<Left>(std::in_place, l->get());
   return {};
 }
 
 template <typename Left, typename Right>
 std::optional<Right> Either<Left, Right>::maybeRight() const {
-  if (auto r = rightPtr())
-    return std::optional<Right>(std::in_place, *r);
+  if (auto r = maybeRightRef())
+    return std::optional<Right>(std::in_place, r->get());
   return {};
 }
 
 template <typename Left, typename Right>
-Left const* Either<Left, Right>::leftPtr() const {
-  if (auto l = std::get_if<LeftType>(&m_value))
-    return &l->value;
-  return nullptr;
+Left const& Either<Left, Right>::leftRef() const {
+  return std::get<LeftType>(m_value).value;
 }
 
 template <typename Left, typename Right>
-Right const* Either<Left, Right>::rightPtr() const {
-  if (auto r = std::get_if<RightType>(&m_value))
-    return &r->value;
-  return nullptr;
+Right const& Either<Left, Right>::rightRef() const {
+  return std::get<RightType>(m_value).value;
 }
 
 template <typename Left, typename Right>
-Left* Either<Left, Right>::leftPtr() {
-  if (auto l = std::get_if<LeftType>(&m_value))
-    return &l->value;
-  return nullptr;
+Left& Either<Left, Right>::leftRef() {
+  return std::get<LeftType>(m_value).value;
 }
 
 template <typename Left, typename Right>
-Right* Either<Left, Right>::rightPtr() {
-  if (auto r = std::get_if<RightType>(&m_value))
-    return &r->value;
-  return nullptr;
+Right& Either<Left, Right>::rightRef() {
+  return std::get<RightType>(m_value).value;
+}
+
+template <typename Left, typename Right>
+std::optional<std::reference_wrapper<Left const>> Either<Left, Right>::maybeLeftRef() const {
+  if (isLeft())
+    return std::reference_wrapper<Left const>(leftRef());
+  return std::nullopt;
+}
+
+template <typename Left, typename Right>
+std::optional<std::reference_wrapper<Right const>> Either<Left, Right>::maybeRightRef() const {
+  if (isRight())
+    return std::reference_wrapper<Right const>(rightRef());
+  return std::nullopt;
+}
+
+template <typename Left, typename Right>
+std::optional<std::reference_wrapper<Left>> Either<Left, Right>::maybeLeftRef() {
+  if (isLeft())
+    return std::reference_wrapper<Left>(leftRef());
+  return std::nullopt;
+}
+
+template <typename Left, typename Right>
+std::optional<std::reference_wrapper<Right>> Either<Left, Right>::maybeRightRef() {
+  if (isRight())
+    return std::reference_wrapper<Right>(rightRef());
+  return std::nullopt;
 }
 
 }

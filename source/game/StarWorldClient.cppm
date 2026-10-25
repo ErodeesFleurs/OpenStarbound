@@ -129,7 +129,7 @@ class PlayerStorage;
 struct OverheadBar;
 
 struct WorldClientExceptionTag {
-  static constexpr char const* name() { return "WorldClientException"; }
+  static constexpr std::string_view name() { return "WorldClientException"; }
 };
 using WorldClientException = StarError<WorldClientExceptionTag, StarException>;
 
@@ -140,8 +140,8 @@ public:
 
   typedef LuaEntityScript ScriptComponent;
   
-  [[nodiscard]] static std::expected<std::shared_ptr<WorldClient>, StarException> create(Root& root, std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient* universe);
-  [[nodiscard]] static std::expected<std::shared_ptr<WorldClient>, StarException> create(Root& root, ClientSubWorldId subWorldId, UniverseClient* universe);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldClient>, StarException> create(Root& root, std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient& universe);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldClient>, StarException> create(Root& root, ClientSubWorldId subWorldId, UniverseClient& universe);
   [[nodiscard]] std::expected<void, StarException> close();
   ~WorldClient();
 
@@ -267,7 +267,7 @@ public:
   [[nodiscard]] std::expected<void, StarException> update(float dt);
   // borderTiles here should extend the client window for border tile
   // calculations.  It is not necessary on the light array.
-  [[nodiscard]] std::expected<void, StarException> render(WorldRenderData& renderData, unsigned borderTiles, TileDrawer* tileDrawer);
+  [[nodiscard]] std::expected<void, StarException> render(WorldRenderData& renderData, unsigned borderTiles, std::optional<std::reference_wrapper<TileDrawer>> tileDrawer);
   List<std::shared_ptr<AudioInstance>> pullPendingAudio();
   List<std::shared_ptr<AudioInstance>> pullPendingMusic();
 
@@ -291,7 +291,7 @@ public:
 
   [[nodiscard]] std::expected<void, StarException> collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
 
-  [[nodiscard]] std::expected<bool, StarException> waitForLighting(WorldRenderData* renderData = nullptr);
+  [[nodiscard]] std::expected<bool, StarException> waitForLighting(std::optional<std::reference_wrapper<WorldRenderData>> renderData = std::nullopt);
 
   typedef std::function<std::expected<bool, StarException>(std::shared_ptr<Player>, StringView)> BroadcastCallback;
   BroadcastCallback& broadcastCallback();
@@ -302,16 +302,16 @@ public:
   void requestDestroy();
 
 private:
-  explicit WorldClient(Root& root);
-  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient* universe);
-  [[nodiscard]] std::expected<void, StarException> initialize(ClientSubWorldId subWorldId, UniverseClient* universe);
+  explicit WorldClient(Root& root, UniverseClient& universe);
+  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient& universe);
+  [[nodiscard]] std::expected<void, StarException> initialize(ClientSubWorldId subWorldId, UniverseClient& universe);
 
   static const float DropDist;
 
   struct ClientRenderCallback : RenderCallback {
-    explicit ClientRenderCallback(TileDrawer* drawer) : m_tileDrawer(drawer) {}
-    TileDrawer* tileDrawer() const override { return m_tileDrawer; }
-    TileDrawer* m_tileDrawer;
+    explicit ClientRenderCallback(std::optional<std::reference_wrapper<TileDrawer>> drawer) : m_tileDrawer(drawer) {}
+    std::optional<std::reference_wrapper<TileDrawer>> tileDrawer() const override { return m_tileDrawer; }
+    std::optional<std::reference_wrapper<TileDrawer>> m_tileDrawer;
     [[nodiscard]] std::expected<void, StarException> addDrawable(Drawable drawable, EntityRenderLayer renderLayer) override;
     [[nodiscard]] std::expected<void, StarException> addLightSource(LightSource lightSource) override;
     [[nodiscard]] std::expected<void, StarException> addParticle(Particle particle) override;
@@ -341,13 +341,14 @@ private:
     bool operator<(DamageNumberKey const& other) const;
   };
 
-  typedef std::function<std::expected<ClientTile const*, StarException>(Vec2I)> ClientTileGetter;
+  typedef std::function<std::expected<std::reference_wrapper<ClientTile const>, StarException>(Vec2I)> ClientTileGetter;
 
   [[nodiscard]] std::expected<void, StarException> lightingTileGather();
   [[nodiscard]] std::expected<void, StarException> lightingCalc();
   [[nodiscard]] std::expected<void, StarException> lightingMain();
 
   [[nodiscard]] std::expected<void, StarException> initWorld(WorldStartPacket const& packet);
+  [[nodiscard]] std::expected<void, StarException> initializeWorld(WorldStartPacket const& packet);
   [[nodiscard]] std::expected<void, StarException> clearWorld();
   [[nodiscard]] std::expected<void, StarException> tryGiveMainPlayerItem(std::shared_ptr<Item> item, bool silent = false);
 
@@ -530,7 +531,7 @@ private:
 
   GameTimer m_expiryTimer;
   
-  UniverseClient* m_universe;
+  std::reference_wrapper<UniverseClient> m_universe;
   
   StringMap<LuaCallbacks> m_luaThreadCallbacks;
 };

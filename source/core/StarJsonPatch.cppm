@@ -10,11 +10,11 @@ export module star.json_patch;
 
 export namespace Star {
 struct JsonPatchExceptionTag {
-  static constexpr char const* name() { return "JsonPatchException"; }
+  static constexpr std::string_view name() { return "JsonPatchException"; }
 };
 using JsonPatchException = StarError<JsonPatchExceptionTag, JsonException>;
 struct JsonPatchTestFailTag {
-  static constexpr char const* name() { return "JsonPatchTestFail"; }
+  static constexpr std::string_view name() { return "JsonPatchTestFail"; }
 };
 using JsonPatchTestFail = StarError<JsonPatchTestFailTag, StarException>;
 
@@ -61,13 +61,13 @@ std::expected<std::size_t, StarException> findJsonMatch(Json const& searchable, 
 }
 
 namespace JsonPatching {
-  using Operation = std::expected<Json, StarException> (*)(Json const&, Json const&);
+  using Operation = std::reference_wrapper<std::expected<Json, StarException>(Json const&, Json const&)>;
   using OperationEntry = std::pair<std::string_view, Operation>;
   static constexpr std::array<OperationEntry, 7> functionMap{{
-      {"test", &applyTestOperation}, {"remove", &applyRemoveOperation},
-      {"add", &applyAddOperation}, {"replace", &applyReplaceOperation},
-      {"move", &applyMoveOperation}, {"copy", &applyCopyOperation},
-      {"merge", &applyMergeOperation},
+      {"test", std::ref(applyTestOperation)}, {"remove", std::ref(applyRemoveOperation)},
+      {"add", std::ref(applyAddOperation)}, {"replace", std::ref(applyReplaceOperation)},
+      {"move", std::ref(applyMoveOperation)}, {"copy", std::ref(applyCopyOperation)},
+      {"merge", std::ref(applyMergeOperation)},
   }};
 
   std::expected<Json, StarException> applyOperation(Json const& base, Json const& op, std::optional<Json> const&) {

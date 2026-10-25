@@ -67,7 +67,7 @@ public:
 
   [[nodiscard]] std::expected<void, StarException> fetchData();
 
-  [[nodiscard]] std::expected<void, StarException> pollDialog(PaneManager* paneManager);
+  [[nodiscard]] std::expected<void, StarException> pollDialog(PaneManager& paneManager);
 
 private:
   QuestLogInterface(GuiContext& guiContext, std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client);

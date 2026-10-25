@@ -105,17 +105,23 @@ private:
     Top
   };
 
-  struct WorkingCell {
+  struct WorkingCellState {
     Vec2I position;
     std::optional<LiquidId> liquid;
     bool sourceCell;
     float level;
     float pressure;
+  };
 
-    WorkingCell* leftCell;
-    WorkingCell* rightCell;
-    WorkingCell* topCell;
-    WorkingCell* bottomCell;
+  // Neighbors only borrow physical state, not another cell's adjacency cache.
+  // Keep that state complete before instantiating its reference wrappers: a
+  // self-referential WorkingCell would recursively instantiate its own wrapper
+  // when the active-cell list queries the wrapper's construction traits.
+  struct WorkingCell : WorkingCellState {
+    std::optional<std::reference_wrapper<WorkingCellState>> leftCell;
+    std::optional<std::reference_wrapper<WorkingCellState>> rightCell;
+    std::optional<std::reference_wrapper<WorkingCellState>> topCell;
+    std::optional<std::reference_wrapper<WorkingCellState>> bottomCell;
   };
 
   template <typename Key, typename Value>
@@ -137,13 +143,13 @@ private:
   [[nodiscard]] std::expected<void, StarException> findInteractions();
   [[nodiscard]] std::expected<void, StarException> finish();
 
-  [[nodiscard]] std::expected<WorkingCell*, StarException> workingCell(Vec2I p);
-  [[nodiscard]] std::expected<WorkingCell*, StarException> adjacentCell(WorkingCell* cell, Adjacency adjacency);
+  [[nodiscard]] std::expected<std::optional<std::reference_wrapper<WorkingCell>>, StarException> workingCell(Vec2I p);
+  [[nodiscard]] std::expected<std::optional<std::reference_wrapper<WorkingCellState>>, StarException> adjacentCell(WorkingCell& cell, Adjacency adjacency);
 
-  void setPressure(float pressure, WorkingCell& cell);
-  void transferPressure(float amount, WorkingCell& source, WorkingCell& dest, bool allowReverse);
-  void transferLevel(float amount, WorkingCell& source, WorkingCell& dest, bool allowReverse);
-  void setLevel(float level, WorkingCell& cell);
+  void setPressure(float pressure, WorkingCellState& cell);
+  void transferPressure(float amount, WorkingCellState& source, WorkingCellState& dest, bool allowReverse);
+  void transferLevel(float amount, WorkingCellState& source, WorkingCellState& dest, bool allowReverse);
+  void setLevel(float level, WorkingCellState& cell);
 
   RandomSource m_random;
   LiquidCellEngineParameters m_engineParameters;
@@ -156,7 +162,7 @@ private:
   std::uint64_t m_step;
 
   BAHashMap<Vec2I, std::optional<WorkingCell>> m_workingCells;
-  List<WorkingCell*> m_currentActiveCells;
+  List<std::reference_wrapper<WorkingCell>> m_currentActiveCells;
   BAHashSet<Vec2I> m_nextActiveCells;
   BAHashSet<std::tuple<Vec2I, LiquidId, Vec2I, LiquidId>> m_liquidInteractions;
   BAHashSet<std::tuple<Vec2I, LiquidId, Vec2I>> m_liquidCollisions;
@@ -302,48 +308,50 @@ template <typename LiquidId>
       auto found = workingCell(pos);
       if (!found) return std::unexpected(std::move(found.error()));
       auto cell = *found;
-      if (!cell || cell->liquid != activeCellsPair.first) {
+      if (!cell || cell->get().liquid != activeCellsPair.first) {
         activeCellsPair.second.remove(pos);
       } else {
-        m_currentActiveCells.append(cell);
+        m_currentActiveCells.append(*cell);
         activeCellsPair.second.remove(pos);
       }
     }
   }
 
-  std::sort(m_currentActiveCells.begin(), m_currentActiveCells.end(), [](WorkingCell* lhs, WorkingCell* rhs) {
-      return lhs->position[1] < rhs->position[1];
+  std::sort(m_currentActiveCells.begin(), m_currentActiveCells.end(), [](std::reference_wrapper<WorkingCell> lhs, std::reference_wrapper<WorkingCell> rhs) {
+      return lhs.get().position[1] < rhs.get().position[1];
     });
   return {};
 }
 
 template <typename LiquidId>
 [[nodiscard]] std::expected<void, StarException> LiquidCellEngine<LiquidId>::applyPressure() {
-  for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid || selfCell->sourceCell)
+  for (auto const& selfCellRef : m_currentActiveCells) {
+    auto& selfCell = selfCellRef.get();
+    if (!selfCell.liquid || selfCell.sourceCell)
       continue;
 
     auto found = adjacentCell(selfCell, Adjacency::Top);
     if (!found) return std::unexpected(std::move(found.error()));
     auto topCell = *found;
-    if (topCell && selfCell->liquid == topCell->liquid)
-      setPressure(std::max(selfCell->pressure, topCell->pressure + std::min(topCell->level, 1.0f)), *selfCell);
+    if (topCell && selfCell.liquid == topCell->get().liquid)
+      setPressure(std::max(selfCell.pressure, topCell->get().pressure + std::min(topCell->get().level, 1.0f)), selfCell);
   }
   return {};
 }
 
 template <typename LiquidId>
 [[nodiscard]] std::expected<void, StarException> LiquidCellEngine<LiquidId>::spreadPressure() {
-  for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid)
+  for (auto const& selfCellRef : m_currentActiveCells) {
+    auto& selfCell = selfCellRef.get();
+    if (!selfCell.liquid)
       continue;
 
     auto spreadPressure = [&](Adjacency adjacency, float bias) -> std::expected<void, StarException> {
       auto found = adjacentCell(selfCell, adjacency);
       if (!found) return std::unexpected(std::move(found.error()));
       auto targetCell = *found;
-      if (targetCell && !targetCell->sourceCell)
-        transferPressure((selfCell->pressure + bias - targetCell->pressure) * m_engineParameters.pressureEqualizeFactor, *selfCell, *targetCell, true);
+      if (targetCell && !targetCell->get().sourceCell)
+        transferPressure((selfCell.pressure + bias - targetCell->get().pressure) * m_engineParameters.pressureEqualizeFactor, selfCell, targetCell->get(), true);
       return {};
     };
 
@@ -362,37 +370,39 @@ template <typename LiquidId>
 
 template <typename LiquidId>
 [[nodiscard]] std::expected<void, StarException> LiquidCellEngine<LiquidId>::limitPressure() {
-  for (auto const& selfCell : m_currentActiveCells) {
-    float level = std::min(selfCell->level, 1.0f);
+  for (auto const& selfCellRef : m_currentActiveCells) {
+    auto& selfCell = selfCellRef.get();
+    float level = std::min(selfCell.level, 1.0f);
     auto found = adjacentCell(selfCell, Adjacency::Top);
     if (!found) return std::unexpected(std::move(found.error()));
     auto topCell = *found;
 
     // Force the pressure to the cell level if there is empty space above,
     // otherwise simply make sure the pressure is at least the level
-    if (topCell && !topCell->liquid)
-      setPressure(level, *selfCell);
+    if (topCell && !topCell->get().liquid)
+      setPressure(level, selfCell);
     else
-      setPressure(std::max(selfCell->pressure, level), *selfCell);
+      setPressure(std::max(selfCell.pressure, level), selfCell);
   }
   return {};
 }
 
 template <typename LiquidId>
 [[nodiscard]] std::expected<void, StarException> LiquidCellEngine<LiquidId>::pressureMove() {
-  for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid)
+  for (auto const& selfCellRef : m_currentActiveCells) {
+    auto& selfCell = selfCellRef.get();
+    if (!selfCell.liquid)
       continue;
 
     auto pressureMove = [&](Adjacency adjacency) -> std::expected<void, StarException> {
       auto found = adjacentCell(selfCell, adjacency);
       if (!found) return std::unexpected(std::move(found.error()));
       auto targetCell = *found;
-      if (targetCell && !targetCell->sourceCell && targetCell->level >= selfCell->level) {
-        float amount = (selfCell->pressure - targetCell->pressure) * m_engineParameters.pressureMoveFactor;
-        amount = std::min(amount, selfCell->level - (1.0f - m_engineParameters.maximumPressureLevelImbalance));
-        amount = std::min(amount, (1.0f + m_engineParameters.maximumPressureLevelImbalance) - targetCell->level);
-        transferLevel(amount, *selfCell, *targetCell, false);
+      if (targetCell && !targetCell->get().sourceCell && targetCell->get().level >= selfCell.level) {
+        float amount = (selfCell.pressure - targetCell->get().pressure) * m_engineParameters.pressureMoveFactor;
+        amount = std::min(amount, selfCell.level - (1.0f - m_engineParameters.maximumPressureLevelImbalance));
+        amount = std::min(amount, (1.0f + m_engineParameters.maximumPressureLevelImbalance) - targetCell->get().level);
+        transferLevel(amount, selfCell, targetCell->get(), false);
       }
       return {};
     };
@@ -408,18 +418,19 @@ template <typename LiquidId>
 
 template <typename LiquidId>
 [[nodiscard]] std::expected<void, StarException> LiquidCellEngine<LiquidId>::spreadOverfill() {
-  for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid || selfCell->sourceCell)
+  for (auto const& selfCellRef : m_currentActiveCells) {
+    auto& selfCell = selfCellRef.get();
+    if (!selfCell.liquid || selfCell.sourceCell)
       continue;
 
     auto spreadOverfill = [&](Adjacency adjacency, float factor) -> std::expected<void, StarException> {
-      float overfill = selfCell->level - 1.0f;
+      float overfill = selfCell.level - 1.0f;
       if (overfill > 0.0f) {
         auto found = adjacentCell(selfCell, adjacency);
         if (!found) return std::unexpected(std::move(found.error()));
         auto targetCell = *found;
         if (targetCell)
-          transferLevel(std::min(overfill, (selfCell->level - targetCell->level)) * factor, *selfCell, *targetCell, false);
+          transferLevel(std::min(overfill, (selfCell.level - targetCell->get().level)) * factor, selfCell, targetCell->get(), false);
       }
       return {};
     };
@@ -439,26 +450,27 @@ template <typename LiquidId>
 
 template <typename LiquidId>
 [[nodiscard]] std::expected<void, StarException> LiquidCellEngine<LiquidId>::levelMove() {
-  for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid)
+  for (auto const& selfCellRef : m_currentActiveCells) {
+    auto& selfCell = selfCellRef.get();
+    if (!selfCell.liquid)
       continue;
 
     auto found = adjacentCell(selfCell, Adjacency::Bottom);
     if (!found) return std::unexpected(std::move(found.error()));
     auto belowCell = *found;
     if (belowCell)
-      transferLevel(std::min(1.0f - belowCell->level, selfCell->level), *selfCell, *belowCell, false);
+      transferLevel(std::min(1.0f - belowCell->get().level, selfCell.level), selfCell, belowCell->get(), false);
 
-    auto drain = m_cellWorld->drainLevel(selfCell->position);
+    auto drain = m_cellWorld->drainLevel(selfCell.position);
     if (!drain) return std::unexpected(std::move(drain.error()));
-    setLevel(selfCell->level * (1.0f - *drain), *selfCell);
+    setLevel(selfCell.level * (1.0f - *drain), selfCell);
 
     auto lateralMove = [&](Adjacency adjacency) -> std::expected<void, StarException> {
       auto found = adjacentCell(selfCell, adjacency);
       if (!found) return std::unexpected(std::move(found.error()));
       auto targetCell = *found;
       if (targetCell)
-        transferLevel((selfCell->level - targetCell->level) * m_engineParameters.lateralMoveFactor, *selfCell, *targetCell, false);
+        transferLevel((selfCell.level - targetCell->get().level) * m_engineParameters.lateralMoveFactor, selfCell, targetCell->get(), false);
       return {};
     };
 
@@ -473,8 +485,9 @@ template <typename LiquidId>
 
 template <typename LiquidId>
 [[nodiscard]] std::expected<void, StarException> LiquidCellEngine<LiquidId>::findInteractions() {
-  for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid)
+  for (auto const& selfCellRef : m_currentActiveCells) {
+    auto& selfCell = selfCellRef.get();
+    if (!selfCell.liquid)
       continue;
 
     for (auto adjacency : {Adjacency::Bottom, Adjacency::Top, Adjacency::Left, Adjacency::Right}) {
@@ -482,7 +495,7 @@ template <typename LiquidId>
       if (!found) return std::unexpected(std::move(found.error()));
       auto targetCell = *found;
       if (!targetCell) {
-        Vec2I adjacentPos = selfCell->position;
+        Vec2I adjacentPos = selfCell.position;
         if (adjacency == Adjacency::Left)
           adjacentPos += Vec2I(-1, 0);
         else if (adjacency == Adjacency::Right)
@@ -491,22 +504,22 @@ template <typename LiquidId>
           adjacentPos += Vec2I(0, -1);
         else if (adjacency == Adjacency::Top)
           adjacentPos += Vec2I(0, 1);
-        m_liquidCollisions.add(std::make_tuple(selfCell->position, *selfCell->liquid, adjacentPos));
+        m_liquidCollisions.add(std::make_tuple(selfCell.position, *selfCell.liquid, adjacentPos));
 
-      } else if (targetCell->liquid && *targetCell->liquid != *selfCell->liquid) {
-        if (targetCell->level <= m_engineParameters.interactTransformationLevel
-            || selfCell->level <= m_engineParameters.interactTransformationLevel) {
-          if (selfCell->level > targetCell->level)
-            targetCell->liquid = selfCell->liquid;
+      } else if (targetCell->get().liquid && *targetCell->get().liquid != *selfCell.liquid) {
+        if (targetCell->get().level <= m_engineParameters.interactTransformationLevel
+            || selfCell.level <= m_engineParameters.interactTransformationLevel) {
+          if (selfCell.level > targetCell->get().level)
+            targetCell->get().liquid = selfCell.liquid;
           else
-            selfCell->liquid = targetCell->liquid;
+            selfCell.liquid = targetCell->get().liquid;
         } else {
           // Make sure to add the point pair in a predictable order so that any
           // combination of Vec2I points will be unique in m_liquidInteractions
-          if (selfCell->position < targetCell->position)
-            m_liquidInteractions.add(std::make_tuple(selfCell->position, *selfCell->liquid, targetCell->position, *targetCell->liquid));
+          if (selfCell.position < targetCell->get().position)
+            m_liquidInteractions.add(std::make_tuple(selfCell.position, *selfCell.liquid, targetCell->get().position, *targetCell->get().liquid));
           else
-            m_liquidInteractions.add(std::make_tuple(targetCell->position, *targetCell->liquid, selfCell->position, *selfCell->liquid));
+            m_liquidInteractions.add(std::make_tuple(targetCell->get().position, *targetCell->get().liquid, selfCell.position, *selfCell.liquid));
         }
       }
     }
@@ -554,8 +567,8 @@ template <typename LiquidId>
       auto found = workingCell(p);
       if (!found) return std::unexpected(std::move(found.error()));
       auto cell = *found;
-      if (cell && cell->liquid)
-        m_activeCells[*cell->liquid].add(p);
+      if (cell && cell->get().liquid)
+        m_activeCells[*cell->get().liquid].add(p);
       return {};
     };
     for (auto const& p : {c, c + Vec2I(-1, 0), c + Vec2I(1, 0), c + Vec2I(0, -1), c + Vec2I(0, 1)}) {
@@ -571,7 +584,7 @@ template <typename LiquidId>
 }
 
 template <typename LiquidId>
-[[nodiscard]] std::expected<typename LiquidCellEngine<LiquidId>::WorkingCell*, StarException> LiquidCellEngine<LiquidId>::workingCell(Vec2I p) {
+[[nodiscard]] std::expected<std::optional<std::reference_wrapper<typename LiquidCellEngine<LiquidId>::WorkingCell>>, StarException> LiquidCellEngine<LiquidId>::workingCell(Vec2I p) {
   p = m_cellWorld->uniqueLocation(p);
 
   auto res = m_workingCells.insert(std::make_pair(p, std::optional<WorkingCell>()));
@@ -581,40 +594,46 @@ template <typename LiquidId>
       m_workingCells.remove(p);
       return std::unexpected(std::move(cellData.error()));
     }
-    if (auto flowCell = std::get_if<CellularLiquidFlowCell<LiquidId>>(&*cellData))
-      res.first->second = WorkingCell{p, flowCell->liquid, false, flowCell->level, flowCell->pressure, nullptr, nullptr, nullptr, nullptr};
-    else if (auto sourceCell = std::get_if<CellularLiquidSourceCell<LiquidId>>(&*cellData))
-      res.first->second = WorkingCell{p, sourceCell->liquid, true, 1.0f, sourceCell->pressure, nullptr, nullptr, nullptr, nullptr};
+    if (std::holds_alternative<CellularLiquidFlowCell<LiquidId>>(*cellData)) {
+      auto const& flowCell = std::get<CellularLiquidFlowCell<LiquidId>>(*cellData);
+      res.first->second = WorkingCell{{p, flowCell.liquid, false, flowCell.level, flowCell.pressure}, {}, {}, {}, {}};
+    } else if (std::holds_alternative<CellularLiquidSourceCell<LiquidId>>(*cellData)) {
+      auto const& sourceCell = std::get<CellularLiquidSourceCell<LiquidId>>(*cellData);
+      res.first->second = WorkingCell{{p, sourceCell.liquid, true, 1.0f, sourceCell.pressure}, {}, {}, {}, {}};
+    }
   }
-  return optionalPtr(res.first->second);
+  return optionalRef(res.first->second);
 }
 
 template <typename LiquidId>
-[[nodiscard]] std::expected<typename LiquidCellEngine<LiquidId>::WorkingCell*, StarException> LiquidCellEngine<LiquidId>::adjacentCell(
-    WorkingCell* cell, Adjacency adjacency) {
-  auto getCell = [this](WorkingCell*& cellptr, Vec2I cellPos) -> std::expected<WorkingCell*, StarException> {
-    if (cellptr)
-      return cellptr;
+[[nodiscard]] std::expected<std::optional<std::reference_wrapper<typename LiquidCellEngine<LiquidId>::WorkingCellState>>, StarException> LiquidCellEngine<LiquidId>::adjacentCell(
+    WorkingCell& cell, Adjacency adjacency) {
+  auto getCell = [this](std::optional<std::reference_wrapper<WorkingCellState>>& cellRef, Vec2I cellPos) -> std::expected<std::optional<std::reference_wrapper<WorkingCellState>>, StarException> {
+    if (cellRef)
+      return cellRef;
     auto found = workingCell(cellPos);
     if (!found) return std::unexpected(std::move(found.error()));
-    cellptr = *found;
-    return cellptr;
+    if (*found) {
+      WorkingCellState& state = (*found)->get();
+      cellRef = std::ref(state);
+    }
+    return cellRef;
   };
 
   if (adjacency == Adjacency::Left)
-    return getCell(cell->leftCell, cell->position + Vec2I(-1, 0));
+    return getCell(cell.leftCell, cell.position + Vec2I(-1, 0));
   else if (adjacency == Adjacency::Right)
-    return getCell(cell->rightCell, cell->position + Vec2I(1, 0));
+    return getCell(cell.rightCell, cell.position + Vec2I(1, 0));
   else if (adjacency == Adjacency::Bottom)
-    return getCell(cell->bottomCell, cell->position + Vec2I(0, -1));
+    return getCell(cell.bottomCell, cell.position + Vec2I(0, -1));
   else if (adjacency == Adjacency::Top)
-    return getCell(cell->topCell, cell->position + Vec2I(0, 1));
+    return getCell(cell.topCell, cell.position + Vec2I(0, 1));
 
-  return nullptr;
+  return std::nullopt;
 }
 
 template <typename LiquidId>
-void LiquidCellEngine<LiquidId>::setPressure(float pressure, WorkingCell& cell) {
+void LiquidCellEngine<LiquidId>::setPressure(float pressure, WorkingCellState& cell) {
   if (!cell.liquid || cell.sourceCell)
     return;
 
@@ -624,7 +643,7 @@ void LiquidCellEngine<LiquidId>::setPressure(float pressure, WorkingCell& cell) 
 }
 
 template <typename LiquidId>
-void LiquidCellEngine<LiquidId>::transferPressure(float amount, WorkingCell& source, WorkingCell& dest, bool allowReverse) {
+void LiquidCellEngine<LiquidId>::transferPressure(float amount, WorkingCellState& source, WorkingCellState& dest, bool allowReverse) {
   if (amount < 0.0f && allowReverse) {
     return transferPressure(-amount, dest, source, false);
   } else if (amount > 0.0f) {
@@ -653,7 +672,7 @@ void LiquidCellEngine<LiquidId>::transferPressure(float amount, WorkingCell& sou
 }
 
 template <typename LiquidId>
-void LiquidCellEngine<LiquidId>::setLevel(float level, WorkingCell& cell) {
+void LiquidCellEngine<LiquidId>::setLevel(float level, WorkingCellState& cell) {
   if (!cell.liquid || cell.sourceCell)
     return;
 
@@ -670,7 +689,7 @@ void LiquidCellEngine<LiquidId>::setLevel(float level, WorkingCell& cell) {
 
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::transferLevel(
-    float amount, WorkingCell& source, WorkingCell& dest, bool allowReverse) {
+    float amount, WorkingCellState& source, WorkingCellState& dest, bool allowReverse) {
   if (amount < 0.0f && allowReverse) {
     transferLevel(-amount, dest, source, false);
 

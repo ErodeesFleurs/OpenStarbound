@@ -71,12 +71,12 @@ String printDuration(double time) {
   milliseconds = strf("{} millisecond{}", numMilliseconds, numMilliseconds == 1 ? "" : "s");
 
   String result;
-  for (auto const* component : {&hours, &minutes, &seconds, &milliseconds}) {
-    if (component->empty())
+  for (auto component : {std::cref(hours), std::cref(minutes), std::cref(seconds), std::cref(milliseconds)}) {
+    if (component.get().empty())
       continue;
     if (!result.empty())
       result += ", ";
-    result += *component;
+    result += component.get();
   }
   return result;
 }

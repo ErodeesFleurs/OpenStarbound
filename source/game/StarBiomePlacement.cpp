@@ -113,28 +113,32 @@ std::expected<BiomeItem, StarException> variantToBiomeItem(Assets const& assets,
 }
 
 std::expected<Json, StarException> variantFromBiomeItem(BiomeItem const& item) {
-  if (auto grass = std::get_if<GrassVariant>(&item)) {
-    auto json = grass->toJson();
-    if (!json) return std::unexpected(std::move(json.error()));
-    return JsonArray{"grass", std::move(*json)};
-  } else if (auto bush = std::get_if<BushVariant>(&item)) {
-    auto json = bush->toJson();
-    if (!json) return std::unexpected(std::move(json.error()));
-    return JsonArray{"bush", std::move(*json)};
-  } else if (auto trees = std::get_if<TreePair>(&item)) {
-    auto first = trees->first.toJson();
-    if (!first) return std::unexpected(std::move(first.error()));
-    auto second = trees->second.toJson();
-    if (!second) return std::unexpected(std::move(second.error()));
-    return JsonArray{"treePair", JsonArray{std::move(*first), std::move(*second)}};
-  } else if (auto pool = std::get_if<ObjectPool>(&item)) {
-    return JsonArray{"objectPool", transform<JsonArray>(pool->items(), [](auto const& p) { return JsonArray{p.first, JsonArray{p.second.first, p.second.second}}; })};
-  } else if (auto treasure = std::get_if<TreasureBoxSet>(&item)) {
-    return JsonArray{"treasureBoxSet", String(*treasure)};
-  } else if (auto dungeons = std::get_if<MicroDungeonNames>(&item)) {
-    return JsonArray{"microDungeon", jsonFromStringSet(*dungeons)};
-  }
-  return std::unexpected(BiomeException("Unrecognized biome item type"));
+  return std::visit([](auto const& value) -> std::expected<Json, StarException> {
+    using Value = std::remove_cvref_t<decltype(value)>;
+    if constexpr (std::is_same_v<Value, GrassVariant>) {
+      auto json = value.toJson();
+      if (!json) return std::unexpected(std::move(json.error()));
+      return JsonArray{"grass", std::move(*json)};
+    } else if constexpr (std::is_same_v<Value, BushVariant>) {
+      auto json = value.toJson();
+      if (!json) return std::unexpected(std::move(json.error()));
+      return JsonArray{"bush", std::move(*json)};
+    } else if constexpr (std::is_same_v<Value, TreePair>) {
+      auto first = value.first.toJson();
+      if (!first) return std::unexpected(std::move(first.error()));
+      auto second = value.second.toJson();
+      if (!second) return std::unexpected(std::move(second.error()));
+      return JsonArray{"treePair", JsonArray{std::move(*first), std::move(*second)}};
+    } else if constexpr (std::is_same_v<Value, ObjectPool>) {
+      return JsonArray{"objectPool", transform<JsonArray>(value.items(), [](auto const& p) { return JsonArray{p.first, JsonArray{p.second.first, p.second.second}}; })};
+    } else if constexpr (std::is_same_v<Value, TreasureBoxSet>) {
+      return JsonArray{"treasureBoxSet", String(value)};
+    } else if constexpr (std::is_same_v<Value, MicroDungeonNames>) {
+      return JsonArray{"microDungeon", jsonFromStringSet(value)};
+    } else {
+      return std::unexpected(BiomeException("Unrecognized biome item type"));
+    }
+  }, item);
 }
 
 
@@ -158,7 +162,7 @@ std::expected<std::optional<BiomeItem>, StarException> BiomeItemDistribution::cr
     if (!plants) return std::unexpected(std::move(plants.error()));
     auto grass = rand.randFrom(*grasses);
     if (!grass) return std::unexpected(std::move(grass.error()));
-    auto variant = (*plants)->buildGrassVariant(**grass, biomeHueShift);
+    auto variant = (*plants)->buildGrassVariant(grass->get(), biomeHueShift);
     if (!variant) return std::unexpected(std::move(variant.error()));
     return BiomeItem{std::move(*variant)};
   } else if (auto match = type->equalsIgnoreCase("bush"); !match) return std::unexpected(std::move(match.error()));
@@ -525,7 +529,7 @@ std::expected<std::optional<BiomeItemPlacement>, StarException> BiomeItemDistrib
     }
 
   } else if (m_distribution == DistributionType::Periodic) {
-    BiomeItem const* biomeItem = nullptr;
+    std::optional<std::reference_wrapper<BiomeItem const>> biomeItem;
     auto density = m_densityFunction.get(x, y);
     if (!density) return std::unexpected(std::move(density.error()));
     if (*density > 0) {
@@ -539,14 +543,14 @@ std::expected<std::optional<BiomeItemPlacement>, StarException> BiomeItemDistrib
           float weight = *weightResult;
           if (weight > maxWeight) {
             maxWeight = weight;
-            biomeItem = &weightedItem.first;
+            biomeItem = std::cref(weightedItem.first);
           }
         }
       }
     }
 
     if (biomeItem)
-      return BiomeItemPlacement{*biomeItem, Vec2I(x, y), m_priority};
+      return BiomeItemPlacement{biomeItem->get(), Vec2I(x, y), m_priority};
   }
 
   return std::optional<BiomeItemPlacement>();

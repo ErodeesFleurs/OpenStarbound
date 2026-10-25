@@ -212,7 +212,7 @@ if (!result976) return std::unexpected(std::move(result976.error()));
 return std::move(*result976);
 }
 
-std::expected<void, StarException> Projectile::init(World* world, EntityId entityId, EntityMode mode) {
+std::expected<void, StarException> Projectile::init(World& world, EntityId entityId, EntityMode mode) {
   auto result948 = Entity::init(world, entityId, mode);
 if (!result948) return std::unexpected(std::move(result948.error()));
   m_movementController->init(world);
@@ -262,15 +262,15 @@ m_scriptComponent.setUpdateDelta(std::move(*result961));
 if (!result962) return std::unexpected(std::move(result962.error()));
 auto result963 = m_scriptComponent.addCallbacks("projectile", std::move(*result962));
 if (!result963) return std::unexpected(std::move(result963.error()));
-      auto result964 = LuaBindings::makeConfigCallbacks(std::bind(&Projectile::configValue, this, std::placeholders::_1, std::placeholders::_2));
+      auto result964 = LuaBindings::makeConfigCallbacks(std::bind(&Projectile::configValue, std::cref(*this), std::placeholders::_1, std::placeholders::_2));
 if (!result964) return std::unexpected(std::move(result964.error()));
 auto result965 = m_scriptComponent.addCallbacks("config", std::move(*result964));
 if (!result965) return std::unexpected(std::move(result965.error()));
-      auto result966 = LuaBindings::makeEntityCallbacks(this);
+      auto result966 = LuaBindings::makeEntityCallbacks(*this);
 if (!result966) return std::unexpected(std::move(result966.error()));
 auto result967 = m_scriptComponent.addCallbacks("entity", std::move(*result966));
 if (!result967) return std::unexpected(std::move(result967.error()));
-      auto result968 = LuaBindings::makeMovementControllerCallbacks(m_movementController.get());
+      auto result968 = LuaBindings::makeMovementControllerCallbacks(*m_movementController);
 if (!result968) return std::unexpected(std::move(result968.error()));
 auto result969 = m_scriptComponent.addCallbacks("mcontroller", std::move(*result968));
 if (!result969) return std::unexpected(std::move(result969.error()));
@@ -289,7 +289,7 @@ if (!result972) return std::unexpected(std::move(result972.error()));
 setReferenceVelocity(std::move(*result972));
 }
 
-  if (world->isClient() && !m_persistentAudioFile.empty()) {
+  if (world.isClient() && !m_persistentAudioFile.empty()) {
     auto result973 = this->root().assets();
 if (!result973) return std::unexpected(std::move(result973.error()));
 auto result974 = std::move(*result973)->audio(m_persistentAudioFile);
@@ -388,7 +388,7 @@ if (auto res = std::move(*result935))
   return m_timeToLive <= 0.0f;
 }
 
-std::expected<void, StarException> Projectile::destroy(RenderCallback* renderCallback) {
+std::expected<void, StarException> Projectile::destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) {
   auto result927 = m_parameters.getArray("actionOnReap", m_config->actionOnReap);
 if (!result927) return std::unexpected(std::move(result927.error()));
 for (auto const& action : std::move(*result927))
@@ -417,7 +417,7 @@ if (!result932) return std::unexpected(std::move(result932.error()));
 
   if (renderCallback)
     {
-auto result933 = renderPendingRenderables(renderCallback);
+auto result933 = renderPendingRenderables(renderCallback->get());
 if (!result933) return std::unexpected(std::move(result933.error()));
 }
 
@@ -459,14 +459,14 @@ if (std::move(*result924))
     knockback = knockbackMagnitude;
 
   List<DamageSource> res;
-  auto addDamageSource = [&](DamageSource::DamageArea damageArea) {
-    res.append(DamageSource(m_damageType, damageArea, m_power * m_powerMultiplier, true, m_sourceEntity, sourceTeam,
-        m_damageRepeatGroup, m_damageRepeatTimeout, m_damageKind, statusEffects, knockback, m_rayCheckToSource));
+  auto addDamageSource = [&, &self = *this](DamageSource::DamageArea damageArea) {
+    res.append(DamageSource(self.m_damageType, damageArea, self.m_power * self.m_powerMultiplier, true, self.m_sourceEntity, sourceTeam,
+        self.m_damageRepeatGroup, self.m_damageRepeatTimeout, self.m_damageKind, statusEffects, knockback, self.m_rayCheckToSource));
   };
 
   auto result925 = world();
 if (!result925) return std::unexpected(std::move(result925.error()));
-  Vec2F positionDelta = (*result925)->geometry().diff(m_travelLine.min(), m_travelLine.max());
+  Vec2F positionDelta = result925->get().geometry().diff(m_travelLine.min(), m_travelLine.max());
   static float const MinimumDamageLineDelta = 0.1f;
   bool useDamageLine = positionDelta.magnitudeSquared() >= square(MinimumDamageLineDelta);
   if (useDamageLine)
@@ -496,7 +496,7 @@ if (!result916) return std::unexpected(std::move(result916.error()));
 if (!std::move(*result916)) {
     auto result917 = world();
 if (!result917) return std::unexpected(std::move(result917.error()));
-auto victimEntity = std::move(*result917)->entity(entity);
+auto victimEntity = result917->get().entity(entity);
     if (!victimEntity || (victimEntity->getTeam().type != TeamType::Passive && victimEntity->getTeam().type != TeamType::Environment)) {
       if (victimEntity) {
         auto result918 = victimEntity->hitPoly();
@@ -504,7 +504,7 @@ if (!result918) return std::unexpected(std::move(result918.error()));
 if (auto hitPoly = std::move(*result918)) {
           auto result919 = world();
 if (!result919) return std::unexpected(std::move(result919.error()));
-auto geometry = std::move(*result919)->geometry();
+auto geometry = result919->get().geometry();
           Vec2F checkVec = m_movementController->velocity().normalized() * 5;
           Vec2F nearMin = geometry.nearestTo(hitPoly->center(), m_movementController->position() - checkVec);
           if (auto intersection = hitPoly->lineIntersection(Line2F(nearMin, nearMin + checkVec * 2)))
@@ -552,7 +552,7 @@ if (!result907) return std::unexpected(std::move(result907.error()));
     if (m_trackSourceEntity) {
       auto result908 = world();
 if (!result908) return std::unexpected(std::move(result908.error()));
-if (auto sourceEntity = std::move(*result908)->entity(m_sourceEntity)) {
+if (auto sourceEntity = result908->get().entity(m_sourceEntity)) {
         Vec2F newEntityPosition = sourceEntity->position();
         m_movementController->translate(newEntityPosition - m_lastEntityPosition);
         m_lastEntityPosition = newEntityPosition;
@@ -597,7 +597,7 @@ if (!result909) return std::unexpected(std::move(result909.error()));
           auto pos = Vec2I::floor(m_movementController->position() + m_travelLine.direction() * -i);
           auto result910 = world();
 if (!result910) return std::unexpected(std::move(result910.error()));
-if (std::move(*result910)->material(pos, TileLayer::Foreground) == EmptyMaterialId) {
+if (result910->get().material(pos, TileLayer::Foreground) == EmptyMaterialId) {
             m_lastNonCollidingTile = pos;
             break;
           }
@@ -608,7 +608,7 @@ if (std::move(*result910)->material(pos, TileLayer::Foreground) == EmptyMaterial
     if (!m_collision && m_hydrophobic) {
       auto result911 = world();
 if (!result911) return std::unexpected(std::move(result911.error()));
-auto liquid = std::move(*result911)->liquidLevel(Vec2I::floor(position()));
+auto liquid = result911->get().liquidLevel(Vec2I::floor(position()));
       if (liquid.level > 0.5f) {
         m_collision = true;
         m_timeToLive = 0.0f;
@@ -632,12 +632,12 @@ if (!result914) return std::unexpected(std::move(result914.error()));
 
   auto result915 = world();
 if (!result915) return std::unexpected(std::move(result915.error()));
-if (std::move(*result915)->isClient())
+if (result915->get().isClient())
     this->root().spatialLogger().logPoly("world", m_movementController->collisionBody(), Color::Red.toRgba());
   return {};
 }
 
-std::expected<void, StarException> Projectile::render(RenderCallback* renderCallback) {
+std::expected<void, StarException> Projectile::render(RenderCallback& renderCallback) {
   auto result900 = renderPendingRenderables(renderCallback);
 if (!result900) return std::unexpected(std::move(result900.error()));
 
@@ -668,20 +668,20 @@ if (!result903) return std::unexpected(std::move(result903.error()));
   }
   drawable.fullbright = m_config->fullbright;
   drawable.translate(position());
-  auto result904 = renderCallback->addDrawable(std::move(drawable), m_config->renderLayer);
+  auto result904 = renderCallback.addDrawable(std::move(drawable), m_config->renderLayer);
 if (!result904) return std::unexpected(std::move(result904.error()));
   return {};
 }
 
-std::expected<void, StarException> Projectile::renderLightSources(RenderCallback* renderCallback) {
+std::expected<void, StarException> Projectile::renderLightSources(RenderCallback& renderCallback) {
   for (auto const& renderable : m_pendingRenderables) {
-    if (auto lightSource = std::get_if<LightSource>(&renderable))
+    if (std::holds_alternative<LightSource>(renderable))
       {
-auto result898 = renderCallback->addLightSource(*lightSource);
+auto result898 = renderCallback.addLightSource(std::get<LightSource>(renderable));
 if (!result898) return std::unexpected(std::move(result898.error()));
 }
   }
-  auto result899 = renderCallback->addLightSource({position(), m_config->lightColor.toRgbF(), m_config->lightType, 0.0f, 0.0f, 0.0f});
+  auto result899 = renderCallback.addLightSource({position(), m_config->lightColor.toRgbF(), m_config->lightType, 0.0f, 0.0f, 0.0f});
 if (!result899) return std::unexpected(std::move(result899.error()));
   return {};
 }
@@ -689,7 +689,7 @@ if (!result899) return std::unexpected(std::move(result899.error()));
 std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   auto result896 = world();
 if (!result896) return std::unexpected(std::move(result896.error()));
-auto result897 = m_scriptComponent.handleMessage(message, sendingConnection == std::move(*result896)->connection(), args);
+auto result897 = m_scriptComponent.handleMessage(message, sendingConnection == result896->get().connection(), args);
 if (!result897) return std::unexpected(std::move(result897.error()));
 return std::move(*result897);
 }
@@ -742,8 +742,8 @@ void Projectile::setInitialVelocity(Vec2F const& velocity) {
 void Projectile::setSourceEntity(EntityId source, bool trackSource) {
   m_sourceEntity = source;
   m_trackSourceEntity = trackSource;
-  if (inWorld()) {
-    if (auto sourceEntity = worldPtr()->entity(source)) {
+  if (auto world = maybeWorld()) {
+    if (auto sourceEntity = world->get().entity(source)) {
       m_lastEntityPosition = sourceEntity->position();
       if (!m_damageTeam)
         setTeam(sourceEntity->getTeam());
@@ -793,7 +793,7 @@ std::size_t Projectile::movingCollisionCount() const {
 std::expected<std::optional<PhysicsMovingCollision>, StarException> Projectile::movingCollision(std::size_t positionIndex) const {
   auto result893 = m_physicsCollisions.valueAt(positionIndex);
 if (!result893) return std::unexpected(std::move(result893.error()));
-auto const& mc = (**result893);
+auto const& mc = result893->get();
   if (!mc.enabled.get())
     return {};
   PhysicsMovingCollision collision = mc.movingCollision;
@@ -801,11 +801,11 @@ auto const& mc = (**result893);
   return collision;
 }
 
-MovementController* Projectile::movementController() {
-  return m_movementController.get();
+MovementController& Projectile::movementController() {
+  return *m_movementController;
 }
 
-std::expected<List<Particle>, StarException> Projectile::sparkBlock(Root& rootContext, World* world, Vec2I const& position, Vec2F const& damageSource) {
+std::expected<List<Particle>, StarException> Projectile::sparkBlock(Root& rootContext, World& world, Vec2I const& position, Vec2F const& damageSource) {
   auto& root = rootContext;
   auto result885 = root.assets();
 if (!result885) return std::unexpected(std::move(result885.error()));
@@ -827,12 +827,12 @@ auto blockDamageVariance = std::move(*result890);
 
   List<Particle> result;
   for (auto layer : {TileLayer::Background, TileLayer::Foreground}) {
-    auto material = world->material(position, layer);
-    auto hueShift = world->materialHueShift(position, layer);
+    auto material = world.material(position, layer);
+    auto hueShift = world.materialHueShift(position, layer);
     if (isRealMaterial(material)) {
       auto particle = blockDamageParticle;
       particle.position += centerOfTile(position);
-      particle.velocity = particle.velocity.magnitude() * vnorm(world->geometry().diff(damageSource, particle.position));
+      particle.velocity = particle.velocity.magnitude() * vnorm(world.geometry().diff(damageSource, particle.position));
       auto result892 = materialDatabase->materialParticleColor(material, hueShift);
 if (!result892) return std::unexpected(std::move(result892.error()));
 particle.color = std::move(*result892);
@@ -908,19 +908,19 @@ if (!result732) return std::unexpected(std::move(result732.error()));
 command = std::move(*result732);
   }
 
-  auto doWithDelay = [this](int stepsDelay, WorldAction function)  -> std::expected<void, StarException> {
+  auto doWithDelay = [&self = *this](int stepsDelay, WorldAction function)  -> std::expected<void, StarException> {
     if (stepsDelay == 0)
       {
-auto result657 = world();
+auto result657 = self.world();
 if (!result657) return std::unexpected(std::move(result657.error()));
-auto result658 = function(std::move(*result657));
+auto result658 = function(result657->get());
 if (!result658) return std::unexpected(std::move(result658.error()));
 }
     else
       {
-auto result659 = world();
+auto result659 = self.world();
 if (!result659) return std::unexpected(std::move(result659.error()));
-std::move(*result659)->timer((float)stepsDelay / 60.f, function);
+result659->get().timer((float)stepsDelay / 60.f, function);
 }
     return {};
 };
@@ -954,7 +954,7 @@ auto mat = std::move(*result737);
 if (!result738) return std::unexpected(std::move(result738.error()));
 auto result739 = parameters.getInt("radius", 2);
 if (!result739) return std::unexpected(std::move(result739.error()));
-auto result740 = std::move(*result738)->findEmptyTiles(m_lastNonCollidingTile, std::move(*result739), totalDrops);
+auto result740 = result738->get().findEmptyTiles(m_lastNonCollidingTile, std::move(*result739), totalDrops);
 if (!result740) return std::unexpected(std::move(result740.error()));
 List<Vec2I> openSpaces = std::move(*result740);
     if (openSpaces.size() < totalDrops)
@@ -971,7 +971,7 @@ bool allowEntityOverlap = std::move(*result742);
     for (auto& tile : zip(openSpaces, tileDrops)) {
       auto result743 = world();
 if (!result743) return std::unexpected(std::move(result743.error()));
-auto result746 = (*result743)->modifyTile(std::get<0>(tile), PlaceMaterial{TileLayer::Foreground, std::get<1>(tile), MaterialHue()}, allowEntityOverlap);
+auto result746 = result743->get().modifyTile(std::get<0>(tile), PlaceMaterial{TileLayer::Foreground, std::get<1>(tile), MaterialHue()}, allowEntityOverlap);
 if (!result746) return std::unexpected(std::move(result746.error()));
 if (!std::move(*result746)) {
 auto result748 = materialDatabase->materialItemDrop(std::get<1>(tile));
@@ -981,7 +981,7 @@ if (!result750) return std::unexpected(std::move(result750.error()));
 auto itemDrop = std::move(*result750);
         auto result751 = world();
 if (!result751) return std::unexpected(std::move(result751.error()));
-auto result752 = std::move(*result751)->addEntity(itemDrop);
+auto result752 = result751->get().addEntity(itemDrop);
 if (!result752) return std::unexpected(std::move(result752.error()));
       }
     }
@@ -1029,21 +1029,21 @@ if (std::move(*result761))
       for (int x = m_collisionTile[0] - radius; x <= m_collisionTile[0] + radius; ++x) {
         auto result762 = world();
 if (!result762) return std::unexpected(std::move(result762.error()));
-if (std::move(*result762)->material({x, m_collisionTile[1] + radius + 1}, layer) == EmptyMaterialId) {
+if (result762->get().material({x, m_collisionTile[1] + radius + 1}, layer) == EmptyMaterialId) {
           for (int y = m_collisionTile[1] + radius; y >= m_collisionTile[1] - radius; --y) {
             auto result763 = world();
 if (!result763) return std::unexpected(std::move(result763.error()));
-auto mat = std::move(*result763)->material({x, y}, layer);
+auto mat = result763->get().material({x, y}, layer);
             if (this->root().random().randf() <= chance) {
               if (isRealMaterial(mat)) {
                 auto result764 = world();
 if (!result764) return std::unexpected(std::move(result764.error()));
-auto mod = std::move(*result764)->mod({x, y}, layer);
+auto mod = result764->get().mod({x, y}, layer);
                 if (!previousMod || *previousMod == mod)
                   {
 auto result765 = world();
 if (!result765) return std::unexpected(std::move(result765.error()));
-auto result766 = std::move(*result765)->modifyTile({x, y}, PlaceMod{layer, newMod, {}}, true);
+auto result766 = result765->get().modifyTile({x, y}, PlaceMod{layer, newMod, {}}, true);
 if (!result766) return std::unexpected(std::move(result766.error()));
 }
               }
@@ -1073,24 +1073,24 @@ LiquidId liquid = std::move(*result770);
 if (!result771) return std::unexpected(std::move(result771.error()));
 auto result772 = parameters.getInt("radius", 5);
 if (!result772) return std::unexpected(std::move(result772.error()));
-auto result773 = std::move(*result771)->findEmptyTiles(m_lastNonCollidingTile, std::move(*result772), 50);
+auto result773 = result771->get().findEmptyTiles(m_lastNonCollidingTile, std::move(*result772), 50);
 if (!result773) return std::unexpected(std::move(result773.error()));
 auto empty = std::move(*result773);
     for (Vec2I pos : empty) {
       auto result774 = world();
 if (!result774) return std::unexpected(std::move(result774.error()));
-auto result775 = std::move(*result774)->lineTileCollision(Vec2F(pos), Vec2F(m_lastNonCollidingTile));
+auto result775 = result774->get().lineTileCollision(Vec2F(pos), Vec2F(m_lastNonCollidingTile));
 if (!result775) return std::unexpected(std::move(result775.error()));
 if (std::move(*result775))
         continue;
 
       auto result776 = world();
 if (!result776) return std::unexpected(std::move(result776.error()));
-auto liquidLevel = std::move(*result776)->liquidLevel(pos);
+auto liquidLevel = result776->get().liquidLevel(pos);
       if (liquidLevel.liquid == EmptyLiquidId || liquidLevel.liquid == liquid) {
         auto result777 = world();
 if (!result777) return std::unexpected(std::move(result777.error()));
-auto result778 = std::move(*result777)->modifyTile(pos, PlaceLiquid{liquid, waterAmount}, true);
+auto result778 = result777->get().modifyTile(pos, PlaceLiquid{liquid, waterAmount}, true);
 if (!result778) return std::unexpected(std::move(result778.error()));
         break;
       }
@@ -1248,14 +1248,14 @@ if (condition816) {
 if (condition818) {
 auto result817 = world();
 if (!result817) return std::unexpected(std::move(result817.error()));
-condition818 = static_cast<bool>(!std::move(*result817)->entity(m_sourceEntity));
+condition818 = static_cast<bool>(!result817->get().entity(m_sourceEntity));
 }
 if (condition818)
       projectile->setTeam(getTeam());
 
     auto result819 = parameters.getUInt("delaySteps", 0);
 if (!result819) return std::unexpected(std::move(result819.error()));
-auto result820 = doWithDelay(std::move(*result819), [=](World* world)  -> std::expected<void, StarException> { auto result656 = world->addEntity(projectile);
+auto result820 = doWithDelay(std::move(*result819), [projectile](World& world)  -> std::expected<void, StarException> { auto result656 = world.addEntity(projectile);
 if (!result656) return std::unexpected(std::move(result656.error()));   return {};
 });
 if (!result820) return std::unexpected(std::move(result820.error()));
@@ -1263,18 +1263,18 @@ if (!result820) return std::unexpected(std::move(result820.error()));
   } else if (command == "spark") {
     auto result821 = world();
 if (!result821) return std::unexpected(std::move(result821.error()));
-if (!std::move(*result821)->isClient())
+if (!result821->get().isClient())
       return {};
 
     auto result822 = world();
 if (!result822) return std::unexpected(std::move(result822.error()));
-auto collisionMaterial = std::move(*result822)->material(m_collisionTile, TileLayer::Foreground);
+auto collisionMaterial = result822->get().material(m_collisionTile, TileLayer::Foreground);
     if (!m_collision || collisionMaterial == EmptyMaterialId)
       return {};
 
     auto result823 = world();
 if (!result823) return std::unexpected(std::move(result823.error()));
-auto result824 = sparkBlock(this->root(), std::move(*result823), m_collisionTile, position());
+auto result824 = sparkBlock(this->root(), result823->get(), m_collisionTile, position());
 if (!result824) return std::unexpected(std::move(result824.error()));
 for (auto& particle : std::move(*result824)) {
       // enable trails and such
@@ -1290,7 +1290,7 @@ for (auto& particle : std::move(*result824)) {
   } else if (command == "particle") {
     auto result825 = world();
 if (!result825) return std::unexpected(std::move(result825.error()));
-if (!std::move(*result825)->isClient())
+if (!result825->get().isClient())
       return {};
 
     auto result826 = this->root().particleDatabase();
@@ -1329,7 +1329,7 @@ if (!result833) return std::unexpected(std::move(result833.error()));
 if (!TileDamageTypeNames) return std::unexpected(TileDamageTypeNames.error());
 auto result834 = TileDamageTypeNames->getLeft(std::move(*result833));
 if (!result834) return std::unexpected(std::move(result834.error()));
-auto damageType = (**result834);
+auto damageType = result834->get();
     auto result835 = parameters.getUInt("harvestLevel", 0);
 if (!result835) return std::unexpected(std::move(result835.error()));
 unsigned harvestLevel = std::move(*result835);
@@ -1339,14 +1339,14 @@ unsigned harvestLevel = std::move(*result835);
 if (!result836) return std::unexpected(std::move(result836.error()));
 auto result837 = doWithDelay(std::move(*result836),
         [foregroundRadius, backgroundRadius, explosionPosition, damageType,
-            explosiveDamageAmount, harvestLevel, sourceEntityId = sourceEntity()](World* world)  -> std::expected<void, StarException> {
-        auto result654 = world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
+            explosiveDamageAmount, harvestLevel, sourceEntityId = sourceEntity()](World& world)  -> std::expected<void, StarException> {
+        auto result654 = world.damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
             TileLayer::Foreground,
             explosionPosition,
             {damageType, explosiveDamageAmount, harvestLevel},
             sourceEntityId);
 if (!result654) return std::unexpected(std::move(result654.error()));
-        auto result655 = world->damageTiles(tileAreaBrush(backgroundRadius, explosionPosition, false),
+        auto result655 = world.damageTiles(tileAreaBrush(backgroundRadius, explosionPosition, false),
             TileLayer::Background,
             explosionPosition,
             {damageType, explosiveDamageAmount, harvestLevel},
@@ -1395,13 +1395,13 @@ spawnPosition += std::move(*result847);
       monster->setPosition(spawnPosition);
       auto result848 = world();
 if (!result848) return std::unexpected(std::move(result848.error()));
-auto result849 = std::move(*result848)->addEntity(monster);
+auto result849 = result848->get().addEntity(monster);
 if (!result849) return std::unexpected(std::move(result849.error()));
     }
 
     auto result850 = world();
 if (!result850) return std::unexpected(std::move(result850.error()));
-bool condition852 = static_cast<bool>(std::move(*result850)->isClient());
+bool condition852 = static_cast<bool>(result850->get().isClient());
 if (condition852) {
 auto result851 = parameters.contains("particle");
 if (!result851) return std::unexpected(std::move(result851.error()));
@@ -1439,13 +1439,13 @@ if (!result859) return std::unexpected(std::move(result859.error()));
 auto itemDrop = std::move(*result859);
     auto result860 = world();
 if (!result860) return std::unexpected(std::move(result860.error()));
-auto result861 = std::move(*result860)->addEntity(itemDrop);
+auto result861 = result860->get().addEntity(itemDrop);
 if (!result861) return std::unexpected(std::move(result861.error()));
 
   } else if (command == "sound") {
     auto result862 = world();
 if (!result862) return std::unexpected(std::move(result862.error()));
-if (!std::move(*result862)->isClient())
+if (!result862->get().isClient())
       return {};
 
     auto result863 = this->root().assets();
@@ -1471,7 +1471,7 @@ sound->setPitchMultiplier(std::move(*result868));
   } else if (command == "light") {
     auto result869 = world();
 if (!result869) return std::unexpected(std::move(result869.error()));
-if (!std::move(*result869)->isClient())
+if (!result869->get().isClient())
       return {};
 
     auto result870 = parameters.get("color");
@@ -1497,7 +1497,7 @@ JsonArray options = std::move(*result873);
       {
 auto result874 = this->root().random().randFrom(options);
 if (!result874) return std::unexpected(std::move(result874.error()));
-auto result875 = processAction((**result874));
+auto result875 = processAction(result874->get());
 if (!result875) return std::unexpected(std::move(result875.error()));
 }
 
@@ -1635,7 +1635,7 @@ if (!result688) return std::unexpected(std::move(result688.error()));
 if (!DamageTypeNames) return std::unexpected(DamageTypeNames.error());
 auto result689 = DamageTypeNames->getLeft(std::move(*result688));
 if (!result689) return std::unexpected(std::move(result689.error()));
-m_damageType = (**result689);
+m_damageType = result689->get();
   auto result690 = m_parameters.getBool("rayCheckToSource", m_config->rayCheckToSource);
 if (!result690) return std::unexpected(std::move(result690.error()));
 m_rayCheckToSource = std::move(*result690);
@@ -1737,72 +1737,72 @@ forceConfig.enabled.set(std::move(*result713));
   m_physicsForces.sortByKey();
   for (auto& p : m_physicsForces)
     {
-auto result714 = m_netGroup.addNetElement(&p.second.enabled);
+auto result714 = m_netGroup.addNetElement(p.second.enabled);
 if (!result714) return std::unexpected(std::move(result714.error()));
 }
 
   m_physicsCollisions.sortByKey();
   for (auto& p : m_physicsCollisions)
     {
-auto result715 = m_netGroup.addNetElement(&p.second.enabled);
+auto result715 = m_netGroup.addNetElement(p.second.enabled);
 if (!result715) return std::unexpected(std::move(result715.error()));
 }
 
-  auto result716 = m_netGroup.addNetElement(&m_collisionEvent);
+  auto result716 = m_netGroup.addNetElement(m_collisionEvent);
 if (!result716) return std::unexpected(std::move(result716.error()));
-  auto result717 = m_netGroup.addNetElement(m_movementController.get());
+  auto result717 = m_netGroup.addNetElement(*m_movementController);
 if (!result717) return std::unexpected(std::move(result717.error()));
-  auto result718 = m_netGroup.addNetElement(m_effectEmitter.get());
+  auto result718 = m_netGroup.addNetElement(*m_effectEmitter);
 if (!result718) return std::unexpected(std::move(result718.error()));
   return {};
 }
 
 std::expected<LuaCallbacks, StarException> Projectile::makeProjectileCallbacks() {
   LuaCallbacks callbacks;
-  auto result670 = callbacks.registerCallback("getParameter", [this](String const& name, Json const& def) {
-      return configValue(name,def);
+  auto result670 = callbacks.registerCallback("getParameter", [&self = *this](String const& name, Json const& def) {
+      return self.configValue(name,def);
     });
 if (!result670) return std::unexpected(std::move(result670.error()));
-  auto result671 = callbacks.registerCallback("die", [this]() { m_timeToLive = 0.0f; });
+  auto result671 = callbacks.registerCallback("die", [&self = *this]() { self.m_timeToLive = 0.0f; });
 if (!result671) return std::unexpected(std::move(result671.error()));
-  auto result672 = callbacks.registerCallback("sourceEntity", [this]() -> std::optional<EntityId> {
-      if (m_sourceEntity == NullEntityId)
+  auto result672 = callbacks.registerCallback("sourceEntity", [&self = *this]() -> std::optional<EntityId> {
+      if (self.m_sourceEntity == NullEntityId)
         return {};
       else
-        return m_sourceEntity;
+        return self.m_sourceEntity;
     });
 if (!result672) return std::unexpected(std::move(result672.error()));
-  auto result673 = callbacks.registerCallback("powerMultiplier", [this]() { return powerMultiplier(); });
+  auto result673 = callbacks.registerCallback("powerMultiplier", [&self = *this]() { return self.powerMultiplier(); });
 if (!result673) return std::unexpected(std::move(result673.error()));
-  auto result674 = callbacks.registerCallback("timeToLive", [this]() { return m_timeToLive; });
+  auto result674 = callbacks.registerCallback("timeToLive", [&self = *this]() { return self.m_timeToLive; });
 if (!result674) return std::unexpected(std::move(result674.error()));
-  auto result675 = callbacks.registerCallback("setTimeToLive", [this](float const& timeToLive) { return m_timeToLive = timeToLive; });
+  auto result675 = callbacks.registerCallback("setTimeToLive", [&self = *this](float const& timeToLive) { return self.m_timeToLive = timeToLive; });
 if (!result675) return std::unexpected(std::move(result675.error()));
-  auto result676 = callbacks.registerCallback("collision", [this]() { return m_collision; });
+  auto result676 = callbacks.registerCallback("collision", [&self = *this]() { return self.m_collision; });
 if (!result676) return std::unexpected(std::move(result676.error()));
-  auto result677 = callbacks.registerCallback("processAction", [this](Json const& action)  -> std::expected<void, StarException> { auto result653 = processAction(action);
+  auto result677 = callbacks.registerCallback("processAction", [&self = *this](Json const& action)  -> std::expected<void, StarException> { auto result653 = self.processAction(action);
 if (!result653) return std::unexpected(std::move(result653.error()));   return {};
 });
 if (!result677) return std::unexpected(std::move(result677.error()));
-  auto result678 = callbacks.registerCallback("power", [this]() { return m_power; });
+  auto result678 = callbacks.registerCallback("power", [&self = *this]() { return self.m_power; });
 if (!result678) return std::unexpected(std::move(result678.error()));
-  auto result679 = callbacks.registerCallback("setPower", [this](float const& power) { m_power = power; });
+  auto result679 = callbacks.registerCallback("setPower", [&self = *this](float const& power) { self.m_power = power; });
 if (!result679) return std::unexpected(std::move(result679.error()));
-  auto result680 = callbacks.registerCallback("setReferenceVelocity", [this](std::optional<Vec2F> const& referenceVelocity) { setReferenceVelocity(referenceVelocity); });
+  auto result680 = callbacks.registerCallback("setReferenceVelocity", [&self = *this](std::optional<Vec2F> const& referenceVelocity) { self.setReferenceVelocity(referenceVelocity); });
 if (!result680) return std::unexpected(std::move(result680.error()));
   return callbacks;
 }
 
-std::expected<void, StarException> Projectile::renderPendingRenderables(RenderCallback* renderCallback) {
+std::expected<void, StarException> Projectile::renderPendingRenderables(RenderCallback& renderCallback) {
   for (auto const& renderable : m_pendingRenderables) {
-    if (auto audio = std::get_if<std::shared_ptr<AudioInstance>>(&renderable))
+    if (std::holds_alternative<std::shared_ptr<AudioInstance>>(renderable))
       {
-auto result668 = renderCallback->addAudio(*audio);
+auto result668 = renderCallback.addAudio(std::get<std::shared_ptr<AudioInstance>>(renderable));
 if (!result668) return std::unexpected(std::move(result668.error()));
 }
-    else if (auto particle = std::get_if<Particle>(&renderable))
+    else if (std::holds_alternative<Particle>(renderable))
       {
-auto result669 = renderCallback->addParticle(*particle);
+auto result669 = renderCallback.addParticle(std::get<Particle>(renderable));
 if (!result669) return std::unexpected(std::move(result669.error()));
 }
   }

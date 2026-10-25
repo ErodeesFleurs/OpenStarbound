@@ -103,7 +103,7 @@ private:
     SwapSlotStack
   };
 
-  [[nodiscard]] std::expected<void, StarException> swapSlot(ItemGridWidget* grid);
+  [[nodiscard]] std::expected<void, StarException> swapSlot(ItemGridWidget& grid);
   [[nodiscard]] std::expected<void, StarException> startCrafting();
   [[nodiscard]] std::expected<void, StarException> stopCrafting();
   [[nodiscard]] std::expected<void, StarException> toggleCrafting();

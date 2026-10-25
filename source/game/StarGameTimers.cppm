@@ -8,8 +8,8 @@ import star.json;
 namespace Star {
 
 struct GameTimer {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, GameTimer& gt);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, GameTimer const& gt);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, GameTimer& gt);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, GameTimer const& gt);
   GameTimer();
   explicit GameTimer(float time);
 
@@ -26,8 +26,8 @@ struct GameTimer {
   float percent() const;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, GameTimer& gt);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, GameTimer const& gt);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, GameTimer& gt);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, GameTimer const& gt);
 
 struct SlidingWindow {
   SlidingWindow();
@@ -67,16 +67,16 @@ public:
   double elapsedTime() const;
   void setElapsedTime(double elapsedTime);
 
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, EpochTimer& et);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, EpochTimer const& et);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EpochTimer& et);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EpochTimer const& et);
 
 private:
   std::optional<double> m_lastSeenEpochTime;
   double m_elapsedTime;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, EpochTimer& et);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, EpochTimer const& et);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EpochTimer& et);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EpochTimer const& et);
 
 }
 

@@ -69,12 +69,12 @@ std::expected<List<std::pair<String, bool>>, StarException> File::dirList(String
 
 String File::baseName(String const& fileName) {
   auto bytes = fileName.utf8();
-  return String(::basename(bytes.data()));
+  return String(std::string_view(::basename(bytes.data())));
 }
 
 String File::dirName(String const& fileName) {
   auto bytes = fileName.utf8();
-  return String(::dirname(bytes.data()));
+  return String(std::string_view(::dirname(bytes.data())));
 }
 
 String File::relativeTo(String const& relativeTo, String const& path) {
@@ -157,9 +157,9 @@ std::expected<void, StarException> File::rename(String const& source, String con
   return {};
 }
 
-std::expected<void, StarException> File::overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix) {
+std::expected<void, StarException> File::overwriteFileWithRename(std::span<char const> data, String const& filename, String const& newSuffix) {
   auto newFile = filename + newSuffix;
-  auto written = writeFile(data, len, newFile);
+  auto written = writeFile(data, newFile);
   if (!written)
     return std::unexpected(std::move(written.error()));
   return rename(newFile, filename);

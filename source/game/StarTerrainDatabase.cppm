@@ -10,7 +10,7 @@ class Assets;
 class RandomService;
 
 struct TerrainExceptionTag {
-  static constexpr char const* name() { return "TerrainException"; }
+  static constexpr std::string_view name() { return "TerrainException"; }
 };
 using TerrainException = StarError<TerrainExceptionTag, StarException>;
 

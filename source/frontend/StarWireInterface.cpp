@@ -202,12 +202,12 @@ std::expected<std::shared_ptr<WirePane>, StarException> WirePane::create(GuiCont
 std::expected<void, StarException> WirePane::initialize() {
   auto base = initializePane();
   if (!base) return std::unexpected(std::move(base.error()));
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto gui = (*assets)->json("/interface/wires/wires.config:gui");
   if (!gui) return std::unexpected(std::move(gui.error()));
-  GuiReader reader(*context());
-  auto constructed = reader.construct(*gui, this);
+  GuiReader reader(context());
+  auto constructed = reader.construct(*gui, *this);
   if (!constructed) return std::unexpected(std::move(constructed.error()));
   m_nodeSize = Vec2F(1.8f, 1.8f);
   auto config = (*assets)->json("/player.config:wireConfig");
@@ -289,7 +289,7 @@ std::expected<void, StarException> WirePane::renderWire(Vec2F from, Vec2F to, Co
   to = m_worldPainter->camera().worldToScreen(to);
 
   auto rangeRand = [&](float dev, float min, float max) {
-    return clamp<float>(context()->root().random().nrandf(dev, max), min, max);
+    return clamp<float>(context().root().random().nrandf(dev, max), min, max);
   };
 
   float lineThickness = m_worldPainter->camera().pixelRatio() * rangeRand(m_beamWidthDev, m_minBeamWidth, m_maxBeamWidth);
@@ -303,9 +303,9 @@ std::expected<void, StarException> WirePane::renderWire(Vec2F from, Vec2F to, Co
   innerStripe.setSaturation(innerStripe.saturation() / m_innerBrightnessScale);
   Color secondStripe = innerStripe;
 
-  { auto drawn = context()->drawLine(from, to, baseColor.toRgba(), lineThickness); if (!drawn) return std::unexpected(std::move(drawn.error())); }
-  { auto drawn = context()->drawLine(from, to, firstStripe.toRgba(), lineThickness * m_firstStripeThickness); if (!drawn) return std::unexpected(std::move(drawn.error())); }
-  { auto drawn = context()->drawLine(from, to, secondStripe.toRgba(), lineThickness * m_secondStripeThickness); if (!drawn) return std::unexpected(std::move(drawn.error())); }
+  { auto drawn = context().drawLine(from, to, baseColor.toRgba(), lineThickness); if (!drawn) return std::unexpected(std::move(drawn.error())); }
+  { auto drawn = context().drawLine(from, to, firstStripe.toRgba(), lineThickness * m_firstStripeThickness); if (!drawn) return std::unexpected(std::move(drawn.error())); }
+  { auto drawn = context().drawLine(from, to, secondStripe.toRgba(), lineThickness * m_secondStripeThickness); if (!drawn) return std::unexpected(std::move(drawn.error())); }
   return {};
 }
 
@@ -327,9 +327,9 @@ std::expected<void, StarException> WirePane::renderImpl() {
         if (m_worldClient->isTileProtected(position)) continue;
         auto icon = entity->nodeIcon(node);
         if (!icon) return std::unexpected(std::move(icon.error()));
-        auto size = context()->textureSize(*icon);
+        auto size = context().textureSize(*icon);
         if (!size) return std::unexpected(std::move(size.error()));
-        auto drawn = context()->drawQuad(*icon, camera.worldToScreen(centerOfTile(position) - ((Vec2F(*size) / TilePixels) / 2.0f)), camera.pixelRatio(), Color::White.toRgba());
+        auto drawn = context().drawQuad(*icon, camera.worldToScreen(centerOfTile(position) - ((Vec2F(*size) / TilePixels) / 2.0f)), camera.pixelRatio(), Color::White.toRgba());
         if (!drawn) return std::unexpected(std::move(drawn.error()));
       }
     }
@@ -385,7 +385,7 @@ std::expected<void, StarException> WirePane::renderImpl() {
     }
   }
   if (m_connecting) {
-    Vec2F aimPos = camera.screenToWorld(Vec2F(m_mousePos) * context()->interfaceScale());
+    Vec2F aimPos = camera.screenToWorld(Vec2F(m_mousePos) * context().interfaceScale());
     Vec2I sourcePosition = m_sourceConnector.entityLocation;
     auto sources = m_worldClient->atTile<WireEntity>(m_sourceConnector.entityLocation);
     if (!sources) return std::unexpected(std::move(sources.error()));
@@ -404,7 +404,7 @@ std::expected<void, StarException> WirePane::renderImpl() {
 }
 
 std::expected<bool, StarException> WirePane::sendEvent(InputEvent const& event) {
-  if (std::holds_alternative<MouseMoveEvent>(event) || std::holds_alternative<MouseButtonDownEvent>(event)) m_mousePos = *context()->mousePosition(event);
+  if (std::holds_alternative<MouseMoveEvent>(event) || std::holds_alternative<MouseButtonDownEvent>(event)) m_mousePos = *context().mousePosition(event);
   return false;
 }
 

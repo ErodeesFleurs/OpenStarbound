@@ -62,7 +62,7 @@ class LuaRoot;
 class Rebuilder;
 
 struct ObjectExceptionTag {
-  static constexpr char const* name() { return "ObjectException"; }
+  static constexpr std::string_view name() { return "ObjectException"; }
 };
 using ObjectException = StarError<ObjectExceptionTag, StarException>;
 
@@ -139,8 +139,8 @@ struct ObjectOrientation {
   Json touchDamageConfig;
 
   [[nodiscard]] static std::expected<ParticleEmissionEntry, StarException> parseParticleEmitter(Root& root, String const& path, Json const& config);
-  [[nodiscard]] std::expected<bool, StarException> placementValid(World const* world, Vec2I const& position) const;
-  [[nodiscard]] std::expected<bool, StarException> anchorsValid(World const* world, Vec2I const& position) const;
+  [[nodiscard]] std::expected<bool, StarException> placementValid(World const& world, Vec2I const& position) const;
+  [[nodiscard]] std::expected<bool, StarException> anchorsValid(World const& world, Vec2I const& position) const;
 };
 
 // TODO: This is used very strangely and inconsistently. We go to all the trouble of populating
@@ -151,7 +151,7 @@ struct ObjectOrientation {
 struct ObjectConfig {
   // Returns the index of the best valid orientation.  If no orientations are
   // valid, returns NPos
-  [[nodiscard]] std::expected<std::size_t, StarException> findValidOrientation(World const* world, Vec2I const& position, std::optional<Direction> directionAffinity = std::optional<Direction>()) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findValidOrientation(World const& world, Vec2I const& position, std::optional<Direction> directionAffinity = std::optional<Direction>()) const;
 
   String path;
   // The JSON values that were used to configure this Object
@@ -235,20 +235,20 @@ public:
   bool isObject(String const& name) const;
 
   [[nodiscard]] std::expected<std::shared_ptr<ObjectConfig>, StarException> getConfig(String const& objectName) const;
-  [[nodiscard]] std::expected<List<std::shared_ptr<ObjectOrientation>> const*, StarException> getOrientations(String const& objectName) const;
+  [[nodiscard]] std::expected<std::shared_ptr<List<std::shared_ptr<ObjectOrientation>> const>, StarException> getOrientations(String const& objectName) const;
 
   [[nodiscard]] std::expected<std::shared_ptr<Object>, StarException> createObject(String const& objectName, Json const& objectParameters = JsonObject()) const;
   [[nodiscard]] std::expected<std::shared_ptr<Object>, StarException> diskLoadObject(Json const& diskStore) const;
   [[nodiscard]] std::expected<std::shared_ptr<Object>, StarException> netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  [[nodiscard]] std::expected<bool, StarException> canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const;
+  [[nodiscard]] std::expected<bool, StarException> canPlaceObject(World const& world, Vec2I const& position, String const& objectName) const;
   // If the object is placeable in the given position, creates the given object
   // and sets its position and direction and returns it, otherwise returns
   // null.
-  [[nodiscard]] std::expected<std::shared_ptr<Object>, StarException> createForPlacement(World const* world, String const& objectName, Vec2I const& position,
+  [[nodiscard]] std::expected<std::shared_ptr<Object>, StarException> createForPlacement(World const& world, String const& objectName, Vec2I const& position,
       Direction direction, Json const& parameters = JsonObject()) const;
 
-  [[nodiscard]] std::expected<List<Drawable>, StarException> cursorHintDrawables(World const* world, String const& objectName, Vec2I const& position,
+  [[nodiscard]] std::expected<List<Drawable>, StarException> cursorHintDrawables(World const& world, String const& objectName, Vec2I const& position,
       Direction direction, Json parameters = {}) const;
 
 private:

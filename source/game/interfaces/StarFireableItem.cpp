@@ -111,7 +111,7 @@ FireableItem::FireableItem(FireableItem const& rhs) : ToolUserItem(rhs), StatusE
   m_mode = rhs.m_mode;
 }
 
-std::expected<void, StarException> FireableItem::init(ToolUserEntity* owner, ToolHand hand) {
+std::expected<void, StarException> FireableItem::init(ToolUserEntity& owner, ToolHand hand) {
   auto initialized = ToolUserItem::init(owner, hand);
   if (!initialized)
     return std::unexpected(std::move(initialized.error()));
@@ -128,24 +128,27 @@ std::expected<void, StarException> FireableItem::init(ToolUserEntity* owner, Too
     if (!scripts)
       return std::unexpected(std::move(scripts.error()));
     if (!m_scriptComponent) {
-      m_scriptComponent.emplace(owner->root());
+      m_scriptComponent.emplace(owner.root());
       auto setScripts = m_scriptComponent->setScripts(std::move(*scripts));
       if (!setScripts)
         return std::unexpected(std::move(setScripts.error()));
     }
-    auto configCallbacks = LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, as<Item>(this), std::placeholders::_1, std::placeholders::_2));
+    auto item = rconvert<Item>(*this);
+    if (!item)
+      return std::unexpected(std::move(item.error()));
+    auto configCallbacks = LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, *item, std::placeholders::_1, std::placeholders::_2));
     if (!configCallbacks)
       return std::unexpected(std::move(configCallbacks.error()));
     auto addedConfig = m_scriptComponent->addCallbacks("config", std::move(*configCallbacks));
     if (!addedConfig)
       return std::unexpected(std::move(addedConfig.error()));
-    auto fireableCallbacks = LuaBindings::makeFireableItemCallbacks(this);
+    auto fireableCallbacks = LuaBindings::makeFireableItemCallbacks(*this);
     if (!fireableCallbacks)
       return std::unexpected(std::move(fireableCallbacks.error()));
     auto addedFireable = m_scriptComponent->addCallbacks("fireableItem", std::move(*fireableCallbacks));
     if (!addedFireable)
       return std::unexpected(std::move(addedFireable.error()));
-    auto itemCallbacks = LuaBindings::makeItemCallbacks(as<Item>(this));
+    auto itemCallbacks = LuaBindings::makeItemCallbacks(item->get());
     if (!itemCallbacks)
       return std::unexpected(std::move(itemCallbacks.error()));
     auto addedItem = m_scriptComponent->addCallbacks("item", std::move(*itemCallbacks));
@@ -154,7 +157,7 @@ std::expected<void, StarException> FireableItem::init(ToolUserEntity* owner, Too
     auto itemWorld = world();
     if (!itemWorld)
       return std::unexpected(std::move(itemWorld.error()));
-    return m_scriptComponent->init(*itemWorld);
+    return m_scriptComponent->init(itemWorld->get());
   }
   return {};
 }
@@ -164,7 +167,7 @@ std::expected<void, StarException> FireableItem::uninit() {
     auto uninitialized = m_scriptComponent->uninit();
     if (!uninitialized)
       return std::unexpected(std::move(uninitialized.error()));
-    for (auto const& name : {"config", "fireableItem", "item"}) {
+    for (auto const& name : std::initializer_list<std::string_view>{"config", "fireableItem", "item"}) {
       auto removed = m_scriptComponent->removeCallbacks(name);
       if (!removed)
         return std::unexpected(std::move(removed.error()));
@@ -273,7 +276,7 @@ std::expected<void, StarException> FireableItem::update(float dt, FireMode fireM
     auto modeName = FireModeNames->getRight(fireMode);
     if (!modeName)
       return std::unexpected(std::move(modeName.error()));
-    auto invoked = m_scriptComponent->invoke("update", dt, **modeName, shifting);
+    auto invoked = m_scriptComponent->invoke("update", dt, modeName->get(), shifting);
     if (!invoked)
       return std::unexpected(std::move(invoked.error()));
   }
@@ -450,7 +453,7 @@ std::expected<Vec2F, StarException> FireableItem::ownerFirePosition() const {
   auto handResult = hand();
   if (!handResult)
     return std::unexpected(std::move(handResult.error()));
-  return (*ownerResult)->handPosition(*handResult, (this->firePosition() - handPosition()) / TilePixels);
+  return ownerResult->get().handPosition(*handResult, (this->firePosition() - handPosition()) / TilePixels);
 }
 
 float FireableItem::windupTime() const {

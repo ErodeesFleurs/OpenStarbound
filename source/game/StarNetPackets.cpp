@@ -375,10 +375,10 @@ std::expected<void, StarException> ProtocolResponsePacket::read(DataStream& ds) 
   if (compressionMode() == PacketCompressionMode::Enabled) {
     // gross hack for backwards compatibility with older OpenSB servers
     // can be removed later
-    auto externalBuffer = as<DataStreamExternalBuffer>(&ds);
+    auto externalBuffer = asRef<DataStreamExternalBuffer>(ds);
     bool readInfo = !externalBuffer;
     if (externalBuffer) {
-      auto ended = externalBuffer->atEnd();
+      auto ended = externalBuffer->get().atEnd();
       if (!ended)
         return std::unexpected(std::move(ended.error()));
       readInfo = !*ended;

@@ -75,10 +75,10 @@ std::expected<EntityRenderLayer, StarException> parseRenderLayer(String renderLa
     auto amount = parts->at(1);
     if (!amount)
       return std::unexpected(std::move(amount.error()));
-    auto parsed = lexicalCast<int>(**amount);
+    auto parsed = lexicalCast<int>(amount->get());
     if (!parsed)
       return std::unexpected(std::move(parsed.error()));
-    renderLayer = **name;
+    renderLayer = name->get();
     offset = *plus ? *parsed : -*parsed;
   }
 
@@ -90,7 +90,7 @@ std::expected<EntityRenderLayer, StarException> parseRenderLayer(String renderLa
   auto layer = RenderLayerMap->get(*key);
   if (!layer)
     return std::unexpected(std::move(layer.error()));
-  return **layer + offset;
+  return layer->get() + offset;
 }
 
 PreviewTile::PreviewTile()

@@ -41,10 +41,10 @@ std::expected<std::shared_ptr<PatternedNameGenerator>, StarException> PatternedN
   auto files = (*assets)->scanExtension("namesource");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  auto queued = (*assets)->queueJsons(**files);
+  auto queued = (*assets)->queueJsons(files->get());
   if (!queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& assetFile : **files) {
+  for (auto const& assetFile : files->get()) {
     auto const& file = assetFile.string();
     auto loaded = [&]() -> std::expected<void, StarException> {
       auto config = (*assets)->json(file);
@@ -178,7 +178,7 @@ std::expected<String, StarException> PatternedNameGenerator::processRule(JsonArr
     auto sourceName = meta.getString("source");
     if (!sourceName)
       return std::unexpected(std::move(sourceName.error()));
-    auto source = m_markovSources.ptr(*sourceName);
+    auto source = m_markovSources.maybeRef(*sourceName);
     if (!source)
       return std::unexpected(NameGeneratorException::format("Unknown name source '{}'", *sourceName));
     auto range = meta.get("targetLength").and_then([](Json const& value) { return value.arrayPtr(); });
@@ -197,31 +197,31 @@ std::expected<String, StarException> PatternedNameGenerator::processRule(JsonArr
       return std::unexpected(std::move(target.error()));
     String piece;
     for (std::size_t tries = 0; tries < 10; ++tries) {
-      auto start = random.randFrom(source->starts);
+      auto start = random.randFrom(source->get().starts);
       if (!start)
         return std::unexpected(std::move(start.error()));
-      piece = **start;
+      piece = start->get();
       while (true) {
         auto length = piece.length();
         if (!length)
           return std::unexpected(std::move(length.error()));
         if (*length >= *target) {
-          auto ending = piece.slice(*length - source->endSize, *length);
+          auto ending = piece.slice(*length - source->get().endSize, *length);
           if (!ending)
             return std::unexpected(std::move(ending.error()));
-          if (source->ends.contains(*ending))
+          if (source->get().ends.contains(*ending))
             break;
         }
-        auto link = piece.slice(*length - source->prefixSize, *length);
+        auto link = piece.slice(*length - source->get().prefixSize, *length);
         if (!link)
           return std::unexpected(std::move(link.error()));
-        auto chain = source->chains.ptr(*link);
+        auto chain = source->get().chains.maybeRef(*link);
         if (!chain)
           break;
-        auto next = random.randFrom(*chain);
+        auto next = random.randFrom(chain->get());
         if (!next)
           return std::unexpected(std::move(next.error()));
-        piece += **next;
+        piece += next->get();
       }
       auto length = piece.length();
       if (!length)

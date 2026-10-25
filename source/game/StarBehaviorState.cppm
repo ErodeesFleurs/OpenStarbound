@@ -19,7 +19,7 @@ struct DecoratorState;
 struct CompositeState;
 
 struct BehaviorExceptionTag {
-  static constexpr char const* name() { return "BehaviorException"; }
+  static constexpr std::string_view name() { return "BehaviorException"; }
 };
 using BehaviorException = StarError<BehaviorExceptionTag, StarException>;
 

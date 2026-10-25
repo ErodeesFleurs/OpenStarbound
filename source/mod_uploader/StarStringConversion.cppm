@@ -7,7 +7,8 @@ import star.string;
 namespace Star {
 
 inline String toSString(QString const& str) {
-  return String(str.toUtf8().data());
+  auto utf8 = str.toUtf8();
+  return String(std::string_view(utf8.constData()));
 }
 
 inline QString toQString(String const& str) {

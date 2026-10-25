@@ -17,7 +17,7 @@ class Root;
 
 
 struct InputExceptionTag {
-  static constexpr char const* name() { return "InputException"; }
+  static constexpr std::string_view name() { return "InputException"; }
 };
 using InputException = StarError<InputExceptionTag, StarException>;
 
@@ -72,7 +72,7 @@ public:
     // The user-facing name of this entry.
     String name;
     // The category this entry belongs to.
-    BindCategory const* category;
+    std::reference_wrapper<BindCategory const> category;
     // Associated string tags that become active when this bind is pressed.
     StringList tags;
 
@@ -80,8 +80,9 @@ public:
     List<Bind> defaultBinds;
     // The user-configured binds.
     List<Bind> customBinds;
+    std::size_t stateId;
 
-    explicit BindEntry(Input& owner) : owner(owner) {}
+    explicit BindEntry(Input& owner, BindCategory const& category);
     [[nodiscard]] static std::expected<BindEntry, StarException> create(Input& owner, String entryId, Json const& config, BindCategory const& parentCategory);
     [[nodiscard]] std::expected<void, StarException> updated();
   };
@@ -89,7 +90,7 @@ public:
   struct BindRef {
     KeyMod mods;
     std::uint8_t priority = 0;  
-    BindEntry* entry = nullptr; // Invalidated on reload, careful!
+    std::reference_wrapper<BindEntry> entry; // Invalidated on reload; mappings are rebuilt together.
 
     BindRef(BindEntry& bindEntry, KeyBind& keyBind);
     BindRef(BindEntry& bindEntry, MouseBind& mouseBind);
@@ -196,27 +197,27 @@ public:
     ~ClipboardUnlock();
 
   private:
-    Input* m_input;
+    std::optional<std::reference_wrapper<Input>> m_input;
   };
 
   ClipboardUnlock unlockClipboard();
   bool clipboardAllowed() const;
 private:
   explicit Input(Root& root);
-  List<BindEntry*> filterBindEntries(List<BindRef> const& binds, KeyMod mods) const;
+  List<std::reference_wrapper<BindEntry>> filterBindEntries(List<BindRef> const& binds, KeyMod mods) const;
 
-  BindEntry* bindEntryPtr(String const& categoryId, String const& bindId);
-  [[nodiscard]] std::expected<BindEntry*, StarException> bindEntry(String const& categoryId, String const& bindId);
+  std::optional<std::reference_wrapper<BindEntry>> maybeBindEntry(String const& categoryId, String const& bindId);
+  [[nodiscard]] std::expected<std::reference_wrapper<BindEntry>, StarException> bindEntry(String const& categoryId, String const& bindId);
 
-  InputState* bindStatePtr(String const& categoryId, String const& bindId);
+  std::optional<std::reference_wrapper<InputState>> maybeBindState(String const& categoryId, String const& bindId);
 
-  InputState& addBindState(BindEntry const* bindEntry);
+  InputState& addBindState(BindEntry const& bindEntry);
 
   Root& m_root;
 
   // Regenerated on reload.
   StableHashMap<String, BindCategory> m_bindCategories;
-  // Contains raw pointers to bind entries in categories, so also regenerated on reload.
+  // Contains references to bind entries in categories, so also regenerated on reload.
   HashMap<InputVariant, List<BindRef>> m_bindMappings;
 
   std::shared_ptr<Listener> m_rootReloadListener;
@@ -231,7 +232,12 @@ private:
   HashMap<MouseButton, MouseInputState> m_mouseStates;
   HashMap<ControllerButton, ControllerInputState> m_controllerStates;
   //Bind states
-  HashMap<BindEntry const*, InputState> m_bindStates;
+  struct BindInputState : InputState {
+    std::reference_wrapper<BindEntry const> entry;
+    explicit BindInputState(BindEntry const& entry) : entry(entry) {}
+  };
+  HashMap<std::size_t, BindInputState> m_bindStates;
+  std::size_t m_nextBindEntryId = 0;
   StringMap<unsigned> m_activeTags;
 
   KeyMod m_pressedMods;

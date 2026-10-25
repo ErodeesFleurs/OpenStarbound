@@ -9,7 +9,7 @@ import star.ordered_set;
 namespace Star {
 
 struct OptionParserExceptionTag {
-  static constexpr char const* name() { return "OptionParserException"; }
+  static constexpr std::string_view name() { return "OptionParserException"; }
 };
 using OptionParserException = StarError<OptionParserExceptionTag, StarException>;
 

@@ -30,8 +30,8 @@ struct VisitableWorldParameters;
 // derived from the visitableworldparameters without reconstructing all sky
 // parameters, e.g. for terraforming
 struct SkyParameters {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyParameters& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyParameters const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, SkyParameters& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, SkyParameters const& value);
   SkyParameters();
   [[nodiscard]] static std::expected<SkyParameters, StarException> create(Root& root, CelestialCoordinate const& coordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase);
   SkyParameters(SkyParameters const& oldSkyParameters, std::shared_ptr<VisitableWorldParameters const> newVisitableParameters);
@@ -58,8 +58,8 @@ struct SkyParameters {
   Json settings;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyParameters& sky);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyParameters const& sky);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, SkyParameters& sky);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, SkyParameters const& sky);
 }
 
 export module star.sky_parameters;

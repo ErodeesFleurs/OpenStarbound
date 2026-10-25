@@ -70,10 +70,10 @@ std::expected<std::shared_ptr<CollectionDatabase>, StarException> CollectionData
   auto files = (*assets)->scanExtension("collection");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  auto queued = (*assets)->queueJsons(**files);
+  auto queued = (*assets)->queueJsons(files->get());
   if (!queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& assetFile : **files) {
+  for (auto const& assetFile : files->get()) {
     auto const& file = assetFile.string();
     auto config = (*assets)->json(file);
     if (!config)
@@ -87,12 +87,12 @@ std::expected<std::shared_ptr<CollectionDatabase>, StarException> CollectionData
     auto typeName = config->getString("type", "generic");
     if (!typeName)
       return std::unexpected(std::move(typeName.error()));
-    auto type = CollectionTypeNames->leftPtr(*typeName);
+    auto type = CollectionTypeNames->maybeLeftRef(*typeName);
     if (!type)
       return std::unexpected(std::move(type.error()));
     if (!*type)
       return std::unexpected(CollectionDatabaseException(strf("Unknown collection type '{}'", *typeName)));
-    Collection collection(*name, **type, *title);
+    Collection collection(*name, (*type)->get(), *title);
     auto configs = config->get("collectables").and_then([](Json const& value) { return value.iterateObject(); });
     if (!configs)
       return std::unexpected(std::move(configs.error()));
@@ -117,22 +117,22 @@ List<Collection> CollectionDatabase::collections() const {
 }
 
 std::expected<Collection, StarException> CollectionDatabase::collection(String const& collectionName) const {
-  if (auto result = m_collections.ptr(collectionName))
-    return *result;
+  if (auto result = m_collections.maybeRef(collectionName))
+    return result->get();
   return std::unexpected(CollectionDatabaseException(strf("Collection '{}' not found", collectionName)));
 }
 
 std::expected<List<Collectable>, StarException> CollectionDatabase::collectables(String const& collectionName) const {
-  return collectables(collectionName, nullptr);
+  return collectables(collectionName, std::nullopt);
 }
 
-std::expected<List<Collectable>, StarException> CollectionDatabase::collectables(String const& collectionName, ItemDatabase const* itemCatalog) const {
-  auto configs = m_collectableConfigs.ptr(collectionName);
+std::expected<List<Collectable>, StarException> CollectionDatabase::collectables(String const& collectionName, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
+  auto configs = m_collectableConfigs.maybeRef(collectionName);
   if (!configs)
     return std::unexpected(CollectionDatabaseException(strf("Collection '{}' not found", collectionName)));
   List<Collectable> result;
-  result.reserve(configs->size());
-  for (auto const& entry : *configs) {
+  result.reserve(configs->get().size());
+  for (auto const& entry : configs->get()) {
     auto value = collectable(collectionName, entry.first, itemCatalog);
     if (!value)
       return std::unexpected(std::move(value.error()));
@@ -142,29 +142,29 @@ std::expected<List<Collectable>, StarException> CollectionDatabase::collectables
 }
 
 std::expected<Collectable, StarException> CollectionDatabase::collectable(String const& collectionName, String const& collectableName) const {
-  return collectable(collectionName, collectableName, nullptr);
+  return collectable(collectionName, collectableName, std::nullopt);
 }
 
-std::expected<Collectable, StarException> CollectionDatabase::collectable(String const& collectionName, String const& collectableName, ItemDatabase const* itemCatalog) const {
-  auto configs = m_collectableConfigs.ptr(collectionName);
-  auto config = configs ? configs->ptr(collectableName) : nullptr;
-  auto definition = m_collections.ptr(collectionName);
+std::expected<Collectable, StarException> CollectionDatabase::collectable(String const& collectionName, String const& collectableName, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
+  auto configs = m_collectableConfigs.maybeRef(collectionName);
+  auto config = configs ? configs->get().maybeRef(collectableName) : std::nullopt;
+  auto definition = m_collections.maybeRef(collectionName);
   if (!config || !definition)
     return std::unexpected(CollectionDatabaseException(strf("Collectable '{}' not found in collection '{}'", collectableName, collectionName)));
   {
     std::lock_guard locker(m_collectablesMutex);
-    if (auto published = m_collectables.ptr(collectionName))
-      if (auto cached = published->ptr(collectableName))
-        return *cached;
+    if (auto published = m_collectables.maybeRef(collectionName))
+      if (auto cached = published->get().maybeRef(collectableName))
+        return cached->get();
   }
-  auto result = [&]() -> std::expected<Collectable, StarException> {
-    switch (definition->type) {
+  auto result = [&, &database = *this]() -> std::expected<Collectable, StarException> {
+    switch (definition->get().type) {
       case CollectionType::Generic:
-        return parseGenericCollectable(collectableName, *config);
+        return database.parseGenericCollectable(collectableName, config->get());
       case CollectionType::Monster:
-        return parseMonsterCollectable(collectableName, *config);
+        return database.parseMonsterCollectable(collectableName, config->get());
       case CollectionType::Item:
-        return parseItemCollectable(collectableName, *config, itemCatalog);
+        return database.parseItemCollectable(collectableName, config->get(), itemCatalog);
     }
     return std::unexpected(CollectionDatabaseException("Invalid collection type"));
   }();
@@ -175,15 +175,15 @@ std::expected<Collectable, StarException> CollectionDatabase::collectable(String
   }
   std::lock_guard locker(m_collectablesMutex);
   auto& published = m_collectables[collectionName];
-  if (auto cached = published.ptr(collectableName))
-    return *cached;
+  if (auto cached = published.maybeRef(collectableName))
+    return cached->get();
   published[collectableName] = *result;
   return std::move(*result);
 }
 
 bool CollectionDatabase::hasCollectable(String const& collectionName, String const& collectableName) const {
-  auto configs = m_collectableConfigs.ptr(collectionName);
-  return m_collections.contains(collectionName) && configs && configs->contains(collectableName);
+  auto configs = m_collectableConfigs.maybeRef(collectionName);
+  return m_collections.contains(collectionName) && configs && configs->get().contains(collectableName);
 }
 
 std::expected<Collectable, StarException> CollectionDatabase::parseGenericCollectable(String const& name, Json const& config) const {
@@ -220,7 +220,7 @@ std::expected<Collectable, StarException> CollectionDatabase::parseMonsterCollec
   return std::move(*collectable);
 }
 
-std::expected<Collectable, StarException> CollectionDatabase::parseItemCollectable(String const& name, Json const& config, ItemDatabase const* itemCatalog) const {
+std::expected<Collectable, StarException> CollectionDatabase::parseItemCollectable(String const& name, Json const& config, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
   auto collectable = parseGenericCollectable(name, config);
   if (!collectable)
     return std::unexpected(std::move(collectable.error()));
@@ -230,7 +230,7 @@ std::expected<Collectable, StarException> CollectionDatabase::parseItemCollectab
     if (!catalog)
       return std::unexpected(std::move(catalog.error()));
     catalogOwner = std::move(*catalog);
-    itemCatalog = catalogOwner.get();
+    itemCatalog = std::cref(*catalogOwner);
   }
   auto itemName = config.getString("item");
   if (!itemName)
@@ -238,7 +238,7 @@ std::expected<Collectable, StarException> CollectionDatabase::parseItemCollectab
   auto descriptor = ItemDescriptor::create(*itemName, 1);
   if (!descriptor)
     return std::unexpected(std::move(descriptor.error()));
-  auto item = itemCatalog->itemShared(std::move(*descriptor));
+  auto item = itemCatalog->get().itemShared(std::move(*descriptor));
   if (!item)
     return std::unexpected(std::move(item.error()));
   if (!*item)
@@ -255,7 +255,7 @@ std::expected<Collectable, StarException> CollectionDatabase::parseItemCollectab
     if (!inventoryIcon)
       return std::unexpected(std::move(inventoryIcon.error()));
     if (inventoryIcon->isType(Json::Type::String)) {
-      auto itemConfig = itemCatalog->itemConfig((*item)->name(), JsonObject());
+      auto itemConfig = itemCatalog->get().itemConfig((*item)->name(), JsonObject());
       if (!itemConfig)
         return std::unexpected(std::move(itemConfig.error()));
       auto icon = inventoryIcon->toString();

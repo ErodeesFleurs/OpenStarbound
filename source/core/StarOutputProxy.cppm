@@ -47,8 +47,8 @@ namespace OutputAnyDetail {
 
   template <typename T>
     requires std::same_as<decltype(outputValue(std::declval<std::ostream&>(), std::declval<T const&>())),
-        std::expected<std::ostream*, StarException>>
-  [[nodiscard]] std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Wrapper<T> const& wrapper) {
+        std::expected<std::reference_wrapper<std::ostream>, StarException>>
+  [[nodiscard]] std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, Wrapper<T> const& wrapper) {
     return outputValue(os, wrapper.wrapped);
   }
 }

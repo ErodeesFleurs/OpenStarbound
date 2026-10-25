@@ -123,8 +123,8 @@ private:
     [[nodiscard]] std::expected<Json, StarException> toJson() const;
   };
 
-  [[nodiscard]] std::expected<UniverseMap const*, StarException> universeMap() const;
-  [[nodiscard]] std::expected<UniverseMap*, StarException> universeMap();
+  [[nodiscard]] std::expected<std::reference_wrapper<UniverseMap const>, StarException> universeMap() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<UniverseMap>, StarException> universeMap();
 
   std::optional<Uuid> m_serverUuid;
   HashMap<Uuid, UniverseMap> m_universeMaps;

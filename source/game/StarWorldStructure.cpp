@@ -190,7 +190,7 @@ std::expected<WorldStructure, StarException> WorldStructure::create(Root& root, 
     if (!DirectionNames) return std::unexpected(DirectionNames.error());
     auto autokeyField8Result2 = DirectionNames->getLeft((*autokeyField8Result1));
     if (!autokeyField8Result2) return std::unexpected(std::move(autokeyField8Result2.error()));
-    auto keyField8 = std::move((**autokeyField8Result2));
+    auto keyField8 = autokeyField8Result2->get();
     auto autokeyField9Result1 = blockKeyConfig.getObject("objectParameters", JsonObject());
     if (!autokeyField9Result1) return std::unexpected(std::move(autokeyField9Result1.error()));
     auto keyField9 = std::move((*autokeyField9Result1));
@@ -351,7 +351,7 @@ std::expected<WorldStructure, StarException> WorldStructure::create(Json const& 
     if (!DirectionNames) return std::unexpected(DirectionNames.error());
     auto autofield2Result2 = DirectionNames->getLeft((*autofield2Result1));
     if (!autofield2Result2) return std::unexpected(std::move(autofield2Result2.error()));
-    auto field2 = std::move((**autofield2Result2));
+    auto field2 = autofield2Result2->get();
     auto autofield3Result1 = v.get("parameters", {});
     if (!autofield3Result1) return std::unexpected(std::move(autofield3Result1.error()));
     auto field3 = std::move((*autofield3Result1));
@@ -520,7 +520,7 @@ std::expected<Json, StarException> WorldStructure::store() const {
     return JsonObject{
         {"position", jsonFromVec2I(o.position)},
         {"name", o.name},
-        {"direction", **direction},
+        {"direction", direction->get()},
         {"parameters", o.parameters},
         {"residual", o.residual},
     };

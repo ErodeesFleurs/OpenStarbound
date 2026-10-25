@@ -24,8 +24,8 @@ namespace Star {
 class ImageMetadataDatabase;
 
 struct Drawable {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable& drawable);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable const& drawable);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Drawable& drawable);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Drawable const& drawable);
 
   struct LinePart {
     Line2F line;
@@ -46,13 +46,13 @@ struct Drawable {
     // Add directives to this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    [[nodiscard]] std::expected<ImagePart*, StarException> addDirectives(ImageMetadataDatabase const& imageMetadata, Directives const& directives, bool keepImageCenterPosition = false);
-    [[nodiscard]] std::expected<ImagePart*, StarException> addDirectivesGroup(ImageMetadataDatabase const& imageMetadata, DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false);
+    [[nodiscard]] std::expected<std::reference_wrapper<ImagePart>, StarException> addDirectives(ImageMetadataDatabase const& imageMetadata, Directives const& directives, bool keepImageCenterPosition = false);
+    [[nodiscard]] std::expected<std::reference_wrapper<ImagePart>, StarException> addDirectivesGroup(ImageMetadataDatabase const& imageMetadata, DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false);
 
     // Remove directives from this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    [[nodiscard]] std::expected<ImagePart*, StarException> removeDirectives(ImageMetadataDatabase const& imageMetadata, bool keepImageCenterPosition = false);
+    [[nodiscard]] std::expected<std::reference_wrapper<ImagePart>, StarException> removeDirectives(ImageMetadataDatabase const& imageMetadata, bool keepImageCenterPosition = false);
   };
 
   static Drawable makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position = Vec2F());
@@ -118,8 +118,8 @@ struct Drawable {
   bool fullbright;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable& drawable);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable const& drawable);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Drawable& drawable);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Drawable const& drawable);
 
 template <typename DrawablesContainer>
 void Drawable::translateAll(DrawablesContainer& drawables, Vec2F const& translation) {

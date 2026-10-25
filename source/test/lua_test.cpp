@@ -21,9 +21,8 @@ namespace {
 template <typename T, typename U>
 void expectLuaAlternative(std::expected<LuaValue, StarException> result, U const& expected) {
   ASSERT_TRUE(result) << result.error().what();
-  auto value = std::get_if<T>(&*result);
-  ASSERT_NE(value, nullptr);
-  EXPECT_EQ(*value, expected);
+  ASSERT_TRUE(std::holds_alternative<T>(*result));
+  EXPECT_EQ(std::get<T>(*result), expected);
 }
 
 void expectLuaNil(std::expected<LuaValue, StarException> result) {
@@ -369,13 +368,13 @@ TEST(LuaTest, UserDataTest) {
   ASSERT_TRUE(data1);
   ASSERT_TRUE(data2);
   ASSERT_TRUE(data3);
-  EXPECT_EQ((*data1)->field, 1);
-  EXPECT_EQ((*data2)->field, 2);
-  EXPECT_EQ((*data3)->field, 1);
+  EXPECT_EQ(data1->get().field, 1);
+  EXPECT_EQ(data2->get().field, 2);
+  EXPECT_EQ(data3->get().field, 1);
 
-  (*data1)->field = 3;
-  EXPECT_EQ((*data1)->field, 3);
-  EXPECT_EQ((*data3)->field, 3);
+  data1->get().field = 3;
+  EXPECT_EQ(data1->get().field, 3);
+  EXPECT_EQ(data3->get().field, 3);
 
   ASSERT_TRUE((luaContext.invokePath("doit", TestUserData1())));
   auto userdata4Result = luaContext.get("heldValue");
@@ -495,9 +494,8 @@ TEST(LuaTest, ArrayTest) {
 
   auto arrayValue = luaContext.invokePath("test");
   ASSERT_TRUE(arrayValue);
-  auto arrayTablePointer = std::get_if<LuaTable>(&*arrayValue);
-  ASSERT_NE(arrayTablePointer, nullptr);
-  auto& arrayTable = *arrayTablePointer;
+  ASSERT_TRUE(std::holds_alternative<LuaTable>(*arrayValue));
+  auto& arrayTable = std::get<LuaTable>(*arrayValue);
 
   EXPECT_EQ(arrayTable.length(), 5);
   expectLuaAlternative<LuaInt>(arrayTable.get(2), 4);
@@ -505,11 +503,9 @@ TEST(LuaTest, ArrayTest) {
 
   List<std::pair<int, int>> values;
   ASSERT_TRUE((arrayTable.iterate([&values](LuaValue const& key, LuaValue const& value) -> std::expected<void, StarException> {
-    auto ikey = std::get_if<LuaInt>(&key);
-    auto ivalue = std::get_if<LuaInt>(&value);
-    if (!ikey || !ivalue)
+    if (!std::holds_alternative<LuaInt>(key) || !std::holds_alternative<LuaInt>(value))
       return std::unexpected(LuaConversionException("Expected integer array key and value"));
-    values.append({*ikey, *ivalue});
+    values.append({std::get<LuaInt>(key), std::get<LuaInt>(value)});
     return {};
   })));
   List<std::pair<int, int>> compare = {{1, 2}, {2, 4}, {3, 6}, {4, 8}, {5, 10}};
@@ -1003,7 +999,7 @@ TEST(LuaTest, Limits) {
   // Make sure the instruction count is reset after each call.
   ASSERT_TRUE((context.invokePath("toabignumberandthenstop")));
 
-  auto infLoop = R"SCRIPT(
+  std::string_view infLoop = R"SCRIPT(
         while true do
         end
       )SCRIPT";
@@ -1011,14 +1007,14 @@ TEST(LuaTest, Limits) {
   // Make sure loading code into context with infinite loops in their
   // evaluation triggers instruction limit.
   {
-    auto failure = context.load(infLoop);
+    auto failure = context.load(std::span<char const>(infLoop));
     ASSERT_FALSE(failure);
     EXPECT_TRUE(failure.error().is<LuaInstructionLimitReached>());
   };
 
   // And the same for eval
   {
-    auto failure = context.eval(infLoop);
+    auto failure = context.eval(String(infLoop));
     ASSERT_FALSE(failure);
     EXPECT_TRUE(failure.error().is<LuaInstructionLimitReached>());
   };

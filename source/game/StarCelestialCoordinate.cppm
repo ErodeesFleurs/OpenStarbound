@@ -11,7 +11,7 @@ import star.vector;
 namespace Star {
 
 struct CelestialExceptionTag {
-  static constexpr char const* name() { return "CelestialException"; }
+  static constexpr std::string_view name() { return "CelestialException"; }
 };
 using CelestialException = StarError<CelestialExceptionTag, StarException>;
 
@@ -84,8 +84,8 @@ public:
   // Prints in the same format accepted by parser.  Each coordinate is unique.
   friend std::ostream& operator<<(std::ostream& os, CelestialCoordinate const& coord);
 
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialCoordinate& coordinate);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialCoordinate const& coordinate);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, CelestialCoordinate& coordinate);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, CelestialCoordinate const& coordinate);
 
 private:
   Vec3I m_location;
@@ -93,8 +93,8 @@ private:
   int m_satelliteOrbitNumber;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialCoordinate& coordinate);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialCoordinate const& coordinate);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, CelestialCoordinate& coordinate);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, CelestialCoordinate const& coordinate);
 
 }
 

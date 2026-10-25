@@ -112,9 +112,9 @@ std::expected<std::shared_ptr<LiquidsDatabase>, StarException> LiquidsDatabase::
   result->m_liquidNames["empty"] = EmptyLiquidId;
   auto liquids = assets->scanExtension("liquid");
   if (!liquids) return std::unexpected(std::move(liquids.error()));
-  auto queued = assets->queueJsons(**liquids);
+  auto queued = assets->queueJsons(liquids->get());
   if (!queued) return std::unexpected(std::move(queued.error()));
-  for (auto const& path : **liquids) {
+  for (auto const& path : liquids->get()) {
     auto const& file = path.string();
     auto readFile = [&]() -> std::expected<void, StarException> {
       auto config = assets->json(file);
@@ -224,7 +224,7 @@ List<std::shared_ptr<LiquidSettings const>> LiquidsDatabase::allLiquidSettings()
 std::expected<LiquidId, StarException> LiquidsDatabase::liquidId(String const& str) const {
   auto id = m_liquidNames.get(str);
   if (!id) return std::unexpected(std::move(id.error()));
-  return **id;
+  return id->get();
 }
 
 std::expected<String, StarException> LiquidsDatabase::liquidName(LiquidId liquidId) const {

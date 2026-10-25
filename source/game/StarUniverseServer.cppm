@@ -138,7 +138,7 @@ class ServerClientContext;
 class Root;
 
 struct UniverseServerExceptionTag {
-  static constexpr char const* name() { return "UniverseServerException"; }
+  static constexpr std::string_view name() { return "UniverseServerException"; }
 };
 using UniverseServerException = StarError<UniverseServerExceptionTag, StarException>;
 
@@ -225,7 +225,7 @@ public:
   // given function on the client world and player object in a thread safe way.
   // Returns true if function was called, false if client was not found or in
   // an invalid connection state.
-  [[nodiscard]] std::expected<bool, StarException> executeForClient(ConnectionId clientId, std::function<std::expected<void, StarException>(WorldServer*, std::shared_ptr<Player>)> action);
+  [[nodiscard]] std::expected<bool, StarException> executeForClient(ConnectionId clientId, std::function<std::expected<void, StarException>(WorldServer&, std::shared_ptr<Player>)> action);
   [[nodiscard]] std::expected<void, StarException> disconnectClient(ConnectionId clientId, String const& reason);
   [[nodiscard]] std::expected<void, StarException> banUser(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType, std::optional<int> timeout);
   [[nodiscard]] std::expected<bool, StarException> unbanIp(String const& addressString);
@@ -324,9 +324,9 @@ private:
 
   [[nodiscard]] std::expected<void, StarException> addCelestialRequests(ConnectionId clientId, List<CelestialRequest> requests);
 
-  [[nodiscard]] std::expected<void, StarException> worldUpdated(WorldServerThread* worldServer);
-  [[nodiscard]] std::expected<void, StarException> systemWorldUpdated(SystemWorldServerThread* systemWorldServer);
-  [[nodiscard]] std::expected<void, StarException> packetsReceived(UniverseConnectionServer* connectionServer, ConnectionId clientId, List<std::shared_ptr<Packet>> packets);
+  [[nodiscard]] std::expected<void, StarException> worldUpdated(WorldServerThread& worldServer);
+  [[nodiscard]] std::expected<void, StarException> systemWorldUpdated(SystemWorldServerThread& systemWorldServer);
+  [[nodiscard]] std::expected<void, StarException> packetsReceived(UniverseConnectionServer& connectionServer, ConnectionId clientId, List<std::shared_ptr<Packet>> packets);
 
   [[nodiscard]] std::expected<void, StarException> acceptConnection(UniverseConnection connection, std::optional<HostAddress> remoteAddress);
 

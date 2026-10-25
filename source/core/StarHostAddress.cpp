@@ -55,9 +55,9 @@ std::expected<HostAddress, StarException> HostAddress::lookup(String const& addr
   return result;
 }
 
-HostAddress::HostAddress() : HostAddress(NetworkMode::IPv4, nullptr) {}
+HostAddress::HostAddress() : HostAddress(NetworkMode::IPv4) {}
 
-HostAddress::HostAddress(NetworkMode mode, std::uint8_t* address) {
+HostAddress::HostAddress(NetworkMode mode, std::span<std::uint8_t const> address) {
   set(mode, address);
 }
 
@@ -69,8 +69,8 @@ NetworkMode HostAddress::mode() const {
   return m_mode;
 }
 
-std::uint8_t const* HostAddress::bytes() const {
-  return m_address;
+std::span<std::uint8_t const> HostAddress::bytes() const {
+  return {m_address, size()};
 }
 
 std::uint8_t HostAddress::octet(std::size_t i) const {
@@ -177,10 +177,10 @@ std::expected<void, StarException> HostAddress::set(String const& address) {
       }
       if (mode == NetworkMode::IPv4) {
         struct sockaddr_in* info = (struct sockaddr_in*)ptr->ai_addr;
-        set(mode, (std::uint8_t*)(&info->sin_addr));
+        set(mode, {reinterpret_cast<std::uint8_t const*>(&info->sin_addr), sizeof(info->sin_addr)});
       } else {
         struct sockaddr_in6* info = (struct sockaddr_in6*)ptr->ai_addr;
-        set(mode, (std::uint8_t*)(&info->sin6_addr));
+        set(mode, {reinterpret_cast<std::uint8_t const*>(&info->sin6_addr), sizeof(info->sin6_addr)});
       }
       break;
     }
@@ -191,10 +191,10 @@ std::expected<void, StarException> HostAddress::set(String const& address) {
   return {};
 }
 
-void HostAddress::set(NetworkMode mode, std::uint8_t const* addr) {
+void HostAddress::set(NetworkMode mode, std::span<std::uint8_t const> addr) {
   m_mode = mode;
-  if (addr)
-    std::memcpy(m_address, addr, size());
+  if (!addr.empty())
+    std::memcpy(m_address, addr.data(), size());
   else
     std::memset(m_address, 0, 16);
 }
@@ -265,7 +265,7 @@ HostAddressWithPort::HostAddressWithPort() : m_port(0) {}
 HostAddressWithPort::HostAddressWithPort(HostAddress const& address, std::uint16_t port)
   : m_address(address), m_port(port) {}
 
-HostAddressWithPort::HostAddressWithPort(NetworkMode mode, std::uint8_t* address, std::uint16_t port) {
+HostAddressWithPort::HostAddressWithPort(NetworkMode mode, std::span<std::uint8_t const> address, std::uint16_t port) {
   m_address = HostAddress(mode, address);
   m_port = port;
 }

@@ -42,7 +42,7 @@ private:
     std::shared_ptr<Animation> animation;
   };
 
-  GuiContext* m_guiContext;
+  std::reference_wrapper<GuiContext> m_guiContext;
   std::shared_ptr<UniverseClient> m_client;
   WorldCamera m_camera;
   Map<EntityId, Indicator> m_indicators;

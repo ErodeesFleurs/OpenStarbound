@@ -183,11 +183,11 @@ std::expected<std::shared_ptr<MiningTool>, StarException> MiningTool::create(Roo
   if (!position)
     return std::unexpected(std::move(position.error()));
   item->m_handPosition = *position;
-  for (auto const& [key, target] : {std::pair{"blockRadius", &item->m_blockRadius}, std::pair{"altBlockRadius", &item->m_altBlockRadius}}) {
+  for (auto const& [key, target] : {std::pair{std::string_view("blockRadius"), std::ref(item->m_blockRadius)}, std::pair{std::string_view("altBlockRadius"), std::ref(item->m_altBlockRadius)}}) {
     auto value = item->instanceValue(key).and_then([](Json const& value) { return value.toFloat(); });
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *target = *value;
+    target.get() = *value;
   }
   auto sounds = item->instanceValue("strikeSounds").and_then(jsonToStringList);
   if (!sounds)
@@ -201,11 +201,11 @@ std::expected<std::shared_ptr<MiningTool>, StarException> MiningTool::create(Roo
   if (!pointable)
     return std::unexpected(std::move(pointable.error()));
   item->m_pointable = *pointable;
-  for (auto const& [path, target] : {std::pair{"/sfx.config:miningToolVolume", &item->m_toolVolume}, std::pair{"/sfx.config:miningBlockVolume", &item->m_blockVolume}}) {
+  for (auto const& [path, target] : {std::pair{std::string_view("/sfx.config:miningToolVolume"), std::ref(item->m_toolVolume)}, std::pair{std::string_view("/sfx.config:miningBlockVolume"), std::ref(item->m_blockVolume)}}) {
     auto volume = (*assets)->json(path).and_then([](Json const& value) { return value.toFloat(); });
     if (!volume)
       return std::unexpected(std::move(volume.error()));
-    *target = *volume;
+    target.get() = *volume;
   }
   return item;
 }
@@ -250,20 +250,20 @@ std::expected<void, StarException> MiningTool::fire(FireMode mode, bool shifting
     List<Vec2I> brushArea;
 
     auto layer = (mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background);
-    bool inRange = (*itemOwner)->isAdmin();
+    bool inRange = itemOwner->get().isAdmin();
     if (!inRange) {
-      auto range = (*itemOwner)->inToolRange();
+      auto range = itemOwner->get().inToolRange();
       if (!range)
         return std::unexpected(std::move(range.error()));
       inRange = *range;
     }
     if (inRange) {
-      auto aimPosition = (*itemOwner)->aimPosition();
+      auto aimPosition = itemOwner->get().aimPosition();
       if (!aimPosition)
         return std::unexpected(std::move(aimPosition.error()));
       brushArea = tileAreaBrush(radius, *aimPosition, true);
       for (auto pos : brushArea) {
-        auto sound = (*materialDatabase)->miningSound((*itemWorld)->material(pos, layer), (*itemWorld)->mod(pos, layer));
+        auto sound = (*materialDatabase)->miningSound(itemWorld->get().material(pos, layer), itemWorld->get().mod(pos, layer));
         if (!sound)
           return std::unexpected(std::move(sound.error()));
         blockSound = std::move(*sound);
@@ -272,7 +272,7 @@ std::expected<void, StarException> MiningTool::fire(FireMode mode, bool shifting
       }
       if (blockSound.empty()) {
         for (auto pos : brushArea) {
-          auto sound = (*materialDatabase)->footstepSound((*itemWorld)->material(pos, layer), (*itemWorld)->mod(pos, layer));
+          auto sound = (*materialDatabase)->footstepSound(itemWorld->get().material(pos, layer), itemWorld->get().mod(pos, layer));
           if (!sound)
             return std::unexpected(std::move(sound.error()));
           blockSound = std::move(*sound);
@@ -298,7 +298,7 @@ std::expected<void, StarException> MiningTool::fire(FireMode mode, bool shifting
       auto damageType = TileDamageTypeNames->getLeft(*damageTypeName);
       if (!damageType)
         return std::unexpected(std::move(damageType.error()));
-      damage.type = **damageType;
+      damage.type = damageType->get();
       auto status = durabilityStatus();
       if (!status)
         return std::unexpected(std::move(status.error()));
@@ -310,12 +310,12 @@ std::expected<void, StarException> MiningTool::fire(FireMode mode, bool shifting
       if (!harvest)
         return std::unexpected(std::move(harvest.error()));
       damage.harvestLevel = *harvest;
-      auto damageResult = (*itemWorld)->damageTiles(brushArea, layer, (*itemOwner)->position(), damage, (*itemOwner)->entityId());
+      auto damageResult = itemWorld->get().damageTiles(brushArea, layer, itemOwner->get().position(), damage, itemOwner->get().entityId());
       if (!damageResult)
         return std::unexpected(std::move(damageResult.error()));
       if (*damageResult != TileDamageResult::None) {
         used = true;
-        if (!(*itemOwner)->isAdmin()) {
+        if (!itemOwner->get().isAdmin()) {
           auto perUse = instanceValue("durabilityPerUse", 1.0f).and_then([](Json const& value) { return value.toFloat(); });
           if (!perUse)
             return std::unexpected(std::move(perUse.error()));
@@ -336,15 +336,15 @@ std::expected<void, StarException> MiningTool::fire(FireMode mode, bool shifting
     }
 
     if (used) {
-      auto strike = (*itemOwner)->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
+      auto strike = itemOwner->get().addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
       if (!strike)
         return std::unexpected(std::move(strike.error()));
-      auto sound = (*itemOwner)->addSound(blockSound, m_blockVolume);
+      auto sound = itemOwner->get().addSound(blockSound, m_blockVolume);
       if (!sound)
         return std::unexpected(std::move(sound.error()));
       List<Particle> miningParticles;
       for (auto pos : brushArea) {
-        auto miningParticleConfig = (*materialDatabase)->miningParticle((*itemWorld)->material(pos, layer), (*itemWorld)->mod(pos, layer));
+        auto miningParticleConfig = (*materialDatabase)->miningParticle(itemWorld->get().material(pos, layer), itemWorld->get().mod(pos, layer));
         if (!miningParticleConfig)
           return std::unexpected(std::move(miningParticleConfig.error()));
         if (*miningParticleConfig) {
@@ -353,7 +353,7 @@ std::expected<void, StarException> MiningTool::fire(FireMode mode, bool shifting
           miningParticles.append(miningParticle);
         }
       }
-      auto particles = (*itemOwner)->addParticles(miningParticles);
+      auto particles = itemOwner->get().addParticles(miningParticles);
       if (!particles)
         return std::unexpected(std::move(particles.error()));
       return SwingableItem::fire(mode, shifting, edgeTriggered);
@@ -411,7 +411,7 @@ std::expected<void, StarException> MiningTool::changeDurability(float amount) {
       auto itemOwner = owner();
       if (!itemOwner)
         return std::unexpected(std::move(itemOwner.error()));
-      auto sound = (*itemOwner)->addSound(m_breakSound);
+      auto sound = itemOwner->get().addSound(m_breakSound);
       if (!sound)
         return std::unexpected(std::move(sound.error()));
       consume(1);
@@ -498,9 +498,9 @@ std::expected<void, StarException> HarvestingTool::fire(FireMode mode, bool shif
   auto itemOwner = owner();
   if (!itemOwner)
     return std::unexpected(std::move(itemOwner.error()));
-  bool inRange = (*itemOwner)->isAdmin();
+  bool inRange = itemOwner->get().isAdmin();
   if (!inRange) {
-    auto range = (*itemOwner)->inToolRange();
+    auto range = itemOwner->get().inToolRange();
     if (!range)
       return std::unexpected(std::move(range.error()));
     inRange = *range;
@@ -511,16 +511,16 @@ std::expected<void, StarException> HarvestingTool::fire(FireMode mode, bool shif
     if (!itemWorld)
       return std::unexpected(std::move(itemWorld.error()));
     auto layer = mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background;
-    auto aimPosition = (*itemOwner)->aimPosition();
+    auto aimPosition = itemOwner->get().aimPosition();
     if (!aimPosition)
       return std::unexpected(std::move(aimPosition.error()));
-    auto damaged = (*itemWorld)->damageTile(Vec2I::floor(*aimPosition), layer, (*itemOwner)->position(), {TileDamageType::Plantish, m_harvestPower});
+    auto damaged = itemWorld->get().damageTile(Vec2I::floor(*aimPosition), layer, itemOwner->get().position(), {TileDamageType::Plantish, m_harvestPower});
     if (!damaged)
       return std::unexpected(std::move(damaged.error()));
     used = *damaged != TileDamageResult::None;
   }
   if (used) {
-    auto sound = (*itemOwner)->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
+    auto sound = itemOwner->get().addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
     if (!sound)
       return std::unexpected(std::move(sound.error()));
     return SwingableItem::fire(mode, shifting, edgeTriggered);
@@ -579,7 +579,7 @@ std::expected<std::shared_ptr<WireTool>, StarException> WireTool::create(Root& r
   if (!volume)
     return std::unexpected(std::move(volume.error()));
   item->m_toolVolume = *volume;
-  item->m_wireConnector = nullptr;
+  item->m_wireConnector = std::nullopt;
   item->m_endType = EndType::Wire;
   return item;
 }
@@ -588,15 +588,20 @@ std::expected<std::shared_ptr<Item>, StarException> WireTool::clone() const {
   return std::make_shared<WireTool>(*this);
 }
 
-std::expected<void, StarException> WireTool::init(ToolUserEntity* owner, ToolHand hand) {
+std::expected<void, StarException> WireTool::init(ToolUserEntity& owner, ToolHand hand) {
   auto fireable = FireableItem::init(owner, hand);
   if (!fireable)
     return std::unexpected(std::move(fireable.error()));
   auto beam = BeamItem::init(owner, hand);
   if (!beam)
     return std::unexpected(std::move(beam.error()));
-  m_wireConnector = nullptr;
+  m_wireConnector = std::nullopt;
   return {};
+}
+
+std::expected<void, StarException> WireTool::uninit() {
+  m_wireConnector.reset();
+  return FireableItem::uninit();
 }
 
 std::expected<void, StarException> WireTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
@@ -611,7 +616,7 @@ std::expected<List<Drawable>, StarException> WireTool::drawables() const {
 }
 
 std::expected<List<Drawable>, StarException> WireTool::nonRotatedDrawables() const {
-  if (m_wireConnector && m_wireConnector->connecting())
+  if (m_wireConnector && m_wireConnector->get().connecting())
     return BeamItem::nonRotatedDrawables();
   return {};
 }
@@ -634,23 +639,23 @@ std::expected<void, StarException> WireTool::fire(FireMode mode, bool shifting, 
   if (!worldp)
     return std::unexpected(std::move(worldp.error()));
   if (m_wireConnector) {
-    auto aimPosition = (*ownerp)->aimPosition();
+    auto aimPosition = ownerp->get().aimPosition();
     if (!aimPosition)
       return std::unexpected(std::move(aimPosition.error()));
     Vec2F pos(*aimPosition);
-    bool inRange = (*ownerp)->isAdmin();
+    bool inRange = ownerp->get().isAdmin();
     if (!inRange) {
-      auto range = (*ownerp)->inToolRange();
+      auto range = ownerp->get().inToolRange();
       if (!range)
         return std::unexpected(std::move(range.error()));
       inRange = *range;
     }
     if (inRange) {
-      auto swingResult = m_wireConnector->swing((*worldp)->geometry(), pos, mode);
+      auto swingResult = m_wireConnector->get().swing(worldp->get().geometry(), pos, mode);
       if (!swingResult)
         return std::unexpected(std::move(swingResult.error()));
       if (*swingResult == WireConnector::Connect) {
-        auto sound = (*ownerp)->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
+        auto sound = ownerp->get().addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
         if (!sound)
           return std::unexpected(std::move(sound.error()));
         return FireableItem::fire(mode, shifting, edgeTriggered);
@@ -661,7 +666,7 @@ std::expected<void, StarException> WireTool::fire(FireMode mode, bool shifting, 
         auto wireErrorSound = (*assets)->json("/client.config:wireFailSound").and_then([](Json const& value) { return value.toString(); });
         if (!wireErrorSound)
           return std::unexpected(std::move(wireErrorSound.error()));
-        auto sound = (*ownerp)->addSound(*wireErrorSound, m_toolVolume);
+        auto sound = ownerp->get().addSound(*wireErrorSound, m_toolVolume);
         if (!sound)
           return std::unexpected(std::move(sound.error()));
         return FireableItem::fire(mode, shifting, edgeTriggered);
@@ -675,7 +680,7 @@ std::expected<float, StarException> WireTool::getAngle(float aimAngle) {
   return BeamItem::getAngle(aimAngle);
 }
 
-void WireTool::setConnector(WireConnector* connector) {
+void WireTool::setConnector(std::optional<std::reference_wrapper<WireConnector>> connector) {
   m_wireConnector = connector;
 }
 
@@ -699,11 +704,11 @@ std::expected<std::shared_ptr<BeamMiningTool>, StarException> BeamMiningTool::cr
   auto assets = root.assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
-  for (auto const& [key, target] : {std::pair{"blockRadius", &item->m_blockRadius}, std::pair{"altBlockRadius", &item->m_altBlockRadius}}) {
+  for (auto const& [key, target] : {std::pair{std::string_view("blockRadius"), std::ref(item->m_blockRadius)}, std::pair{std::string_view("altBlockRadius"), std::ref(item->m_altBlockRadius)}}) {
     auto value = item->instanceValue(key).and_then([](Json const& value) { return value.toFloat(); });
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *target = *value;
+    target.get() = *value;
   }
   auto damage = item->instanceValue("tileDamage", 1.0f).and_then([](Json const& value) { return value.toFloat(); });
   if (!damage)
@@ -721,11 +726,11 @@ std::expected<std::shared_ptr<BeamMiningTool>, StarException> BeamMiningTool::cr
   if (!sounds)
     return std::unexpected(std::move(sounds.error()));
   item->m_strikeSounds = std::move(*sounds);
-  for (auto const& [path, target] : {std::pair{"/sfx.config:miningToolVolume", &item->m_toolVolume}, std::pair{"/sfx.config:miningBlockVolume", &item->m_blockVolume}}) {
+  for (auto const& [path, target] : {std::pair{std::string_view("/sfx.config:miningToolVolume"), std::ref(item->m_toolVolume)}, std::pair{std::string_view("/sfx.config:miningBlockVolume"), std::ref(item->m_blockVolume)}}) {
     auto volume = (*assets)->json(path).and_then([](Json const& value) { return value.toFloat(); });
     if (!volume)
       return std::unexpected(std::move(volume.error()));
-    *target = *volume;
+    target.get() = *volume;
   }
   item->m_endType = EndType::Object;
   auto rateValue = item->instanceValue("scaleRate");
@@ -770,30 +775,30 @@ std::expected<List<PreviewTile>, StarException> BeamMiningTool::previewTiles(boo
   auto worldp = world();
   if (!worldp)
     return std::unexpected(std::move(worldp.error()));
-  bool inRange = (*ownerp)->isAdmin();
+  bool inRange = ownerp->get().isAdmin();
   if (!inRange) {
-    auto range = (*ownerp)->inToolRange();
+    auto range = ownerp->get().inToolRange();
     if (!range)
       return std::unexpected(std::move(range.error()));
     inRange = *range;
   }
   if (inRange) {
-    Color lightColor = (*ownerp)->favoriteColor();
+    Color lightColor = ownerp->get().favoriteColor();
     if (!ready())
       lightColor *= Color::rgbaf(0.75f, 0.75f, 0.75f, 1.0f);
     Vec3B light = lightColor.toRgb();
     int radius = !shifting ? m_blockRadius : m_altBlockRadius;
-    auto aimPosition = (*ownerp)->aimPosition();
+    auto aimPosition = ownerp->get().aimPosition();
     if (!aimPosition)
       return std::unexpected(std::move(aimPosition.error()));
     for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
-      auto foreground = (*worldp)->tileIsOccupied(pos, TileLayer::Foreground, true);
+      auto foreground = worldp->get().tileIsOccupied(pos, TileLayer::Foreground, true);
       if (!foreground)
         return std::unexpected(std::move(foreground.error()));
       if (*foreground) {
         result.append({pos, true, light, true});
       } else {
-        auto background = (*worldp)->tileIsOccupied(pos, TileLayer::Background, true);
+        auto background = worldp->get().tileIsOccupied(pos, TileLayer::Background, true);
         if (!background)
           return std::unexpected(std::move(background.error()));
         if (*background)
@@ -804,7 +809,7 @@ std::expected<List<PreviewTile>, StarException> BeamMiningTool::previewTiles(boo
   return result;
 }
 
-std::expected<void, StarException> BeamMiningTool::init(ToolUserEntity* owner, ToolHand hand) {
+std::expected<void, StarException> BeamMiningTool::init(ToolUserEntity& owner, ToolHand hand) {
   auto fireable = FireableItem::init(owner, hand);
   if (!fireable)
     return std::unexpected(std::move(fireable.error()));
@@ -839,37 +844,37 @@ std::expected<void, StarException> BeamMiningTool::fire(FireMode mode, bool shif
   auto worldResult = world();
   if (!worldResult)
     return std::unexpected(std::move(worldResult.error()));
-  auto worldp = *worldResult;
+  auto& worldp = worldResult->get();
   auto ownerResult = owner();
   if (!ownerResult)
     return std::unexpected(std::move(ownerResult.error()));
-  auto ownerp = *ownerResult;
-  if (ownerp && worldp) {
+  auto& ownerp = ownerResult->get();
+  {
     bool used = false;
     int radius = !shifting ? m_blockRadius : m_altBlockRadius;
     String blockSound;
     List<Vec2I> brushArea;
 
     auto layer = (mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background);
-    bool inRange = ownerp->isAdmin();
+    bool inRange = ownerp.isAdmin();
     if (!inRange) {
-      auto range = ownerp->inToolRange();
+      auto range = ownerp.inToolRange();
       if (!range)
         return std::unexpected(std::move(range.error()));
       inRange = *range;
     }
     if (inRange) {
-      auto brushAimPosition = ownerp->aimPosition();
+      auto brushAimPosition = ownerp.aimPosition();
       if (!brushAimPosition)
         return std::unexpected(std::move(brushAimPosition.error()));
       brushArea = tileAreaBrush(radius, *brushAimPosition, true);
-      auto tileAimPosition = ownerp->aimPosition();
+      auto tileAimPosition = ownerp.aimPosition();
       if (!tileAimPosition)
         return std::unexpected(std::move(tileAimPosition.error()));
       auto aimPosition = Vec2I(*tileAimPosition);
 
       for (auto pos : brushArea) {
-        auto sound = materialDatabase->miningSound(worldp->material(pos, layer), worldp->mod(pos, layer));
+        auto sound = materialDatabase->miningSound(worldp.material(pos, layer), worldp.mod(pos, layer));
         if (!sound)
           return std::unexpected(std::move(sound.error()));
         blockSound = std::move(*sound);
@@ -878,7 +883,7 @@ std::expected<void, StarException> BeamMiningTool::fire(FireMode mode, bool shif
       }
       if (blockSound.empty()) {
         for (auto pos : brushArea) {
-          auto sound = materialDatabase->footstepSound(worldp->material(pos, layer), worldp->mod(pos, layer));
+          auto sound = materialDatabase->footstepSound(worldp.material(pos, layer), worldp.mod(pos, layer));
           if (!sound)
             return std::unexpected(std::move(sound.error()));
           blockSound = std::move(*sound);
@@ -895,7 +900,7 @@ std::expected<void, StarException> BeamMiningTool::fire(FireMode mode, bool shif
         }
       }
 
-      auto damageResult = worldp->damageTiles(List<Vec2I>{brushArea}, layer, ownerp->position(), {TileDamageType::Beamish, m_tileDamage, m_harvestLevel}, ownerp->entityId());
+      auto damageResult = worldp.damageTiles(List<Vec2I>{brushArea}, layer, ownerp.position(), {TileDamageType::Beamish, m_tileDamage, m_harvestLevel}, ownerp.entityId());
       if (!damageResult)
         return std::unexpected(std::move(damageResult.error()));
       used = *damageResult != TileDamageResult::None;
@@ -910,15 +915,15 @@ std::expected<void, StarException> BeamMiningTool::fire(FireMode mode, bool shif
         blockSound = std::move(*ding);
       }
 
-      if (!used && m_canCollectLiquid && layer == TileLayer::Foreground && worldp->material(aimPosition, TileLayer::Foreground) == EmptyMaterialId) {
-        auto targetLiquid = worldp->liquidLevel(aimPosition).liquid;
+      if (!used && m_canCollectLiquid && layer == TileLayer::Foreground && worldp.material(aimPosition, TileLayer::Foreground) == EmptyMaterialId) {
+        auto targetLiquid = worldp.liquidLevel(aimPosition).liquid;
         List<Vec2I> drainTiles;
         float totalLiquid = 0;
         for (auto pos : brushArea) {
-          if (worldp->isTileProtected(pos))
+          if (worldp.isTileProtected(pos))
             continue;
 
-          auto liquid = worldp->liquidLevel(pos);
+          auto liquid = worldp.liquidLevel(pos);
           if (liquid.liquid != EmptyLiquidId) {
             if (targetLiquid == EmptyLiquidId)
               targetLiquid = liquid.liquid;
@@ -937,8 +942,8 @@ std::expected<void, StarException> BeamMiningTool::fire(FireMode mode, bool shif
         if (!bucketSize)
           return std::unexpected(std::move(bucketSize.error()));
         if (totalLiquid >= *bucketSize) {
-          if (auto clientWorld = as<WorldClient>(worldp)) {
-            auto collected = clientWorld->collectLiquid(drainTiles, targetLiquid);
+          if (auto clientWorld = asRef<WorldClient>(worldp)) {
+            auto collected = clientWorld->get().collectLiquid(drainTiles, targetLiquid);
             if (!collected)
               return std::unexpected(std::move(collected.error()));
           }
@@ -953,15 +958,15 @@ std::expected<void, StarException> BeamMiningTool::fire(FireMode mode, bool shif
     }
 
     if (used) {
-      auto strike = ownerp->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
+      auto strike = ownerp.addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
       if (!strike)
         return std::unexpected(std::move(strike.error()));
-      auto sound = ownerp->addSound(blockSound, m_blockVolume);
+      auto sound = ownerp.addSound(blockSound, m_blockVolume);
       if (!sound)
         return std::unexpected(std::move(sound.error()));
       List<Particle> miningParticles;
       for (auto pos : brushArea) {
-        auto miningParticleConfig = materialDatabase->miningParticle(worldp->material(pos, layer), worldp->mod(pos, layer));
+        auto miningParticleConfig = materialDatabase->miningParticle(worldp.material(pos, layer), worldp.mod(pos, layer));
         if (!miningParticleConfig)
           return std::unexpected(std::move(miningParticleConfig.error()));
         if (*miningParticleConfig) {
@@ -970,7 +975,7 @@ std::expected<void, StarException> BeamMiningTool::fire(FireMode mode, bool shif
           miningParticles.append(miningParticle);
         }
       }
-      auto particles = ownerp->addParticles(miningParticles);
+      auto particles = ownerp.addParticles(miningParticles);
       if (!particles)
         return std::unexpected(std::move(particles.error()));
       return FireableItem::fire(mode, shifting, edgeTriggered);
@@ -998,21 +1003,21 @@ std::expected<std::shared_ptr<PaintingBeamTool>, StarException> PaintingBeamTool
   auto assets = root.assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
-  for (auto const& [key, target] : {std::pair{"blockRadius", &item->m_blockRadius}, std::pair{"altBlockRadius", &item->m_altBlockRadius}}) {
+  for (auto const& [key, target] : {std::pair{std::string_view("blockRadius"), std::ref(item->m_blockRadius)}, std::pair{std::string_view("altBlockRadius"), std::ref(item->m_altBlockRadius)}}) {
     auto value = item->instanceValue(key).and_then([](Json const& value) { return value.toFloat(); });
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *target = *value;
+    target.get() = *value;
   }
   auto sounds = item->instanceValue("strikeSounds").and_then(jsonToStringList);
   if (!sounds)
     return std::unexpected(std::move(sounds.error()));
   item->m_strikeSounds = std::move(*sounds);
-  for (auto const& [path, target] : {std::pair{"/sfx.config:miningToolVolume", &item->m_toolVolume}, std::pair{"/sfx.config:miningBlockVolume", &item->m_blockVolume}}) {
+  for (auto const& [path, target] : {std::pair{std::string_view("/sfx.config:miningToolVolume"), std::ref(item->m_toolVolume)}, std::pair{std::string_view("/sfx.config:miningBlockVolume"), std::ref(item->m_blockVolume)}}) {
     auto volume = (*assets)->json(path).and_then([](Json const& value) { return value.toFloat(); });
     if (!volume)
       return std::unexpected(std::move(volume.error()));
-    *target = *volume;
+    target.get() = *volume;
   }
   item->m_endType = EndType::Object;
   auto colors = item->instanceValue("colorNumbers").and_then([](Json const& value) { return value.toArray(); });
@@ -1085,22 +1090,22 @@ std::expected<List<PreviewTile>, StarException> PaintingBeamTool::previewTiles(b
   auto ownerResult = owner();
   if (!ownerResult)
     return std::unexpected(std::move(ownerResult.error()));
-  auto ownerp = *ownerResult;
+  auto& ownerp = ownerResult->get();
   auto worldResult = world();
   if (!worldResult)
     return std::unexpected(std::move(worldResult.error()));
-  auto worldp = *worldResult;
+  auto& worldp = worldResult->get();
   Vec3B light = Color::White.toRgb();
-  bool inRange = ownerp->isAdmin();
+  bool inRange = ownerp.isAdmin();
   if (!inRange) {
-    auto range = ownerp->inToolRange();
+    auto range = ownerp.inToolRange();
     if (!range)
       return std::unexpected(std::move(range.error()));
     inRange = *range;
   }
   if (inRange) {
     int radius = !shifting ? m_blockRadius : m_altBlockRadius;
-    auto aimPosition = ownerp->aimPosition();
+    auto aimPosition = ownerp.aimPosition();
     if (!aimPosition)
       return std::unexpected(std::move(aimPosition.error()));
     for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
@@ -1109,7 +1114,7 @@ std::expected<List<PreviewTile>, StarException> PaintingBeamTool::previewTiles(b
           std::pair{TileLayer::Background, (MaterialColorVariant)m_colorIndex},
           std::pair{TileLayer::Foreground, DefaultMaterialColorVariant},
           std::pair{TileLayer::Background, DefaultMaterialColorVariant}}) {
-        auto placeable = worldp->canModifyTile(pos, PlaceMaterialColor{layer, color}, true);
+        auto placeable = worldp.canModifyTile(pos, PlaceMaterialColor{layer, color}, true);
         if (!placeable)
           return std::unexpected(std::move(placeable.error()));
         if (*placeable) {
@@ -1122,7 +1127,7 @@ std::expected<List<PreviewTile>, StarException> PaintingBeamTool::previewTiles(b
   return result;
 }
 
-std::expected<void, StarException> PaintingBeamTool::init(ToolUserEntity* owner, ToolHand hand) {
+std::expected<void, StarException> PaintingBeamTool::init(ToolUserEntity& owner, ToolHand hand) {
   auto fireable = FireableItem::init(owner, hand);
   if (!fireable)
     return std::unexpected(std::move(fireable.error()));
@@ -1153,24 +1158,24 @@ std::expected<void, StarException> PaintingBeamTool::fire(FireMode mode, bool sh
     auto worldResult = world();
     if (!worldResult)
       return std::unexpected(std::move(worldResult.error()));
-    auto worldp = *worldResult;
+    auto& worldp = worldResult->get();
     auto ownerResult = owner();
     if (!ownerResult)
       return std::unexpected(std::move(ownerResult.error()));
-    auto ownerp = *ownerResult;
-    if (ownerp && worldp) {
+    auto& ownerp = ownerResult->get();
+    {
       bool used = false;
       int radius = !shifting ? m_blockRadius : m_altBlockRadius;
 
-      bool inRange = ownerp->isAdmin();
+      bool inRange = ownerp.isAdmin();
       if (!inRange) {
-        auto range = ownerp->inToolRange();
+        auto range = ownerp.inToolRange();
         if (!range)
           return std::unexpected(std::move(range.error()));
         inRange = *range;
       }
       if (inRange) {
-        auto aimPosition = ownerp->aimPosition();
+        auto aimPosition = ownerp.aimPosition();
         if (!aimPosition)
           return std::unexpected(std::move(aimPosition.error()));
         for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
@@ -1178,7 +1183,7 @@ std::expected<void, StarException> PaintingBeamTool::fire(FireMode mode, bool sh
             {pos, PlaceMaterialColor{TileLayer::Foreground, (MaterialColorVariant)m_colorIndex}},
             {pos, PlaceMaterialColor{TileLayer::Background, (MaterialColorVariant)m_colorIndex}}
           };
-          auto failed = worldp->applyTileModifications(modifications, true);
+          auto failed = worldp.applyTileModifications(modifications, true);
           if (!failed)
             return std::unexpected(std::move(failed.error()));
           if (failed->count() < 2)
@@ -1187,7 +1192,7 @@ std::expected<void, StarException> PaintingBeamTool::fire(FireMode mode, bool sh
       }
 
       if (used) {
-        auto sound = ownerp->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
+        auto sound = ownerp.addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
         if (!sound)
           return std::unexpected(std::move(sound.error()));
         return FireableItem::fire(mode, shifting, edgeTriggered);

@@ -15,7 +15,7 @@ namespace Star {
 class Assets;
 
 struct StatusEffectDatabaseExceptionTag {
-  static constexpr char const* name() { return "StatusEffectDatabaseException"; }
+  static constexpr std::string_view name() { return "StatusEffectDatabaseException"; }
 };
 using StatusEffectDatabaseException = StarError<StatusEffectDatabaseExceptionTag, StarException>;
 

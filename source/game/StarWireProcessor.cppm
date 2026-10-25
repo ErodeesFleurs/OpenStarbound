@@ -27,14 +27,14 @@ public:
 
 private:
   struct WireEntityState {
-    WireEntity* wireEntity;
+    std::reference_wrapper<WireEntity> wireEntity;
     List<bool> outputStates;
     bool networkLoaded;
   };
 
   // Add the given WireEntity to the working entities set, populating inbound /
   // outbound nodes and states.
-  [[nodiscard]] std::expected<void, StarException> populateWorking(WireEntity* wireEntity);
+  [[nodiscard]] std::expected<void, StarException> populateWorking(WireEntity& wireEntity);
   // Scans a wire network, starting at an entity at the given position, while
   // also loading any unloaded entries in the network and marking each entry as
   // now having been 'networkLoaded'.

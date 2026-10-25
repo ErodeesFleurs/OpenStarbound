@@ -21,7 +21,7 @@ bool EntityAnchorState::operator==(EntityAnchorState const& eas) const {
   return std::tie(entityId, positionIndex) == std::tie(eas.entityId, eas.positionIndex);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityAnchorState& anchorState) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EntityAnchorState& anchorState) {
   EntityAnchorState decoded;
   auto entityId = ds.read(decoded.entityId);
   if (!entityId)
@@ -30,17 +30,17 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityAncho
   if (!position)
     return std::unexpected(std::move(position.error()));
   anchorState = decoded;
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityAnchorState const& anchorState) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EntityAnchorState const& anchorState) {
   auto entityId = ds.write(anchorState.entityId);
   if (!entityId)
     return std::unexpected(std::move(entityId.error()));
   auto position = ds.writeVlqS(anchorState.positionIndex);
   if (!position)
     return std::unexpected(std::move(position.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 }

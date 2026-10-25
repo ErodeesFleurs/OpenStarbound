@@ -10,7 +10,7 @@ import star.terrain_database;
 export namespace Star {
 
 struct ConstantSelector : TerrainSelector {
-  static char const* const Name;
+  static std::string_view const Name;
 
   [[nodiscard]] static std::expected<std::shared_ptr<ConstantSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters);
 private:
@@ -26,7 +26,7 @@ public:
 
 
 struct FlatSurfaceSelector : TerrainSelector {
-  static char const* const Name;
+  static std::string_view const Name;
 
   [[nodiscard]] static std::expected<std::shared_ptr<FlatSurfaceSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters);
 private:
@@ -45,7 +45,7 @@ public:
 
 namespace Star {
 
-char const* const ConstantSelector::Name = "constant";
+std::string_view const ConstantSelector::Name = "constant";
 
 std::expected<std::shared_ptr<ConstantSelector>, StarException> ConstantSelector::create(Json const& config, TerrainSelectorParameters const& parameters) {
   auto value = config.getFloat("value");
@@ -63,7 +63,7 @@ std::expected<float, StarException> ConstantSelector::get(int, int) const {
 
 
 
-char const* const FlatSurfaceSelector::Name = "flatSurface";
+std::string_view const FlatSurfaceSelector::Name = "flatSurface";
 
 std::expected<std::shared_ptr<FlatSurfaceSelector>, StarException> FlatSurfaceSelector::create(Json const& config, TerrainSelectorParameters const& parameters) {
   auto adjustment = config.getFloat("adjustment", 0);

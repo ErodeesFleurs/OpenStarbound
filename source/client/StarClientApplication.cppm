@@ -59,7 +59,7 @@ protected:
   [[nodiscard]] std::expected<void, StarException> update() override;
   [[nodiscard]] std::expected<void, StarException> render() override;
 
-  [[nodiscard]] std::expected<void, StarException> getAudioData(std::int16_t* stream, std::size_t len) override;
+  [[nodiscard]] std::expected<void, StarException> getAudioData(std::span<std::int16_t> stream, std::size_t len) override;
 
 private:
   enum class MainAppState {
@@ -89,7 +89,7 @@ private:
   struct PostProcessLayer {
     List<String> effects;
     unsigned passes;
-    PostProcessGroup* group;
+    std::optional<std::reference_wrapper<PostProcessGroup>> group;
   };
 
   [[nodiscard]] std::expected<void, StarException> renderReload();
@@ -119,7 +119,7 @@ private:
   MainAppState m_state = MainAppState::Startup;
 
   // Valid after applicationInit is called
-  std::shared_ptr<MainMixer> m_mainMixer;
+  std::unique_ptr<MainMixer> m_mainMixer;
   std::shared_ptr<GuiContext> m_guiContext;
   std::shared_ptr<Input> m_input;
   std::shared_ptr<Voice> m_voice;
@@ -139,7 +139,7 @@ private:
   std::shared_ptr<Player> m_player;
   std::shared_ptr<WorldPainter> m_worldPainter;
   WorldRenderData m_renderData;
-  std::shared_ptr<MainInterface> m_mainInterface;
+  std::unique_ptr<MainInterface> m_mainInterface;
   
   StringMap<PostProcessGroup> m_postProcessGroups;
   List<PostProcessLayer> m_postProcessLayers;

@@ -114,7 +114,7 @@ String AssetPath::addDirectives(String const& path, String const& directives) {
   bool const rightJoined = directives.utf8().front() == '?';
   String result = path;
   if (leftJoined && rightJoined) {
-    result.append(directives.utf8().data() + 1, directives.utf8Size() - 1);
+    result.append(std::string_view(directives.utf8()).substr(1));
   } else {
     if (!leftJoined && !rightJoined)
       result.append("?");
@@ -168,8 +168,8 @@ bool AssetPath::operator==(AssetPath const& rhs) const {
   return std::tie(basePath, subPath, directives) == std::tie(rhs.basePath, rhs.subPath, rhs.directives);
 }
 
-AssetPath::AssetPath(const char* path) {
-  *this = AssetPath::split(path);
+AssetPath::AssetPath(std::string_view path) {
+  *this = AssetPath::split(String(path));
 }
 
 
@@ -230,20 +230,20 @@ std::size_t hash<AssetPath>::operator()(AssetPath const& s) const {
   return hashOf(s.basePath, s.subPath, s.directives);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, AssetPath& path) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, AssetPath& path) {
   String string;
   auto read = ds.read(string);
   if (!read)
     return std::unexpected(std::move(read.error()));
   path = std::move(string);
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, AssetPath const& path) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, AssetPath const& path) {
   auto written = ds.write(AssetPath::join(path));
   if (!written)
     return std::unexpected(std::move(written.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 }

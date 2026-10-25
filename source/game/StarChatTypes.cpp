@@ -31,20 +31,20 @@ extern std::expected<EnumMap<MessageContext::Mode>, StarException> const Message
     {MessageContext::Mode::World, "World"}
   });
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, MessageContext& messageContext) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, MessageContext& messageContext) {
   auto mode = ds.read(messageContext.mode);
   if (!mode) return std::unexpected(std::move(mode.error()));
   auto channel = ds.read(messageContext.channelName);
   if (!channel) return std::unexpected(std::move(channel.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, MessageContext const& messageContext) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, MessageContext const& messageContext) {
   auto mode = ds.write(messageContext.mode);
   if (!mode) return std::unexpected(std::move(mode.error()));
   auto channel = ds.write(messageContext.channelName);
   if (!channel) return std::unexpected(std::move(channel.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 ChatReceivedMessage::ChatReceivedMessage() : fromConnection() {}
@@ -66,7 +66,7 @@ std::expected<ChatReceivedMessage, StarException> ChatReceivedMessage::create(Js
   if (!mode) return std::unexpected(std::move(mode.error()));
   auto channel = context->getString("channelName", "");
   if (!channel) return std::unexpected(std::move(channel.error()));
-  message.context = MessageContext(**mode, *channel);
+  message.context = MessageContext(mode->get(), *channel);
   auto from = json.getUInt("fromConnection", 0);
   if (!from) return std::unexpected(std::move(from.error()));
   message.fromConnection = *from;
@@ -91,7 +91,7 @@ std::expected<Json, StarException> ChatReceivedMessage::toJson() const {
   if (!mode) return std::unexpected(std::move(mode.error()));
   return Json(JsonObject{
     {"context", JsonObject{
-      {"mode", **mode},
+      {"mode", mode->get()},
       {"channelName", context.channelName.empty() ? Json() : Json(context.channelName)}
     }},
     {"fromConnection", fromConnection},
@@ -103,7 +103,7 @@ std::expected<Json, StarException> ChatReceivedMessage::toJson() const {
 }
 
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage) {
   auto context = ds.read(receivedMessage.context);
   if (!context) return std::unexpected(std::move(context.error()));
   auto from = ds.read(receivedMessage.fromConnection);
@@ -118,10 +118,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, ChatReceive
     auto data = ds.read(receivedMessage.data);
     if (!data) return std::unexpected(std::move(data.error()));
   }
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage) {
   auto context = ds.write(receivedMessage.context);
   if (!context) return std::unexpected(std::move(context.error()));
   auto from = ds.write(receivedMessage.fromConnection);
@@ -136,7 +136,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, ChatReceive
     auto data = ds.write(receivedMessage.data);
     if (!data) return std::unexpected(std::move(data.error()));
   }
-  return &ds;
+  return std::ref(ds);
 }
 
 }

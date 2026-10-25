@@ -238,10 +238,10 @@ std::expected<void, StarException> LuaHttpSession::poll() {
     std::expected<void, StarException> settled;
     if (!response)
       settled = request.rpcKeeper.fail(strf("HTTP request exception: {}", response.error().what()));
-    else if (!(**response).error.empty())
-      settled = request.rpcKeeper.fail(strf("HTTP request failed: {}", (**response).error));
+    else if (!response->get().error.empty())
+      settled = request.rpcKeeper.fail(strf("HTTP request failed: {}", response->get().error));
     else
-      settled = request.rpcKeeper.fulfill({(**response).statusCode, std::move((**response).body)});
+      settled = request.rpcKeeper.fulfill({response->get().statusCode, std::move(response->get().body)});
     if (!settled) {
       if (!error)
         error = std::move(settled.error());
@@ -299,17 +299,18 @@ struct LuaConverter<LuaHttpResponse> {
     return std::move(*table);
   }
   [[nodiscard]] static std::expected<std::optional<LuaHttpResponse>, StarException> to(LuaEngine&, LuaValue const& value) {
-    if (auto table = std::get_if<LuaTable>(&value)) {
-      auto status = table->get<std::optional<int>>("status");
+    if (std::holds_alternative<LuaTable>(value)) {
+      auto const& table = std::get<LuaTable>(value);
+      auto status = table.get<std::optional<int>>("status");
       if (!status)
         return std::unexpected(std::move(status.error()));
       LuaHttpResponse response;
       response.statusCode = status->value_or(0);
-      auto hasBody = table->contains("body");
+      auto hasBody = table.contains("body");
       if (!hasBody)
         return std::unexpected(std::move(hasBody.error()));
       if (*hasBody) {
-        auto body = table->get<String>("body");
+        auto body = table.get<String>("body");
         if (!body)
           return std::unexpected(std::move(body.error()));
         response.body = std::move(*body);
@@ -382,16 +383,18 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeHttpCallbacks(std::s
         auto headers = options->get("headers");
         if (!headers)
           return std::unexpected(std::move(headers.error()));
-        if (auto table = std::get_if<LuaTable>(&*headers)) {
-          if (auto iterated = table->iterate([&](LuaValue key, LuaValue value) -> std::expected<void, StarException> {
-            if (auto name = std::get_if<LuaString>(&key)) {
-              if (auto text = std::get_if<LuaString>(&value))
-                request.headers[name->toString()] = text->toString();
+        if (std::holds_alternative<LuaTable>(*headers)) {
+          auto const& table = std::get<LuaTable>(*headers);
+          if (auto iterated = table.iterate([&](LuaValue key, LuaValue value) -> std::expected<void, StarException> {
+            if (std::holds_alternative<LuaString>(key)) {
+              auto const& name = std::get<LuaString>(key);
+              if (std::holds_alternative<LuaString>(value))
+                request.headers[name.toString()] = std::get<LuaString>(value).toString();
               else {
                 auto converted = engine.luaTo<String>(value);
                 if (!converted)
                   return std::unexpected(std::move(converted.error()));
-                request.headers[name->toString()] = std::move(*converted);
+                request.headers[name.toString()] = std::move(*converted);
               }
             }
             return {};
@@ -401,8 +404,8 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeHttpCallbacks(std::s
         auto body = options->get("body");
         if (!body)
           return std::unexpected(std::move(body.error()));
-        if (auto text = std::get_if<LuaString>(&*body)) {
-          request.body = text->toString();
+        if (std::holds_alternative<LuaString>(*body)) {
+          request.body = std::get<LuaString>(*body).toString();
         } else if (!std::holds_alternative<LuaNilType>(*body)) {
           auto json = engine.luaTo<Json>(*body);
           if (!json)

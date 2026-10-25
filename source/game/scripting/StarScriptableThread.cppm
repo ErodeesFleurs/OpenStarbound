@@ -25,7 +25,7 @@ public:
 
   using ScriptComponent = LuaMessageScript;
 
-  [[nodiscard]] static std::expected<std::shared_ptr<ScriptableThread>, StarException> create(Json parameters, LuaBaseComponent* parent);
+  [[nodiscard]] static std::expected<std::shared_ptr<ScriptableThread>, StarException> create(Json parameters, LuaBaseComponent& parent);
   ~ScriptableThread();
 
   [[nodiscard]] std::expected<bool, StarException> start();
@@ -48,7 +48,7 @@ protected:
   [[nodiscard]] std::expected<void, StarException> run() override;
 
 private:
-  ScriptableThread(Json parameters, String name, LuaBaseComponent* parent);
+  ScriptableThread(Json parameters, String name, LuaBaseComponent& parent);
   [[nodiscard]] std::expected<void, StarException> update();
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, JsonArray const& args);
 
@@ -72,7 +72,7 @@ private:
   mutable std::atomic<bool> m_errorOccurred;
   mutable std::atomic<bool> m_shouldExpire;
   
-  LuaBaseComponent* m_parent;
+  std::reference_wrapper<LuaBaseComponent> m_parent;
   
   StringMap<LuaCallbacks> m_threadCallbacks;
   

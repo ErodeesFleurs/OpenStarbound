@@ -7,6 +7,7 @@ import star.set;
 import star.vector;
 import star.thread;
 import star.worker_pool;
+import star.optional;
 
 import std;
 
@@ -64,22 +65,22 @@ public:
   std::size_t loadedSectorCount() const;
   bool sectorLoaded(Sector const& id) const;
 
-  // Will return nullptr if sector is not loaded.
-  Array* sector(Sector const& id);
-  Array const* sector(Sector const& id) const;
+  // Empty when the sector is not loaded.
+  std::optional<std::reference_wrapper<Array>> sector(Sector const& id);
+  std::optional<std::reference_wrapper<Array const>> sector(Sector const& id) const;
 
   void loadSector(Sector const& id, std::unique_ptr<Array> array);
   std::unique_ptr<Array> copySector(Sector const& id);
   std::unique_ptr<Array> takeSector(Sector const& id);
   void discardSector(Sector const& id);
 
-  // Will return nullptr if sector is not loaded.
-  Element const* get(std::size_t x, std::size_t y) const;
-  Element* get(std::size_t x, std::size_t y);
+  // Empty when the sector is not loaded.
+  std::optional<std::reference_wrapper<Element const>> get(std::size_t x, std::size_t y) const;
+  std::optional<std::reference_wrapper<Element>> get(std::size_t x, std::size_t y);
 
-  // Fast evaluate of elements in the given range.  If evalEmpty is true, then
-  // function will be called even for unloaded sectors (with null pointer).
-  // Function is called as function(size_t x, size_t y, Element* element).
+  // Fast evaluate of elements in the given range. If evalEmpty is true, then
+  // function is also called for unloaded sectors with an empty optional.
+  // Function receives (x, y, optional<reference_wrapper<Element [const]>>).
   // Given function returns expected<bool, StarException>: true to continue,
   // false to stop, or an error to propagate.
   template <typename Function>
@@ -88,11 +89,10 @@ public:
   [[nodiscard]] std::expected<bool, StarException> eval(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false);
 
   // Individual sectors are stored column-major, so for speed, use this method
-  // to get whole columns at a time.  If eval empty is true, function will be
-  // called with for each empty column with the correct size information, but
-  // the pointer will be null.  Function will be called as
-  // function(size_t x, size_t y, Element* columnElements, size_t columnSize)
-  // columnSize is guaranteed never to be greater than SectorSize.  Given
+  // to get whole columns at a time. If evalEmpty is true, unloaded columns
+  // receive an empty optional plus the correct columnSize.
+  // Function receives (x, y, optional<span<Element [const]>>, columnSize).
+  // columnSize is guaranteed never to be greater than SectorSize. Given
   // function returns expected<bool, StarException>: false stops traversal,
   // and an error propagates after all parallel jobs have been drained.
   template <typename Function>
@@ -217,13 +217,15 @@ bool SectorArray2D<ElementT, SectorSize>::sectorLoaded(Sector const& id) const {
 }
 
 template <typename ElementT, std::size_t SectorSize>
-auto SectorArray2D<ElementT, SectorSize>::sector(Sector const& id) -> Array * {
-  return m_sectors(id[0], id[1]).get();
+auto SectorArray2D<ElementT, SectorSize>::sector(Sector const& id) -> std::optional<std::reference_wrapper<Array>> {
+  return optionalRef(m_sectors(id[0], id[1]));
 }
 
 template <typename ElementT, std::size_t SectorSize>
-auto SectorArray2D<ElementT, SectorSize>::sector(Sector const& id) const -> Array const * {
-  return m_sectors(id[0], id[1]).get();
+auto SectorArray2D<ElementT, SectorSize>::sector(Sector const& id) const -> std::optional<std::reference_wrapper<Array const>> {
+  if (auto const& array = m_sectors(id[0], id[1]))
+    return std::cref(*array);
+  return std::nullopt;
 }
 
 template <typename ElementT, std::size_t SectorSize>
@@ -261,30 +263,30 @@ void SectorArray2D<ElementT, SectorSize>::discardSector(Sector const& id) {
 }
 
 template <typename ElementT, std::size_t SectorSize>
-typename SectorArray2D<ElementT, SectorSize>::Element const* SectorArray2D<ElementT, SectorSize>::get(
-    std::size_t x, std::size_t y) const {
-  Array* array = m_sectors(x / SectorSize, y / SectorSize).get();
-  if (array) {
-    return &(*array)(x % SectorSize, y % SectorSize);
-  } else {
-    return nullptr;
-  }
+auto SectorArray2D<ElementT, SectorSize>::get(
+    std::size_t x, std::size_t y) const -> std::optional<std::reference_wrapper<Element const>> {
+  if (auto const& array = m_sectors(x / SectorSize, y / SectorSize))
+    return std::reference_wrapper<Element const>((*array)(x % SectorSize, y % SectorSize));
+  return std::nullopt;
 }
 
 template <typename ElementT, std::size_t SectorSize>
-typename SectorArray2D<ElementT, SectorSize>::Element* SectorArray2D<ElementT, SectorSize>::get(std::size_t x, std::size_t y) {
-  Array* array = m_sectors(x / SectorSize, y / SectorSize).get();
-  if (array)
-    return &(*array)(x % SectorSize, y % SectorSize);
-  else
-    return nullptr;
+auto SectorArray2D<ElementT, SectorSize>::get(std::size_t x, std::size_t y) -> std::optional<std::reference_wrapper<Element>> {
+  if (auto& array = m_sectors(x / SectorSize, y / SectorSize))
+    return std::reference_wrapper<Element>((*array)(x % SectorSize, y % SectorSize));
+  return std::nullopt;
 }
 
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
 std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::eval(
     std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) const {
-  return const_cast<SectorArray2D*>(this)->evalPriv(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
+  return const_cast<SectorArray2D&>(*this).evalPriv(minX, minY, width, height,
+      [&function](std::size_t x, std::size_t y, std::optional<std::reference_wrapper<Element>> element) {
+        std::optional<std::reference_wrapper<Element const>> value;
+        if (element) value = std::reference_wrapper<Element const>(element->get());
+        return function(x, y, value);
+      }, evalEmpty);
 }
 
 template <typename ElementT, std::size_t SectorSize>
@@ -298,8 +300,12 @@ template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
 std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColumns(
     std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) const {
-  return const_cast<SectorArray2D*>(this)->evalColumnsPriv(
-      minX, minY, width, height, std::forward<Function>(function), evalEmpty);
+  return const_cast<SectorArray2D&>(*this).evalColumnsPriv(minX, minY, width, height,
+      [&function](std::size_t x, std::size_t y, std::optional<std::span<Element>> column, std::size_t size) {
+        std::optional<std::span<Element const>> values;
+        if (column) values = *column;
+        return function(x, y, values, size);
+      }, evalEmpty);
 }
 
 template <typename ElementT, std::size_t SectorSize>
@@ -313,8 +319,12 @@ template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
 std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColumnsParallel(
     WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) const {
-  return const_cast<SectorArray2D*>(this)->evalColumnsPrivPar(
-      workers, minX, minY, width, height, std::forward<Function>(function), evalEmpty);
+  return const_cast<SectorArray2D&>(*this).evalColumnsPrivPar(workers, minX, minY, width, height,
+      [&function](std::size_t x, std::size_t y, std::optional<std::span<Element>> column, std::size_t size) {
+        std::optional<std::span<Element const>> values;
+        if (column) values = *column;
+        return function(x, y, values, size);
+      }, evalEmpty);
 }
 
 template <typename ElementT, std::size_t SectorSize>
@@ -332,9 +342,11 @@ std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalPriv
       minY,
       width,
       height,
-      [&function](std::size_t x, std::size_t y, Element* column, std::size_t columnSize) -> std::expected<bool, StarException> {
+      [&function](std::size_t x, std::size_t y, std::optional<std::span<Element>> column, std::size_t columnSize) -> std::expected<bool, StarException> {
         for (std::size_t i = 0; i < columnSize; ++i) {
-          auto result = function(x, y + i, column ? column + i : nullptr);
+          std::optional<std::reference_wrapper<Element>> element;
+          if (column) element = std::reference_wrapper<Element>((*column)[i]);
+          auto result = function(x, y + i, element);
           if (!result)
             return std::unexpected(std::move(result.error()));
           if (!*result)
@@ -372,7 +384,7 @@ std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColu
     std::size_t x_ = xSector * SectorSize;
 
     for (std::size_t ySector = minYSector; ySector <= maxYSector; ++ySector) {
-      Array* array = m_sectors(xSector, ySector).get();
+      auto& array = m_sectors(xSector, ySector);
 
       if (!array && !evalEmpty)
         continue;
@@ -389,7 +401,7 @@ std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColu
 
       if (!array) {
         for (std::size_t xi = minXi; xi <= maxXi; ++xi) {
-          auto result = function(xi + x_, minYi + y_, nullptr, maxYi - minYi + 1);
+          auto result = function(xi + x_, minYi + y_, std::optional<std::span<Element>>{}, maxYi - minYi + 1);
           if (!result)
             return std::unexpected(std::move(result.error()));
           if (!*result)
@@ -397,7 +409,7 @@ std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColu
         }
       } else {
         for (std::size_t xi = minXi; xi <= maxXi; ++xi) {
-          auto result = function(xi + x_, minYi + y_, &array->elements[xi * SectorSize + minYi], maxYi - minYi + 1);
+          auto result = function(xi + x_, minYi + y_, std::optional{std::span(array->elements).subspan(xi * SectorSize + minYi, maxYi - minYi + 1)}, maxYi - minYi + 1);
           if (!result)
             return std::unexpected(std::move(result.error()));
           if (!*result)
@@ -448,7 +460,7 @@ std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColu
 
     futures.push_back(workers.addProducer<bool>([=, &function, this]() -> std::expected<bool, StarException> {
       for (std::size_t ySector = minYSector; ySector <= maxYSector; ++ySector) {
-        Array* array = m_sectors(xSector, ySector).get();
+        auto& array = m_sectors(xSector, ySector);
 
         if (!array && !evalEmpty)
           continue;
@@ -465,7 +477,7 @@ std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColu
 
         if (!array) {
           for (std::size_t xi = minXi; xi <= maxXi; ++xi) {
-            auto result = function(xi + x_, minYi + y_, nullptr, maxYi - minYi + 1);
+            auto result = function(xi + x_, minYi + y_, std::optional<std::span<Element>>{}, maxYi - minYi + 1);
             if (!result)
               return std::unexpected(std::move(result.error()));
             if (!*result)
@@ -473,7 +485,7 @@ std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColu
           }
         } else {
           for (std::size_t xi = minXi; xi <= maxXi; ++xi) {
-            auto result = function(xi + x_, minYi + y_, &array->elements[xi * SectorSize + minYi], maxYi - minYi + 1);
+            auto result = function(xi + x_, minYi + y_, std::optional{std::span(array->elements).subspan(xi * SectorSize + minYi, maxYi - minYi + 1)}, maxYi - minYi + 1);
             if (!result)
               return std::unexpected(std::move(result.error()));
             if (!*result)
@@ -494,7 +506,7 @@ std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColu
       if (!firstError)
         firstError.emplace(std::move(completion.error()));
     } else {
-      result = **completion && result;
+      result = completion->get() && result;
     }
   }
   if (firstError)

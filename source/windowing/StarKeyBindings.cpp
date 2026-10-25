@@ -210,7 +210,7 @@ std::expected<KeyBindings, StarException> KeyBindings::create(Root& root, Json c
           return std::unexpected(std::move(logged.error()));
         continue;
       }
-      bindings.m_actions[chord->key].append({chord->mods, **action});
+      bindings.m_actions[chord->key].append({chord->mods, action->get()});
     }
   }
   return bindings;
@@ -221,18 +221,18 @@ Set<InterfaceAction> KeyBindings::actions(Key key) const {
 }
 
 Set<InterfaceAction> KeyBindings::actions(InputEvent const& event) const {
-  if (auto keyDown = std::get_if<KeyDownEvent>(&event))
-    return actions(KeyChord{keyDown->key, keyDown->mods});
+  if (std::holds_alternative<KeyDownEvent>(event))
+    return actions(KeyChord{std::get<KeyDownEvent>(event).key, std::get<KeyDownEvent>(event).mods});
   return {};
 }
 
 Set<InterfaceAction> KeyBindings::actions(KeyChord chord) const {
   std::size_t mostMatchedMods = 0;
   Set<InterfaceAction> matching;
-  auto bindings = m_actions.ptr(chord.key);
+  auto bindings = m_actions.maybeRef(chord.key);
   if (!bindings)
     return matching;
-  for (auto const& pair : *bindings) {
+  for (auto const& pair : bindings->get()) {
     // first make sure that all required mods for the binding are held
     if ((pair.first & chord.mods) == pair.first) {
       // now count the number of mods in the binding
@@ -254,8 +254,8 @@ Set<InterfaceAction> KeyBindings::actions(KeyChord chord) const {
 
 Set<InterfaceAction> KeyBindings::actionsForKey(Key key) const {
   Set<InterfaceAction> matching;
-  if (auto bindings = m_actions.ptr(key)) {
-    for (auto const& pair : *bindings)
+  if (auto bindings = m_actions.maybeRef(key)) {
+    for (auto const& pair : bindings->get())
       matching.add(pair.second);
   }
   return matching;

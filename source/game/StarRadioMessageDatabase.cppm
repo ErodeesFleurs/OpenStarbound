@@ -11,7 +11,7 @@ namespace Star {
 class Root;
 
 struct RadioMessageDatabaseExceptionTag {
-  static constexpr char const* name() { return "RadioMessageDatabaseException"; }
+  static constexpr std::string_view name() { return "RadioMessageDatabaseException"; }
 };
 using RadioMessageDatabaseException = StarError<RadioMessageDatabaseExceptionTag, StarException>;
 

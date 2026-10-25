@@ -44,7 +44,7 @@ public:
 
 private:
   explicit InterfaceCursor(GuiContext& context);
-  GuiContext* m_guiContext;
+  std::reference_wrapper<GuiContext> m_guiContext;
   String m_configFile;
   Vec2I m_offset;
   Vec2I m_size;

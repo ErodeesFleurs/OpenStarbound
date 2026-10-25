@@ -130,13 +130,13 @@ std::expected<void, StarException> Object::initialize(std::shared_ptr<ObjectConf
     auto objectParameters = std::move(*objectParametersResult);
     m_parameters.reset(std::move(objectParameters));
   }
-  auto jOrientations = m_parameters.ptr("customOrientations");
-  if (jOrientations && jOrientations->isType(Json::Type::Array)) {
+  auto jOrientations = m_parameters.maybeRef("customOrientations");
+  if (jOrientations && jOrientations->get().isType(Json::Type::Array)) {
     auto baseResult = m_config->config.getArray("orientations");
     if (!baseResult)
       return std::unexpected(std::move(baseResult.error()));
     auto base = std::move(*baseResult);
-    auto orientationsResult = jOrientations->toArray();
+    auto orientationsResult = jOrientations->get().toArray();
     if (!orientationsResult)
       return std::unexpected(std::move(orientationsResult.error()));
     auto orientations = std::move(*orientationsResult);
@@ -303,91 +303,91 @@ std::expected<void, StarException> Object::initialize(std::shared_ptr<ObjectConf
     return std::unexpected(std::move(uniqueIdResult.error()));
   auto uniqueId = std::move(*uniqueIdResult);
   setUniqueId(std::move(uniqueId));
-  auto operation2 = m_netGroup.addNetElement(&m_parameters);
+  auto operation2 = m_netGroup.addNetElement(m_parameters);
   if (!operation2)
     return std::unexpected(std::move(operation2.error()));
-  auto operation3 = m_netGroup.addNetElement(&m_uniqueIdNetState);
+  auto operation3 = m_netGroup.addNetElement(m_uniqueIdNetState);
   if (!operation3)
     return std::unexpected(std::move(operation3.error()));
-  auto operation4 = m_netGroup.addNetElement(&m_interactive);
+  auto operation4 = m_netGroup.addNetElement(m_interactive);
   if (!operation4)
     return std::unexpected(std::move(operation4.error()));
-  auto operation5 = m_netGroup.addNetElement(&m_materialSpaces);
+  auto operation5 = m_netGroup.addNetElement(m_materialSpaces);
   if (!operation5)
     return std::unexpected(std::move(operation5.error()));
-  auto operation6 = m_netGroup.addNetElement(&m_xTilePosition);
+  auto operation6 = m_netGroup.addNetElement(m_xTilePosition);
   if (!operation6)
     return std::unexpected(std::move(operation6.error()));
-  auto operation7 = m_netGroup.addNetElement(&m_yTilePosition);
+  auto operation7 = m_netGroup.addNetElement(m_yTilePosition);
   if (!operation7)
     return std::unexpected(std::move(operation7.error()));
-  auto operation8 = m_netGroup.addNetElement(&m_direction);
+  auto operation8 = m_netGroup.addNetElement(m_direction);
   if (!operation8)
     return std::unexpected(std::move(operation8.error()));
-  auto operation9 = m_netGroup.addNetElement(&m_health);
+  auto operation9 = m_netGroup.addNetElement(m_health);
   if (!operation9)
     return std::unexpected(std::move(operation9.error()));
-  auto operation10 = m_netGroup.addNetElement(&m_orientationIndexNetState);
+  auto operation10 = m_netGroup.addNetElement(m_orientationIndexNetState);
   if (!operation10)
     return std::unexpected(std::move(operation10.error()));
-  auto operation11 = m_netGroup.addNetElement(&m_netImageKeys);
+  auto operation11 = m_netGroup.addNetElement(m_netImageKeys);
   if (!operation11)
     return std::unexpected(std::move(operation11.error()));
-  auto operation12 = m_netGroup.addNetElement(&m_soundEffectEnabled);
+  auto operation12 = m_netGroup.addNetElement(m_soundEffectEnabled);
   if (!operation12)
     return std::unexpected(std::move(operation12.error()));
-  auto operation13 = m_netGroup.addNetElement(&m_lightSourceColor);
+  auto operation13 = m_netGroup.addNetElement(m_lightSourceColor);
   if (!operation13)
     return std::unexpected(std::move(operation13.error()));
-  auto operation14 = m_netGroup.addNetElement(&m_newChatMessageEvent);
+  auto operation14 = m_netGroup.addNetElement(m_newChatMessageEvent);
   if (!operation14)
     return std::unexpected(std::move(operation14.error()));
-  auto operation15 = m_netGroup.addNetElement(&m_chatMessage);
+  auto operation15 = m_netGroup.addNetElement(m_chatMessage);
   if (!operation15)
     return std::unexpected(std::move(operation15.error()));
-  auto operation16 = m_netGroup.addNetElement(&m_chatPortrait);
+  auto operation16 = m_netGroup.addNetElement(m_chatPortrait);
   if (!operation16)
     return std::unexpected(std::move(operation16.error()));
-  auto operation17 = m_netGroup.addNetElement(&m_chatConfig);
+  auto operation17 = m_netGroup.addNetElement(m_chatConfig);
   if (!operation17)
     return std::unexpected(std::move(operation17.error()));
   for (auto& node : m_inputNodes) {
-    auto operation18 = m_netGroup.addNetElement(&node.connections);
+    auto operation18 = m_netGroup.addNetElement(node.connections);
     if (!operation18)
       return std::unexpected(std::move(operation18.error()));
-    auto operation19 = m_netGroup.addNetElement(&node.state);
+    auto operation19 = m_netGroup.addNetElement(node.state);
     if (!operation19)
       return std::unexpected(std::move(operation19.error()));
   }
   for (auto& node : m_outputNodes) {
-    auto operation20 = m_netGroup.addNetElement(&node.connections);
+    auto operation20 = m_netGroup.addNetElement(node.connections);
     if (!operation20)
       return std::unexpected(std::move(operation20.error()));
-    auto operation21 = m_netGroup.addNetElement(&node.state);
+    auto operation21 = m_netGroup.addNetElement(node.state);
     if (!operation21)
       return std::unexpected(std::move(operation21.error()));
   }
-  auto operation22 = m_netGroup.addNetElement(&m_offeredQuests);
+  auto operation22 = m_netGroup.addNetElement(m_offeredQuests);
   if (!operation22)
     return std::unexpected(std::move(operation22.error()));
-  auto operation23 = m_netGroup.addNetElement(&m_turnInQuests);
+  auto operation23 = m_netGroup.addNetElement(m_turnInQuests);
   if (!operation23)
     return std::unexpected(std::move(operation23.error()));
-  auto operation24 = m_netGroup.addNetElement(&m_damageSources);
+  auto operation24 = m_netGroup.addNetElement(m_damageSources);
   if (!operation24)
     return std::unexpected(std::move(operation24.error()));
   // Scripted animation parameters deliberately do not interpolate.
-  auto operation25 = m_netGroup.addNetElement(&m_scriptedAnimationParameters, false);
+  auto operation25 = m_netGroup.addNetElement(m_scriptedAnimationParameters, false);
   if (!operation25)
     return std::unexpected(std::move(operation25.error()));
-  auto operation26 = m_netGroup.addNetElement(m_tileDamageStatus.get());
+  auto operation26 = m_netGroup.addNetElement(*m_tileDamageStatus);
   if (!operation26)
     return std::unexpected(std::move(operation26.error()));
-  auto operation27 = m_netGroup.addNetElement(m_networkedAnimator.get());
+  auto operation27 = m_netGroup.addNetElement(*m_networkedAnimator);
   if (!operation27)
     return std::unexpected(std::move(operation27.error()));
-  m_netGroup.setNeedsLoadCallback(std::bind(&Object::getNetStates, this, std::placeholders::_1));
-  m_netGroup.setNeedsStoreCallback(std::bind(&Object::setNetStates, this));
+  m_netGroup.setNeedsLoadCallback(std::bind(&Object::getNetStates, std::ref(*this), std::placeholders::_1));
+  m_netGroup.setNeedsStoreCallback(std::bind(&Object::setNetStates, std::ref(*this)));
   auto modeConfigResult = configValue("clientEntityMode", "ClientSlaveOnly");
   if (!modeConfigResult)
     return std::unexpected(std::move(modeConfigResult.error()));
@@ -402,7 +402,7 @@ std::expected<void, StarException> Object::initialize(std::shared_ptr<ObjectConf
   if (!modeResult)
     return std::unexpected(std::move(modeResult.error()));
   auto mode = std::move(*modeResult);
-  m_clientEntityMode = *mode;
+  m_clientEntityMode = mode.get();
   return {};
 }
 
@@ -434,7 +434,7 @@ ClientEntityMode Object::clientEntityMode() const {
   return m_clientEntityMode;
 }
 
-std::expected<void, StarException> Object::init(World* world, EntityId entityId, EntityMode mode) {
+std::expected<void, StarException> Object::init(World& world, EntityId entityId, EntityMode mode) {
   auto operation1 = Entity::init(world, entityId, mode);
   if (!operation1)
     return std::unexpected(std::move(operation1.error()));
@@ -503,8 +503,8 @@ std::expected<void, StarException> Object::init(World* world, EntityId entityId,
         auto value = std::move(*valueResult);
         setImageKey(pair.first, value);
       }
-      if (auto light = m_config->lightColors.ptr(colorName)) {
-        m_lightSourceColor.set(*light);
+      if (auto light = m_config->lightColors.maybeRef(colorName)) {
+        m_lightSourceColor.set(light->get());
       } else {
         m_lightSourceColor.set(Color::Clear);
       }
@@ -554,21 +554,21 @@ std::expected<void, StarException> Object::init(World* world, EntityId entityId,
       auto operation5 = m_scriptComponent.addCallbacks("object", std::move(objectCallbacks));
       if (!operation5)
         return std::unexpected(std::move(operation5.error()));
-      auto configCallbacksResult = LuaBindings::makeConfigCallbacks(std::bind(&Object::configValue, this, std::placeholders::_1, std::placeholders::_2));
+      auto configCallbacksResult = LuaBindings::makeConfigCallbacks(std::bind(&Object::configValue, std::ref(*this), std::placeholders::_1, std::placeholders::_2));
       if (!configCallbacksResult)
         return std::unexpected(std::move(configCallbacksResult.error()));
       auto configCallbacks = std::move(*configCallbacksResult);
       auto operation6 = m_scriptComponent.addCallbacks("config", std::move(configCallbacks));
       if (!operation6)
         return std::unexpected(std::move(operation6.error()));
-      auto entityCallbacksResult = LuaBindings::makeEntityCallbacks(this);
+      auto entityCallbacksResult = LuaBindings::makeEntityCallbacks(*this);
       if (!entityCallbacksResult)
         return std::unexpected(std::move(entityCallbacksResult.error()));
       auto entityCallbacks = std::move(*entityCallbacksResult);
       auto operation7 = m_scriptComponent.addCallbacks("entity", std::move(entityCallbacks));
       if (!operation7)
         return std::unexpected(std::move(operation7.error()));
-      auto animatorCallbacksResult = LuaBindings::makeNetworkedAnimatorCallbacks(m_networkedAnimator.get());
+      auto animatorCallbacksResult = LuaBindings::makeNetworkedAnimatorCallbacks(*m_networkedAnimator);
       if (!animatorCallbacksResult)
         return std::unexpected(std::move(animatorCallbacksResult.error()));
       auto animatorCallbacks = std::move(*animatorCallbacksResult);
@@ -579,11 +579,11 @@ std::expected<void, StarException> Object::init(World* world, EntityId entityId,
       if (!operation9)
         return std::unexpected(std::move(operation9.error()));
     }
-    if (world->isClient()) {
+    if (world.isClient()) {
       auto operation10 = m_scriptedAnimator.setScripts(m_config->animationScripts);
       if (!operation10)
         return std::unexpected(std::move(operation10.error()));
-      auto animationCallbacksResult = LuaBindings::makeScriptedAnimatorCallbacks(m_networkedAnimator.get(), [this](String const& name, Json const& def) -> std::expected<Json, StarException> { return m_scriptedAnimationParameters.value(name, def); });
+      auto animationCallbacksResult = LuaBindings::makeScriptedAnimatorCallbacks(*m_networkedAnimator, [this](String const& name, Json const& def) -> std::expected<Json, StarException> { return m_scriptedAnimationParameters.value(name, def); });
       if (!animationCallbacksResult)
         return std::unexpected(std::move(animationCallbacksResult.error()));
       auto animationCallbacks = std::move(*animationCallbacksResult);
@@ -597,14 +597,14 @@ std::expected<void, StarException> Object::init(World* world, EntityId entityId,
       auto operation12 = m_scriptedAnimator.addCallbacks("objectAnimator", std::move(objectAnimatorCallbacks));
       if (!operation12)
         return std::unexpected(std::move(operation12.error()));
-      auto configCallbacksResult = LuaBindings::makeConfigCallbacks(std::bind(&Object::configValue, this, std::placeholders::_1, std::placeholders::_2));
+      auto configCallbacksResult = LuaBindings::makeConfigCallbacks(std::bind(&Object::configValue, std::ref(*this), std::placeholders::_1, std::placeholders::_2));
       if (!configCallbacksResult)
         return std::unexpected(std::move(configCallbacksResult.error()));
       auto configCallbacks = std::move(*configCallbacksResult);
       auto operation13 = m_scriptedAnimator.addCallbacks("config", std::move(configCallbacks));
       if (!operation13)
         return std::unexpected(std::move(operation13.error()));
-      auto entityCallbacksResult = LuaBindings::makeEntityCallbacks(this);
+      auto entityCallbacksResult = LuaBindings::makeEntityCallbacks(*this);
       if (!entityCallbacksResult)
         return std::unexpected(std::move(entityCallbacksResult.error()));
       auto entityCallbacks = std::move(*entityCallbacksResult);
@@ -615,7 +615,7 @@ std::expected<void, StarException> Object::init(World* world, EntityId entityId,
       if (!operation15)
         return std::unexpected(std::move(operation15.error()));
     }
-    m_xTilePosition.set(world->geometry().xwrap((int)m_xTilePosition.get()));
+    m_xTilePosition.set(world.geometry().xwrap((int)m_xTilePosition.get()));
     auto partsConfigResult = configValue("animationParts", JsonObject());
     if (!partsConfigResult)
       return std::unexpected(std::move(partsConfigResult.error()));
@@ -694,7 +694,7 @@ std::expected<void, StarException> Object::uninit() {
     remember(m_scriptComponent.removeCallbacks("entity"));
     remember(m_scriptComponent.removeCallbacks("animator"));
   }
-  if (worldPtr() && worldPtr()->isClient()) {
+  if (auto attachedWorld = maybeWorld(); attachedWorld && attachedWorld->get().isClient()) {
     remember(m_scriptedAnimator.uninit());
     remember(m_scriptedAnimator.removeCallbacks("animationConfig"));
     remember(m_scriptedAnimator.removeCallbacks("objectAnimator"));
@@ -782,7 +782,7 @@ std::expected<void, StarException> Object::updateOrientation() {
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
+  auto& currentWorld = currentWorldResult->get();
   auto indexResult = m_config->findValidOrientation(currentWorld, tilePosition(), m_direction.get());
   if (!indexResult)
     return std::unexpected(std::move(indexResult.error()));
@@ -839,7 +839,7 @@ std::expected<void, StarException> Object::update(float dt, std::uint64_t) {
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
+  auto& currentWorld = currentWorldResult->get();
   if (isMaster()) {
     m_tileDamageStatus->recover(m_config->tileDamageParameters, dt);
     if (m_liquidCheckTimer.wrapTick(root().timing().timestep)) {
@@ -855,7 +855,7 @@ std::expected<void, StarException> Object::update(float dt, std::uint64_t) {
       }
       m_animationTimer = std::fmod(m_animationTimer + dt, orientation->animationCycle);
     }
-    auto operation2 = m_networkedAnimator->update(dt, nullptr);
+    auto operation2 = m_networkedAnimator->update(dt, std::nullopt);
     if (!operation2)
       return std::unexpected(std::move(operation2.error()));
     m_networkedAnimator->setFlipped(direction() == Direction::Left, m_animationCenterLine);
@@ -863,7 +863,7 @@ std::expected<void, StarException> Object::update(float dt, std::uint64_t) {
     if (!operation3)
       return std::unexpected(std::move(operation3.error()));
   } else {
-    auto operation4 = m_networkedAnimator->update(dt, &m_networkedAnimatorDynamicTarget);
+    auto operation4 = m_networkedAnimator->update(dt, std::ref(m_networkedAnimatorDynamicTarget));
     if (!operation4)
       return std::unexpected(std::move(operation4.error()));
     m_networkedAnimatorDynamicTarget.updatePosition(position() + m_animationPosition);
@@ -872,7 +872,7 @@ std::expected<void, StarException> Object::update(float dt, std::uint64_t) {
     m_lightFlickering->update(dt);
   for (auto& timer : m_emissionTimers)
     timer.tick(dt);
-  if (currentWorld->isClient()) {
+  if (currentWorld.isClient()) {
     auto operation5 = m_scriptedAnimator.update();
     if (!operation5)
       return std::unexpected(std::move(operation5.error()));
@@ -880,7 +880,7 @@ std::expected<void, StarException> Object::update(float dt, std::uint64_t) {
   return {};
 }
 
-std::expected<void, StarException> Object::render(RenderCallback* renderCallback) {
+std::expected<void, StarException> Object::render(RenderCallback& renderCallback) {
   auto operation1 = renderParticles(renderCallback);
   if (!operation1)
     return std::unexpected(std::move(operation1.error()));
@@ -889,10 +889,10 @@ std::expected<void, StarException> Object::render(RenderCallback* renderCallback
     return std::unexpected(std::move(operation2.error()));
   for (auto const& pair : m_imageKeys)
     m_networkedAnimator->setGlobalTag(pair.first, pair.second);
-  auto operation3 = renderCallback->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
+  auto operation3 = renderCallback.addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
   if (!operation3)
     return std::unexpected(std::move(operation3.error()));
-  auto operation4 = renderCallback->addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());
+  auto operation4 = renderCallback.addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());
   if (!operation4)
     return std::unexpected(std::move(operation4.error()));
   if (!m_networkedAnimator->constParts().empty()) {
@@ -904,7 +904,7 @@ std::expected<void, StarException> Object::render(RenderCallback* renderCallback
     if (!drawablesResult)
       return std::unexpected(std::move(drawablesResult.error()));
     auto drawables = std::move(*drawablesResult);
-    auto operation5 = renderCallback->addDrawables(drawables, renderLayer());
+    auto operation5 = renderCallback.addDrawables(drawables, renderLayer());
     if (!operation5)
       return std::unexpected(std::move(operation5.error()));
   } else if (m_orientationIndex != NPos) {
@@ -912,31 +912,31 @@ std::expected<void, StarException> Object::render(RenderCallback* renderCallback
     if (!drawablesResult)
       return std::unexpected(std::move(drawablesResult.error()));
     auto drawables = std::move(*drawablesResult);
-    auto operation6 = renderCallback->addDrawables(drawables, renderLayer(), position());
+    auto operation6 = renderCallback.addDrawables(drawables, renderLayer(), position());
     if (!operation6)
       return std::unexpected(std::move(operation6.error()));
   }
   auto const& drawables = m_scriptedAnimator.drawables();
   for (auto const& pair : drawables) {
-    auto operation7 = renderCallback->addDrawable(pair.first, pair.second.value_or(renderLayer()));
+    auto operation7 = renderCallback.addDrawable(pair.first, pair.second.value_or(renderLayer()));
     if (!operation7)
       return std::unexpected(std::move(operation7.error()));
   }
-  auto operation8 = renderCallback->addParticles(m_scriptedAnimator.pullNewParticles());
+  auto operation8 = renderCallback.addParticles(m_scriptedAnimator.pullNewParticles());
   if (!operation8)
     return std::unexpected(std::move(operation8.error()));
-  auto operation9 = renderCallback->addAudios(m_scriptedAnimator.pullNewAudios());
+  auto operation9 = renderCallback.addAudios(m_scriptedAnimator.pullNewAudios());
   if (!operation9)
     return std::unexpected(std::move(operation9.error()));
   return {};
 }
 
-std::expected<void, StarException> Object::renderLightSources(RenderCallback* renderCallback) {
+std::expected<void, StarException> Object::renderLightSources(RenderCallback& renderCallback) {
   auto operation1 = renderLights(renderCallback);
   if (!operation1)
     return std::unexpected(std::move(operation1.error()));
   auto const& lights = m_scriptedAnimator.lightSources();
-  return renderCallback->addLightSources(lights);
+  return renderCallback.addLightSources(lights);
 }
 
 std::expected<bool, StarException> Object::damageTiles(List<Vec2I> const&, Vec2F const&, TileDamage const& tileDamage) {
@@ -960,7 +960,7 @@ std::expected<bool, StarException> Object::checkBroken() {
       auto currentWorldResult = world();
       if (!currentWorldResult)
         return std::unexpected(std::move(currentWorldResult.error()));
-      auto currentWorld = std::move(*currentWorldResult);
+      auto& currentWorld = currentWorldResult->get();
       auto validResult = orientation->anchorsValid(currentWorld, tilePosition());
       if (!validResult)
         return std::unexpected(std::move(validResult.error()));
@@ -978,7 +978,7 @@ std::expected<bool, StarException> Object::shouldDestroy() const {
   return m_broken || (m_health.get() <= 0);
 }
 
-std::expected<void, StarException> Object::destroy(RenderCallback* renderCallback) {
+std::expected<void, StarException> Object::destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) {
   bool doSmash = m_health.get() <= 0;
   if (!doSmash) {
     auto smashConfigResult = configValue("smashOnBreak", m_config->smashOnBreak);
@@ -999,13 +999,13 @@ std::expected<void, StarException> Object::destroy(RenderCallback* renderCallbac
       auto currentWorldResult = world();
       if (!currentWorldResult)
         return std::unexpected(std::move(currentWorldResult.error()));
-      auto currentWorld = std::move(*currentWorldResult);
+      auto& currentWorld = currentWorldResult->get();
       auto dropItem = [&](auto const& item) -> std::expected<void, StarException> {
         auto dropResult = ItemDrop::createRandomizedDrop(root(), item, position());
         if (!dropResult)
           return std::unexpected(std::move(dropResult.error()));
         auto drop = std::move(*dropResult);
-        auto operation2 = currentWorld->addEntity(std::move(drop));
+        auto operation2 = currentWorld.addEntity(std::move(drop));
         if (!operation2)
           return std::unexpected(std::move(operation2.error()));
         return {};
@@ -1024,7 +1024,7 @@ std::expected<void, StarException> Object::destroy(RenderCallback* renderCallbac
           if (!treasureResult)
             return std::unexpected(std::move(treasureResult.error()));
           auto treasure = std::move(*treasureResult);
-          auto levelResult = currentWorld->threatLevel();
+          auto levelResult = currentWorld.threatLevel();
           if (!levelResult)
             return std::unexpected(std::move(levelResult.error()));
           auto level = std::move(*levelResult);
@@ -1041,8 +1041,8 @@ std::expected<void, StarException> Object::destroy(RenderCallback* renderCallbac
           auto optionsResult = root().random().randFrom(m_config->smashDropOptions);
           if (!optionsResult)
             return std::unexpected(std::move(optionsResult.error()));
-          auto options = std::move(*optionsResult);
-          for (auto const& item : *options) {
+          auto const& options = optionsResult->get();
+          for (auto const& item : options) {
             auto operation4 = dropItem(item);
             if (!operation4)
               return std::unexpected(std::move(operation4.error()));
@@ -1062,7 +1062,7 @@ std::expected<void, StarException> Object::destroy(RenderCallback* renderCallbac
           if (!treasureResult)
             return std::unexpected(std::move(treasureResult.error()));
           auto treasure = std::move(*treasureResult);
-          auto levelResult = currentWorld->threatLevel();
+          auto levelResult = currentWorld.threatLevel();
           if (!levelResult)
             return std::unexpected(std::move(levelResult.error()));
           auto level = std::move(*levelResult);
@@ -1079,8 +1079,8 @@ std::expected<void, StarException> Object::destroy(RenderCallback* renderCallbac
           auto optionsResult = root().random().randFrom(m_config->breakDropOptions);
           if (!optionsResult)
             return std::unexpected(std::move(optionsResult.error()));
-          auto options = std::move(*optionsResult);
-          for (auto const& item : *options) {
+          auto const& options = optionsResult->get();
+          for (auto const& item : options) {
             auto operation6 = dropItem(item);
             if (!operation6)
               return std::unexpected(std::move(operation6.error()));
@@ -1132,8 +1132,8 @@ std::expected<void, StarException> Object::destroy(RenderCallback* renderCallbac
     auto soundResult = root().random().randFrom(m_config->smashSoundOptions);
     if (!soundResult)
       return std::unexpected(std::move(soundResult.error()));
-    auto sound = std::move(*soundResult);
-    auto audioResult = assets->audio(*sound);
+    auto const& sound = soundResult->get();
+    auto audioResult = assets->audio(sound);
     if (!audioResult)
       return std::unexpected(std::move(audioResult.error()));
     auto audio = std::move(*audioResult);
@@ -1141,7 +1141,7 @@ std::expected<void, StarException> Object::destroy(RenderCallback* renderCallbac
     if (!instanceResult)
       return std::unexpected(std::move(instanceResult.error()));
     auto instance = std::move(*instanceResult);
-    auto operation9 = renderCallback->addAudios({std::move(instance)}, position());
+    auto operation9 = renderCallback->get().addAudios({std::move(instance)}, position());
     if (!operation9)
       return std::unexpected(std::move(operation9.error()));
   }
@@ -1190,7 +1190,7 @@ std::expected<void, StarException> Object::destroy(RenderCallback* renderCallbac
         particles.append(std::move(particle));
       }
     }
-    auto operation10 = renderCallback->addParticles(particles);
+    auto operation10 = renderCallback->get().addParticles(particles);
     if (!operation10)
       return std::unexpected(std::move(operation10.error()));
   }
@@ -1388,8 +1388,8 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Object
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  return m_scriptComponent.handleMessage(message, sendingConnection == currentWorld->connection(), args);
+  auto& currentWorld = currentWorldResult->get();
+  return m_scriptComponent.handleMessage(message, sendingConnection == currentWorld.connection(), args);
 }
 
 std::expected<Json, StarException> Object::configValue(String const& name, Json const& def) const {
@@ -1441,7 +1441,7 @@ std::expected<void, StarException> Object::readStoredData(Json const& diskStore)
   if (!directionValueResult)
     return std::unexpected(std::move(directionValueResult.error()));
   auto directionValue = std::move(*directionValueResult);
-  m_direction.set(*directionValue);
+  m_direction.set(directionValue.get());
   auto actionResult = configValue("interactAction", Json());
   if (!actionResult)
     return std::unexpected(std::move(actionResult.error()));
@@ -1566,7 +1566,7 @@ std::expected<Json, StarException> Object::writeStoredData() const {
     {"uniqueId", jsonFromOptional(uniqueId())},
     {"tilePosition", jsonFromVec2I(tilePosition())},
     {"orientationIndex", jsonFromSize(m_orientationIndex)},
-    {"direction", **direction},
+    {"direction", direction->get()},
     {"scriptStorage", std::move(*storage)},
     {"interactive", m_interactive.get()},
     {"inputWireNodes", std::move(inputNodes)},
@@ -1593,14 +1593,14 @@ std::expected<Vec2I, StarException> Object::nodePosition(WireNode wireNode) cons
     auto nodeResult = m_inputNodes.at(wireNode.nodeIndex);
     if (!nodeResult)
       return std::unexpected(std::move(nodeResult.error()));
-    auto node = std::move(*nodeResult);
-    return node->position;
+    auto const& node = nodeResult->get();
+    return node.position;
   }
   auto nodeResult = m_outputNodes.at(wireNode.nodeIndex);
   if (!nodeResult)
     return std::unexpected(std::move(nodeResult.error()));
-  auto node = std::move(*nodeResult);
-  return node->position;
+  auto const& node = nodeResult->get();
+  return node.position;
 }
 
 std::expected<List<WireConnection>, StarException> Object::connectionsForNode(WireNode wireNode) const {
@@ -1608,14 +1608,14 @@ std::expected<List<WireConnection>, StarException> Object::connectionsForNode(Wi
     auto nodeResult = m_inputNodes.at(wireNode.nodeIndex);
     if (!nodeResult)
       return std::unexpected(std::move(nodeResult.error()));
-    auto node = std::move(*nodeResult);
-    return node->connections.get();
+    auto const& node = nodeResult->get();
+    return node.connections.get();
   }
   auto nodeResult = m_outputNodes.at(wireNode.nodeIndex);
   if (!nodeResult)
     return std::unexpected(std::move(nodeResult.error()));
-  auto node = std::move(*nodeResult);
-  return node->connections.get();
+  auto const& node = nodeResult->get();
+  return node.connections.get();
 }
 
 std::expected<bool, StarException> Object::nodeState(WireNode wireNode) const {
@@ -1623,28 +1623,28 @@ std::expected<bool, StarException> Object::nodeState(WireNode wireNode) const {
     auto nodeResult = m_inputNodes.at(wireNode.nodeIndex);
     if (!nodeResult)
       return std::unexpected(std::move(nodeResult.error()));
-    auto node = std::move(*nodeResult);
-    return node->state.get();
+    auto const& node = nodeResult->get();
+    return node.state.get();
   }
   auto nodeResult = m_outputNodes.at(wireNode.nodeIndex);
   if (!nodeResult)
     return std::unexpected(std::move(nodeResult.error()));
-  auto node = std::move(*nodeResult);
-  return node->state.get();
+  auto const& node = nodeResult->get();
+  return node.state.get();
 }
 std::expected<String, StarException> Object::nodeIcon(WireNode wireNode) const {
   if (wireNode.direction == WireDirection::Input) {
     auto nodeResult = m_inputNodes.at(wireNode.nodeIndex);
     if (!nodeResult)
       return std::unexpected(std::move(nodeResult.error()));
-    auto node = std::move(*nodeResult);
-    return node->icon;
+    auto const& node = nodeResult->get();
+    return node.icon;
   }
   auto nodeResult = m_outputNodes.at(wireNode.nodeIndex);
   if (!nodeResult)
     return std::unexpected(std::move(nodeResult.error()));
-  auto node = std::move(*nodeResult);
-  return node->icon;
+  auto const& node = nodeResult->get();
+  return node.icon;
 }
 
 std::expected<Color, StarException> Object::nodeColor(WireNode wireNode) const {
@@ -1652,14 +1652,14 @@ std::expected<Color, StarException> Object::nodeColor(WireNode wireNode) const {
     auto nodeResult = m_inputNodes.at(wireNode.nodeIndex);
     if (!nodeResult)
       return std::unexpected(std::move(nodeResult.error()));
-    auto node = std::move(*nodeResult);
-    return node->color;
+    auto const& node = nodeResult->get();
+    return node.color;
   }
   auto nodeResult = m_outputNodes.at(wireNode.nodeIndex);
   if (!nodeResult)
     return std::unexpected(std::move(nodeResult.error()));
-  auto node = std::move(*nodeResult);
-  return node->color;
+  auto const& node = nodeResult->get();
+  return node.color;
 }
 
 std::expected<void, StarException> Object::addNodeConnection(WireNode wireNode, WireConnection nodeConnection) {
@@ -1673,8 +1673,8 @@ std::expected<void, StarException> Object::addNodeConnection(WireNode wireNode, 
     auto nodeResult = m_inputNodes.at(wireNode.nodeIndex);
     if (!nodeResult)
       return std::unexpected(std::move(nodeResult.error()));
-    auto node = std::move(*nodeResult);
-    node->connections.update([&](auto& list) {
+    auto& node = nodeResult->get();
+    node.connections.update([&](auto& list) {
       if (list.contains(nodeConnection))
         return false;
       list.append(nodeConnection);
@@ -1690,8 +1690,8 @@ std::expected<void, StarException> Object::addNodeConnection(WireNode wireNode, 
     auto nodeResult = m_outputNodes.at(wireNode.nodeIndex);
     if (!nodeResult)
       return std::unexpected(std::move(nodeResult.error()));
-    auto node = std::move(*nodeResult);
-    node->connections.update([&](auto& list) {
+    auto& node = nodeResult->get();
+    node.connections.update([&](auto& list) {
       if (list.contains(nodeConnection))
         return false;
       list.append(nodeConnection);
@@ -1709,16 +1709,16 @@ std::expected<void, StarException> Object::removeNodeConnection(WireNode wireNod
     auto nodeResult = m_inputNodes.at(wireNode.nodeIndex);
     if (!nodeResult)
       return std::unexpected(std::move(nodeResult.error()));
-    auto node = std::move(*nodeResult);
-    node->connections.update([&](auto& list) {
+    auto& node = nodeResult->get();
+    node.connections.update([&](auto& list) {
       return list.remove(nodeConnection);
     });
   } else {
     auto nodeResult = m_outputNodes.at(wireNode.nodeIndex);
     if (!nodeResult)
       return std::unexpected(std::move(nodeResult.error()));
-    auto node = std::move(*nodeResult);
-    node->connections.update([&](auto& list) {
+    auto& node = nodeResult->get();
+    node.connections.update([&](auto& list) {
       return list.remove(nodeConnection);
     });
   }
@@ -1728,12 +1728,12 @@ std::expected<void, StarException> Object::removeNodeConnection(WireNode wireNod
   return {};
 }
 
-std::expected<void, StarException> Object::evaluate(WireCoordinator* coordinator) {
+std::expected<void, StarException> Object::evaluate(WireCoordinator& coordinator) {
   for (std::size_t i = 0; i < m_inputNodes.size(); ++i) {
     auto& node = m_inputNodes[i];
     bool nextState = false;
     for (auto const& connection : node.connections.get()) {
-      auto stateResult = coordinator->readInputConnection(connection);
+      auto stateResult = coordinator.readInputConnection(connection);
       if (!stateResult)
         return std::unexpected(std::move(stateResult.error()));
       auto state = std::move(*stateResult);
@@ -1753,9 +1753,9 @@ void Object::setImageKey(String const& name, String const& value) {
   if (!isSlave())
     m_netImageKeys.set(name, value);
 
-  if (auto p = m_imageKeys.ptr(name)) {
-    if (*p != value) {
-      *p = value;
+  if (auto p = m_imageKeys.maybeRef(name)) {
+    if (p->get() != value) {
+      p->get() = value;
       m_orientationDrawablesCache.reset();
     }
   } else {
@@ -1910,8 +1910,8 @@ std::expected<LuaCallbacks, StarException> Object::makeObjectCallbacks() {
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  auto levelResult = currentWorld->threatLevel();
+  auto& currentWorld = currentWorldResult->get();
+  auto levelResult = currentWorld.threatLevel();
   if (!levelResult)
     return std::unexpected(std::move(levelResult.error()));
   auto level = std::move(*levelResult);
@@ -1954,8 +1954,8 @@ std::expected<LuaCallbacks, StarException> Object::makeObjectCallbacks() {
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  if (auto entity = currentWorld->entity(entityId))
+  auto& currentWorld = currentWorldResult->get();
+  if (auto entity = currentWorld.entity(entityId))
     return !entity->collisionArea().overlap(volume().boundBox()).isEmpty();
   return false;
 });
@@ -1975,8 +1975,8 @@ std::expected<LuaCallbacks, StarException> Object::makeObjectCallbacks() {
   auto nodeResult = m_inputNodes.at(i);
   if (!nodeResult)
     return std::unexpected(std::move(nodeResult.error()));
-  auto node = std::move(*nodeResult);
-  return !node->connections.get().empty();
+  auto const& node = nodeResult->get();
+  return !node.connections.get().empty();
 });
   if (!operation28)
     return std::unexpected(std::move(operation28.error()));
@@ -1988,13 +1988,13 @@ std::expected<LuaCallbacks, StarException> Object::makeObjectCallbacks() {
   auto nodeResult = m_inputNodes.at(i);
   if (!nodeResult)
     return std::unexpected(std::move(nodeResult.error()));
-  auto node = std::move(*nodeResult);
+  auto const& node = nodeResult->get();
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  for (auto const& connection : node->connections.get()) {
-    auto entitiesResult = currentWorld->atTile<WireEntity>(connection.entityLocation);
+  auto& currentWorld = currentWorldResult->get();
+  for (auto const& connection : node.connections.get()) {
+    auto entitiesResult = currentWorld.atTile<WireEntity>(connection.entityLocation);
     if (!entitiesResult)
       return std::unexpected(std::move(entitiesResult.error()));
     auto entities = std::move(*entitiesResult);
@@ -2022,8 +2022,8 @@ std::expected<LuaCallbacks, StarException> Object::makeObjectCallbacks() {
   auto nodeResult = m_outputNodes.at(i);
   if (!nodeResult)
     return std::unexpected(std::move(nodeResult.error()));
-  auto node = std::move(*nodeResult);
-  return !node->connections.get().empty();
+  auto const& node = nodeResult->get();
+  return !node.connections.get().empty();
 });
   if (!operation32)
     return std::unexpected(std::move(operation32.error()));
@@ -2035,13 +2035,13 @@ std::expected<LuaCallbacks, StarException> Object::makeObjectCallbacks() {
   auto nodeResult = m_outputNodes.at(i);
   if (!nodeResult)
     return std::unexpected(std::move(nodeResult.error()));
-  auto node = std::move(*nodeResult);
+  auto const& node = nodeResult->get();
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  for (auto const& connection : node->connections.get()) {
-    auto entitiesResult = currentWorld->atTile<WireEntity>(connection.entityLocation);
+  auto& currentWorld = currentWorldResult->get();
+  for (auto const& connection : node.connections.get()) {
+    auto entitiesResult = currentWorld.atTile<WireEntity>(connection.entityLocation);
     if (!entitiesResult)
       return std::unexpected(std::move(entitiesResult.error()));
     auto entities = std::move(*entitiesResult);
@@ -2059,8 +2059,8 @@ std::expected<LuaCallbacks, StarException> Object::makeObjectCallbacks() {
   auto nodeResult = m_outputNodes.at(i);
   if (!nodeResult)
     return std::unexpected(std::move(nodeResult.error()));
-  auto node = std::move(*nodeResult);
-  node->state.set(level);
+  auto& node = nodeResult->get();
+  node.state.set(level);
   return {};
 });
   if (!operation34)
@@ -2187,10 +2187,10 @@ std::expected<std::optional<HitType>, StarException> Object::queryHit(DamageSour
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
+  auto& currentWorld = currentWorldResult->get();
   auto poly = volume();
   poly.translate(position());
-  auto intersectsResult = source.intersectsWithPoly(currentWorld->geometry(), poly);
+  auto intersectsResult = source.intersectsWithPoly(currentWorld.geometry(), poly);
   if (!intersectsResult)
     return std::unexpected(std::move(intersectsResult.error()));
   auto intersects = std::move(*intersectsResult);
@@ -2243,8 +2243,8 @@ std::expected<InteractAction, StarException> Object::interact(InteractRequest co
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  Vec2F diff = currentWorld->geometry().diff(request.sourcePosition, position());
+  auto& currentWorld = currentWorldResult->get();
+  Vec2F diff = currentWorld.geometry().diff(request.sourcePosition, position());
   auto resultResult = m_scriptComponent.invoke<Json>("onInteraction", JsonObject{{"source", JsonArray{diff[0], diff[1]}}, {"sourceId", request.sourceId}});
   if (!resultResult)
     return std::unexpected(std::move(resultResult.error()));
@@ -2357,8 +2357,7 @@ std::expected<List<Drawable>, StarException> Object::orientationDrawables(std::s
   auto orientationEntryResult = getOrientations().at(orientationIndex);
   if (!orientationEntryResult)
     return std::unexpected(std::move(orientationEntryResult.error()));
-  auto orientationEntry = std::move(*orientationEntryResult);
-  auto const& orientation = *orientationEntry;
+  auto const& orientation = orientationEntryResult->get();
   if (!m_orientationDrawablesCache || orientationIndex != m_orientationDrawablesCache->first) {
     auto metadataResult = root().imageMetadataDatabase();
     if (!metadataResult)
@@ -2434,15 +2433,15 @@ EntityRenderLayer Object::renderLayer() const {
     return RenderLayerObject;
 }
 
-std::expected<void, StarException> Object::renderLights(RenderCallback* renderCallback) const {
+std::expected<void, StarException> Object::renderLights(RenderCallback& renderCallback) const {
   auto lightsResult = lightSources();
   if (!lightsResult)
     return std::unexpected(std::move(lightsResult.error()));
   auto lights = std::move(*lightsResult);
-  return renderCallback->addLightSources(lights);
+  return renderCallback.addLightSources(lights);
 }
 
-std::expected<void, StarException> Object::renderParticles(RenderCallback* renderCallback) {
+std::expected<void, StarException> Object::renderParticles(RenderCallback& renderCallback) {
   if (!inWorld())
     return {};
   if (auto orientation = currentOrientation()) {
@@ -2460,11 +2459,11 @@ std::expected<void, StarException> Object::renderParticles(RenderCallback* rende
           auto spaceResult = root().random().randFrom(orientation->spaces);
           if (!spaceResult)
             return std::unexpected(std::move(spaceResult.error()));
-          auto space = std::move(*spaceResult);
-          particle.translate(Vec2F(*space) + Vec2F(0.5, 0.5));
+          auto const& space = spaceResult->get();
+          particle.translate(Vec2F(space) + Vec2F(0.5, 0.5));
         }
         particle.translate(position());
-        auto operation1 = renderCallback->addParticle(std::move(particle));
+        auto operation1 = renderCallback.addParticle(std::move(particle));
         if (!operation1)
           return std::unexpected(std::move(operation1.error()));
         auto varianceResult = root().random().randf(-emitter.particleEmissionRateVariance, emitter.particleEmissionRateVariance);
@@ -2478,7 +2477,7 @@ std::expected<void, StarException> Object::renderParticles(RenderCallback* rende
   return {};
 }
 
-std::expected<void, StarException> Object::renderSounds(RenderCallback* renderCallback) {
+std::expected<void, StarException> Object::renderSounds(RenderCallback& renderCallback) {
   if (m_soundEffectEnabled.get()) {
     if (!m_config->soundEffect.empty() && (!m_soundEffect || m_soundEffect->finished())) {
       auto assetsResult = root().assets();
@@ -2505,7 +2504,7 @@ std::expected<void, StarException> Object::renderSounds(RenderCallback* renderCa
       sound->setPosition(metaBoundBox().center() + position());
       sound->setVolume(0);
       sound->setVolume(1, 1.0);
-      auto operation2 = renderCallback->addAudio(sound);
+      auto operation2 = renderCallback.addAudio(sound);
       if (!operation2)
         return std::unexpected(std::move(operation2.error()));
       m_soundEffect = std::move(sound);

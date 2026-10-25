@@ -87,7 +87,7 @@ public:
   [[nodiscard]] std::expected<int, StarException> stringWidth(StringView s, unsigned charLimit = 0);
 
   typedef std::function<std::expected<bool, StarException>(StringView, unsigned)> WrapTextCallback;
-  [[nodiscard]] std::expected<bool, StarException> processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc);
+  [[nodiscard]] std::expected<bool, StarException> processWrapText(StringView s, std::optional<std::reference_wrapper<unsigned>> wrapWidth, WrapTextCallback textFunc);
 
   [[nodiscard]] std::expected<List<StringView>, StarException> wrapTextViews(StringView s, std::optional<unsigned> wrapWidth);
   [[nodiscard]] std::expected<StringList, StarException> wrapText(StringView s, std::optional<unsigned> wrapWidth);
@@ -99,7 +99,7 @@ public:
   void setFontColor(Vec4B color);
   [[nodiscard]] std::expected<void, StarException> setProcessingDirectives(StringView directives, bool back = false);
   [[nodiscard]] std::expected<void, StarException> setFont(String const& font);
-  [[nodiscard]] std::expected<TextStyle*, StarException> setTextStyle(TextStyle const& textStyle);
+  [[nodiscard]] std::expected<std::reference_wrapper<TextStyle>, StarException> setTextStyle(TextStyle const& textStyle);
   [[nodiscard]] std::expected<void, StarException> clearTextStyle();
   [[nodiscard]] std::expected<void, StarException> addFont(std::shared_ptr<Font> const& font, String const& name);
   [[nodiscard]] std::expected<void, StarException> reloadFonts();
@@ -109,12 +109,12 @@ public:
 private:
   TextPainter(Root& root, std::shared_ptr<Renderer> renderer, std::shared_ptr<TextureGroup> textureGroup);
   [[nodiscard]] std::expected<void, StarException> modifyDirectives(Directives& directives);
-  [[nodiscard]] std::expected<RectF, StarException> doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
-  [[nodiscard]] std::expected<RectF, StarException> doRenderLine(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
+  [[nodiscard]] std::expected<RectF, StarException> doRenderText(StringView s, TextPositioning const& position, bool reallyRender, std::optional<std::reference_wrapper<unsigned>> charLimit);
+  [[nodiscard]] std::expected<RectF, StarException> doRenderLine(StringView s, TextPositioning const& position, bool reallyRender, std::optional<std::reference_wrapper<unsigned>> charLimit);
   [[nodiscard]] std::expected<RectF, StarException> doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender);
 
   void renderPrimitives();
-  [[nodiscard]] std::expected<void, StarException> renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize, float scale, Vec4B color, Directives const* processingDirectives = nullptr);
+  [[nodiscard]] std::expected<void, StarException> renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize, float scale, Vec4B color, std::optional<std::reference_wrapper<Directives const>> processingDirectives = std::nullopt);
   [[nodiscard]] std::expected<std::shared_ptr<Font>, StarException> loadFont(String const& fontPath, std::optional<String> fontName = {});
 
   Root& m_root;

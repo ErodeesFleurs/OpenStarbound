@@ -156,7 +156,7 @@ ActorJumpProfile ActorJumpProfile::merge(ActorJumpProfile const& rhs) const {
   return merged;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorJumpProfile& movementParameters) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ActorJumpProfile& movementParameters) {
   if (auto result = ds.read(movementParameters.jumpSpeed); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementParameters.jumpControlForce); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementParameters.jumpInitialPercentage); !result) return std::unexpected(std::move(result.error()));
@@ -167,10 +167,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorJumpPr
   if (auto result = ds.read(movementParameters.autoJump); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementParameters.collisionCancelled); !result) return std::unexpected(std::move(result.error()));
 
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorJumpProfile const& movementParameters) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ActorJumpProfile const& movementParameters) {
   if (auto result = ds.write(movementParameters.jumpSpeed); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementParameters.jumpControlForce); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementParameters.jumpInitialPercentage); !result) return std::unexpected(std::move(result.error()));
@@ -181,7 +181,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorJumpPr
   if (auto result = ds.write(movementParameters.autoJump); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementParameters.collisionCancelled); !result) return std::unexpected(std::move(result.error()));
 
-  return &ds;
+  return std::ref(ds);
 }
 
 std::expected<ActorMovementParameters, StarException> ActorMovementParameters::sensibleDefaults(Root& root) {
@@ -485,7 +485,7 @@ ActorMovementParameters ActorMovementParameters::merge(ActorMovementParameters c
   return merged;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMovementParameters& movementParameters) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ActorMovementParameters& movementParameters) {
   if (auto result = ds.read(movementParameters.mass); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementParameters.gravityMultiplier); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementParameters.liquidBuoyancy); !result) return std::unexpected(std::move(result.error()));
@@ -525,10 +525,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMoveme
   if (auto result = ds.read(movementParameters.gravityEnabled); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementParameters.pathExploreRate); !result) return std::unexpected(std::move(result.error()));
 
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMovementParameters const& movementParameters) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ActorMovementParameters const& movementParameters) {
   if (auto result = ds.write(movementParameters.mass); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementParameters.gravityMultiplier); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementParameters.liquidBuoyancy); !result) return std::unexpected(std::move(result.error()));
@@ -568,7 +568,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMoveme
   if (auto result = ds.write(movementParameters.gravityEnabled); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementParameters.pathExploreRate); !result) return std::unexpected(std::move(result.error()));
 
-  return &ds;
+  return std::ref(ds);
 }
 
 ActorMovementModifiers::ActorMovementModifiers() {
@@ -648,7 +648,7 @@ ActorMovementModifiers ActorMovementModifiers::combine(ActorMovementModifiers co
   return res;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers) {
   if (auto result = ds.read(movementModifiers.groundMovementModifier); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementModifiers.liquidMovementModifier); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementModifiers.speedModifier); !result) return std::unexpected(std::move(result.error()));
@@ -659,10 +659,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMoveme
   if (auto result = ds.read(movementModifiers.facingSuppressed); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.read(movementModifiers.movementSuppressed); !result) return std::unexpected(std::move(result.error()));
 
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers) {
   if (auto result = ds.write(movementModifiers.groundMovementModifier); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementModifiers.liquidMovementModifier); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementModifiers.speedModifier); !result) return std::unexpected(std::move(result.error()));
@@ -673,7 +673,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMoveme
   if (auto result = ds.write(movementModifiers.facingSuppressed); !result) return std::unexpected(std::move(result.error()));
   if (auto result = ds.write(movementModifiers.movementSuppressed); !result) return std::unexpected(std::move(result.error()));
 
-  return &ds;
+  return std::ref(ds);
 }
 
 ActorMovementController::ActorMovementController(Root& root) : MovementController(root) {
@@ -697,18 +697,18 @@ std::expected<std::shared_ptr<ActorMovementController>, StarException> ActorMove
   auto controller = std::shared_ptr<ActorMovementController>(new ActorMovementController(root));
   auto initialized = controller->initialize({});
   if (!initialized) return std::unexpected(std::move(initialized.error()));
-  if (auto result = controller->addNetElement(&controller->m_walking); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = controller->addNetElement(&controller->m_running); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = controller->addNetElement(&controller->m_movingDirection); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = controller->addNetElement(&controller->m_facingDirection); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = controller->addNetElement(&controller->m_crouching); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = controller->addNetElement(&controller->m_flying); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = controller->addNetElement(&controller->m_falling); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = controller->addNetElement(&controller->m_canJump); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = controller->addNetElement(&controller->m_jumping); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = controller->addNetElement(&controller->m_groundMovement); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = controller->addNetElement(&controller->m_liquidMovement); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = controller->addNetElement(&controller->m_anchorState); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_walking); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_running); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_movingDirection); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_facingDirection); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_crouching); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_flying); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_falling); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_canJump); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_jumping); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_groundMovement); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_liquidMovement); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = controller->addNetElement(controller->m_anchorState); !result) return std::unexpected(std::move(result.error()));
 
   auto configured = controller->resetBaseParameters(parameters);
   if (!configured) return std::unexpected(std::move(configured.error()));
@@ -749,6 +749,11 @@ void ActorMovementController::resetBaseModifiers(ActorMovementModifiers const& m
   m_baseModifiers = modifiers;
 }
 
+void ActorMovementController::uninit() {
+  m_pathController.reset();
+  MovementController::uninit();
+}
+
 std::expected<Json, StarException> ActorMovementController::storeState() const {
   if (!DirectionNames) return std::unexpected(DirectionNames.error());
   auto movingName = DirectionNames->getRight(m_movingDirection.get());
@@ -758,8 +763,8 @@ std::expected<Json, StarException> ActorMovementController::storeState() const {
   return JsonObject{{"position", jsonFromVec2F(MovementController::position())},
       {"velocity", jsonFromVec2F(velocity())},
       {"rotation", MovementController::rotation()},
-      {"movingDirection", **movingName},
-      {"facingDirection", **facingName},
+      {"movingDirection", movingName->get()},
+      {"facingDirection", facingName->get()},
       {"crouching", m_crouching.get()}};
 }
 
@@ -777,8 +782,8 @@ std::expected<void, StarException> ActorMovementController::loadState(Json const
   if (!facingDirection) return std::unexpected(std::move(facingDirection.error()));
   auto crouchingValue = state.getBool("crouching");
   if (!crouchingValue) return std::unexpected(std::move(crouchingValue.error()));
-  m_movingDirection.set(**movingDirection);
-  m_facingDirection.set(**facingDirection);
+  m_movingDirection.set(movingDirection->get());
+  m_facingDirection.set(facingDirection->get());
   m_crouching.set(*crouchingValue);
   return {};
 }
@@ -931,7 +936,7 @@ std::expected<std::optional<std::pair<Vec2F, bool>>, StarException> ActorMovemen
   if (!m_pathController) {
     auto activeWorld = world();
     if (!activeWorld) return std::unexpected(std::move(activeWorld.error()));
-    m_pathController = std::make_shared<PathController>(*activeWorld);
+    m_pathController = std::make_shared<PathController>(activeWorld->get());
   }
 
   // set new parameters if they have changed
@@ -992,10 +997,10 @@ void ActorMovementController::clearControls() {
 std::expected<void, StarException> ActorMovementController::tickMaster(float dt) {
   auto activeWorld = world();
   if (!activeWorld) return std::unexpected(std::move(activeWorld.error()));
-  World* worldPtr = *activeWorld;
+  World& worldRef = activeWorld->get();
   std::shared_ptr<EntityAnchor const> newAnchor;
   if (auto anchorState = m_anchorState.get()) {
-    if (auto anchorableEntity = as<AnchorableEntity>(worldPtr->entity(anchorState->entityId)))
+    if (auto anchorableEntity = as<AnchorableEntity>(worldRef.entity(anchorState->entityId)))
       {
         auto anchorValue = anchorableEntity->anchor(anchorState->positionIndex);
         if (!anchorValue) return std::unexpected(std::move(anchorValue.error()));
@@ -1053,7 +1058,7 @@ std::expected<void, StarException> ActorMovementController::tickMaster(float dt)
       } else if (!m_pathController->pathfinding()) {
         auto pathResult = m_pathController->move(*this, activeParameters, activeModifiers, m_controlPathMove->second, dt);
         if (!pathResult) return std::unexpected(std::move(pathResult.error()));
-        m_pathMoveResult = pathResult->transform([this](bool result) { return std::pair<Vec2F, bool>(m_controlPathMove->first, result); });
+        m_pathMoveResult = pathResult->transform([&pathMove = m_controlPathMove](bool result) { return std::pair<Vec2F, bool>(pathMove->first, result); });
 
         auto action = m_pathController->curAction();
         bool onGround = false;
@@ -1097,8 +1102,8 @@ std::expected<void, StarException> ActorMovementController::tickMaster(float dt)
       } else {
         auto pathResult = m_pathController->findPath(*this, m_controlPathMove->first);
         if (!pathResult) return std::unexpected(std::move(pathResult.error()));
-        m_pathMoveResult = pathResult->transform([this](bool result) {
-            return std::pair<Vec2F, bool>(m_controlPathMove->first, result);
+        m_pathMoveResult = pathResult->transform([&pathMove = m_controlPathMove](bool result) {
+            return std::pair<Vec2F, bool>(pathMove->first, result);
           });
       }
     } else {
@@ -1180,7 +1185,7 @@ std::expected<void, StarException> ActorMovementController::tickMaster(float dt)
       } else if (!m_groundMovementSustainTimer.ready() && groundCheckDistance > 0.0f && maxGroundSustain - m_groundMovementSustainTimer.timer > minGroundSustain) {
         PolyF collisionBody = MovementController::collisionBody();
         collisionBody.translate(Vec2F(0, -groundCheckDistance));
-        auto collision = worldPtr->polyCollision(collisionBody, {CollisionKind::Block, CollisionKind::Dynamic, CollisionKind::Platform, CollisionKind::Slippery});
+        auto collision = worldRef.polyCollision(collisionBody, {CollisionKind::Block, CollisionKind::Dynamic, CollisionKind::Platform, CollisionKind::Slippery});
         if (!collision) return std::unexpected(std::move(collision.error()));
         if (!*collision)
           m_groundMovementSustainTimer = GameTimer(0);
@@ -1303,12 +1308,12 @@ std::expected<void, StarException> ActorMovementController::tickMaster(float dt)
 std::expected<void, StarException> ActorMovementController::tickSlave(float dt) {
   auto activeWorld = world();
   if (!activeWorld) return std::unexpected(std::move(activeWorld.error()));
-  World* worldPtr = *activeWorld;
+  World& worldRef = activeWorld->get();
   if (auto result = MovementController::tickSlave(dt); !result) return std::unexpected(std::move(result.error()));
 
   m_entityAnchor.reset();
   if (auto anchorState = m_anchorState.get()) {
-    if (auto anchorableEntity = as<AnchorableEntity>(worldPtr->entity(anchorState->entityId)))
+    if (auto anchorableEntity = as<AnchorableEntity>(worldRef.entity(anchorState->entityId)))
       {
         auto anchorValue = anchorableEntity->anchor(anchorState->positionIndex);
         if (!anchorValue) return std::unexpected(std::move(anchorValue.error()));
@@ -1414,8 +1419,8 @@ std::expected<void, StarException> ActorMovementController::doSetAnchorState(std
   if (anchorState) {
     auto activeWorld = world();
     if (!activeWorld) return std::unexpected(std::move(activeWorld.error()));
-    World* worldPtr = *activeWorld;
-    auto anchorableEntity = as<AnchorableEntity>(worldPtr->entity(anchorState->entityId));
+    World& worldRef = activeWorld->get();
+    auto anchorableEntity = as<AnchorableEntity>(worldRef.entity(anchorState->entityId));
     if (!anchorableEntity)
       return std::unexpected(ActorMovementControllerException::format("No such anchorable entity id {} in ActorMovementController::setAnchorState", anchorState->entityId));
     auto anchorValue = anchorableEntity->anchor(anchorState->positionIndex);
@@ -1440,7 +1445,7 @@ std::expected<void, StarException> ActorMovementController::doSetAnchorState(std
 }
 
 
-PathController::PathController(World* world)
+PathController::PathController(World& world)
   : m_world(world), m_edgeIndex(0), m_edgeTimer(0.0) { }
 
 PlatformerAStar::Parameters const& PathController::parameters() {
@@ -1484,13 +1489,13 @@ std::expected<std::optional<bool>, StarException> PathController::findPath(Actor
   using namespace PlatformerAStar;
 
   // reached the end of the last path and we have a new target position to move toward
-  if (m_path && m_edgeIndex == m_path->size() && m_world->geometry().diff(*m_targetPosition, targetPosition).magnitude() > 0.001) {
+  if (m_path && m_edgeIndex == m_path->size() && m_world.get().geometry().diff(*m_targetPosition, targetPosition).magnitude() > 0.001) {
     reset();
     m_targetPosition = targetPosition;
   }
 
   // starting a new path, or the target position moved by more than 2 blocks
-  if (!m_targetPosition || (!m_path && !m_pathFinder) || m_world->geometry().diff(*m_targetPosition, targetPosition).magnitude() > 2.0) {
+  if (!m_targetPosition || (!m_path && !m_pathFinder) || m_world.get().geometry().diff(*m_targetPosition, targetPosition).magnitude() > 2.0) {
     auto grounded = movementController.onGround();
     if (m_path) {
       // if already moving on a path, collision will be disabled and we can't use MovementController::onGround() to check for ground collision
@@ -1504,7 +1509,7 @@ std::expected<std::optional<bool>, StarException> PathController::findPath(Actor
     }
     m_startPosition = movementController.position();
     m_targetPosition = targetPosition;
-    auto finder = PathFinder::create(m_world, movementController.position(), *m_targetPosition, movementController.baseParameters(), m_parameters);
+    auto finder = PathFinder::create(m_world.get(), movementController.position(), *m_targetPosition, movementController.baseParameters(), m_parameters);
     if (!finder) return std::unexpected(std::move(finder.error()));
     m_pathFinder = std::move(*finder);
   }
@@ -1536,7 +1541,7 @@ std::expected<std::optional<bool>, StarException> PathController::findPath(Actor
           auto curEdgeIndex = std::min(m_edgeIndex, m_path->size() - 1);
           auto curEdgeResult = m_path->at(curEdgeIndex);
           if (!curEdgeResult) return std::unexpected(std::move(curEdgeResult.error()));
-          auto& curEdge = **curEdgeResult;
+          auto& curEdge = curEdgeResult->get();
           for (auto& edge : path) {
             if (curEdge.action == edge.action && curEdge.source.position == edge.source.position && edge.target.position == edge.target.position) {
               // fast forward on the new path
@@ -1573,7 +1578,7 @@ std::expected<std::optional<bool>, StarException> PathController::findPath(Actor
         if (!merged && movementController.position() != *m_startPosition) {
           // merging the paths failed, and the entity has moved from the path start position
           // try to bridge the gap from the current position to the new path
-          auto bridgeResult = PathFinder::create(m_world, movementController.position(), *m_startPosition, movementController.baseParameters(), m_parameters);
+          auto bridgeResult = PathFinder::create(m_world.get(), movementController.position(), *m_startPosition, movementController.baseParameters(), m_parameters);
           if (!bridgeResult) return std::unexpected(std::move(bridgeResult.error()));
           auto bridgePathFinder = std::move(*bridgeResult);
           auto bridgeExploration = bridgePathFinder->explore(movementController.baseParameters().pathExploreRate.value_or(100.0));
@@ -1634,7 +1639,7 @@ std::expected<std::optional<bool>, StarException> PathController::move(ActorMove
 
   while (m_edgeIndex < m_path->size()) {
     auto& edge = (*m_path)[m_edgeIndex];
-    Vec2F delta =  m_world->geometry().diff(edge.target.position, edge.source.position);
+    Vec2F delta = m_world.get().geometry().diff(edge.target.position, edge.source.position);
 
     Vec2F sourceVelocity;
     Vec2F targetVelocity;
@@ -1720,18 +1725,18 @@ std::expected<bool, StarException> PathController::validateEdge(ActorMovementCon
   using namespace PlatformerAStar;
   auto const groundCollision = CollisionSet{CollisionKind::Null, CollisionKind::Block, CollisionKind::Slippery, CollisionKind::Platform};
   auto const solidCollision = CollisionSet{CollisionKind::Null, CollisionKind::Block, CollisionKind::Slippery};
-  auto openDoors = [&](RectF const& bounds) -> std::expected<bool, StarException> {
-    auto objects = m_world->entityQuery(bounds, entityTypeFilter<Object>());
+  auto openDoors = [&world = m_world.get()](RectF const& bounds) -> std::expected<bool, StarException> {
+    auto objects = world.entityQuery(bounds, entityTypeFilter<Object>());
     if (!objects) return std::unexpected(std::move(objects.error()));
     bool opened = false;
     for (auto const& entity : *objects) {
       if (auto object = as<Object>(entity); object && object->isMaster()) {
-        auto arg = m_world->luaRoot()->luaEngine().createString("closedDoor");
+        auto arg = world.luaRoot()->luaEngine().createString("closedDoor");
         if (!arg) return std::unexpected(std::move(arg.error()));
         auto response = object->callScript("hasCapability", LuaVariadic<LuaValue>{*arg});
         if (!response) return std::unexpected(std::move(response.error()));
         if (*response && std::holds_alternative<LuaBoolean>(**response) && std::get<LuaBoolean>(**response)) {
-          auto sent = m_world->sendEntityMessage(entity->entityId(), "openDoor");
+          auto sent = world.sendEntityMessage(entity->entityId(), "openDoor");
           if (!sent) return std::unexpected(std::move(sent.error()));
           opened = true;
         }
@@ -1741,7 +1746,7 @@ std::expected<bool, StarException> PathController::validateEdge(ActorMovementCon
   };
   auto poly = movementController.collisionPoly();
   poly.translate(edge.target.position);
-  auto worldCollision = m_world->polyCollision(poly);
+  auto worldCollision = m_world.get().polyCollision(poly);
   if (!worldCollision) return std::unexpected(std::move(worldCollision.error()));
   bool collided = *worldCollision;
   if (!collided) {
@@ -1751,19 +1756,19 @@ std::expected<bool, StarException> PathController::validateEdge(ActorMovementCon
   }
   if (collided) {
     auto bounds = RectI::integral(poly.boundBox());
-    auto tileCollision = m_world->rectTileCollision(bounds);
+    auto tileCollision = m_world.get().rectTileCollision(bounds);
     if (!tileCollision) return std::unexpected(std::move(tileCollision.error()));
     if (!*tileCollision) return false;
-    auto solid = m_world->rectTileCollision(bounds, solidCollision);
+    auto solid = m_world.get().rectTileCollision(bounds, solidCollision);
     if (!solid) return std::unexpected(std::move(solid.error()));
     if (*solid) return false;
     auto opened = openDoors(poly.boundBox());
     if (!opened) return std::unexpected(std::move(opened.error()));
     if (!*opened) return false;
   }
-  auto inLiquid = [&](Vec2F const& position) -> std::expected<bool, StarException> {
+  auto inLiquid = [&movementController, &world = m_world.get()](Vec2F const& position) -> std::expected<bool, StarException> {
     auto bounds = movementController.localBoundBox().translated(position);
-    auto liquid = m_world->liquidLevel(bounds);
+    auto liquid = world.liquidLevel(bounds);
     if (!liquid) return std::unexpected(std::move(liquid.error()));
     return liquid->level >= movementController.baseParameters().minimumLiquidPercentage.value_or(1.0);
   };
@@ -1806,7 +1811,7 @@ std::expected<bool, StarException> PathController::onGround(ActorMovementControl
     auto bounds = RectI::integral(movementController.localBoundBox().translated(position));
     Vec2I min = Vec2I(bounds.xMin(), bounds.yMin() - 1);
     Vec2I max = Vec2I(bounds.xMax(), bounds.yMin());
-    return m_world->rectTileCollision(RectI(min, max), collisionSet);
+    return m_world.get().rectTileCollision(RectI(min, max), collisionSet);
 }
 
 }

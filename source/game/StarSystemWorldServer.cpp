@@ -143,7 +143,7 @@ std::expected<std::shared_ptr<SystemWorldServer>, StarException> SystemWorldServ
   if (!objects)
     return std::unexpected(std::move(objects.error()));
   for (auto const& store : *objects) {
-    auto object = SystemObject::create(root, server.get(), store);
+    auto object = SystemObject::create(root, *server, store);
     if (!object)
       return std::unexpected(std::move(object.error()));
     auto uuid = (*object)->uuid();
@@ -173,8 +173,8 @@ std::expected<void, StarException> SystemWorldServer::setClientDestination(Conne
 }
 
 std::shared_ptr<SystemClientShip> SystemWorldServer::clientShip(ConnectionId clientId) const {
-  if (auto uuid = m_clientShips.ptr(clientId))
-    return m_ships.value(*uuid);
+  if (auto uuid = m_clientShips.maybeRef(clientId))
+    return m_ships.value(uuid->get());
   return {};
 }
 
@@ -190,15 +190,16 @@ std::expected<std::optional<std::pair<WarpAction, WarpMode>>, StarException> Sys
   if (!ship)
     return std::unexpected(StarException::format("No system ship for client {}", clientId));
   auto location = ship->systemLocation();
-  if (auto uuid = std::get_if<Uuid>(&location)) {
-    auto action = objectWarpAction(*uuid);
+  if (std::holds_alternative<Uuid>(location)) {
+    auto action = objectWarpAction(std::get<Uuid>(location));
     if (!action)
       return std::unexpected(std::move(action.error()));
     if (*action)
       return std::optional(std::pair<WarpAction, WarpMode>(**action, WarpMode::DeployOnly));
-  } else if (auto coordinate = std::get_if<CelestialCoordinate>(&location)) {
-    return std::optional(std::pair<WarpAction, WarpMode>(WarpToWorld(CelestialWorldId(*coordinate)), WarpMode::BeamOrDeploy));
-  } else if (auto position = std::get_if<Vec2F>(&location)) {
+  } else if (std::holds_alternative<CelestialCoordinate>(location)) {
+    return std::optional(std::pair<WarpAction, WarpMode>(WarpToWorld(CelestialWorldId(std::get<CelestialCoordinate>(location))), WarpMode::BeamOrDeploy));
+  } else if (std::holds_alternative<Vec2F>(location)) {
+    auto const& position = std::get<Vec2F>(location);
     auto allPlanets = planets();
     if (!allPlanets)
       return std::unexpected(std::move(allPlanets.error()));
@@ -206,14 +207,14 @@ std::expected<std::optional<std::pair<WarpAction, WarpMode>>, StarException> Sys
       auto planetPos = planetPosition(planet);
       if (!planetPos)
         return std::unexpected(std::move(planetPos.error()));
-      if (std::abs(planetPos->magnitude() - position->magnitude()) > systemConfig().asteroidBeamDistance)
+      if (std::abs(planetPos->magnitude() - position.magnitude()) > systemConfig().asteroidBeamDistance)
         continue;
       auto parameters = m_celestialDatabase->parameters(planet);
       if (!parameters)
         return std::unexpected(std::move(parameters.error()));
       if (*parameters) {
         if (auto asteroids = as<AsteroidsWorldParameters>((**parameters).visitableParameters())) {
-          float targetX = (position->angle() / (2 * std::numbers::pi)) * asteroids->worldSize[0];
+          float targetX = (position.angle() / (2 * std::numbers::pi)) * asteroids->worldSize[0];
           return std::optional(std::pair<WarpAction, WarpMode>(WarpToWorld(CelestialWorldId(planet), SpawnTargetX(targetX)), WarpMode::DeployOnly));
         }
       }
@@ -234,12 +235,12 @@ List<ConnectionId> SystemWorldServer::clients() const {
 }
 
 std::expected<void, StarException> SystemWorldServer::addClientShip(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation location) {
-  if (auto object = std::get_if<Uuid>(&location))
-    if (!getObject(*object))
+  if (std::holds_alternative<Uuid>(location))
+    if (!getObject(std::get<Uuid>(location)))
       location.emplace<0>();
   if (std::holds_alternative<std::monostate>(location))
     location = randomArrivalPosition();
-  auto created = SystemClientShip::create(this, uuid, shipSpeed, location);
+  auto created = SystemClientShip::create(*this, uuid, shipSpeed, location);
   if (!created)
     return std::unexpected(std::move(created.error()));
   auto ship = std::move(*created);
@@ -282,7 +283,7 @@ std::expected<void, StarException> SystemWorldServer::removeClientShip(Connectio
   auto uuid = m_clientShips.get(clientId);
   if (!uuid)
     return std::unexpected(std::move(uuid.error()));
-  m_shipDestroyQueue.append(**uuid);
+  m_shipDestroyQueue.append(uuid->get());
   m_clientShips.remove(clientId);
   m_clientNetVersions.remove(clientId);
   m_outgoingPackets.remove(clientId);
@@ -304,10 +305,11 @@ std::expected<List<InstanceWorldId>, StarException> SystemWorldServer::activeIns
     auto warp = clientWarpAction(clientId);
     if (!warp)
       return std::unexpected(std::move(warp.error()));
-    if (*warp)
-      if (auto action = std::get_if<WarpToWorld>(&(**warp).first))
-        if (auto world = std::get_if<InstanceWorldId>(&action->world))
-          worlds.append(*world);
+    if (*warp && std::holds_alternative<WarpToWorld>((**warp).first)) {
+      auto const& action = std::get<WarpToWorld>((**warp).first);
+      if (std::holds_alternative<InstanceWorldId>(action.world))
+        worlds.append(std::get<InstanceWorldId>(action.world));
+    }
   }
   return worlds;
 }
@@ -326,9 +328,8 @@ std::expected<void, StarException> SystemWorldServer::removeObject(Uuid objectUu
       return std::unexpected(StarException::format("No system ship for client {}", entry.first));
     auto location = ship->systemLocation();
     auto destination = ship->destination();
-    auto locationUuid = std::get_if<Uuid>(&location);
-    auto destinationUuid = std::get_if<Uuid>(&destination);
-    if ((locationUuid && *locationUuid == objectUuid) || (destinationUuid && *destinationUuid == objectUuid)) {
+    if ((std::holds_alternative<Uuid>(location) && std::get<Uuid>(location) == objectUuid)
+        || (std::holds_alternative<Uuid>(destination) && std::get<Uuid>(destination) == objectUuid)) {
       auto position = systemLocationPosition(objectUuid);
       if (!position)
         return std::unexpected(std::move(position.error()));
@@ -402,12 +403,12 @@ std::expected<bool, StarException> SystemWorldServer::addObject(std::shared_ptr<
 
 std::expected<void, StarException> SystemWorldServer::update(float dt) {
   for (auto const& entry : m_ships) {
-    auto updated = entry.second->serverUpdate(this, dt);
+    auto updated = entry.second->serverUpdate(*this, dt);
     if (!updated)
       return std::unexpected(std::move(updated.error()));
   }
   for (auto const& entry : m_objects) {
-    auto updated = entry.second->serverUpdate(this, dt);
+    auto updated = entry.second->serverUpdate(*this, dt);
     if (!updated)
       return std::unexpected(std::move(updated.error()));
     if (entry.second->shouldDestroy() && shipsAtLocation(entry.first).empty()) {
@@ -459,22 +460,22 @@ List<ConnectionId> SystemWorldServer::pullShipFlights() {
 
 std::expected<void, StarException> SystemWorldServer::queueUpdatePackets() {
   for (auto clientId : m_clientNetVersions.keys()) {
-    auto versions = m_clientNetVersions.ptr(clientId);
+    auto& versions = m_clientNetVersions.maybeRef(clientId)->get();
     HashMap<Uuid, ByteArray> shipUpdates;
     for (auto const& ship : m_ships.valueView()) {
-      auto update = ship->writeNetState(versions->ships.value(ship->uuid(), 0), {});
+      auto update = ship->writeNetState(versions.ships.value(ship->uuid(), 0), {});
       if (!update)
         return std::unexpected(std::move(update.error()));
-      versions->ships.set(ship->uuid(), update->second);
+      versions.ships.set(ship->uuid(), update->second);
       if (!update->first.empty())
         shipUpdates.set(ship->uuid(), std::move(update->first));
     }
     HashMap<Uuid, ByteArray> objectUpdates;
     for (auto const& object : m_objects.valueView()) {
-      auto update = object->writeNetState(versions->objects.value(object->uuid(), 0), {});
+      auto update = object->writeNetState(versions.objects.value(object->uuid(), 0), {});
       if (!update)
         return std::unexpected(std::move(update.error()));
-      versions->objects.set(object->uuid(), update->second);
+      versions.objects.set(object->uuid(), update->second);
       if (!update->first.empty())
         objectUpdates.set(object->uuid(), std::move(update->first));
     }
@@ -613,7 +614,7 @@ std::expected<void, StarException> SystemWorldServer::spawnObjects() {
         auto selected = root().random().randFrom(targets);
         if (!selected)
           return std::unexpected(std::move(selected.error()));
-        auto const& target = **selected;
+        auto const& target = selected->get();
         auto targetPosition = planetPosition(target);
         if (!targetPosition)
           return std::unexpected(std::move(targetPosition.error()));
@@ -699,15 +700,16 @@ std::expected<Vec2F, StarException> SystemWorldServer::randomObjectSpawnPosition
   auto selected = random.randFrom(ranges);
   if (!selected)
     return std::unexpected(std::move(selected.error()));
-  auto const& range = **selected;
+  auto const& range = selected->get();
   return Vec2F::withAngle(random.randf() * std::numbers::pi * 2.0, range[0] + random.randf() * (range[1] - range[0]));
 }
 
 std::expected<SkyParameters, StarException> SystemWorldServer::locationSkyParameters(SystemLocation const& location) const {
   SkyParameters sky = systemConfig().emptySkyParameters;
-  if (auto coordinate = std::get_if<CelestialCoordinate>(&location)) {
-    return SkyParameters::create(root(), *coordinate, m_celestialDatabase);
-  } else if (auto position = std::get_if<Vec2F>(&location)) {
+  if (std::holds_alternative<CelestialCoordinate>(location)) {
+    return SkyParameters::create(root(), std::get<CelestialCoordinate>(location), m_celestialDatabase);
+  } else if (std::holds_alternative<Vec2F>(location)) {
+    auto const& position = std::get<Vec2F>(location);
     auto allPlanets = planets();
     if (!allPlanets)
       return std::unexpected(std::move(allPlanets.error()));
@@ -715,7 +717,7 @@ std::expected<SkyParameters, StarException> SystemWorldServer::locationSkyParame
       auto planetPos = planetPosition(planet);
       if (!planetPos)
         return std::unexpected(std::move(planetPos.error()));
-      if (std::abs(position->magnitude() - planetPos->magnitude()) > systemConfig().asteroidBeamDistance)
+      if (std::abs(position.magnitude() - planetPos->magnitude()) > systemConfig().asteroidBeamDistance)
         continue;
       auto parameters = m_celestialDatabase->parameters(planet);
       if (!parameters)
@@ -725,15 +727,16 @@ std::expected<SkyParameters, StarException> SystemWorldServer::locationSkyParame
     }
   } else if (!std::holds_alternative<std::monostate>(location)) {
     CelestialCoordinate target;
-    if (auto uuid = std::get_if<Uuid>(&location)) {
-      auto object = getObject(*uuid);
+    if (std::holds_alternative<Uuid>(location)) {
+      auto const& uuid = std::get<Uuid>(location);
+      auto object = getObject(uuid);
       if (!object)
-        return std::unexpected(StarException::format("No system object {} for sky parameters", uuid->hex()));
+        return std::unexpected(StarException::format("No system object {} for sky parameters", uuid.hex()));
       sky = object->skyParameters();
       if (auto orbitTarget = object->orbitTarget())
         target = *orbitTarget;
-    } else if (auto orbit = std::get_if<CelestialOrbit>(&location)) {
-      target = orbit->target;
+    } else if (std::holds_alternative<CelestialOrbit>(location)) {
+      target = std::get<CelestialOrbit>(location).target;
     }
     if (target.isPlanetaryBody()) {
       auto parameters = m_celestialDatabase->parameters(target);

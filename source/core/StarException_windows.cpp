@@ -200,9 +200,9 @@ const char* StarException::what() const noexcept {
   return m_whatBuffer.c_str();
 }
 
-StarException::StarException(char const* type, std::string message, bool genStackTrace) noexcept {
+StarException::StarException(std::string_view type, std::string message, bool genStackTrace) noexcept {
   auto printException = [](
-      std::ostream& os, bool fullStacktrace, char const* type, std::string const& message, std::optional<StackCapture> const& stack) {
+      std::ostream& os, bool fullStacktrace, std::string_view type, std::string const& message, std::optional<StackCapture> const& stack) {
     os << "(" << type << ")";
     if (!message.empty())
       os << " " << message;
@@ -216,7 +216,7 @@ StarException::StarException(char const* type, std::string message, bool genStac
   m_printException = std::bind(printException, std::placeholders::_1, std::placeholders::_2, type, std::move(message), genStackTrace ? captureStack() : std::optional<StackCapture>());
 }
 
-StarException::StarException(char const* type, std::string message, ExceptionDiagnostic cause) noexcept
+StarException::StarException(std::string_view type, std::string message, ExceptionDiagnostic cause) noexcept
     : StarException(type, std::move(message), true) {
   auto printException = [](std::ostream& os,
       bool fullStacktrace,
@@ -248,18 +248,18 @@ OutputProxy outputException(ExceptionDiagnostic const& e, bool fullStacktrace) {
   return OutputProxy(std::bind(e.m_printException, std::placeholders::_1, fullStacktrace));
 }
 
-void printStack(char const* message) {
+void printStack(std::string_view message) {
   EmergencyLog::info("Stack Trace ({})...\n{}", message, outputStack(captureStack()));
 }
 
-void fatalError(char const* message, bool showStackTrace) {
+void fatalError(std::string_view message, bool showStackTrace) {
   std::ostringstream ss;
   ss << "v" << OpenStarVersionString << " (" << StarSourceIdentifierString << ")\n"
      << "Fatal Error: " << message << std::endl;
   if (showStackTrace)
     ss << outputStack(captureStack());
 
-  EmergencyLog::log(LogLevel::Error, ss.str().c_str());
+  EmergencyLog::log(LogLevel::Error, ss.str());
   auto text = stringToUtf16(ss.str());
   MessageBoxW(NULL, text ? text->get() : L"Fatal error; diagnostic text could not be converted. See the log.",
       L"Error", MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);

@@ -115,7 +115,7 @@ private:
   explicit PlayerStorage(Root& root);
   [[nodiscard]] std::expected<void, StarException> initialize(String const& storageDir);
   Root& m_root;
-  [[nodiscard]] std::expected<String const*, StarException> uuidFileName(Uuid const& uuid);
+  [[nodiscard]] std::expected<std::reference_wrapper<String const>, StarException> uuidFileName(Uuid const& uuid);
   [[nodiscard]] std::expected<void, StarException> writeMetadata();
 
   mutable std::recursive_mutex m_mutex;

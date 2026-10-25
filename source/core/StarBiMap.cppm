@@ -15,6 +15,7 @@ namespace Star {
 // either the left or right element to the other side.  Every left side value
 // must be unique from every other left side value and the same for the right
 // side.
+// Cross-index node addresses are container internals, not public borrow results.
 template <typename LeftT,
     typename RightT,
     typename LeftMapT = Map<LeftT, RightT const*>,
@@ -61,8 +62,8 @@ public:
   bool hasLeftValue(Left const& left) const;
   bool hasRightValue(Right const& right) const;
 
-  [[nodiscard]] std::expected<Right const*, StarException> getRight(Left const& left) const;
-  [[nodiscard]] std::expected<Left const*, StarException> getLeft(Right const& right) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Right const>, StarException> getRight(Left const& left) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Left const>, StarException> getLeft(Right const& right) const;
 
   Right valueRight(Left const& left, Right const& def = Right()) const;
   Left valueLeft(Right const& right, Left const& def = Left()) const;
@@ -77,8 +78,8 @@ public:
   std::optional<Right> maybeTakeRight(Left const& left);
   std::optional<Left> maybeTakeLeft(Right const& right);
 
-  Right const* rightPtr(Left const& left) const;
-  Left const* leftPtr(Right const& right) const;
+  std::optional<std::reference_wrapper<Right const>> maybeRightRef(Left const& left) const;
+  std::optional<std::reference_wrapper<Left const>> maybeLeftRef(Right const& right) const;
 
   BiMap& operator=(BiMap const& map);
 
@@ -283,42 +284,42 @@ public:
 
   bool hasLeftValue(Left const& left) const { return m_storage.hasLeftValue(left); }
   [[nodiscard]] std::expected<bool, StarException> hasRightValue(Right const& right) const {
-    auto value = leftPtr(right);
+    auto value = maybeLeftRef(right);
     if (!value) return std::unexpected(std::move(value.error()));
-    return *value != nullptr;
+    return value->has_value();
   }
-  [[nodiscard]] std::expected<Right const*, StarException> getRight(Left const& left) const {
+  [[nodiscard]] std::expected<std::reference_wrapper<Right const>, StarException> getRight(Left const& left) const {
     auto value = m_storage.getRight(left);
     if (!value) return std::unexpected(std::move(value.error()));
-    return &(*value)->string();
+    return std::cref(value->get().string());
   }
-  [[nodiscard]] std::expected<Left const*, StarException> getLeft(Right const& right) const {
-    auto value = leftPtr(right);
+  [[nodiscard]] std::expected<std::reference_wrapper<Left const>, StarException> getLeft(Right const& right) const {
+    auto value = maybeLeftRef(right);
     if (!value) return std::unexpected(std::move(value.error()));
     if (!*value)
       return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()", "EnumMap::getLeft: key not found while rendering its diagnostic", right));
-    return *value;
+    return std::reference_wrapper<Left const>((*value)->get());
   }
   Right valueRight(Left const& left, Right const& fallback = Right()) const {
-    if (auto value = rightPtr(left))
-      return *value;
+    if (auto value = maybeRightRef(left))
+      return value->get();
     return fallback;
   }
   [[nodiscard]] std::expected<Left, StarException> valueLeft(Right const& right, Left const& fallback = Left()) const {
-    auto value = leftPtr(right);
+    auto value = maybeLeftRef(right);
     if (!value) return std::unexpected(std::move(value.error()));
-    return *value ? **value : fallback;
+    return *value ? (*value)->get() : fallback;
   }
   std::optional<Right> maybeRight(Left const& left) const {
-    if (auto value = rightPtr(left))
-      return *value;
+    if (auto value = maybeRightRef(left))
+      return value->get();
     return {};
   }
   [[nodiscard]] std::expected<std::optional<Left>, StarException> maybeLeft(Right const& right) const {
-    auto value = leftPtr(right);
+    auto value = maybeLeftRef(right);
     if (!value) return std::unexpected(std::move(value.error()));
     if (!*value) return std::optional<Left>();
-    return std::optional<Left>(**value);
+    return std::optional<Left>((*value)->get());
   }
   [[nodiscard]] std::expected<Right, StarException> takeRight(Left const& left) {
     auto value = m_storage.takeRight(left);
@@ -326,11 +327,11 @@ public:
     return value->string();
   }
   [[nodiscard]] std::expected<Left, StarException> takeLeft(Right const& right) {
-    auto value = leftPtr(right);
+    auto value = maybeLeftRef(right);
     if (!value) return std::unexpected(std::move(value.error()));
     if (!*value)
       return std::unexpected(mapDiagnosticError("No such key '{}' in BiMap::takeLeft", "EnumMap::takeLeft: key not found while rendering its diagnostic", right));
-    Left result = **value;
+    Left result = (*value)->get();
     m_storage.removeLeft(result);
     return result;
   }
@@ -340,22 +341,24 @@ public:
     return {};
   }
   [[nodiscard]] std::expected<std::optional<Left>, StarException> maybeTakeLeft(Right const& right) {
-    auto value = leftPtr(right);
+    auto value = maybeLeftRef(right);
     if (!value) return std::unexpected(std::move(value.error()));
     if (!*value) return std::optional<Left>();
-    Left result = **value;
+    Left result = (*value)->get();
     m_storage.removeLeft(result);
     return std::optional<Left>(result);
   }
-  Right const* rightPtr(Left const& left) const {
-    auto value = m_storage.rightPtr(left);
-    return value ? &value->string() : nullptr;
+  std::optional<std::reference_wrapper<Right const>> maybeRightRef(Left const& left) const {
+    auto value = m_storage.maybeRightRef(left);
+    if (value) return std::cref(value->get().string());
+    return std::nullopt;
   }
-  [[nodiscard]] std::expected<Left const*, StarException> leftPtr(Right const& right) const {
+  [[nodiscard]] std::expected<std::optional<std::reference_wrapper<Left const>>, StarException> maybeLeftRef(Right const& right) const {
     auto key = CaseInsensitiveStringView::create(right);
     if (!key) return std::unexpected(std::move(key.error()));
     auto position = m_storage.m_rightMap.find(*key);
-    return position == m_storage.m_rightMap.end() ? nullptr : position->second;
+    if (position == m_storage.m_rightMap.end()) return std::nullopt;
+    return std::optional{std::reference_wrapper<Left const>(*position->second)};
   }
   [[nodiscard]] std::expected<std::pair<iterator, bool>, StarException> insert(value_type const& value) {
     auto key = CaseInsensitiveString::create(value.second);
@@ -387,9 +390,9 @@ public:
   }
   bool removeLeft(Left const& left) { return m_storage.removeLeft(left); }
   [[nodiscard]] std::expected<bool, StarException> removeRight(Right const& right) {
-    auto value = leftPtr(right);
+    auto value = maybeLeftRef(right);
     if (!value) return std::unexpected(std::move(value.error()));
-    return *value ? m_storage.removeLeft(**value) : false;
+    return *value ? m_storage.removeLeft((*value)->get()) : false;
   }
   iterator begin() const { return {m_storage.begin()}; }
   iterator end() const { return {m_storage.end()}; }
@@ -492,19 +495,19 @@ bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::hasRightValue(Right const& right
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-std::expected<RightT const*, StarException> BiMap<LeftT, RightT, LeftMapT, RightMapT>::getRight(Left const& left) const {
+std::expected<std::reference_wrapper<RightT const>, StarException> BiMap<LeftT, RightT, LeftMapT, RightMapT>::getRight(Left const& left) const {
   auto result = m_leftMap.get(left);
   if (!result)
     return std::unexpected(std::move(result.error()));
-  return **result;
+  return std::reference_wrapper<RightT const>(*result->get());
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-std::expected<LeftT const*, StarException> BiMap<LeftT, RightT, LeftMapT, RightMapT>::getLeft(Right const& right) const {
+std::expected<std::reference_wrapper<LeftT const>, StarException> BiMap<LeftT, RightT, LeftMapT, RightMapT>::getLeft(Right const& right) const {
   auto result = m_rightMap.get(right);
   if (!result)
     return std::unexpected(std::move(result.error()));
-  return **result;
+  return std::reference_wrapper<LeftT const>(*result->get());
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
@@ -570,13 +573,17 @@ std::optional<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeTakeLeft(Ri
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-RightT const* BiMap<LeftT, RightT, LeftMapT, RightMapT>::rightPtr(Left const& left) const {
-  return m_leftMap.value(left);
+std::optional<std::reference_wrapper<RightT const>> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeRightRef(Left const& left) const {
+  auto position = m_leftMap.find(left);
+  if (position == m_leftMap.end()) return std::nullopt;
+  return std::reference_wrapper<RightT const>(*position->second);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-LeftT const* BiMap<LeftT, RightT, LeftMapT, RightMapT>::leftPtr(Right const& right) const {
-  return m_rightMap.value(right);
+std::optional<std::reference_wrapper<LeftT const>> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeLeftRef(Right const& right) const {
+  auto position = m_rightMap.find(right);
+  if (position == m_rightMap.end()) return std::nullopt;
+  return std::reference_wrapper<LeftT const>(*position->second);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
@@ -693,9 +700,9 @@ bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::operator==(BiMap const& m) const
     return false;
 
   for (auto const& pair : *this) {
-    if (auto p = m.rightPtr(pair.first))
-      if (!p || *p != pair.second)
-        return false;
+    auto value = m.maybeRightRef(pair.first);
+    if (!value || value->get() != pair.second)
+      return false;
   }
 
   return true;

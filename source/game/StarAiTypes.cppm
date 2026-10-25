@@ -17,7 +17,7 @@ import star.quest_descriptor;
 namespace Star {
 
 struct AiExceptionTag {
-  static constexpr char const* name() { return "AiException"; }
+  static constexpr std::string_view name() { return "AiException"; }
 };
 using AiException = StarError<AiExceptionTag, StarException>;
 

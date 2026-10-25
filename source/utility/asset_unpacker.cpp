@@ -43,11 +43,11 @@ static std::expected<int, StarException> unpackAssets(int argc, char** argv) {
   auto inputArgument = opts.arguments.at(0);
   if (!inputArgument)
     return std::unexpected(std::move(inputArgument.error()));
-  String inputFile = **inputArgument;
+  String inputFile = inputArgument->get();
   auto outputArgument = opts.arguments.at(1);
   if (!outputArgument)
     return std::unexpected(std::move(outputArgument.error()));
-  String outputFolderPath = **outputArgument;
+  String outputFolderPath = outputArgument->get();
   bool verbose = opts.switches.contains("v");
 
   auto assetsPack = PackedAssetSource::create(inputFile);

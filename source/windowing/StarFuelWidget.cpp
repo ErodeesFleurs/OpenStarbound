@@ -93,10 +93,10 @@ std::expected<void, StarException> FuelWidget::update(float dt) {
 }
 
 std::expected<void, StarException> FuelWidget::renderImpl() {
-  auto scissor = context()->resetInterfaceScissorRect();
+  auto scissor = context().resetInterfaceScissorRect();
   if (!scissor) return std::unexpected(std::move(scissor.error()));
 
-  auto texture = context()->textureSize("/interface/fuel/fuelgauge.png");
+  auto texture = context().textureSize("/interface/fuel/fuelgauge.png");
   if (!texture) return std::unexpected(std::move(texture.error()));
   Vec2F textureSize(*texture);
   RectF entireTex = RectF::withSize({}, textureSize);
@@ -124,20 +124,20 @@ std::expected<void, StarException> FuelWidget::renderImpl() {
     return result;
   };
 
-  auto background = context()->drawInterfaceQuad(
-      std::fmod(m_pingTimeout, 0.2f) > 0.1f ? "/interface/fuel/fuelgaugebackgroundflash.png" : "/interface/fuel/fuelgaugebackground.png",
+  auto background = context().drawInterfaceQuad(
+      std::fmod(m_pingTimeout, 0.2f) > 0.1f ? std::string_view("/interface/fuel/fuelgaugebackgroundflash.png") : std::string_view("/interface/fuel/fuelgaugebackground.png"),
       shift(0, 1, entireTex), shift(0, 1, entirePosition));
   if (!background) return std::unexpected(std::move(background.error()));
-  auto green = context()->drawInterfaceQuad("/interface/fuel/fuelgaugegreen.png", shift(fuel, fuelPotential, entireTex), shift(fuel, fuelPotential, entirePosition));
+  auto green = context().drawInterfaceQuad("/interface/fuel/fuelgaugegreen.png", shift(fuel, fuelPotential, entireTex), shift(fuel, fuelPotential, entirePosition));
   if (!green) return std::unexpected(std::move(green.error()));
-  auto red = context()->drawInterfaceQuad("/interface/fuel/fuelgaugered.png", shift(fuel, fuelRequested, entireTex), shift(fuel, fuelRequested, entirePosition));
+  auto red = context().drawInterfaceQuad("/interface/fuel/fuelgaugered.png", shift(fuel, fuelRequested, entireTex), shift(fuel, fuelRequested, entirePosition));
   if (!red) return std::unexpected(std::move(red.error()));
-  auto gauge = context()->drawInterfaceQuad("/interface/fuel/fuelgauge.png", shift(0, fuel, entireTex), shift(0, fuel, entirePosition));
+  auto gauge = context().drawInterfaceQuad("/interface/fuel/fuelgauge.png", shift(0, fuel, entireTex), shift(0, fuel, entirePosition));
   if (!gauge) return std::unexpected(std::move(gauge.error()));
-  auto markings = context()->drawInterfaceQuad("/interface/fuel/fuelgaugemarkings.png", shift(0, 1, entireTex), shift(0, 1, entirePosition));
+  auto markings = context().drawInterfaceQuad("/interface/fuel/fuelgaugemarkings.png", shift(0, 1, entireTex), shift(0, 1, entirePosition));
   if (!markings) return std::unexpected(std::move(markings.error()));
 
-  auto& guiContext = *context();
+  auto& guiContext = context();
   auto style = guiContext.setTextStyle(m_textStyle);
   if (!style) return std::unexpected(std::move(style.error()));
   Color color = Color::White;

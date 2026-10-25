@@ -60,7 +60,7 @@ TEST(WorkerPoolTest, MoveOnlyTasksPublishResultsToAllWaiters) {
     waiters.emplace_back([&, i] {
       auto value = result.get();
       ASSERT_TRUE(value);
-      observations[i] = **value;
+      observations[i] = value->get();
     });
   }
   release.store(true);
@@ -72,7 +72,7 @@ TEST(WorkerPoolTest, MoveOnlyTasksPublishResultsToAllWaiters) {
   EXPECT_TRUE(result.done());
   auto value = result.get();
   ASSERT_TRUE(value);
-  EXPECT_EQ(**value, 42);
+  EXPECT_EQ(value->get(), 42);
   auto empty = pool.addWork(UniqueFunction<std::expected<void, StarException>()>{});
   auto emptyFinish = empty.finish();
   ASSERT_FALSE(emptyFinish);
@@ -85,17 +85,17 @@ TEST(WorkerPoolTest, MoveOnlyTasksPublishResultsToAllWaiters) {
   auto recovery = pool.addProducer<int>([]() -> std::expected<int, StarException> { return 19; });
   auto recoveredValue = recovery.get();
   ASSERT_TRUE(recoveredValue);
-  EXPECT_EQ(**recoveredValue, 19);
+  EXPECT_EQ(recoveredValue->get(), 19);
   ASSERT_TRUE(pool.finish());
 }
 
 namespace {
 struct StoredLvalueTask {
   std::unique_ptr<int> value;
-  int* observed;
+  std::reference_wrapper<int> observed;
   explicit operator bool() const { return false; }
   std::expected<void, StarException> operator()() & {
-    *observed = *value;
+    observed.get() = *value;
     return {};
   }
   std::expected<void, StarException> operator()() && = delete;
@@ -128,14 +128,14 @@ static_assert(!AcceptsIntProducer<decltype([] { return 1; })>);
 TEST(WorkerPoolTest, ConcreteMoveOnlyCallablesAreInvokedAsStoredLvalues) {
   WorkerPool pool("stored-lvalue");
   int observed = 0;
-  auto task = pool.addWork(StoredLvalueTask{std::make_unique<int>(23), &observed});
+  auto task = pool.addWork(StoredLvalueTask{std::make_unique<int>(23), std::ref(observed)});
   auto producer = pool.addProducer<int>(StoredLvalueProducer{std::make_unique<int>(47)});
   ASSERT_TRUE(pool.finish());
   ASSERT_TRUE(task.finish());
   EXPECT_EQ(observed, 23);
   auto result = producer.get();
   ASSERT_TRUE(result);
-  EXPECT_EQ(**result, 47);
+  EXPECT_EQ(result->get(), 47);
 }
 
 TEST(WorkerPoolTest, NullFunctionPointersPublishRepeatableErrorsAndDrainContinues) {

@@ -28,8 +28,8 @@ std::expected<TextStyle, StarException> TextStyle::create(Json const& config) {
   }
   return result;
 }
-std::expected<TextStyle*, StarException> TextStyle::loadJson(Json const& config) {
-  if (!config) return this;
+std::expected<std::reference_wrapper<TextStyle>, StarException> TextStyle::loadJson(Json const& config) {
+  if (!config) return std::ref(*this);
   auto spacing = config.getFloat("lineSpacing", lineSpacing);
   if (!spacing) return std::unexpected(std::move(spacing.error()));
   lineSpacing = *spacing;
@@ -59,7 +59,7 @@ std::expected<TextStyle*, StarException> TextStyle::loadJson(Json const& config)
   auto jBackDirectives = config.optString("backDirectives");
   if (!jBackDirectives) return std::unexpected(std::move(jBackDirectives.error()));
   if (*jBackDirectives) backDirectives = **jBackDirectives;
-  return this;
+  return std::ref(*this);
 }
 
 namespace Text {

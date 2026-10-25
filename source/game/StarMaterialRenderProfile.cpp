@@ -77,7 +77,7 @@ std::expected<MaterialRenderMatchList, StarException> parseMaterialRenderMatchLi
       if (!name) return std::unexpected(std::move(name.error()));
       auto rule = ruleMap.get(*name);
       if (!rule) return std::unexpected(std::move(rule.error()));
-      point.rule = **rule;
+      point.rule = rule->get();
       match->matchPoints.append(std::move(point));
     }
     auto pieces = config.getArray("pieces", {});
@@ -91,7 +91,7 @@ std::expected<MaterialRenderMatchList, StarException> parseMaterialRenderMatchLi
       if (!positionConfig) return std::unexpected(std::move(positionConfig.error()));
       auto position = jsonToVec2F(*positionConfig);
       if (!position) return std::unexpected(std::move(position.error()));
-      match->resultingPieces.append({**renderPiece, *position});
+      match->resultingPieces.append({renderPiece->get(), *position});
     }
     auto subMatches = config.get("subMatches", {});
     if (!subMatches) return std::unexpected(std::move(subMatches.error()));
@@ -100,7 +100,7 @@ std::expected<MaterialRenderMatchList, StarException> parseMaterialRenderMatchLi
       if (!name) return std::unexpected(std::move(name.error()));
       auto list = matchMap.get(*name);
       if (!list) return std::unexpected(std::move(list.error()));
-      match->subMatches = **list;
+      match->subMatches = list->get();
     } else if (!subMatches->isNull()) {
       {
         auto value = parseMaterialRenderMatchList(*subMatches, ruleMap, pieceMap, matchMap);
@@ -114,7 +114,7 @@ std::expected<MaterialRenderMatchList, StarException> parseMaterialRenderMatchLi
       if (!TileLayerNames) return std::unexpected(TileLayerNames.error());
       auto value = TileLayerNames->getLeft(**layer);
       if (!value) return std::unexpected(std::move(value.error()));
-      match->requiredLayer = **value;
+      match->requiredLayer = value->get();
     }
     {
       auto value = config.getBool("haltOnMatch", false);
@@ -139,16 +139,16 @@ std::expected<MaterialRenderMatchList, StarException> parseMaterialRenderMatchLi
 std::expected<String, StarException> MaterialRenderProfile::pieceImage(String const& pieceName, unsigned variant, MaterialColorVariant colorVariant, MaterialHue hueShift) const {
   auto piece = pieces.get(pieceName);
   if (!piece) return std::unexpected(std::move(piece.error()));
-  String texture = (**piece)->texture;
+  String texture = piece->get()->texture;
   if (hueShift != MaterialHue()) texture = strf("{}?hueshift={}", texture, materialHueToDegrees(hueShift));
-  auto variants = (**piece)->variants.get(colorVariant);
+  auto variants = piece->get()->variants.get(colorVariant);
   if (!variants) return std::unexpected(std::move(variants.error()));
-  auto rect = (*variants)->wrap(variant);
+  auto rect = variants->get().wrap(variant);
   if (!rect) return std::unexpected(std::move(rect.error()));
-  return strf("{}?crop={};{};{};{}", texture, (*rect)->xMin(), (*rect)->yMin(), (*rect)->xMax(), (*rect)->yMax());
+  return strf("{}?crop={};{};{};{}", texture, rect->get().xMin(), rect->get().yMin(), rect->get().xMax(), rect->get().yMax());
 }
 
-std::expected<std::pair<String, Vec2F> const*, StarException> MaterialRenderProfile::damageImage(float damageLevel, TileDamageType damageType) const {
+std::expected<std::reference_wrapper<std::pair<String, Vec2F> const>, StarException> MaterialRenderProfile::damageImage(float damageLevel, TileDamageType damageType) const {
   if (damageType == TileDamageType::Protected)
     return protectedFrames.at(clamp<unsigned>(damageLevel * crackingFrames.size(), 0, crackingFrames.size() - 1));
   return crackingFrames.at(clamp<unsigned>(damageLevel * crackingFrames.size(), 0, crackingFrames.size() - 1));
@@ -216,7 +216,7 @@ std::expected<MaterialRenderProfile, StarException> parseMaterialRenderProfile(I
     if (!joinName) return std::unexpected(std::move(joinName.error()));
     auto join = MaterialJoinTypeNames->getLeft(*joinName);
     if (!join) return std::unexpected(std::move(join.error()));
-    rule->join = **join;
+    rule->join = join->get();
     auto entries = pair.second.getArray("entries", {});
     if (!entries) return std::unexpected(std::move(entries.error()));
     for (auto const& entryConfig : *entries) {
@@ -321,7 +321,7 @@ std::expected<MaterialRenderProfile, StarException> parseMaterialRenderProfile(I
   }
   auto main = profile.matches.get("main");
   if (!main) return std::unexpected(std::move(main.error()));
-  profile.mainMatchList = **main;
+  profile.mainMatchList = main->get();
 
   // TODO: Completely hard-coded for now
   profile.crackingFrames = {

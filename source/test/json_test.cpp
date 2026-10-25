@@ -196,12 +196,12 @@ TEST(JsonTest, JsonParsingEdge) {
 }
 
 TEST(JsonTest, LazyUtf8PreservesFirstError) {
-  auto syntaxError = Json::parse(String("! \xff", 3));
+  auto syntaxError = Json::parse(String(std::string_view("! \xff", 3)));
   ASSERT_FALSE(syntaxError);
   EXPECT_TRUE(syntaxError.error().is<JsonParsingException>());
   EXPECT_FALSE(syntaxError.error().is<UnicodeException>());
 
-  auto decodeError = Json::parse(String("1 \xff", 3));
+  auto decodeError = Json::parse(String(std::string_view("1 \xff", 3)));
   ASSERT_FALSE(decodeError);
   EXPECT_TRUE(decodeError.error().is<UnicodeException>());
   EXPECT_FALSE(decodeError.error().is<JsonParsingException>());
@@ -310,7 +310,7 @@ TEST(JsonTest, NumericOutputStopsAtFirstSinkError) {
       std::u32string prefix;
       std::size_t calls = 0;
       // The invalid string must not replace the earlier numeric sink failure.
-      Json input = JsonArray{number, String("\xff", 1)};
+      Json input = JsonArray{number, String(std::string_view("\xff", 1))};
       auto written = outputUtf32Json(input, Sink{prefix, calls, limit}, 0, false);
       ASSERT_FALSE(written);
       EXPECT_TRUE(written.error().is<JsonException>());
@@ -328,7 +328,7 @@ TEST(JsonTest, NumericOutputStopsAtFirstSinkError) {
 }
 
 TEST(JsonTest, Utf8OutputPreservesExactEscapesUnicodeAndFormatting) {
-  String controls("A\0\1\b\f\n\r\t\"\\", 10);
+  String controls(std::string_view("A\0\1\b\f\n\r\t\"\\", 10));
   Json input = JsonObject{{"é", 1}, {"a", JsonArray{controls, "é水😀", Json(), true}}};
   std::string escaped = "\"A\\u0000\\u0001\\b\\f\\n\\r\\t\\\"\\\\\"";
   std::string compact = "{\"a\":[" + escaped + ",\"é水😀\",null,true],\"é\":1}";
@@ -368,8 +368,8 @@ TEST(JsonTest, Utf8OutputValidatesCurrentStringBeforeWriting) {
       return std::unexpected(JsonException("unexpected output callback"));
     }
   };
-  for (auto const& invalid : {String("valid\xff", 6), String("valid\0\xff", 7),
-           String("valid\xe2\x82", 7), String("valid\xc0\x80", 7), String("valid\xf4\x90\x80\x80", 9)}) {
+  for (auto const& invalid : {String(std::string_view("valid\xff", 6)), String(std::string_view("valid\0\xff", 7)),
+           String(std::string_view("valid\xe2\x82", 7)), String(std::string_view("valid\xc0\x80", 7)), String(std::string_view("valid\xf4\x90\x80\x80", 9))}) {
     std::string prefix;
     std::size_t calls = 0;
     auto written = outputUtf8Json(Json(invalid), Sink{prefix, calls}, 2, false);
@@ -381,9 +381,9 @@ TEST(JsonTest, Utf8OutputValidatesCurrentStringBeforeWriting) {
     // A genuine UTF-32 builder must also receive no partial string callback.
     struct Builder : JsonBuilderStream {
       std::size_t strings = 0;
-      std::expected<void, StarException> putString(char32_t const* text, std::size_t size) override {
+      std::expected<void, StarException> putString(std::span<char32_t const> text) override {
         ++strings;
-        return JsonBuilderStream::putString(text, size);
+        return JsonBuilderStream::putString(text);
       }
     } builder;
     auto built = JsonStreamer<Json>::toJsonStream(Json(invalid), builder, false);
@@ -406,7 +406,7 @@ TEST(JsonTest, Utf8OutputPreservesFirstSinkErrorBeforeInvalidLaterValues) {
       return {};
     }
   };
-  Json input = JsonArray{"é水😀", String("bad\xff", 4)};
+  Json input = JsonArray{"é水😀", String(std::string_view("bad\xff", 4))};
   std::string validPrefix = "[\"é水😀\",";
   for (std::size_t limit = 0; limit < validPrefix.size(); ++limit) {
     std::string prefix;
@@ -418,7 +418,7 @@ TEST(JsonTest, Utf8OutputPreservesFirstSinkErrorBeforeInvalidLaterValues) {
     EXPECT_EQ(calls, limit + 1);
     EXPECT_EQ(prefix, validPrefix.substr(0, limit));
   }
-  for (Json const& invalid : {input, Json(JsonObject{{String("key\0\xff", 5), 1}})}) {
+  for (Json const& invalid : {input, Json(JsonObject{{String(std::string_view("key\0\xff", 5)), 1}})}) {
     std::string prefix;
     std::size_t calls = 0;
     auto written = outputUtf8Json(invalid, Sink{prefix, calls, 100}, 2, true);

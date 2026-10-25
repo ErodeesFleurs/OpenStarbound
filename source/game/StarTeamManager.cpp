@@ -69,13 +69,13 @@ std::expected<std::shared_ptr<TeamManager>, StarException> TeamManager::create(R
 
 JsonRpcHandlers TeamManager::rpcHandlers() {
   return JsonRpcHandlers{
-    {"team.fetchTeamStatus", std::bind(&TeamManager::fetchTeamStatus, this, std::placeholders::_1)},
-    {"team.updateStatus", std::bind(&TeamManager::updateStatus, this, std::placeholders::_1)},
-    {"team.invite", std::bind(&TeamManager::invite, this, std::placeholders::_1)},
-    {"team.pollInvitation", std::bind(&TeamManager::pollInvitation, this, std::placeholders::_1)},
-    {"team.acceptInvitation", std::bind(&TeamManager::acceptInvitation, this, std::placeholders::_1)},
-    {"team.makeLeader", std::bind(&TeamManager::makeLeader, this, std::placeholders::_1)},
-    {"team.removeFromTeam", [&](Json request) -> std::expected<Json, StarException> { return removeFromTeam(request); }}
+    {"team.fetchTeamStatus", std::bind(&TeamManager::fetchTeamStatus, std::ref(*this), std::placeholders::_1)},
+    {"team.updateStatus", std::bind(&TeamManager::updateStatus, std::ref(*this), std::placeholders::_1)},
+    {"team.invite", std::bind(&TeamManager::invite, std::ref(*this), std::placeholders::_1)},
+    {"team.pollInvitation", std::bind(&TeamManager::pollInvitation, std::ref(*this), std::placeholders::_1)},
+    {"team.acceptInvitation", std::bind(&TeamManager::acceptInvitation, std::ref(*this), std::placeholders::_1)},
+    {"team.makeLeader", std::bind(&TeamManager::makeLeader, std::ref(*this), std::placeholders::_1)},
+    {"team.removeFromTeam", [&self = *this](Json request) -> std::expected<Json, StarException> { return self.removeFromTeam(request); }}
   };
 }
 
@@ -89,13 +89,13 @@ JsonRpcHandlers TeamManager::authenticatedRpcHandlers(Uuid const& callerUuid) {
   };
 
   return JsonRpcHandlers{
-    wrap("team.fetchTeamStatus", std::bind(&TeamManager::fetchTeamStatus, this, std::placeholders::_1)),
-    wrap("team.updateStatus", std::bind(&TeamManager::updateStatus, this, std::placeholders::_1)),
-    wrap("team.invite", std::bind(&TeamManager::invite, this, std::placeholders::_1)),
-    wrap("team.pollInvitation", std::bind(&TeamManager::pollInvitation, this, std::placeholders::_1)),
-    wrap("team.acceptInvitation", std::bind(&TeamManager::acceptInvitation, this, std::placeholders::_1)),
-    wrap("team.makeLeader", std::bind(&TeamManager::makeLeader, this, std::placeholders::_1)),
-    wrap("team.removeFromTeam", [this](Json const& request) -> std::expected<Json, StarException> { return removeFromTeam(request); })
+    wrap("team.fetchTeamStatus", std::bind(&TeamManager::fetchTeamStatus, std::ref(*this), std::placeholders::_1)),
+    wrap("team.updateStatus", std::bind(&TeamManager::updateStatus, std::ref(*this), std::placeholders::_1)),
+    wrap("team.invite", std::bind(&TeamManager::invite, std::ref(*this), std::placeholders::_1)),
+    wrap("team.pollInvitation", std::bind(&TeamManager::pollInvitation, std::ref(*this), std::placeholders::_1)),
+    wrap("team.acceptInvitation", std::bind(&TeamManager::acceptInvitation, std::ref(*this), std::placeholders::_1)),
+    wrap("team.makeLeader", std::bind(&TeamManager::makeLeader, std::ref(*this), std::placeholders::_1)),
+    wrap("team.removeFromTeam", [&self = *this](Json const& request) -> std::expected<Json, StarException> { return self.removeFromTeam(request); })
   };
 }
 
@@ -111,7 +111,7 @@ void TeamManager::playerDisconnected(Uuid const& playerUuid) {
   purgeInvitationsFrom(playerUuid);
 
   for (auto teamUuid : m_teams.keys()) {
-    auto& team = *m_teams.ptr(teamUuid);
+    auto& team = m_teams.maybeRef(teamUuid)->get();
     if (team.members.contains(playerUuid))
       removeFromTeam(playerUuid, teamUuid);
   }
@@ -213,7 +213,7 @@ bool TeamManager::addToTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
   if (!m_teams.contains(teamUuid))
     return false;
 
-  auto& team = *m_teams.ptr(teamUuid);
+  auto& team = m_teams.maybeRef(teamUuid)->get();
 
   if (team.members.contains(playerUuid))
     return false;
@@ -243,7 +243,7 @@ bool TeamManager::removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
   if (!m_teams.contains(teamUuid))
     return false;
 
-  auto& team = *m_teams.ptr(teamUuid);
+  auto& team = m_teams.maybeRef(teamUuid)->get();
 
   if (!team.members.contains(playerUuid))
     return false;
@@ -287,8 +287,8 @@ std::expected<Json, StarException> TeamManager::fetchTeamStatus(Json const& argu
   JsonObject result;
   result["version"] = TeamManagerVersion;
   if (auto teamUuid = getTeam(playerUuid)) {
-    auto& team = *m_teams.ptr(*teamUuid);
-    auto& playerMem = *team.members.ptr(playerUuid);
+    auto& team = m_teams.maybeRef(*teamUuid)->get();
+    auto& playerMem = team.members.maybeRef(playerUuid)->get();
 
     result["teamUuid"] = teamUuid->hex();
     result["leader"] = team.leaderUuid.hex();
@@ -315,7 +315,7 @@ std::expected<Json, StarException> TeamManager::fetchTeamStatus(Json const& argu
       if (!WarpModeNames) return std::unexpected(WarpModeNames.error());
       auto warp = WarpModeNames->getRight(mem.warpMode);
       if (!warp) return std::unexpected(std::move(warp.error()));
-      member["warpMode"] = **warp;
+      member["warpMode"] = warp->get();
       auto portrait = jsonFromList(mem.portrait, std::mem_fn(&Drawable::toJson));
       if (!portrait) return std::unexpected(std::move(portrait.error()));
       member["portrait"] = *portrait;
@@ -349,8 +349,8 @@ std::expected<Json, StarException> TeamManager::updateStatus(Json const& argumen
   }
 
   if (auto teamUuid = getTeam(playerUuid)) {
-    auto& team = *m_teams.ptr(*teamUuid);
-    auto& entry = *team.members.ptr(playerUuid);
+    auto& team = m_teams.maybeRef(*teamUuid)->get();
+    auto& entry = team.members.maybeRef(playerUuid)->get();
     auto hasName = arguments.contains("name");
     if (!hasName) return std::unexpected(std::move(hasName.error()));
     if (*hasName) {
@@ -382,7 +382,7 @@ std::expected<Json, StarException> TeamManager::updateStatus(Json const& argumen
     if (!WarpModeNames) return std::unexpected(WarpModeNames.error());
     auto warp = WarpModeNames->getLeft(*warpText);
     if (!warp) return std::unexpected(std::move(warp.error()));
-    entry.warpMode = **warp;
+    entry.warpMode = warp->get();
     auto hasWorld = arguments.contains("world");
     if (!hasWorld) return std::unexpected(std::move(hasWorld.error()));
     if (*hasWorld) {
@@ -580,7 +580,7 @@ std::expected<Json, StarException> TeamManager::removeFromTeam(Json const& argum
     if (!callerResult) return std::unexpected(std::move(callerResult.error()));
     auto callerUuid = *callerResult;
     if (m_secureTeams && callerUuid != playerUuid) {
-      if (!m_teams.contains(teamUuid) || m_teams.ptr(teamUuid)->leaderUuid != callerUuid) {
+      if (!m_teams.contains(teamUuid) || m_teams.maybeRef(teamUuid)->get().leaderUuid != callerUuid) {
         auto logged = m_root.logger().warn("TeamManager: Rejected removeFromTeam by non-leader {} targeting {}", callerUuid.hex(), playerUuid.hex());
         if (!logged) return std::unexpected(std::move(logged.error()));
         return Json("unauthorized");
@@ -609,7 +609,7 @@ std::expected<Json, StarException> TeamManager::makeLeader(Json const& arguments
   if (!m_teams.contains(teamUuid))
     return Json("noSuchTeam");
 
-  auto& team = *m_teams.ptr(teamUuid);
+  auto& team = m_teams.maybeRef(teamUuid)->get();
 
   auto callerHexResult = arguments.optString("_callerUuid");
   if (!callerHexResult) return std::unexpected(std::move(callerHexResult.error()));

@@ -27,7 +27,7 @@ import star.algorithm;
 namespace Star {
 
 struct LuaAnimationComponentExceptionTag {
-  static constexpr char const* name() { return "LuaAnimationComponentException"; }
+  static constexpr std::string_view name() { return "LuaAnimationComponentException"; }
 };
 using LuaAnimationComponentException = StarError<LuaAnimationComponentExceptionTag, LuaComponentException>;
 
@@ -57,8 +57,8 @@ private:
   if (m_host.hasCallbacks("localAnimator"))
     return {};
   LuaCallbacks callbacks;
-  if (auto result = callbacks.registerCallback("playAudio", [this](String const& sound, std::optional<int> loops, std::optional<float> volume) -> std::expected<std::shared_ptr<AudioInstance>, StarException> {
-    auto assets = m_host.root().assets();
+  if (auto result = callbacks.registerCallback("playAudio", [&self = *this](String const& sound, std::optional<int> loops, std::optional<float> volume) -> std::expected<std::shared_ptr<AudioInstance>, StarException> {
+    auto assets = self.m_host.root().assets();
     if (!assets)
       return std::unexpected(std::move(assets.error()));
     auto source = (*assets)->audio(sound);
@@ -69,26 +69,26 @@ private:
       return std::unexpected(std::move(audio.error()));
     (*audio)->setLoops(loops.value_or(0));
     (*audio)->setVolume(volume.value_or(1.0f));
-    m_pendingAudios.append(*audio);
-    m_activeAudio.append(*audio);
+    self.m_pendingAudios.append(*audio);
+    self.m_activeAudio.append(*audio);
     return audio;
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("spawnParticle", [this](Json const& config, std::optional<Vec2F> const& position) -> std::expected<void, StarException> {
-    auto database = m_host.root().particleDatabase();
+  if (auto result = callbacks.registerCallback("spawnParticle", [&self = *this](Json const& config, std::optional<Vec2F> const& position) -> std::expected<void, StarException> {
+    auto database = self.m_host.root().particleDatabase();
     if (!database)
       return std::unexpected(std::move(database.error()));
     auto particle = (*database)->particle(config);
     if (!particle)
       return std::unexpected(std::move(particle.error()));
     particle->translate(position.value_or(Vec2F{}));
-    m_pendingParticles.append(std::move(*particle));
+    self.m_pendingParticles.append(std::move(*particle));
     return {};
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("clearDrawables", [this]() { m_drawables.clear(); }); !result)
+  if (auto result = callbacks.registerCallback("clearDrawables", [&self = *this]() { self.m_drawables.clear(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("addDrawable", [this](Drawable drawable, std::optional<String> layerName) -> std::expected<void, StarException> {
+  if (auto result = callbacks.registerCallback("addDrawable", [&self = *this](Drawable drawable, std::optional<String> layerName) -> std::expected<void, StarException> {
     std::optional<EntityRenderLayer> layer;
     if (layerName) {
       auto parsed = parseRenderLayer(*layerName);
@@ -96,14 +96,14 @@ private:
         return std::unexpected(std::move(parsed.error()));
       layer = *parsed;
     }
-    if (auto image = std::get_if<Drawable::ImagePart>(&drawable.part))
-      image->transformation.scale(0.125f);
-    m_drawables.append({std::move(drawable), layer});
+    if (std::holds_alternative<Drawable::ImagePart>(drawable.part))
+      std::get<Drawable::ImagePart>(drawable.part).transformation.scale(0.125f);
+    self.m_drawables.append({std::move(drawable), layer});
     return {};
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("addJsonDrawable", [this](Json config, std::optional<String> layerName) -> std::expected<void, StarException> {
-    auto metadata = m_host.root().imageMetadataDatabase();
+  if (auto result = callbacks.registerCallback("addJsonDrawable", [&self = *this](Json config, std::optional<String> layerName) -> std::expected<void, StarException> {
+    auto metadata = self.m_host.root().imageMetadataDatabase();
     if (!metadata)
       return std::unexpected(std::move(metadata.error()));
     auto drawable = Drawable::create(**metadata, config);
@@ -116,15 +116,15 @@ private:
         return std::unexpected(std::move(parsed.error()));
       layer = *parsed;
     }
-    if (auto image = std::get_if<Drawable::ImagePart>(&drawable->part))
-      image->transformation.scale(0.125f);
-    m_drawables.append({std::move(*drawable), layer});
+    if (std::holds_alternative<Drawable::ImagePart>(drawable->part))
+      std::get<Drawable::ImagePart>(drawable->part).transformation.scale(0.125f);
+    self.m_drawables.append({std::move(*drawable), layer});
     return {};
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("clearLightSources", [this]() { m_lightSources.clear(); }); !result)
+  if (auto result = callbacks.registerCallback("clearLightSources", [&self = *this]() { self.m_lightSources.clear(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("addLightSource", [this](LuaTable const& table) -> std::expected<void, StarException> {
+  if (auto result = callbacks.registerCallback("addLightSource", [&self = *this](LuaTable const& table) -> std::expected<void, StarException> {
     auto position = table.get<Vec2F>("position");
     if (!position)
       return std::unexpected(std::move(position.error()));
@@ -143,7 +143,7 @@ private:
     auto ambience = table.get<std::optional<float>>("beamAmbience");
     if (!ambience)
       return std::unexpected(std::move(ambience.error()));
-    m_lightSources.append({*position, color->toRgbF(), (LightType)point->value_or(false), beam->value_or(float{}), angle->value_or(float{}), ambience->value_or(float{})});
+    self.m_lightSources.append({*position, color->toRgbF(), (LightType)point->value_or(false), beam->value_or(float{}), angle->value_or(float{}), ambience->value_or(float{})});
     return {};
   }); !result)
     return std::unexpected(std::move(result.error()));
@@ -172,7 +172,7 @@ class LuaAnimationScript final : public LuaBaseComponent {
 public:
   explicit LuaAnimationScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_animation(*this) {}
   ~LuaAnimationScript() override { m_update.destroy(); }
-  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> init(World& world) { return m_world.init(world); }
   [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
   unsigned updateDelta() const { return m_update.updateDelta(); }
   float updateDt(float dt) const { return m_update.updateDt(dt); }
@@ -225,7 +225,7 @@ class LuaDeploymentScript final : public LuaBaseComponent {
 public:
   explicit LuaDeploymentScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_storage(*this), m_messages(*this), m_animation(*this) {}
   ~LuaDeploymentScript() override { m_update.destroy(); }
-  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> init(World& world) { return m_world.init(world); }
   [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
   unsigned updateDelta() const { return m_update.updateDelta(); }
   float updateDt(float dt) const { return m_update.updateDt(dt); }

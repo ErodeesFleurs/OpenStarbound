@@ -47,6 +47,8 @@ public:
   // Returns a pointer to the beginning of the Buffer.
   char* ptr();
   char const* ptr() const;
+  std::span<char> span() { return m_bytes.span(); }
+  std::span<char const> span() const { return m_bytes.span(); }
 
   // Same thing as size(), just size_t type (since this is in-memory)
   std::size_t dataSize() const;
@@ -64,8 +66,8 @@ public:
   Buffer& operator=(Buffer&& buffer);
 
 private:
-  [[nodiscard]] std::expected<std::size_t, StarException> doRead(std::size_t pos, char* data, std::size_t len);
-  [[nodiscard]] std::expected<std::size_t, StarException> doWrite(std::size_t pos, char const* data, std::size_t len);
+  [[nodiscard]] std::expected<std::size_t, StarException> doRead(std::size_t pos, std::span<char> data);
+  [[nodiscard]] std::expected<std::size_t, StarException> doWrite(std::size_t pos, std::span<char const> data);
 
   std::size_t m_pos;
   ByteArray m_bytes;
@@ -101,6 +103,7 @@ public:
 
   // Returns a pointer to the beginning of the Buffer.
   char const* ptr() const;
+  std::span<char const> span() const { return m_bytes; }
 
   // Same thing as size(), just size_t type (since this is in-memory)
   std::size_t dataSize() const;
@@ -114,7 +117,7 @@ public:
   void reset(std::span<char const> externalData);
 
 private:
-  [[nodiscard]] std::expected<std::size_t, StarException> doRead(std::size_t pos, char* data, std::size_t len);
+  [[nodiscard]] std::expected<std::size_t, StarException> doRead(std::size_t pos, std::span<char> data);
 
   std::size_t m_pos;
   std::span<char const> m_bytes;

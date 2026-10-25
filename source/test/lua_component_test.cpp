@@ -41,9 +41,8 @@ void expectNoResponse(std::expected<std::optional<ChainableJsonMessageResponse>,
 void expectResponse(std::expected<std::optional<ChainableJsonMessageResponse>, StarException> response, Json const& expected) {
   ASSERT_TRUE(response) << response.error().what();
   ASSERT_TRUE(*response);
-  auto value = std::get_if<Json>(&**response);
-  ASSERT_NE(value, nullptr);
-  EXPECT_EQ(*value, expected);
+  ASSERT_TRUE(std::holds_alternative<Json>(**response));
+  EXPECT_EQ(std::get<Json>(**response), expected);
 }
 
 void expectPending(RpcPromise<Json> const& promise) {
@@ -62,7 +61,7 @@ void expectPromiseFailure(RpcPromise<Json> const& promise) {
 }
 
 template <typename Host>
-void expectStorageLifecycle(Root& root, WorldServer* world) {
+void expectStorageLifecycle(Root& root, WorldServer& world) {
   Host component(root);
   auto cleanup = finally([&] { EXPECT_TRUE(component.uninit()); });
   JsonObject initial{{"total", 7}, {"saves", 0}};
@@ -141,15 +140,15 @@ const GameTestRegistration persistentStorage("LuaComponentLifecycle", "Persisten
   auto close = finally([&] { EXPECT_TRUE(world->close()); });
   {
     SCOPED_TRACE("LuaStoredEntityScript");
-    expectStorageLifecycle<LuaStoredEntityScript>(fixture.root(), world.get());
+    expectStorageLifecycle<LuaStoredEntityScript>(fixture.root(), *world);
   }
   {
     SCOPED_TRACE("LuaActorScript");
-    expectStorageLifecycle<LuaActorScript>(fixture.root(), world.get());
+    expectStorageLifecycle<LuaActorScript>(fixture.root(), *world);
   }
   {
     SCOPED_TRACE("LuaActionScript");
-    expectStorageLifecycle<LuaActionScript>(fixture.root(), world.get());
+    expectStorageLifecycle<LuaActionScript>(fixture.root(), *world);
   }
 });
 
@@ -205,7 +204,7 @@ const GameTestRegistration messageLifecycle("LuaComponentLifecycle", "MessageArg
   ASSERT_TRUE(*reinitialized);
   // Checking after reinit catches retained LuaFunction handlers; checking only
   // while uninitialized would merely exercise the initialized() guard.
-  for (auto name : {"legacy", "localUnnamed", "localNamed", "remoteUnnamed"})
+  for (std::string_view name : {"legacy", "localUnnamed", "localNamed", "remoteUnnamed"})
     expectNoResponse(component.handleMessage(name, true, {17, "unused"}));
   EXPECT_EQ(calls, 4u);
   auto registered = component.eval<bool>(R"LUA(
@@ -303,22 +302,22 @@ const GameTestRegistration inputBindNames("InputNameSerialization", "BindJsonPre
   auto key = Input::bindFromJson(JsonObject{{"type", "key"}, {"value", "eSc"},
       {"mods", JsonArray{"rShIfT", "lCtRl", "RSHIFT"}}});
   ASSERT_TRUE(key) << key.error().what();
-  auto keyBind = std::get_if<Input::KeyBind>(&*key);
-  ASSERT_NE(keyBind, nullptr);
-  EXPECT_EQ(keyBind->key, Key::Escape);
-  EXPECT_EQ(keyBind->mods, KeyMod::RShift | KeyMod::LCtrl);
-  EXPECT_EQ(keyBind->priority, 2);
+  ASSERT_TRUE(std::holds_alternative<Input::KeyBind>(*key));
+  auto const& keyBind = std::get<Input::KeyBind>(*key);
+  EXPECT_EQ(keyBind.key, Key::Escape);
+  EXPECT_EQ(keyBind.mods, KeyMod::RShift | KeyMod::LCtrl);
+  EXPECT_EQ(keyBind.priority, 2);
   auto serializedKey = Input::bindToJson(*key);
   ASSERT_TRUE(serializedKey) << serializedKey.error().what();
   EXPECT_EQ(*serializedKey, Json(JsonObject{{"type", "key"}, {"value", "Esc"},
       {"mods", JsonArray{"RShift", "LCtrl"}}}));
   auto reparsedKey = Input::bindFromJson(*serializedKey);
   ASSERT_TRUE(reparsedKey) << reparsedKey.error().what();
-  auto reparsedKeyBind = std::get_if<Input::KeyBind>(&*reparsedKey);
-  ASSERT_NE(reparsedKeyBind, nullptr);
-  EXPECT_EQ(reparsedKeyBind->key, keyBind->key);
-  EXPECT_EQ(reparsedKeyBind->mods, keyBind->mods);
-  EXPECT_EQ(reparsedKeyBind->priority, keyBind->priority);
+  ASSERT_TRUE(std::holds_alternative<Input::KeyBind>(*reparsedKey));
+  auto const& reparsedKeyBind = std::get<Input::KeyBind>(*reparsedKey);
+  EXPECT_EQ(reparsedKeyBind.key, keyBind.key);
+  EXPECT_EQ(reparsedKeyBind.mods, keyBind.mods);
+  EXPECT_EQ(reparsedKeyBind.priority, keyBind.priority);
 
   for (Json const& json : JsonArray{
       JsonObject{{"type", "mouse"}, {"value", "mOuSeFiFtH"}},
@@ -333,7 +332,7 @@ const GameTestRegistration inputBindNames("InputNameSerialization", "BindJsonPre
         ? Json(JsonObject{{"type", "mouse"}, {"value", "MouseFifth"}})
         : Json(JsonObject{{"type", "controller"}, {"value", "Touchpad"}, {"controller", 7}}));
   }
-  String malformed("zzzz\xff", 5);
+  String malformed(std::string_view("zzzz\xff", 5));
   auto unknown = Input::bindFromJson(JsonObject{{"type", "key"}, {"value", "not a key"},
       {"mods", JsonArray{malformed}}});
   ASSERT_TRUE(unknown) << unknown.error().what();

@@ -295,8 +295,8 @@ std::expected<List<std::shared_ptr<Packet>>, StarException> WorldServerThread::r
   std::unique_lock queueLocker(m_queueMutex, std::defer_lock);
   lockWithDiagnostics(queueLocker);
   List<std::shared_ptr<Packet>> incomingPackets;
-  if (auto queued = m_incomingPacketQueue.ptr(clientId))
-    incomingPackets = take(*queued);
+  if (auto queued = m_incomingPacketQueue.maybeRef(clientId))
+    incomingPackets = take(queued->get());
   std::optional<StarException> error;
   if (m_worldServer->hasClient(clientId)) {
     m_clients.add(clientId);
@@ -309,8 +309,8 @@ std::expected<List<std::shared_ptr<Packet>>, StarException> WorldServerThread::r
     }
   }
   List<std::shared_ptr<Packet>> outgoingPackets;
-  if (auto queued = m_outgoingPacketQueue.ptr(clientId))
-    outgoingPackets = take(*queued);
+  if (auto queued = m_outgoingPacketQueue.maybeRef(clientId))
+    outgoingPackets = take(queued->get());
   if (m_worldServer->hasClient(clientId)) {
     auto removed = m_worldServer->removeClient(clientId);
     if (!removed) {
@@ -406,7 +406,7 @@ std::expected<void, StarException> WorldServerThread::executeAction(WorldServerA
   lockWithDiagnostics(locker);
   if (!action)
     return std::unexpected(StarException("Cannot execute an empty server world action"));
-  return action(this, m_worldServer.get());
+  return action(*this, *m_worldServer);
 }
 
 void WorldServerThread::setUpdateAction(WorldServerAction updateAction) {
@@ -520,7 +520,7 @@ std::expected<void, StarException> WorldServerThread::runLoop() {
     auto fidelity = WorldServerFidelityNames->getLeft(*serverFidelityMode);
     if (!fidelity)
       return std::unexpected(std::move(fidelity.error()));
-    lockedFidelity = **fidelity;
+    lockedFidelity = fidelity->get();
   }
   auto storageIntervalConfig = config->getDouble("worldStorageInterval");
   if (!storageIntervalConfig)
@@ -535,7 +535,7 @@ std::expected<void, StarException> WorldServerThread::runLoop() {
     auto fidelityName = WorldServerFidelityNames->getRight(fidelity);
     if (!fidelityName)
       return std::unexpected(std::move(fidelityName.error()));
-    root.logMap().set(strf("server_{}_fidelity", m_worldName), **fidelityName);
+    root.logMap().set(strf("server_{}_fidelity", m_worldName), fidelityName->get());
     root.logMap().set(strf("server_{}_update", m_worldName), strf("{:4.2f}Hz", tickApproacher.rate()));
     auto updated = update(fidelity);
     if (!updated)
@@ -623,8 +623,8 @@ std::expected<void, StarException> WorldServerThread::update(WorldServerFidelity
       completion = message.promise.fail("World message handling failed");
     } else if (!*response) {
       completion = message.promise.fail("Message not handled by world");
-    } else if (auto promise = std::get_if<RpcPromise<Json>>(&**response)) {
-      completion = message.promise.chain(*promise);
+    } else if (std::holds_alternative<RpcPromise<Json>>(**response)) {
+      completion = message.promise.chain(std::get<RpcPromise<Json>>(**response));
     } else {
       completion = message.promise.fulfill(std::get<Json>(**response));
     }
@@ -643,7 +643,7 @@ std::expected<void, StarException> WorldServerThread::update(WorldServerFidelity
   }
   m_shouldExpire = m_worldServer->shouldExpire();
   if (m_updateAction)
-    return m_updateAction(this, m_worldServer.get());
+    return m_updateAction(*this, *m_worldServer);
   return {};
 }
 

@@ -37,7 +37,7 @@ std::expected<String, StarException> wiredObjectName(ObjectDatabase const& datab
     if (!outputs) return std::unexpected(std::move(outputs.error()));
     if (outputs->empty())
       continue;
-    auto placeable = database.canPlaceObject(&world, position, name);
+    auto placeable = database.canPlaceObject(world, position, name);
     if (!placeable) return std::unexpected(std::move(placeable.error()));
     if (*placeable)
       return name;
@@ -68,8 +68,8 @@ void exerciseNetwork(GameTest& fixture, bool cycle) {
     for (int x = 992; x < 1120; ++x) {
       auto tile = world->modifyServerTile(Vec2I(x, y), true);
       ASSERT_TRUE(tile) << tile.error().what();
-      ASSERT_NE(*tile, nullptr);
-      (*tile)->background = StructureMaterialId;
+      ASSERT_TRUE(*tile);
+      (*tile)->get().background = StructureMaterialId;
     }
   }
   auto database = fixture.root().objectDatabase();
@@ -79,7 +79,7 @@ void exerciseNetwork(GameTest& fixture, bool cycle) {
   SCOPED_TRACE(name->utf8());
   std::array<std::shared_ptr<Object>, 3> objects;
   for (std::size_t i = 0; i < objects.size(); ++i) {
-    auto object = (*database)->createForPlacement(world.get(), *name,
+    auto object = (*database)->createForPlacement(*world, *name,
         Vec2I(1000 + 40 * i, 1024), Direction::Left, JsonObject{{"unbreakable", true}});
     ASSERT_TRUE(object) << object.error().what();
     ASSERT_NE(*object, nullptr);

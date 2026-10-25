@@ -144,7 +144,7 @@ public:
   static const std::uint32_t SERVERDATA_RESPONSE_VALUE = 0x00;
   static const std::uint32_t SERVERDATA_AUTH_RESPONSE = 0x02;
   static const std::uint32_t SERVERDATA_AUTH_FAILURE = 0xffffffff;
-  [[nodiscard]] static std::expected<std::shared_ptr<ServerRconClient>, StarException> create(UniverseServer* universe, std::shared_ptr<TcpSocket> socket);
+  [[nodiscard]] static std::expected<std::shared_ptr<ServerRconClient>, StarException> create(UniverseServer& universe, std::shared_ptr<TcpSocket> socket);
   ~ServerRconClient();
 
   [[nodiscard]] std::expected<void, StarException> start();
@@ -154,17 +154,17 @@ protected:
   [[nodiscard]] std::expected<void, StarException> run() override;
 
 private:
-  ServerRconClient(UniverseServer* universe, std::shared_ptr<TcpSocket> socket, String password);
+  ServerRconClient(UniverseServer& universe, std::shared_ptr<TcpSocket> socket, String password);
   static constexpr std::size_t MaxPacketSize = 4096;
   // Requests are small (a command line); anything larger is refused instead of
   // being allocated, since the length is client supplied.
   static constexpr std::size_t MaxReceivePacketSize = MaxPacketSize * 4;
   struct NoMoreRequestsTag {
-    static constexpr char const* name() { return "NoMoreRequests"; }
+    static constexpr std::string_view name() { return "NoMoreRequests"; }
   };
   using NoMoreRequests = StarError<NoMoreRequestsTag, StarException>;
   struct OversizedPacketTag {
-    static constexpr char const* name() { return "OversizedPacket"; }
+    static constexpr std::string_view name() { return "OversizedPacket"; }
   };
   using OversizedPacket = StarError<OversizedPacketTag, StarException>;
 
@@ -175,7 +175,7 @@ private:
   [[nodiscard]] std::expected<void, StarException> processRequest();
   [[nodiscard]] std::expected<ServerCommandResult, StarException> handleCommand(String commandLine);
 
-  UniverseServer* m_universe;
+  std::reference_wrapper<UniverseServer> m_universe;
   std::shared_ptr<TcpSocket> m_socket;
   DataStreamBuffer m_packetBuffer;
   bool m_stop;
@@ -187,7 +187,7 @@ private:
 
 class ServerRconThread : public Thread {
 public:
-  [[nodiscard]] static std::expected<std::unique_ptr<ServerRconThread>, StarException> create(UniverseServer* universe, HostAddressWithPort const& address);
+  [[nodiscard]] static std::expected<std::unique_ptr<ServerRconThread>, StarException> create(UniverseServer& universe, HostAddressWithPort const& address);
   ~ServerRconThread();
 
   [[nodiscard]] std::expected<void, StarException> start();
@@ -197,10 +197,10 @@ protected:
   [[nodiscard]] std::expected<void, StarException> run() override;
 
 private:
-  ServerRconThread(UniverseServer* universe, std::unique_ptr<TcpServer> server);
+  ServerRconThread(UniverseServer& universe, std::unique_ptr<TcpServer> server);
   void clearClients(bool all = false);
 
-  UniverseServer* m_universe;
+  std::reference_wrapper<UniverseServer> m_universe;
   std::unique_ptr<TcpServer> m_rconServer;
   bool m_stop;
   HashMap<HostAddress, std::shared_ptr<ServerRconClient>> m_clients;
@@ -210,8 +210,8 @@ private:
 
 namespace Star {
 
-std::expected<std::shared_ptr<ServerRconClient>, StarException> ServerRconClient::create(UniverseServer* universe, std::shared_ptr<TcpSocket> socket) {
-  auto configuration = universe->root().configuration();
+std::expected<std::shared_ptr<ServerRconClient>, StarException> ServerRconClient::create(UniverseServer& universe, std::shared_ptr<TcpSocket> socket) {
+  auto configuration = universe.root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   auto password = (*configuration)->get("rconServerPassword");
@@ -223,7 +223,7 @@ std::expected<std::shared_ptr<ServerRconClient>, StarException> ServerRconClient
   return std::shared_ptr<ServerRconClient>(new ServerRconClient(universe, std::move(socket), std::move(*text)));
 }
 
-ServerRconClient::ServerRconClient(UniverseServer* universe, std::shared_ptr<TcpSocket> socket, String password)
+ServerRconClient::ServerRconClient(UniverseServer& universe, std::shared_ptr<TcpSocket> socket, String password)
   : Thread("RconClient"), m_universe(universe), m_socket(std::move(socket)),
     m_packetBuffer(MaxPacketSize), m_stop(true), m_authed(false), m_rconPassword(std::move(password)) {
   m_packetBuffer.setByteOrder(ByteOrder::LittleEndian);
@@ -244,17 +244,17 @@ std::expected<ServerCommandResult, StarException> ServerRconClient::handleComman
   if (command == "echo") {
     return ServerCommandResult(std::move(commandLine));
   } else if (command == "broadcast" || command == "say") {
-    auto broadcast = m_universe->adminBroadcast(commandLine);
+    auto broadcast = m_universe.get().adminBroadcast(commandLine);
     if (!broadcast)
       return std::unexpected(std::move(broadcast.error()));
     return ServerCommandResult(String(strf("OK: said {}", commandLine)));
   } else if (command == "stop") {
-    auto stopped = m_universe->stop();
+    auto stopped = m_universe.get().stop();
     if (!stopped)
       return std::unexpected(std::move(stopped.error()));
     return ServerCommandResult(String("OK: shutting down"));
   }
-  return m_universe->adminCommand(strf("{} {}", command, commandLine));
+  return m_universe.get().adminCommand(strf("{} {}", command, commandLine));
 }
 
 std::expected<void, StarException> ServerRconClient::receive(std::size_t size) {
@@ -262,15 +262,14 @@ std::expected<void, StarException> ServerRconClient::receive(std::size_t size) {
   if (size > MaxReceivePacketSize)
     return std::unexpected(OversizedPacket(strf("RCON packet of {} bytes is above the {} byte limit", size, MaxReceivePacketSize)));
   m_packetBuffer.reset(size);
-  auto ptr = m_packetBuffer.ptr();
-  while (size > 0) {
-    auto received = m_socket->receive(ptr, size);
+  auto remaining = m_packetBuffer.span();
+  while (!remaining.empty()) {
+    auto received = m_socket->receive(remaining);
     if (!received)
       return std::unexpected(std::move(received.error()));
     if (*received == 0)
       return std::unexpected(NoMoreRequests());
-    size -= *received;
-    ptr += *received;
+    remaining = remaining.subspan(*received);
   }
   return {};
 }
@@ -281,14 +280,14 @@ std::expected<void, StarException> ServerRconClient::send(std::uint32_t requestI
   if (!header)
     return std::unexpected(std::move(header.error()));
   if (!str.empty()) {
-    auto data = m_packetBuffer.writeData(str.data(), str.size());
+    auto data = m_packetBuffer.writeData(std::span(str));
     if (!data)
       return std::unexpected(std::move(data.error()));
   }
   auto terminator = m_packetBuffer << std::uint8_t{0} << std::uint8_t{0};
   if (!terminator)
     return std::unexpected(std::move(terminator.error()));
-  auto sent = m_socket->send(m_packetBuffer.ptr(), m_packetBuffer.size());
+  auto sent = m_socket->send(m_packetBuffer.span());
   if (!sent)
     return std::unexpected(std::move(sent.error()));
   return {};
@@ -305,13 +304,13 @@ std::expected<void, StarException> ServerRconClient::sendCmdResponse(std::uint32
   auto cursor = *begin;
   // Preserve code-point chunk boundaries and the packet for an empty response.
   do {
-    auto first = cursor.base();
+    auto first = cursor;
     std::size_t count = 0;
     while (cursor != response.end() && count < MaxPacketSize) {
       ++cursor;
       ++count;
     }
-    auto sent = send(requestId, SERVERDATA_RESPONSE_VALUE, std::string_view(first, cursor.base()));
+    auto sent = send(requestId, SERVERDATA_RESPONSE_VALUE, std::string_view(first.base(), cursor.base()));
     if (!sent)
       return std::unexpected(std::move(sent.error()));
   } while (cursor != response.end());
@@ -381,7 +380,7 @@ std::expected<void, StarException> ServerRconClient::processRequest() {
         auto decoded = m_packetBuffer >> command;
         if (!decoded)
           return std::unexpected(std::move(decoded.error()));
-        auto logged = m_universe->root().logger().info("RCON {}: {}", m_socket->remoteAddress(), command);
+        auto logged = m_universe.get().root().logger().info("RCON {}: {}", m_socket->remoteAddress(), command);
         if (!logged)
           return std::unexpected(std::move(logged.error()));
         auto result = handleCommand(command);
@@ -389,8 +388,8 @@ std::expected<void, StarException> ServerRconClient::processRequest() {
           auto response = sendCmdResponse(requestId, strf("RCON: Error executing: {}: {}", command, outputException(ExceptionDiagnostic(result.error()), true)));
           if (!response)
             return std::unexpected(std::move(response.error()));
-        } else if (auto text = std::get_if<String>(&*result)) {
-          auto response = sendCmdResponse(requestId, *text);
+        } else if (std::holds_alternative<String>(*result)) {
+          auto response = sendCmdResponse(requestId, std::get<String>(*result));
           if (!response)
             return std::unexpected(std::move(response.error()));
         } else {
@@ -446,7 +445,7 @@ std::expected<void, StarException> ServerRconClient::run() {
     auto request = processRequest();
     if (!request) {
       if (!request.error().is<NoMoreRequests>()) {
-        auto logged = m_universe->root().logger().error("ServerRconClient error: {}", outputException(ExceptionDiagnostic(request.error()), false));
+        auto logged = m_universe.get().root().logger().error("ServerRconClient error: {}", outputException(ExceptionDiagnostic(request.error()), false));
         if (!logged)
           return std::unexpected(std::move(logged.error()));
       }
@@ -457,11 +456,11 @@ std::expected<void, StarException> ServerRconClient::run() {
 }
 
 
-std::expected<std::unique_ptr<ServerRconThread>, StarException> ServerRconThread::create(UniverseServer* universe, HostAddressWithPort const& address) {
-  auto server = TcpServer::create(universe->root().logger(), address);
+std::expected<std::unique_ptr<ServerRconThread>, StarException> ServerRconThread::create(UniverseServer& universe, HostAddressWithPort const& address) {
+  auto server = TcpServer::create(universe.root().logger(), address);
   if (!server)
     return std::unexpected(std::move(server.error()));
-  auto configuration = universe->root().configuration();
+  auto configuration = universe.root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   auto password = (*configuration)->get("rconServerPassword");
@@ -471,14 +470,14 @@ std::expected<std::unique_ptr<ServerRconThread>, StarException> ServerRconThread
   if (!text)
     return std::unexpected(std::move(text.error()));
   if (text->empty()) {
-    auto logged = universe->root().logger().warn("rconServerPassword is not configured requests will NOT be processed");
+    auto logged = universe.root().logger().warn("rconServerPassword is not configured requests will NOT be processed");
     if (!logged)
       return std::unexpected(std::move(logged.error()));
   }
   return std::unique_ptr<ServerRconThread>(new ServerRconThread(universe, std::move(*server)));
 }
 
-ServerRconThread::ServerRconThread(UniverseServer* universe, std::unique_ptr<TcpServer> server)
+ServerRconThread::ServerRconThread(UniverseServer& universe, std::unique_ptr<TcpServer> server)
   : Thread("RconServer"), m_universe(universe), m_rconServer(std::move(server)), m_stop(true) {}
 
 ServerRconThread::~ServerRconThread() {
@@ -521,7 +520,7 @@ std::expected<void, StarException> ServerRconThread::stop() {
 
 std::expected<void, StarException> ServerRconThread::run() {
   auto loop = [this]() -> std::expected<void, StarException> {
-    auto configuration = m_universe->root().configuration();
+    auto configuration = m_universe.get().root().configuration();
     if (!configuration)
       return std::unexpected(std::move(configuration.error()));
     auto setting = (*configuration)->get("rconServerTimeout");
@@ -539,7 +538,7 @@ std::expected<void, StarException> ServerRconThread::run() {
       auto configured = (*client)->setTimeout(*timeout);
       if (!configured)
         return std::unexpected(std::move(configured.error()));
-      auto rconClient = ServerRconClient::create(m_universe, *client);
+      auto rconClient = ServerRconClient::create(m_universe.get(), *client);
       if (!rconClient)
         return std::unexpected(std::move(rconClient.error()));
       auto started = (*rconClient)->start();
@@ -551,7 +550,7 @@ std::expected<void, StarException> ServerRconThread::run() {
     return {};
   };
   if (auto result = loop(); !result) {
-    auto logged = m_universe->root().logger().error("ServerRconThread error: {}", result.error().what());
+    auto logged = m_universe.get().root().logger().error("ServerRconThread error: {}", result.error().what());
     if (!logged)
       return std::unexpected(std::move(logged.error()));
   }

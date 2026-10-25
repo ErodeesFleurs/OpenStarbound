@@ -20,8 +20,8 @@ import star.line;
 namespace Star {
 
 struct DamageSource {
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageSource const& damageSource);
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageSource& damageSource);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, DamageSource const& damageSource);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, DamageSource& damageSource);
 
   typedef std::variant<std::monostate, PolyF, Line2F> DamageArea;
   typedef std::variant<std::monostate, float, Vec2F> Knockback;
@@ -78,12 +78,12 @@ struct DamageSource {
   bool rayCheck;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageSource const& damageSource);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageSource& damageSource);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, DamageSource const& damageSource);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, DamageSource& damageSource);
 
 struct DamageRequest {
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageRequest const& damageRequest);
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageRequest& damageRequest);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, DamageRequest const& damageRequest);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, DamageRequest& damageRequest);
 
   DamageRequest();
   [[nodiscard]] static std::expected<DamageRequest, StarException> create(Json const& v);
@@ -108,12 +108,12 @@ struct DamageRequest {
   List<EphemeralStatusEffect> statusEffects;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageRequest const& damageRequest);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageRequest& damageRequest);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, DamageRequest const& damageRequest);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, DamageRequest& damageRequest);
 
 struct DamageNotification {
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageNotification const& damageNotification);
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageNotification& damageNotification);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, DamageNotification const& damageNotification);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, DamageNotification& damageNotification);
 
   DamageNotification();
   [[nodiscard]] static std::expected<DamageNotification, StarException> create(Json const& v);
@@ -138,8 +138,8 @@ struct DamageNotification {
   String targetMaterialKind;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageNotification const& damageNotification);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageNotification& damageNotification);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, DamageNotification const& damageNotification);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, DamageNotification& damageNotification);
 }
 
 export module star.damage;

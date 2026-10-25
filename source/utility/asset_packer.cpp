@@ -51,11 +51,11 @@ static std::expected<int, StarException> packAssets(int argc, char** argv) {
   auto assetsArgument = opts.arguments.at(0);
   if (!assetsArgument)
     return std::unexpected(std::move(assetsArgument.error()));
-  String assetsFolderPath = **assetsArgument;
+  String assetsFolderPath = assetsArgument->get();
   auto outputArgument = opts.arguments.at(1);
   if (!outputArgument)
     return std::unexpected(std::move(outputArgument.error()));
-  String outputFilename = **outputArgument;
+  String outputFilename = outputArgument->get();
 
   StringList ignoreFiles;
   StringList extensionOrdering;
@@ -63,10 +63,10 @@ static std::expected<int, StarException> packAssets(int argc, char** argv) {
     auto configValues = opts.parameters.get("c");
     if (!configValues)
       return std::unexpected(std::move(configValues.error()));
-    auto configArgument = (*configValues)->first();
+    auto configArgument = configValues->get().first();
     if (!configArgument)
       return std::unexpected(std::move(configArgument.error()));
-    String configFile = **configArgument;
+    String configFile = configArgument->get();
     auto configFileContents = File::readFileString(configFile);
     if (!configFileContents) {
       if (!configFileContents.error().is<IOException>())

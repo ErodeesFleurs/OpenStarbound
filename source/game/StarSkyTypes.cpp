@@ -47,12 +47,12 @@ SkyColoring::SkyColoring() {
 
 std::expected<SkyColoring, StarException> SkyColoring::create(Json const& variant) {
   SkyColoring coloring;
-  auto getColor = [&](char const* key) -> std::expected<Color, StarException> {
+  auto getColor = [&](String const& key) -> std::expected<Color, StarException> {
     auto value = variant.get(key);
     if (!value) return std::unexpected(std::move(value.error()));
     return jsonToColor(*value);
   };
-  auto getColorPair = [&](char const* key) -> std::expected<std::pair<Color, Color>, StarException> {
+  auto getColorPair = [&](String const& key) -> std::expected<std::pair<Color, Color>, StarException> {
     auto pair = variant.get(key);
     if (!pair) return std::unexpected(std::move(pair.error()));
     auto first = pair->get(0);
@@ -111,20 +111,20 @@ Json SkyColoring::toJson() const {
       {"nightLightColor", jsonFromColor(nightLightColor)}};
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyColoring& skyColoring) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, SkyColoring& skyColoring) {
   SkyColoring value;
   auto result = ds >> value.mainColor >> value.morningColors >> value.dayColors >> value.eveningColors
       >> value.nightColors >> value.morningLightColor >> value.dayLightColor >> value.eveningLightColor >> value.nightLightColor;
   if (!result) return std::unexpected(std::move(result.error()));
   skyColoring = std::move(value);
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyColoring const& skyColoring) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, SkyColoring const& skyColoring) {
   auto result = ds << skyColoring.mainColor << skyColoring.morningColors << skyColoring.dayColors << skyColoring.eveningColors
       << skyColoring.nightColors << skyColoring.morningLightColor << skyColoring.dayLightColor << skyColoring.eveningLightColor << skyColoring.nightLightColor;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 SkyOrbiter::SkyOrbiter() : type(), scale(), angle() {}

@@ -17,8 +17,8 @@ PlayerBlueprints::PlayerBlueprints() {}
 std::expected<PlayerBlueprints, StarException> PlayerBlueprints::create(Json const& json) {
   PlayerBlueprints blueprints;
   for (auto const& field : {
-      std::pair{"knownBlueprints", &blueprints.m_knownBlueprints},
-      std::pair{"newBlueprints", &blueprints.m_newBlueprints}}) {
+      std::pair{std::string_view{"knownBlueprints"}, std::ref(blueprints.m_knownBlueprints)},
+      std::pair{std::string_view{"newBlueprints"}, std::ref(blueprints.m_newBlueprints)}}) {
     auto entries = json.getArray(field.first);
     if (!entries)
       return std::unexpected(std::move(entries.error()));
@@ -26,7 +26,7 @@ std::expected<PlayerBlueprints, StarException> PlayerBlueprints::create(Json con
       auto descriptor = ItemDescriptor::create(entry);
       if (!descriptor)
         return std::unexpected(std::move(descriptor.error()));
-      field.second->add(std::move(*descriptor));
+      field.second.get().add(std::move(*descriptor));
     }
   }
   return blueprints;

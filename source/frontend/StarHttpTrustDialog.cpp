@@ -79,15 +79,15 @@ std::expected<std::shared_ptr<HttpTrustDialog>, StarException> HttpTrustDialog::
 std::expected<void, StarException> HttpTrustDialog::displayRequest(String const& domain, std::function<std::expected<void, StarException>(HttpTrustReply, bool)> callback) {
   if (!callback)
     return std::unexpected(StarException("HTTP trust request has no reply callback"));
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   removeAllChildren();
-  GuiReader reader(*context());
+  GuiReader reader(context());
   m_domain = domain;
   m_callback = std::move(callback);
-  reader.registerCallback("yes", [this](Widget*) { return reply(HttpTrustReply::Allow); });
-  reader.registerCallback("no", [this](Widget*) { return reply(HttpTrustReply::Deny); });
+  reader.registerCallback("yes", [this](Widget&) { return reply(HttpTrustReply::Allow); });
+  reader.registerCallback("no", [this](Widget&) { return reply(HttpTrustReply::Deny); });
   m_confirmed = false;
   auto config = (*assets)->json("/interface/httpwarning/warning.config");
   if (!config)
@@ -95,7 +95,7 @@ std::expected<void, StarException> HttpTrustDialog::displayRequest(String const&
   auto layout = config->get("paneLayout");
   if (!layout)
     return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, this);
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed)
     return std::unexpected(std::move(constructed.error()));
   auto domainLabel = fetchChild<LabelWidget>("domain");
@@ -129,7 +129,7 @@ std::expected<void, StarException> HttpTrustDialog::reply(HttpTrustReply replyTy
     return std::unexpected(GUIBuilderException("Missing HTTP trust remember checkbox"));
   bool remember = (*checkbox)->isChecked();
   if (replyType == HttpTrustReply::Allow && remember) {
-    auto config = context()->root().configuration();
+    auto config = context().root().configuration();
     if (!config)
       return std::unexpected(std::move(config.error()));
     auto sites = (*config)->getPath("safe.luaHttp.trustedSites");

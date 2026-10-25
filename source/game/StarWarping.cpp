@@ -68,16 +68,16 @@ std::size_t hash<InstanceWorldId>::operator()(InstanceWorldId const& id) const {
   return hashOf(id.instance, id.uuid, id.level);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, InstanceWorldId& instanceWorldId) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, InstanceWorldId& instanceWorldId) {
   InstanceWorldId decoded;
   auto result = ds >> decoded.instance >> decoded.uuid >> decoded.level;
   if (!result)
     return std::unexpected(std::move(result.error()));
   instanceWorldId = std::move(decoded);
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, InstanceWorldId const& instanceWorldId) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, InstanceWorldId const& instanceWorldId) {
   return ds << instanceWorldId.instance << instanceWorldId.uuid << instanceWorldId.level;
 }
 
@@ -97,7 +97,7 @@ std::size_t hash<ClientCustomWorldId>::operator()(ClientCustomWorldId const& id)
   return hashOf(id.uuid, id.name);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId) {
   auto uuid = ds.read<Uuid>();
   if (!uuid)
     return std::unexpected(std::move(uuid.error()));
@@ -105,29 +105,31 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, ClientCusto
   if (!name)
     return std::unexpected(std::move(name.error()));
   clientWorldId = ClientCustomWorldId(std::move(*uuid), std::move(*name));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId) {
   return ds << clientWorldId.uuid << clientWorldId.name;
 }
 
 std::expected<String, StarException> printWorldId(WorldId const& worldId) {
-  if (auto instanceWorldId = std::get_if<InstanceWorldId>(&worldId)) {
-    if (instanceWorldId->level && *instanceWorldId->level < 0.0f)
+  if (std::holds_alternative<InstanceWorldId>(worldId)) {
+    auto const& instanceWorldId = std::get<InstanceWorldId>(worldId);
+    if (instanceWorldId.level && *instanceWorldId.level < 0.0f)
       return std::unexpected(StarException::format("InstanceWorldId level component cannot be negative"));
 
-    String uuidPart = instanceWorldId->uuid ? instanceWorldId->uuid->hex() : "-";
-    String levelPart = instanceWorldId->level ? toString(*instanceWorldId->level) : "-";
-    return strf("InstanceWorld:{}:{}:{}", instanceWorldId->instance, uuidPart, levelPart);
-  } else if (auto celestialWorldId = std::get_if<CelestialWorldId>(&worldId)) {
-    return strf("CelestialWorld:{}", *celestialWorldId);
-  } else if (auto clientShipWorldId = std::get_if<ClientShipWorldId>(&worldId)) {
-    return strf("ClientShipWorld:{}", clientShipWorldId->hex());
-  } else if (auto customWorldId = std::get_if<CustomWorldId>(&worldId)) {
-    return strf("CustomWorld:{}", *customWorldId);
-  } else if (auto clientCustomWorldId = std::get_if<ClientCustomWorldId>(&worldId)) {
-    return strf("ClientCustomWorld:{}:{}", clientCustomWorldId->uuid.hex(), clientCustomWorldId->name);
+    String uuidPart = instanceWorldId.uuid ? instanceWorldId.uuid->hex() : "-";
+    String levelPart = instanceWorldId.level ? toString(*instanceWorldId.level) : "-";
+    return strf("InstanceWorld:{}:{}:{}", instanceWorldId.instance, uuidPart, levelPart);
+  } else if (std::holds_alternative<CelestialWorldId>(worldId)) {
+    return strf("CelestialWorld:{}", std::get<CelestialWorldId>(worldId));
+  } else if (std::holds_alternative<ClientShipWorldId>(worldId)) {
+    return strf("ClientShipWorld:{}", std::get<ClientShipWorldId>(worldId).hex());
+  } else if (std::holds_alternative<CustomWorldId>(worldId)) {
+    return strf("CustomWorld:{}", std::get<CustomWorldId>(worldId));
+  } else if (std::holds_alternative<ClientCustomWorldId>(worldId)) {
+    auto const& clientCustomWorldId = std::get<ClientCustomWorldId>(worldId);
+    return strf("ClientCustomWorld:{}:{}", clientCustomWorldId.uuid.hex(), clientCustomWorldId.name);
   } else {
     return "Nowhere";
   }
@@ -142,7 +144,7 @@ std::expected<WorldId, StarException> parseWorldId(String const& printedId) {
   auto const& type = (*parts)[0];
   enum class Kind { Instance, Celestial, Ship, Custom, ClientCustom, Nowhere };
   auto kind = [&]() -> std::expected<Kind, StarException> {
-    constexpr std::pair<char const*, Kind> names[] = {
+    constexpr std::pair<std::string_view, Kind> names[] = {
         {"InstanceWorld", Kind::Instance}, {"CelestialWorld", Kind::Celestial},
         {"ClientShipWorld", Kind::Ship}, {"CustomWorld", Kind::Custom},
         {"ClientCustomWorld", Kind::ClientCustom}, {"Nowhere", Kind::Nowhere}};
@@ -264,12 +266,13 @@ std::expected<SpawnTarget, StarException> spawnTargetFromJson(Json v) {
 }
 
 String printSpawnTarget(SpawnTarget spawnTarget) {
-  if (auto str = std::get_if<SpawnTargetUniqueEntity>(&spawnTarget))
-    return *str;
-  else if (auto pos = std::get_if<SpawnTargetPosition>(&spawnTarget))
-    return strf("{}.{}", (*pos)[0], (*pos)[1]);
-  else if (auto x = std::get_if<SpawnTargetX>(&spawnTarget))
-    return toString(x->t);
+  if (std::holds_alternative<SpawnTargetUniqueEntity>(spawnTarget))
+    return std::get<SpawnTargetUniqueEntity>(spawnTarget);
+  else if (std::holds_alternative<SpawnTargetPosition>(spawnTarget)) {
+    auto const& pos = std::get<SpawnTargetPosition>(spawnTarget);
+    return strf("{}.{}", pos[0], pos[1]);
+  } else if (std::holds_alternative<SpawnTargetX>(spawnTarget))
+    return toString(std::get<SpawnTargetX>(spawnTarget).t);
   else
     return "";
 }
@@ -387,21 +390,23 @@ std::expected<WarpAction, StarException> parseWarpAction(String const& warpStrin
 }
 
 std::expected<String, StarException> printWarpAction(WarpAction const& warpAction) {
-  if (auto warpAlias = std::get_if<WarpAlias>(&warpAction)) {
-    if (*warpAlias == WarpAlias::Return)
+  if (std::holds_alternative<WarpAlias>(warpAction)) {
+    auto warpAlias = std::get<WarpAlias>(warpAction);
+    if (warpAlias == WarpAlias::Return)
       return "Return";
-    else if (*warpAlias == WarpAlias::OrbitedWorld)
+    else if (warpAlias == WarpAlias::OrbitedWorld)
       return "OrbitedWorld";
-    else if (*warpAlias == WarpAlias::OwnShip)
+    else if (warpAlias == WarpAlias::OwnShip)
       return "OwnShip";
-  } else if (auto warpToPlayer = std::get_if<WarpToPlayer>(&warpAction)) {
-    return strf("Player:{}", warpToPlayer->hex());
-  } else if (auto warpToWorld = std::get_if<WarpToWorld>(&warpAction)) {
-    auto toWorldString = printWorldId(warpToWorld->world);
+  } else if (std::holds_alternative<WarpToPlayer>(warpAction)) {
+    return strf("Player:{}", std::get<WarpToPlayer>(warpAction).hex());
+  } else if (std::holds_alternative<WarpToWorld>(warpAction)) {
+    auto const& warpToWorld = std::get<WarpToWorld>(warpAction);
+    auto toWorldString = printWorldId(warpToWorld.world);
     if (!toWorldString)
       return std::unexpected(std::move(toWorldString.error()));
-    if (!std::holds_alternative<std::monostate>(warpToWorld->target))
-      return strf("{}={}", *toWorldString, printSpawnTarget(warpToWorld->target));
+    if (!std::holds_alternative<std::monostate>(warpToWorld.target))
+      return strf("{}={}", *toWorldString, printSpawnTarget(warpToWorld.target));
     return std::move(*toWorldString);
   }
 
@@ -409,32 +414,34 @@ std::expected<String, StarException> printWarpAction(WarpAction const& warpActio
 }
 
 std::expected<JsonObject, StarException> warpActionToJson(WarpAction const& warpAction) {
-  if (auto warpAlias = std::get_if<WarpAlias>(&warpAction)) {
+  if (std::holds_alternative<WarpAlias>(warpAction)) {
+    auto warpAlias = std::get<WarpAlias>(warpAction);
     auto out = JsonObject{
       {"actionKind", "Alias"}
     };
-    if (*warpAlias == WarpAlias::Return)
+    if (warpAlias == WarpAlias::Return)
       out.set("actionAlias","Return");
-    else if (*warpAlias == WarpAlias::OrbitedWorld)
+    else if (warpAlias == WarpAlias::OrbitedWorld)
       out.set("actionAlias","OrbitedWorld");
-    else if (*warpAlias == WarpAlias::OwnShip)
+    else if (warpAlias == WarpAlias::OwnShip)
       out.set("actionAlias","OwnShip");
     return out;
-  } else if (auto warpToPlayer = std::get_if<WarpToPlayer>(&warpAction)) {
+  } else if (std::holds_alternative<WarpToPlayer>(warpAction)) {
     return JsonObject{
       {"actionKind", "Player"},
-      {"uuid", warpToPlayer->hex()}
+      {"uuid", std::get<WarpToPlayer>(warpAction).hex()}
     };
-  } else if (auto warpToWorld = std::get_if<WarpToWorld>(&warpAction)) {
-    auto printed = printWorldId(warpToWorld->world);
+  } else if (std::holds_alternative<WarpToWorld>(warpAction)) {
+    auto const& warpToWorld = std::get<WarpToWorld>(warpAction);
+    auto printed = printWorldId(warpToWorld.world);
     if (!printed)
       return std::unexpected(std::move(printed.error()));
     auto out = JsonObject{
       {"actionKind", "World"},
       {"worldId", std::move(*printed)}
     };
-    if (!std::holds_alternative<std::monostate>(warpToWorld->target))
-      out.set("spawnTarget", spawnTargetToJson(warpToWorld->target));
+    if (!std::holds_alternative<std::monostate>(warpToWorld.target))
+      out.set("spawnTarget", spawnTargetToJson(warpToWorld.target));
     return out;
   }
 
@@ -443,16 +450,16 @@ std::expected<JsonObject, StarException> warpActionToJson(WarpAction const& warp
   };
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, WarpToWorld& warpToWorld) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, WarpToWorld& warpToWorld) {
   WarpToWorld decoded;
   auto result = ds >> decoded.world >> decoded.target;
   if (!result)
     return std::unexpected(std::move(result.error()));
   warpToWorld = std::move(decoded);
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, WarpToWorld const& warpToWorld) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, WarpToWorld const& warpToWorld) {
   return ds << warpToWorld.world << warpToWorld.target;
 }
 

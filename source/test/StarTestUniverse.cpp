@@ -377,7 +377,7 @@ std::expected<List<Drawable>, StarException> TestUniverse::currentClientDrawable
   if (!worldClient)
     return std::unexpected(StarException("Test player has no world to render"));
   worldClient->centerClientWindowOnPlayer(m_clientWindowSize);
-  auto rendered = worldClient->render(renderData, 0, nullptr);
+  auto rendered = worldClient->render(renderData, 0, std::nullopt);
   if (!rendered)
     return std::unexpected(std::move(rendered.error()));
 

@@ -142,23 +142,23 @@ std::expected<std::shared_ptr<SongbookInterface>, StarException> SongbookInterfa
 }
 
 std::expected<void, StarException> SongbookInterface::initialize() {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
-  GuiReader reader(*context());
-  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { dismiss(); return {}; });
-  reader.registerCallback("btnPlay", [this](Widget*) -> std::expected<void, StarException> {
+  GuiReader reader(context());
+  reader.registerCallback("close", [this](Widget&) -> std::expected<void, StarException> { dismiss(); return {}; });
+  reader.registerCallback("btnPlay", [this](Widget&) -> std::expected<void, StarException> {
     auto played = play();
     if (!played) return std::unexpected(std::move(played.error()));
     if (*played) dismiss();
     return {};
   });
-  reader.registerCallback("group", [](Widget*) -> std::expected<void, StarException> { return {}; });
-  reader.registerCallback("search", [](Widget*) -> std::expected<void, StarException> { return {}; });
+  reader.registerCallback("group", [](Widget&) -> std::expected<void, StarException> { return {}; });
+  reader.registerCallback("search", [](Widget&) -> std::expected<void, StarException> { return {}; });
   auto layout = (*assets)->json("/interface/windowconfig/songbook.config:paneLayout");
   if (!layout) return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, this);
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed) return std::unexpected(std::move(constructed.error()));
-  m_reloadSubscription = context()->root().registerReloadListener(
+  m_reloadSubscription = context().root().registerReloadListener(
     m_reloadListener = std::make_shared<CallbackListener>([this]() { return refresh(true); })
   );
   return refresh(true);
@@ -186,29 +186,29 @@ std::expected<bool, StarException> SongbookInterface::play() {
   auto group = fetchChild<TextBoxWidget>("group");
   if (!group) return std::unexpected(std::move(group.error()));
   JsonObject song;
-  song["resource"] = **songName;
-  auto assets = context()->root().assets();
+  song["resource"] = songName->get();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
-  auto buffer = (*assets)->bytes(**songName);
+  auto buffer = (*assets)->bytes(songName->get());
   if (!buffer) return std::unexpected(std::move(buffer.error()));
-  song["abc"] = String((*buffer)->ptr(), (*buffer)->size());
+  song["abc"] = String(std::string_view((*buffer)->span()));
   m_player->songbook()->play(song, (*group)->getText());
   return true;
 }
 
 std::expected<void, StarException> SongbookInterface::refresh(bool reloadFiles) {
   if (reloadFiles) {
-    auto assets = context()->root().assets();
+    auto assets = context().root().assets();
     if (!assets) return std::unexpected(std::move(assets.error()));
     auto scanned = (*assets)->scanExtension(".abc");
     if (!scanned) return std::unexpected(std::move(scanned.error()));
     m_files.clear();
-    for (auto const& path : **scanned) {
+    for (auto const& path : scanned->get()) {
       String song = path.string();
       auto inSongs = song.beginsWith(SongPathPrefix, String::CaseInsensitive);
       if (!inSongs) return std::unexpected(std::move(inSongs.error()));
       if (!*inSongs) {
-        auto logged = context()->root().logger().warn("Song '{}' isn't in {}, ignoring", song, SongPathPrefix);
+        auto logged = context().root().logger().warn("Song '{}' isn't in {}, ignoring", song, SongPathPrefix);
         if (!logged) return std::unexpected(std::move(logged.error()));
       } else {
         m_files.append(std::move(song));

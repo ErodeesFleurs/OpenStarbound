@@ -215,7 +215,7 @@ std::expected<std::shared_ptr<CharCreationPane>, StarException> CharCreationPane
 
 std::expected<void, StarException> CharCreationPane::init(
     std::function<std::expected<void, StarException>(std::shared_ptr<Player>)> requestCloseFunc) {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   auto speciesConfig = (*assets)->json("/interface/windowconfig/charcreation.config:speciesOrdering");
@@ -227,9 +227,9 @@ std::expected<void, StarException> CharCreationPane::init(
   m_speciesList = std::move(*speciesList);
   if (m_speciesList.empty())
     return std::unexpected(CharCreationException("Character creation species ordering is empty"));
-  GuiReader guiReader(*context());
-  guiReader.registerCallback("cancel", [requestCloseFunc](Widget*) { return requestCloseFunc({}); });
-  guiReader.registerCallback("saveChar", [this, requestCloseFunc](Widget*) -> std::expected<void, StarException> {
+  GuiReader guiReader(context());
+  guiReader.registerCallback("cancel", [requestCloseFunc](Widget&) { return requestCloseFunc({}); });
+  guiReader.registerCallback("saveChar", [this, requestCloseFunc](Widget&) -> std::expected<void, StarException> {
     auto skipIntro = requireChild<ButtonWidget>("btnSkipIntro");
     if (!skipIntro)
       return std::unexpected(std::move(skipIntro.error()));
@@ -244,25 +244,25 @@ std::expected<void, StarException> CharCreationPane::init(
     return randomizeName();
   });
   for (auto const& [callback, member, increment, clothing] : {
-      std::tuple{"mainSkinColor.up", &CharCreationPane::m_bodyColor, true, false},
-      std::tuple{"mainSkinColor.down", &CharCreationPane::m_bodyColor, false, false},
-      std::tuple{"alty.up", &CharCreationPane::m_alty, true, false},
-      std::tuple{"alty.down", &CharCreationPane::m_alty, false, false},
-      std::tuple{"hairStyle.up", &CharCreationPane::m_hairChoice, true, false},
-      std::tuple{"hairStyle.down", &CharCreationPane::m_hairChoice, false, false},
-      std::tuple{"shirt.up", &CharCreationPane::m_shirtChoice, true, true},
-      std::tuple{"shirt.down", &CharCreationPane::m_shirtChoice, false, true},
-      std::tuple{"pants.up", &CharCreationPane::m_pantsChoice, true, true},
-      std::tuple{"pants.down", &CharCreationPane::m_pantsChoice, false, true},
-      std::tuple{"heady.up", &CharCreationPane::m_heady, true, false},
-      std::tuple{"heady.down", &CharCreationPane::m_heady, false, false},
-      std::tuple{"shirtColor.up", &CharCreationPane::m_shirtColor, true, true},
-      std::tuple{"shirtColor.down", &CharCreationPane::m_shirtColor, false, true},
-      std::tuple{"pantsColor.up", &CharCreationPane::m_pantsColor, true, true},
-      std::tuple{"pantsColor.down", &CharCreationPane::m_pantsColor, false, true},
-      std::tuple{"personality.up", &CharCreationPane::m_personality, true, false},
-      std::tuple{"personality.down", &CharCreationPane::m_personality, false, false}}) {
-    guiReader.registerCallback(callback, [this, member, increment, clothing](Widget*) -> std::expected<void, StarException> {
+      std::tuple{std::string_view("mainSkinColor.up"), &CharCreationPane::m_bodyColor, true, false},
+      std::tuple{std::string_view("mainSkinColor.down"), &CharCreationPane::m_bodyColor, false, false},
+      std::tuple{std::string_view("alty.up"), &CharCreationPane::m_alty, true, false},
+      std::tuple{std::string_view("alty.down"), &CharCreationPane::m_alty, false, false},
+      std::tuple{std::string_view("hairStyle.up"), &CharCreationPane::m_hairChoice, true, false},
+      std::tuple{std::string_view("hairStyle.down"), &CharCreationPane::m_hairChoice, false, false},
+      std::tuple{std::string_view("shirt.up"), &CharCreationPane::m_shirtChoice, true, true},
+      std::tuple{std::string_view("shirt.down"), &CharCreationPane::m_shirtChoice, false, true},
+      std::tuple{std::string_view("pants.up"), &CharCreationPane::m_pantsChoice, true, true},
+      std::tuple{std::string_view("pants.down"), &CharCreationPane::m_pantsChoice, false, true},
+      std::tuple{std::string_view("heady.up"), &CharCreationPane::m_heady, true, false},
+      std::tuple{std::string_view("heady.down"), &CharCreationPane::m_heady, false, false},
+      std::tuple{std::string_view("shirtColor.up"), &CharCreationPane::m_shirtColor, true, true},
+      std::tuple{std::string_view("shirtColor.down"), &CharCreationPane::m_shirtColor, false, true},
+      std::tuple{std::string_view("pantsColor.up"), &CharCreationPane::m_pantsColor, true, true},
+      std::tuple{std::string_view("pantsColor.down"), &CharCreationPane::m_pantsColor, false, true},
+      std::tuple{std::string_view("personality.up"), &CharCreationPane::m_personality, true, false},
+      std::tuple{std::string_view("personality.down"), &CharCreationPane::m_personality, false, false}}) {
+    guiReader.registerCallback(callback, [this, member, increment, clothing](Widget&) -> std::expected<void, StarException> {
       if (increment)
         ++(this->*member);
       else
@@ -276,15 +276,15 @@ std::expected<void, StarException> CharCreationPane::init(
       return changed();
     });
   }
-  guiReader.registerCallback("toggleClothing", [this](Widget*) { return changed(); });
-  guiReader.registerCallback("randomName", [this](Widget*) { return randomizeName(); });
-  guiReader.registerCallback("randomize", [this](Widget*) { return randomize(); });
-  guiReader.registerCallback("name", [this](Widget* object) { return nameBoxCallback(object); });
-  guiReader.registerCallback("species", [this](Widget* widget) -> std::expected<void, StarException> {
-    auto button = convert<ButtonWidget>(widget);
+  guiReader.registerCallback("toggleClothing", [this](Widget&) { return changed(); });
+  guiReader.registerCallback("randomName", [this](Widget&) { return randomizeName(); });
+  guiReader.registerCallback("randomize", [this](Widget&) { return randomize(); });
+  guiReader.registerCallback("name", [this](Widget& object) { return nameBoxCallback(object); });
+  guiReader.registerCallback("species", [this](Widget& widget) -> std::expected<void, StarException> {
+    auto button = rconvert<ButtonWidget>(widget);
     if (!button)
       return std::unexpected(std::move(button.error()));
-    std::size_t choice = (*button)->buttonGroupId();
+    std::size_t choice = button->get().buttonGroupId();
     if (choice < m_speciesList.size() && choice != m_speciesChoice) {
       m_speciesChoice = choice;
       if (auto result = randomize(); !result)
@@ -293,28 +293,28 @@ std::expected<void, StarException> CharCreationPane::init(
     }
     return {};
   });
-  guiReader.registerCallback("gender", [this](Widget* widget) -> std::expected<void, StarException> {
-    auto button = convert<ButtonWidget>(widget);
+  guiReader.registerCallback("gender", [this](Widget& widget) -> std::expected<void, StarException> {
+    auto button = rconvert<ButtonWidget>(widget);
     if (!button)
       return std::unexpected(std::move(button.error()));
-    m_genderChoice = (*button)->buttonGroupId();
+    m_genderChoice = button->get().buttonGroupId();
     return changed();
   });
-  guiReader.registerCallback("mode", [this](Widget* widget) -> std::expected<void, StarException> {
-    auto button = convert<ButtonWidget>(widget);
+  guiReader.registerCallback("mode", [this](Widget& widget) -> std::expected<void, StarException> {
+    auto button = rconvert<ButtonWidget>(widget);
     if (!button)
       return std::unexpected(std::move(button.error()));
-    m_modeChoice = (*button)->buttonGroupId();
+    m_modeChoice = button->get().buttonGroupId();
     return changed();
   });
   auto layout = (*assets)->json("/interface/windowconfig/charcreation.config:paneLayout");
   if (!layout)
     return std::unexpected(std::move(layout.error()));
-  if (auto result = guiReader.construct(*layout, this); !result)
+  if (auto result = guiReader.construct(*layout, *this); !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = createPlayer(); !result)
     return std::unexpected(std::move(result.error()));
-  RandomSource random(context()->root().random().randu64());
+  RandomSource random(context().root().random().randu64());
   m_speciesChoice = random.randu32() % m_speciesList.size();
   m_genderChoice = random.randu32();
   m_modeChoice = 1;
@@ -324,7 +324,7 @@ std::expected<void, StarException> CharCreationPane::init(
 }
 
 std::expected<void, StarException> CharCreationPane::createPlayer() {
-  auto factory = context()->root().playerFactory();
+  auto factory = context().root().playerFactory();
   if (!factory)
     return std::unexpected(std::move(factory.error()));
   auto player = (*factory)->create();
@@ -337,11 +337,11 @@ std::expected<void, StarException> CharCreationPane::createPlayer() {
   if (*portrait)
     return (*portrait)->setEntity(m_previewPlayer);
   auto error = CharCreationException("The charPreview portrait has the wrong type.");
-  return context()->root().logger().error("Character Preview portrait was not found in the json specification. {}", outputException(ExceptionDiagnostic(error), false));
+  return context().root().logger().error("Character Preview portrait was not found in the json specification. {}", outputException(ExceptionDiagnostic(error), false));
 }
 
 std::expected<void, StarException> CharCreationPane::randomize() {
-  RandomSource random(context()->root().random().randu64());
+  RandomSource random(context().root().random().randu64());
   m_bodyColor = random.randu32();
   m_hairChoice = random.randu32();
   m_alty = random.randu32();
@@ -365,7 +365,7 @@ std::expected<void, StarException> CharCreationPane::tick(float dt) {
 std::expected<bool, StarException> CharCreationPane::sendEvent(InputEvent const& event) {
   if (active() && m_previewPlayer) {
     if (std::holds_alternative<KeyDownEvent>(event)) {
-      auto actions = context()->actions(event);
+      auto actions = context().actions(event);
       if (actions.contains(InterfaceAction::EmoteBlabbering))
         m_previewPlayer->addEmote(HumanoidEmote::Blabbering);
       if (actions.contains(InterfaceAction::EmoteShouting))
@@ -398,7 +398,7 @@ std::expected<bool, StarException> CharCreationPane::sendEvent(InputEvent const&
 }
 
 std::expected<void, StarException> CharCreationPane::randomizeName() {
-  auto database = context()->root().speciesDatabase();
+  auto database = context().root().speciesDatabase();
   if (!database)
     return std::unexpected(std::move(database.error()));
   auto species = (*database)->species(m_speciesList[m_speciesChoice]);
@@ -410,12 +410,12 @@ std::expected<void, StarException> CharCreationPane::randomizeName() {
   auto genderOption = (*species)->options().genderOptions.wrap(m_genderChoice);
   if (!genderOption)
     return std::unexpected(std::move(genderOption.error()));
-  auto generator = context()->root().nameGenerator();
+  auto generator = context().root().nameGenerator();
   if (!generator)
     return std::unexpected(std::move(generator.error()));
   int limiter = 100;
   while (true) {
-    auto name = (*generator)->generateName((*species)->nameGen((*genderOption)->gender));
+    auto name = (*generator)->generateName((*species)->nameGen(genderOption->get().gender));
     if (!name)
       return std::unexpected(std::move(name.error()));
     auto accepted = (*textBox)->setText(*name);
@@ -429,7 +429,7 @@ std::expected<void, StarException> CharCreationPane::randomizeName() {
 }
 
 std::expected<void, StarException> CharCreationPane::changed() {
-  auto& root = context()->root();
+  auto& root = context().root();
   auto setRequiredLabel = [this](String const& name, String const& text) -> std::expected<void, StarException> {
     auto label = requireChild<LabelWidget>(name);
     if (!label)
@@ -452,28 +452,28 @@ std::expected<void, StarException> CharCreationPane::changed() {
   int genderIdx = pmod<std::int64_t>(m_genderChoice, species.genderOptions.size());
   auto const& labels = (*speciesDefinition)->charGenTextLabels();
   for (auto const& [name, index] : {
-      std::pair{"labelMainSkinColor", 0}, std::pair{"labelHairStyle", 1},
-      std::pair{"labelShirt", 2}, std::pair{"labelPants", 3}, std::pair{"labelHeady", 5},
-      std::pair{"labelShirtColor", 6}, std::pair{"labelPantsColor", 7},
-      std::pair{"labelPortrait", 8}, std::pair{"labelPersonality", 9}}) {
+      std::pair{std::string_view("labelMainSkinColor"), 0}, std::pair{std::string_view("labelHairStyle"), 1},
+      std::pair{std::string_view("labelShirt"), 2}, std::pair{std::string_view("labelPants"), 3}, std::pair{std::string_view("labelHeady"), 5},
+      std::pair{std::string_view("labelShirtColor"), 6}, std::pair{std::string_view("labelPantsColor"), 7},
+      std::pair{std::string_view("labelPortrait"), 8}, std::pair{std::string_view("labelPersonality"), 9}}) {
     auto label = labels.at(index);
     if (!label)
       return std::unexpected(std::move(label.error()));
-    if (auto result = setRequiredLabel(name, **label); !result)
+    if (auto result = setRequiredLabel(name, label->get()); !result)
       return std::unexpected(std::move(result.error()));
   }
   auto altyLabel = labels.at(4);
   if (!altyLabel)
     return std::unexpected(std::move(altyLabel.error()));
-  if (!(**altyLabel).empty()) {
-    if (auto result = setRequiredLabel("labelAlty", **altyLabel); !result)
+  if (!altyLabel->get().empty()) {
+    if (auto result = setRequiredLabel("labelAlty", altyLabel->get()); !result)
       return std::unexpected(std::move(result.error()));
   }
-  for (char const* name : {"labelAlty", "alty"}) {
+  for (std::string_view name : {std::string_view("labelAlty"), std::string_view("alty")}) {
     auto child = requireChild(name);
     if (!child)
       return std::unexpected(std::move(child.error()));
-    if (auto result = (*child)->setVisibility(!(**altyLabel).empty()); !result)
+    if (auto result = (*child)->setVisibility(!altyLabel->get().empty()); !result)
       return std::unexpected(std::move(result.error()));
   }
   auto speciesButton = fetchChild<ButtonWidget>(strf("species.{}", m_speciesChoice));
@@ -516,7 +516,7 @@ std::expected<void, StarException> CharCreationPane::changed() {
         auto option = definition->options().genderOptions.at(genderIdx);
         if (!option)
           return std::unexpected(std::move(option.error()));
-        (*button)->setOverlayImage((*option)->characterImage);
+        (*button)->setOverlayImage(option->get().characterImage);
       }
     }
   }
@@ -564,44 +564,44 @@ std::expected<void, StarException> CharCreationPane::changed() {
   return m_previewPlayer->finalizeCreation();
 }
 
-std::expected<void, StarException> CharCreationPane::nameBoxCallback(Widget* object) {
-  if (!as<TextBoxWidget>(object))
+std::expected<void, StarException> CharCreationPane::nameBoxCallback(Widget& object) {
+  if (!asRef<TextBoxWidget>(object))
     return std::unexpected(GuiException("Invalid object type, expected TextBoxWidget."));
   return changed();
 }
 
 std::expected<std::shared_ptr<Pane>, StarException> CharCreationPane::createTooltip(Vec2I const& screenPosition) {
   if (auto child = getChildAt(screenPosition)) {
-    if (child->parent()->name() == "species") {
+    if (auto parent = child->parent(); parent && parent->get().name() == "species") {
       auto button = convert<ButtonWidget>(child);
       if (!button)
         return std::unexpected(std::move(button.error()));
       std::size_t speciesIndex = (*button)->buttonGroupId();
       if (speciesIndex >= m_speciesList.size())
         return std::shared_ptr<Pane>{};
-      auto database = context()->root().speciesDatabase();
+      auto database = context().root().speciesDatabase();
       if (!database)
         return std::unexpected(std::move(database.error()));
       auto definition = (*database)->species(m_speciesList[speciesIndex]);
       if (!definition)
         return std::unexpected(std::move(definition.error()));
-      auto tooltip = Pane::create(*context());
+      auto tooltip = Pane::create(context());
       if (!tooltip)
         return std::unexpected(std::move(tooltip.error()));
       (*tooltip)->removeAllChildren();
-      GuiReader reader(*context());
-      auto assets = context()->root().assets();
+      GuiReader reader(context());
+      auto assets = context().root().assets();
       if (!assets)
         return std::unexpected(std::move(assets.error()));
       auto config = (*assets)->json("/interface/tooltips/species.tooltip");
       if (!config)
         return std::unexpected(std::move(config.error()));
-      if (auto result = reader.construct(*config, tooltip->get()); !result)
+      if (auto result = reader.construct(*config, **tooltip); !result)
         return std::unexpected(std::move(result.error()));
       auto genderOption = (*definition)->options().genderOptions.wrap(m_genderChoice);
       if (!genderOption)
         return std::unexpected(std::move(genderOption.error()));
-      auto icon = ImageWidget::create(*context(), (*genderOption)->characterImage);
+      auto icon = ImageWidget::create(context(), genderOption->get().characterImage);
       if (!icon)
         return std::unexpected(std::move(icon.error()));
       if (auto result = (*tooltip)->setTitle(*icon, (*definition)->tooltip().title, (*definition)->tooltip().subTitle); !result)

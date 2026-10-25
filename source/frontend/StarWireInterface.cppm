@@ -77,6 +77,8 @@ private:
 
   std::shared_ptr<WorldClient> m_worldClient;
   std::shared_ptr<Player> m_player;
+  // Panes can escape their manager and be displayed again after dismissal.
+  // Retain the painter until a terminal detach protocol prevents further rendering.
   std::shared_ptr<WorldPainter> m_worldPainter;
   Vec2I m_mousePos;
   bool m_connecting;

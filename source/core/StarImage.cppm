@@ -23,7 +23,7 @@ std::uint8_t bitsPerPixel(PixelFormat pf);
 std::uint8_t bytesPerPixel(PixelFormat pf);
 
 struct ImageExceptionTag {
-  static constexpr char const* name() { return "ImageException"; }
+  static constexpr std::string_view name() { return "ImageException"; }
 };
 using ImageException = StarError<ImageExceptionTag, StarException>;
 
@@ -63,9 +63,9 @@ public:
 
   PixelFormat pixelFormat() const;
 
-  // If the image is empty, the data ptr will be null
-  std::uint8_t const* data() const;
-  std::uint8_t* data();
+  // Borrows the tightly packed image storage.
+  std::span<std::uint8_t const> data() const;
+  std::span<std::uint8_t> data();
 
   // Reallocate the image with the given width, height, and pixel format.  The
   // contents of the image are always zeroed after a call to reset.
@@ -209,12 +209,12 @@ inline PixelFormat Image::pixelFormat() const {
   return m_pixelFormat;
 }
 
-inline const std::uint8_t* Image::data() const {
-  return m_data;
+inline std::span<std::uint8_t const> Image::data() const {
+  return {m_data, std::size_t(m_width) * m_height * bytesPerPixel()};
 }
 
-inline std::uint8_t* Image::data() {
-  return m_data;
+inline std::span<std::uint8_t> Image::data() {
+  return {m_data, std::size_t(m_width) * m_height * bytesPerPixel()};
 }
 
 inline std::expected<void, StarException> Image::set(unsigned x, unsigned y, Vec4B const& c) {
@@ -367,7 +367,7 @@ struct ImageView {
   ImageView(Image const& image);
 
   Vec2U size{0, 0};
-  std::uint8_t const* data = nullptr;
+  std::span<std::uint8_t const> data;
   PixelFormat format = PixelFormat::RGB24;
 };
 

@@ -76,7 +76,7 @@ public:
   [[nodiscard]] std::expected<Json, StarException> diskStore();
   [[nodiscard]] std::expected<void, StarException> diskLoad(Json const& store);
 
-  [[nodiscard]] std::expected<void, StarException> init(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController);
+  [[nodiscard]] std::expected<void, StarException> init(Entity& parentEntity, ActorMovementController& movementController, StatusController& statusController);
   [[nodiscard]] std::expected<void, StarException> uninit();
 
   [[nodiscard]] std::expected<void, StarException> setLoadedTech(StringList const& techModules, bool forceLoad = false);
@@ -130,7 +130,7 @@ private:
     TechAnimator(Root& root);
     [[nodiscard]] static std::expected<std::shared_ptr<TechAnimator>, StarException> create(Root& root, std::optional<String> animationConfig = {});
 
-    void initNetVersion(NetElementVersion const* version = nullptr) override;
+    void initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version = std::nullopt) override;
 
     [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
     [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -186,9 +186,9 @@ private:
   LinkedList<TechModule> m_techModules;
   TechAnimatorGroup m_techAnimators;
 
-  Entity* m_parentEntity;
-  ActorMovementController* m_movementController;
-  StatusController* m_statusController;
+  std::optional<std::reference_wrapper<Entity>> m_parentEntity;
+  std::optional<std::reference_wrapper<ActorMovementController>> m_movementController;
+  std::optional<std::reference_wrapper<StatusController>> m_statusController;
 
   bool m_moveRun;
   bool m_movePrimaryFire;

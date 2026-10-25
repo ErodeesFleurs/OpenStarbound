@@ -139,76 +139,76 @@ import star.root;
 module star.universe_server_lua_bindings;
 
 namespace Star::LuaBindings::UniverseServerCallbacks {
-  [[nodiscard]] std::expected<std::optional<String>, StarException> uuidForClient(UniverseServer* universe, ConnectionId arg1);
-  [[nodiscard]] std::expected<List<ConnectionId>, StarException> clientIds(UniverseServer* universe);
-  [[nodiscard]] std::expected<std::size_t, StarException> numberOfClients(UniverseServer* universe);
-  [[nodiscard]] std::expected<bool, StarException> isConnectedClient(UniverseServer* universe, ConnectionId arg1);
-  [[nodiscard]] std::expected<String, StarException> clientNick(UniverseServer* universe, ConnectionId arg1);
-  [[nodiscard]] std::expected<std::optional<ConnectionId>, StarException> findNick(UniverseServer* universe, String const& arg1);
-  [[nodiscard]] std::expected<String, StarException> clientAccount(UniverseServer* universe, ConnectionId arg1);
-  [[nodiscard]] std::expected<void, StarException> adminBroadcast(UniverseServer* universe, String const& arg1);
-  [[nodiscard]] std::expected<void, StarException> adminWhisper(UniverseServer* universe, ConnectionId arg1, String const& arg2);
-  [[nodiscard]] std::expected<bool, StarException> isAdmin(UniverseServer* universe, ConnectionId arg1);
-  [[nodiscard]] std::expected<void, StarException> setAdmin(UniverseServer* universe, ConnectionId arg1, std::optional<bool> arg2);
-  [[nodiscard]] std::expected<bool, StarException> isPvp(UniverseServer* universe, ConnectionId arg1);
-  [[nodiscard]] std::expected<void, StarException> setPvp(UniverseServer* universe, ConnectionId arg1, std::optional<bool> arg2);
-  [[nodiscard]] std::expected<bool, StarException> isWorldActive(UniverseServer* universe, String const& worldId);
-  [[nodiscard]] std::expected<StringList, StarException> activeWorlds(UniverseServer* universe);
-  [[nodiscard]] std::expected<RpcPromise<Json>, StarException> sendWorldMessage(UniverseServer* universe, String const& worldId, String const& message, LuaVariadic<Json> args);
-  [[nodiscard]] std::expected<bool, StarException> sendPacket(UniverseServer* universe, ConnectionId clientId, String const& packetTypeName, Json const& args);
-  [[nodiscard]] std::expected<String, StarException> clientWorld(UniverseServer* universe, ConnectionId clientId);
-  [[nodiscard]] std::expected<void, StarException> disconnectClient(UniverseServer* universe, ConnectionId clientId, std::optional<String> const& reason);
-  [[nodiscard]] std::expected<void, StarException> banClient(UniverseServer* universe, ConnectionId clientId, std::optional<String> const& reason, bool banIp, bool banUuid, std::optional<int> timeout);
+  [[nodiscard]] std::expected<std::optional<String>, StarException> uuidForClient(UniverseServer& universe, ConnectionId arg1);
+  [[nodiscard]] std::expected<List<ConnectionId>, StarException> clientIds(UniverseServer& universe);
+  [[nodiscard]] std::expected<std::size_t, StarException> numberOfClients(UniverseServer& universe);
+  [[nodiscard]] std::expected<bool, StarException> isConnectedClient(UniverseServer& universe, ConnectionId arg1);
+  [[nodiscard]] std::expected<String, StarException> clientNick(UniverseServer& universe, ConnectionId arg1);
+  [[nodiscard]] std::expected<std::optional<ConnectionId>, StarException> findNick(UniverseServer& universe, String const& arg1);
+  [[nodiscard]] std::expected<String, StarException> clientAccount(UniverseServer& universe, ConnectionId arg1);
+  [[nodiscard]] std::expected<void, StarException> adminBroadcast(UniverseServer& universe, String const& arg1);
+  [[nodiscard]] std::expected<void, StarException> adminWhisper(UniverseServer& universe, ConnectionId arg1, String const& arg2);
+  [[nodiscard]] std::expected<bool, StarException> isAdmin(UniverseServer& universe, ConnectionId arg1);
+  [[nodiscard]] std::expected<void, StarException> setAdmin(UniverseServer& universe, ConnectionId arg1, std::optional<bool> arg2);
+  [[nodiscard]] std::expected<bool, StarException> isPvp(UniverseServer& universe, ConnectionId arg1);
+  [[nodiscard]] std::expected<void, StarException> setPvp(UniverseServer& universe, ConnectionId arg1, std::optional<bool> arg2);
+  [[nodiscard]] std::expected<bool, StarException> isWorldActive(UniverseServer& universe, String const& worldId);
+  [[nodiscard]] std::expected<StringList, StarException> activeWorlds(UniverseServer& universe);
+  [[nodiscard]] std::expected<RpcPromise<Json>, StarException> sendWorldMessage(UniverseServer& universe, String const& worldId, String const& message, LuaVariadic<Json> args);
+  [[nodiscard]] std::expected<bool, StarException> sendPacket(UniverseServer& universe, ConnectionId clientId, String const& packetTypeName, Json const& args);
+  [[nodiscard]] std::expected<String, StarException> clientWorld(UniverseServer& universe, ConnectionId clientId);
+  [[nodiscard]] std::expected<void, StarException> disconnectClient(UniverseServer& universe, ConnectionId clientId, std::optional<String> const& reason);
+  [[nodiscard]] std::expected<void, StarException> banClient(UniverseServer& universe, ConnectionId clientId, std::optional<String> const& reason, bool banIp, bool banUuid, std::optional<int> timeout);
 }
 
 namespace Star {
 
-std::expected<LuaCallbacks, StarException> LuaBindings::makeUniverseServerCallbacks(Root& root, UniverseServer* universe) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeUniverseServerCallbacks(Root& root, UniverseServer& universe) {
   LuaCallbacks callbacks;
 
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<std::optional<String>, StarException>, ConnectionId>("uuidForClient", std::bind(UniverseServerCallbacks::uuidForClient, universe, std::placeholders::_1)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<std::optional<String>, StarException>, ConnectionId>("uuidForClient", std::bind(UniverseServerCallbacks::uuidForClient, std::ref(universe), std::placeholders::_1)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<List<ConnectionId>, StarException>>("clientIds", std::bind(UniverseServerCallbacks::clientIds, universe)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<List<ConnectionId>, StarException>>("clientIds", std::bind(UniverseServerCallbacks::clientIds, std::ref(universe))); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<std::size_t, StarException>>("numberOfClients", std::bind(UniverseServerCallbacks::numberOfClients, universe)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<std::size_t, StarException>>("numberOfClients", std::bind(UniverseServerCallbacks::numberOfClients, std::ref(universe))); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, ConnectionId>("isConnectedClient", std::bind(UniverseServerCallbacks::isConnectedClient, universe, std::placeholders::_1)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, ConnectionId>("isConnectedClient", std::bind(UniverseServerCallbacks::isConnectedClient, std::ref(universe), std::placeholders::_1)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<String, StarException>, ConnectionId>("clientNick", std::bind(UniverseServerCallbacks::clientNick, universe, std::placeholders::_1)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<String, StarException>, ConnectionId>("clientNick", std::bind(UniverseServerCallbacks::clientNick, std::ref(universe), std::placeholders::_1)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<std::optional<ConnectionId>, StarException>, String>("findNick", std::bind(UniverseServerCallbacks::findNick, universe, std::placeholders::_1)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<std::optional<ConnectionId>, StarException>, String>("findNick", std::bind(UniverseServerCallbacks::findNick, std::ref(universe), std::placeholders::_1)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<String, StarException>, ConnectionId>("clientAccount", std::bind(UniverseServerCallbacks::clientAccount, universe, std::placeholders::_1)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<String, StarException>, ConnectionId>("clientAccount", std::bind(UniverseServerCallbacks::clientAccount, std::ref(universe), std::placeholders::_1)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, String>("adminBroadcast", std::bind(UniverseServerCallbacks::adminBroadcast, universe, std::placeholders::_1)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, String>("adminBroadcast", std::bind(UniverseServerCallbacks::adminBroadcast, std::ref(universe), std::placeholders::_1)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, ConnectionId, String>("adminWhisper", std::bind(UniverseServerCallbacks::adminWhisper, universe, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, ConnectionId, String>("adminWhisper", std::bind(UniverseServerCallbacks::adminWhisper, std::ref(universe), std::placeholders::_1, std::placeholders::_2)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, ConnectionId>("isAdmin", std::bind(UniverseServerCallbacks::isAdmin, universe, std::placeholders::_1)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, ConnectionId>("isAdmin", std::bind(UniverseServerCallbacks::isAdmin, std::ref(universe), std::placeholders::_1)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, ConnectionId>("isPvp", std::bind(UniverseServerCallbacks::isPvp, universe, std::placeholders::_1)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, ConnectionId>("isPvp", std::bind(UniverseServerCallbacks::isPvp, std::ref(universe), std::placeholders::_1)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, ConnectionId, bool>("setPvp", std::bind(UniverseServerCallbacks::setPvp, universe, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, ConnectionId, bool>("setPvp", std::bind(UniverseServerCallbacks::setPvp, std::ref(universe), std::placeholders::_1, std::placeholders::_2)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, String>("isWorldActive", std::bind(UniverseServerCallbacks::isWorldActive, universe, std::placeholders::_1)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, String>("isWorldActive", std::bind(UniverseServerCallbacks::isWorldActive, std::ref(universe), std::placeholders::_1)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<StringList, StarException>>("activeWorlds", std::bind(UniverseServerCallbacks::activeWorlds, universe)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<StringList, StarException>>("activeWorlds", std::bind(UniverseServerCallbacks::activeWorlds, std::ref(universe))); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<RpcPromise<Json>, StarException>, String, String, LuaVariadic<Json>>("sendWorldMessage", std::bind(UniverseServerCallbacks::sendWorldMessage, universe, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<RpcPromise<Json>, StarException>, String, String, LuaVariadic<Json>>("sendWorldMessage", std::bind(UniverseServerCallbacks::sendWorldMessage, std::ref(universe), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, ConnectionId, String, Json>("sendPacket", std::bind(UniverseServerCallbacks::sendPacket, universe, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, ConnectionId, String, Json>("sendPacket", std::bind(UniverseServerCallbacks::sendPacket, std::ref(universe), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<String, StarException>, ConnectionId>("clientWorld", std::bind(UniverseServerCallbacks::clientWorld, universe, std::placeholders::_1)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<String, StarException>, ConnectionId>("clientWorld", std::bind(UniverseServerCallbacks::clientWorld, std::ref(universe), std::placeholders::_1)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, ConnectionId, std::optional<String>>("disconnectClient", std::bind(UniverseServerCallbacks::disconnectClient, universe, std::placeholders::_1, std::placeholders::_2)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, ConnectionId, std::optional<String>>("disconnectClient", std::bind(UniverseServerCallbacks::disconnectClient, std::ref(universe), std::placeholders::_1, std::placeholders::_2)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, ConnectionId, std::optional<String>, bool, bool, std::optional<int>>("banClient", std::bind(UniverseServerCallbacks::banClient, universe, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)); !registration)
+  if (auto registration = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, ConnectionId, std::optional<String>, bool, bool, std::optional<int>>("banClient", std::bind(UniverseServerCallbacks::banClient, std::ref(universe), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallback("warpClient", [universe](ConnectionId clientId, String action, std::optional<bool> deploy)  -> std::expected<void, StarException> {
+  if (auto registration = callbacks.registerCallback("warpClient", [&universe](ConnectionId clientId, String action, std::optional<bool> deploy)  -> std::expected<void, StarException> {
     auto warp = parseWarpAction(action);
     if (!warp)
       return std::unexpected(std::move(warp.error()));
-    return universe->clientWarpPlayer(clientId, std::move(*warp), deploy.value_or(false));
+    return universe.clientWarpPlayer(clientId, std::move(*warp), deploy.value_or(false));
   }); !registration)
       return std::unexpected(std::move(registration.error()));
 
@@ -264,19 +264,19 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeUniverseServerCallba
       return std::unexpected(std::move(registration.error()));
 
   
-  if (auto registration = callbacks.registerCallback("clientOpenProtocolVersion", [universe](ConnectionId clientId) {
-    return universe->clientConnectionVersion(clientId);
+  if (auto registration = callbacks.registerCallback("clientOpenProtocolVersion", [&universe](ConnectionId clientId) {
+    return universe.clientConnectionVersion(clientId);
   }); !registration)
       return std::unexpected(std::move(registration.error()));
   
-  if (auto registration = callbacks.registerCallback("createCustomWorld", [&root, universe](String name, Json templateData)  -> std::expected<void, StarException> {
+  if (auto registration = callbacks.registerCallback("createCustomWorld", [&root, &universe](String name, Json templateData)  -> std::expected<void, StarException> {
     auto worldTemplate = WorldTemplate::create(root, templateData);
     if (!worldTemplate)
       return std::unexpected(std::move(worldTemplate.error()));
-    return universe->createCustomWorld(CustomWorldId(name), std::move(*worldTemplate));
+    return universe.createCustomWorld(CustomWorldId(name), std::move(*worldTemplate));
   }); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallback("createCustomWorldFromConfig", [&root, universe](String name, Json worldConfig)  -> std::expected<void, StarException> {
+  if (auto registration = callbacks.registerCallback("createCustomWorldFromConfig", [&root, &universe](String name, Json worldConfig)  -> std::expected<void, StarException> {
     std::uint64_t worldSeed;
     auto hasSeed = worldConfig.contains("seed");
     if (!hasSeed)
@@ -333,7 +333,7 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeUniverseServerCallba
       auto rule = BeamUpRuleNames->getLeft(**beamUpRule);
       if (!rule)
         return std::unexpected(std::move(rule.error()));
-      (*worldParameters)->beamUpRule = **rule;
+      (*worldParameters)->beamUpRule = rule->get();
     }
     auto disableDeathDrops = worldConfig.getBool("disableDeathDrops", false);
     if (!disableDeathDrops)
@@ -348,16 +348,16 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeUniverseServerCallba
     auto worldTemplate = WorldTemplate::create(root, *worldParameters, *skyParameters, worldSeed);
     if (!worldTemplate)
       return std::unexpected(std::move(worldTemplate.error()));
-    return universe->createCustomWorld(CustomWorldId(name), std::move(*worldTemplate));
+    return universe.createCustomWorld(CustomWorldId(name), std::move(*worldTemplate));
   }); !registration)
       return std::unexpected(std::move(registration.error()));
   
-  if (auto registration = callbacks.registerCallback("sendOwnUniverseMessage", [universe](String const& message, LuaVariadic<Json> args) -> std::expected<RpcPromise<Json>, StarException> {
-    return universe->sendUniverseMessage(ServerConnectionId,message,JsonArray::from(std::move(args)));
+  if (auto registration = callbacks.registerCallback("sendOwnUniverseMessage", [&universe](String const& message, LuaVariadic<Json> args) -> std::expected<RpcPromise<Json>, StarException> {
+    return universe.sendUniverseMessage(ServerConnectionId,message,JsonArray::from(std::move(args)));
   }); !registration)
       return std::unexpected(std::move(registration.error()));
-  if (auto registration = callbacks.registerCallback("sendUniverseMessage", [universe](ConnectionId const& connection, String const& message, LuaVariadic<Json> args) -> std::expected<RpcPromise<Json>, StarException> {
-    return universe->sendUniverseMessage(connection,message,JsonArray::from(std::move(args)));
+  if (auto registration = callbacks.registerCallback("sendUniverseMessage", [&universe](ConnectionId const& connection, String const& message, LuaVariadic<Json> args) -> std::expected<RpcPromise<Json>, StarException> {
+    return universe.sendUniverseMessage(connection,message,JsonArray::from(std::move(args)));
   }); !registration)
       return std::unexpected(std::move(registration.error()));
   
@@ -372,58 +372,58 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeUniverseServerCallba
 // Gets a list of client ids
 //
 // @return A list of numerical client IDs.
-std::expected<std::optional<String>, StarException> LuaBindings::UniverseServerCallbacks::uuidForClient(UniverseServer* universe, ConnectionId arg1) {
-  return universe->uuidForClient(arg1).transform([](Uuid const& str) { return str.hex(); });
+std::expected<std::optional<String>, StarException> LuaBindings::UniverseServerCallbacks::uuidForClient(UniverseServer& universe, ConnectionId arg1) {
+  return universe.uuidForClient(arg1).transform([](Uuid const& str) { return str.hex(); });
 }
 
 // Gets a list of client ids
 //
 // @return A list of numerical client IDs.
-std::expected<List<ConnectionId>, StarException> LuaBindings::UniverseServerCallbacks::clientIds(UniverseServer* universe) {
-  return universe->clientIds();
+std::expected<List<ConnectionId>, StarException> LuaBindings::UniverseServerCallbacks::clientIds(UniverseServer& universe) {
+  return universe.clientIds();
 }
 
 // Gets the number of logged in clients
 //
 // @return An integer containing the number of logged in clients
-std::expected<std::size_t, StarException> LuaBindings::UniverseServerCallbacks::numberOfClients(UniverseServer* universe) {
-  return universe->numberOfClients();
+std::expected<std::size_t, StarException> LuaBindings::UniverseServerCallbacks::numberOfClients(UniverseServer& universe) {
+  return universe.numberOfClients();
 }
 
 // Returns whether or not the provided client ID is currently connected
 //
 // @param clientId the client ID in question
 // @return A bool that is true if the client is connected and false otherwise
-std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::isConnectedClient(UniverseServer* universe, ConnectionId arg1) {
-  return universe->isConnectedClient(arg1);
+std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::isConnectedClient(UniverseServer& universe, ConnectionId arg1) {
+  return universe.isConnectedClient(arg1);
 }
 
 // Returns the nickname for the given client ID
 //
 // @param clientId the client ID in question
 // @return A string containing the nickname of the given client
-std::expected<String, StarException> LuaBindings::UniverseServerCallbacks::clientNick(UniverseServer* universe, ConnectionId arg1) {
-  return universe->clientNick(arg1);
+std::expected<String, StarException> LuaBindings::UniverseServerCallbacks::clientNick(UniverseServer& universe, ConnectionId arg1) {
+  return universe.clientNick(arg1);
 }
 
 // Returns the client ID for the given nick
 //
 // @param nick the nickname of the client to search for
 // @return An integer containing the clientID of the nick in question
-std::expected<std::optional<ConnectionId>, StarException> LuaBindings::UniverseServerCallbacks::findNick(UniverseServer* universe, String const& arg1) {
-  return universe->findNick(arg1);
+std::expected<std::optional<ConnectionId>, StarException> LuaBindings::UniverseServerCallbacks::findNick(UniverseServer& universe, String const& arg1) {
+  return universe.findNick(arg1);
 }
 
 // Sends a message to all logged in clients
 //
 // @param message the message to broadcast
 // @return nil
-std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::adminBroadcast(UniverseServer* universe, String const& arg1) {
-  return universe->adminBroadcast(arg1);
+std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::adminBroadcast(UniverseServer& universe, String const& arg1) {
+  return universe.adminBroadcast(arg1);
 }
 
-std::expected<String, StarException> LuaBindings::UniverseServerCallbacks::clientAccount(UniverseServer* universe, ConnectionId arg1) {
-  return universe->clientAccount(arg1);
+std::expected<String, StarException> LuaBindings::UniverseServerCallbacks::clientAccount(UniverseServer& universe, ConnectionId arg1) {
+  return universe.clientAccount(arg1);
 }
 
 
@@ -432,18 +432,18 @@ std::expected<String, StarException> LuaBindings::UniverseServerCallbacks::clien
 // @param clientId the client id to whisper
 // @param message the message to whisper
 // @return nil
-std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::adminWhisper(UniverseServer* universe, ConnectionId arg1, String const& arg2) {
+std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::adminWhisper(UniverseServer& universe, ConnectionId arg1, String const& arg2) {
   ConnectionId client = arg1;
   String message = arg2;
-  return universe->adminWhisper(client, message);
+  return universe.adminWhisper(client, message);
 }
 
 // Returns whether or not a specific client is flagged as an admin
 //
 // @param clientId the client id to check
 // @return a boolean containing true if the client is an admin, false otherwise
-std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::isAdmin(UniverseServer* universe, ConnectionId arg1) {
-  return universe->isAdmin(arg1);
+std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::isAdmin(UniverseServer& universe, ConnectionId arg1) {
+  return universe.isAdmin(arg1);
 }
 
 // Set (or unset) the admin status of a specific user
@@ -451,10 +451,10 @@ std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::isAdmin
 // @param clientId the client id to modify
 // @param setAdminTo set admin status to this bool, defaults to true
 // @return nil
-std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::setAdmin(UniverseServer* universe, ConnectionId arg1, std::optional<bool> arg2) {
+std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::setAdmin(UniverseServer& universe, ConnectionId arg1, std::optional<bool> arg2) {
   ConnectionId client = arg1;
   bool setAdminTo = arg2.value_or(true);
-  return universe->setAdmin(client, setAdminTo);
+  return universe.setAdmin(client, setAdminTo);
 }
 
 // Returns whether or not a specific client is flagged as pvp
@@ -462,8 +462,8 @@ std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::setAdmi
 // @param clientId the client id to check
 // @return a boolean containing true if the client is flagged as pvp, false
 // otherwise
-std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::isPvp(UniverseServer* universe, ConnectionId arg1) {
-  return universe->isPvp(arg1);
+std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::isPvp(UniverseServer& universe, ConnectionId arg1) {
+  return universe.isPvp(arg1);
 }
 
 // Set (or unset) the pvp status of a specific user
@@ -471,21 +471,21 @@ std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::isPvp(U
 // @param clientId the client id to check
 // @param setPvp set pvp status to this bool, defaults to true
 // @return nil
-std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::setPvp(UniverseServer* universe, ConnectionId arg1, std::optional<bool> arg2) {
+std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::setPvp(UniverseServer& universe, ConnectionId arg1, std::optional<bool> arg2) {
   ConnectionId client = arg1;
   bool setPvpTo = arg2.value_or(true);
-  return universe->setPvp(client, setPvpTo);
+  return universe.setPvp(client, setPvpTo);
 }
 
-std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::isWorldActive(UniverseServer* universe, String const& worldId) {
+std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::isWorldActive(UniverseServer& universe, String const& worldId) {
   auto id = parseWorldId(worldId);
   if (!id)
     return std::unexpected(std::move(id.error()));
-  return universe->isWorldActive(*id);
+  return universe.isWorldActive(*id);
 }
 
-std::expected<StringList, StarException> LuaBindings::UniverseServerCallbacks::activeWorlds(UniverseServer* universe) {
-  auto worlds = universe->activeWorlds();
+std::expected<StringList, StarException> LuaBindings::UniverseServerCallbacks::activeWorlds(UniverseServer& universe) {
+  auto worlds = universe.activeWorlds();
   if (!worlds)
     return std::unexpected(std::move(worlds.error()));
   StringList result;
@@ -498,38 +498,38 @@ std::expected<StringList, StarException> LuaBindings::UniverseServerCallbacks::a
   return result;
 }
 
-std::expected<RpcPromise<Json>, StarException> LuaBindings::UniverseServerCallbacks::sendWorldMessage(UniverseServer* universe, String const& worldId, String const& message, LuaVariadic<Json> args) {
+std::expected<RpcPromise<Json>, StarException> LuaBindings::UniverseServerCallbacks::sendWorldMessage(UniverseServer& universe, String const& worldId, String const& message, LuaVariadic<Json> args) {
   auto id = parseWorldId(worldId);
   if (!id)
     return std::unexpected(std::move(id.error()));
-  return universe->sendWorldMessage(*id, message, JsonArray::from(std::move(args)));
+  return universe.sendWorldMessage(*id, message, JsonArray::from(std::move(args)));
 }
 
-std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::sendPacket(UniverseServer* universe, ConnectionId clientId, String const& packetTypeName, Json const& args) {
+std::expected<bool, StarException> LuaBindings::UniverseServerCallbacks::sendPacket(UniverseServer& universe, ConnectionId clientId, String const& packetTypeName, Json const& args) {
   if (!PacketTypeNames)
     return std::unexpected(PacketTypeNames.error());
   auto packetType = PacketTypeNames->getLeft(packetTypeName);
   if (!packetType)
     return std::unexpected(std::move(packetType.error()));
-  auto packet = createPacket(universe->root().random(), **packetType, args);
+  auto packet = createPacket(universe.root().random(), packetType->get(), args);
   if (!packet)
     return std::unexpected(std::move(packet.error()));
-  return universe->sendPacket(clientId, std::move(*packet));
+  return universe.sendPacket(clientId, std::move(*packet));
 }
 
-std::expected<String, StarException> LuaBindings::UniverseServerCallbacks::clientWorld(UniverseServer* universe, ConnectionId clientId) {
-  auto world = universe->clientWorld(clientId);
+std::expected<String, StarException> LuaBindings::UniverseServerCallbacks::clientWorld(UniverseServer& universe, ConnectionId clientId) {
+  auto world = universe.clientWorld(clientId);
   if (!world)
     return std::unexpected(std::move(world.error()));
   return printWorldId(*world);
 }
 
-std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::disconnectClient(UniverseServer* universe, ConnectionId clientId, std::optional<String> const& reason) {
-  return universe->disconnectClient(clientId, reason.value_or(String{}));
+std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::disconnectClient(UniverseServer& universe, ConnectionId clientId, std::optional<String> const& reason) {
+  return universe.disconnectClient(clientId, reason.value_or(String{}));
 }
 
-std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::banClient(UniverseServer* universe, ConnectionId clientId, std::optional<String> const& reason, bool banIp, bool banUuid, std::optional<int> timeout) {
-  return universe->banUser(clientId, reason.value_or(String{}), std::make_pair(banIp, banUuid), timeout);
+std::expected<void, StarException> LuaBindings::UniverseServerCallbacks::banClient(UniverseServer& universe, ConnectionId clientId, std::optional<String> const& reason, bool banIp, bool banUuid, std::optional<int> timeout) {
+  return universe.banUser(clientId, reason.value_or(String{}), std::make_pair(banIp, banUuid), timeout);
 }
 
 }

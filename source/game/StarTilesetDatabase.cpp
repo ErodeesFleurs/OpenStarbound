@@ -71,7 +71,7 @@ namespace Tiled {
     if (!LayerNames) return std::unexpected(LayerNames.error());
     auto layer = LayerNames->getLeft(*value);
     if (!layer) return std::unexpected(std::move(layer.error()));
-    return **layer;
+    return layer->get();
   }
 
   [[nodiscard]] std::expected<std::optional<std::shared_ptr<Brush const>>, StarException> getClearBrush(bool value, Properties&) {
@@ -111,7 +111,7 @@ namespace Tiled {
       if (!DirectionNames) return std::unexpected(DirectionNames.error());
       auto parsed = DirectionNames->getLeft(**configured);
       if (!parsed) return std::unexpected(std::move(parsed.error()));
-      direction = **parsed;
+      direction = parsed->get();
     }
     auto flip = properties.contains("flipX");
     if (!flip) return std::unexpected(std::move(flip.error()));
@@ -290,7 +290,7 @@ namespace Tiled {
       if (!LayerNames) return std::unexpected(LayerNames.error());
       auto name = LayerNames->getRight(layer);
       if (!name) return std::unexpected(std::move(name.error()));
-      computed["layer"] = **name;
+      computed["layer"] = name->get();
     } else {
       auto configured = propertyLayer(properties);
       if (!configured) return std::unexpected(std::move(configured.error()));
@@ -367,7 +367,7 @@ namespace Tiled {
         if (!DungeonDirectionNames) return std::unexpected(DungeonDirectionNames.error());
         auto parsed = DungeonDirectionNames->getLeft(**direction);
         if (!parsed) return std::unexpected(std::move(parsed.error()));
-        configured.direction = **parsed;
+        configured.direction = parsed->get();
       }
       connector = std::move(configured);
     }
@@ -438,9 +438,9 @@ std::expected<std::shared_ptr<TilesetDatabase>, StarException> TilesetDatabase::
 }
 std::expected<std::shared_ptr<Tiled::Tileset const>, StarException> TilesetDatabase::get(String const& path) const {
   std::lock_guard locker(m_cacheMutex);
-  auto result = m_tilesetCache.get(path, [this](String const& path) { return readTileset(path); });
+  auto result = m_tilesetCache.get(path, [&database = *this](String const& path) { return database.readTileset(path); });
   if (!result) return std::unexpected(std::move(result.error()));
-  return **result;
+  return result->get();
 }
 std::expected<std::shared_ptr<Tiled::Tileset const>, StarException> TilesetDatabase::readTileset(String const& path) const {
   auto assets = m_root.assets();

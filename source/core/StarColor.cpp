@@ -35,7 +35,7 @@ Color const Color::Pink = Color::rgba(255, 162, 187, 255);
 Color const Color::Clear = Color::rgba(0, 0, 0, 0);
 
 [[nodiscard]] static std::expected<CaseInsensitiveStringMap<Color>, StarException> makeNamedColors() {
-  std::pair<char const*, Color> const entries[]{
+  std::pair<std::string_view, Color> const entries[]{
   {"red", Color::Red},
   {"orange", Color::Orange},
   {"yellow", Color::Yellow},
@@ -469,7 +469,7 @@ float Color::fromLinear(float in) {
 
 String Color::toHex() const {
   auto rgba = toRgba();
-  return hexEncode((char*)rgba.ptr(), rgba[3] == 255 ? 3 : 4);
+  return hexEncode({reinterpret_cast<char const*>(rgba.data()), rgba[3] == 255 ? std::size_t(3) : std::size_t(4)});
 }
 
 void Color::convertToLinear() {

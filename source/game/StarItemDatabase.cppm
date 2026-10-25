@@ -43,7 +43,7 @@ class Rebuilder;
 class LuaRoot;
 
 struct ItemDatabaseExceptionTag {
-  static constexpr char const* name() { return "ItemDatabaseException"; }
+  static constexpr std::string_view name() { return "ItemDatabaseException"; }
 };
 using ItemDatabaseException = StarError<ItemDatabaseExceptionTag, ItemException>;
 
@@ -190,7 +190,7 @@ public:
   HashSet<ItemRecipe> allRecipes(StringSet const& types) const;
 
   [[nodiscard]]
-  std::expected<std::shared_ptr<Item>, StarException> applyAugment(std::shared_ptr<Item> const item, AugmentItem* augment) const;
+  std::expected<std::shared_ptr<Item>, StarException> applyAugment(std::shared_ptr<Item> const item, AugmentItem& augment) const;
   [[nodiscard]]
   std::expected<bool, StarException> ageItem(std::shared_ptr<Item>& item, double aging) const;
 
@@ -218,7 +218,7 @@ private:
   std::expected<std::shared_ptr<Item>, StarException> tryCreateItem(ItemDescriptor const& descriptor, std::optional<float> level = {}, std::optional<std::uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
   [[nodiscard]]
-  std::expected<ItemData const*, StarException> itemData(String const& name) const;
+  std::expected<std::reference_wrapper<ItemData const>, StarException> itemData(String const& name) const;
   [[nodiscard]]
   std::expected<ItemRecipe, StarException> makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const;
 

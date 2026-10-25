@@ -121,7 +121,7 @@ namespace JsonExtraDetail {
   }
 
   template <typename T, std::size_t Size, typename Getter>
-  std::expected<Array<T, Size>, StarException> array(Json const& v, Getter getter, char const* name) {
+  std::expected<Array<T, Size>, StarException> array(Json const& v, Getter getter, std::string_view name) {
     auto size = v.size();
     if (!size)
       return std::unexpected(std::move(size.error()));

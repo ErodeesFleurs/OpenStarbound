@@ -111,7 +111,7 @@ const GameTestRegistration randomInstanceWorld("SpawnTest", "RandomInstanceWorld
   ASSERT_GT(instanceWorlds.size(), 0u);
   auto selectedWorld = root.random().randFrom(instanceWorlds);
   ASSERT_TRUE(selectedWorld);
-  WorldId instanceWorld = InstanceWorldId(**selectedWorld);
+  WorldId instanceWorld = InstanceWorldId(selectedWorld->get());
 
   auto testUniverse = TestUniverse::create(root, Vec2U(100, 100));
   ASSERT_TRUE(testUniverse);

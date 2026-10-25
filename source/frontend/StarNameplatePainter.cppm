@@ -39,7 +39,7 @@ class GuiContext;
 
 class NameplatePainter {
 public:
-  [[nodiscard]] static std::expected<std::shared_ptr<NameplatePainter>, StarException> create(GuiContext& context);
+  [[nodiscard]] static std::expected<std::unique_ptr<NameplatePainter>, StarException> create(GuiContext& context);
 
   [[nodiscard]] std::expected<void, StarException> update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera, bool inspectionMode);
   [[nodiscard]] std::expected<void, StarException> render();
@@ -59,7 +59,7 @@ private:
   TextPositioning statusPosition(Vec2F bubblePosition) const;
   [[nodiscard]] std::expected<RectF, StarException> determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const;
 
-  GuiContext* m_guiContext;
+  std::reference_wrapper<GuiContext> m_guiContext;
 
   bool m_showMasterNames;
   float m_opacityRate;

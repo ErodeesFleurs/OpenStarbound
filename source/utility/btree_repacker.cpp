@@ -43,7 +43,7 @@ static std::expected<int, StarException> repackBTree(int argc, char** argv) {
   auto inputArgument = opts.arguments.at(0);
   if (!inputArgument)
     return std::unexpected(std::move(inputArgument.error()));
-  String bTreePath = **inputArgument;
+  String bTreePath = inputArgument->get();
   String outputFilename = opts.arguments.get(1, bTreePath + ".repack");
 
   auto outputDirectory = File::fullPath(File::dirName(outputFilename));

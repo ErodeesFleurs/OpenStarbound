@@ -60,25 +60,25 @@ namespace Star::Dungeon {
 
 std::expected<bool, StarException> TMXMap::forEachTile(TileCallback const& callback) const {
   for (auto const& layer : tileLayers()) {
-    auto result = layer->forEachTile(this, callback);
+    auto result = layer->forEachTile(*this, callback);
     if (!result) return std::unexpected(std::move(result.error()));
     if (*result) return true;
   }
   for (auto const& group : objectGroups()) {
-    auto result = group->forEachTile(this, callback);
+    auto result = group->forEachTile(*this, callback);
     if (!result) return std::unexpected(std::move(result.error()));
     if (*result) return true;
   }
   return false;
 }
 
-std::expected<bool, StarException> TMXTileLayer::forEachTile(TMXMap const* map, TileCallback const& callback) const {
+std::expected<bool, StarException> TMXTileLayer::forEachTile(TMXMap const& map, TileCallback const& callback) const {
   for (int y = m_rect.yMin(); y <= m_rect.yMax(); ++y) {
     for (int x = m_rect.xMin(); x <= m_rect.xMax(); ++x) {
-      auto tile = getTile(map->tilesets(), Vec2I(x, y));
+      auto tile = getTile(map.tilesets(), Vec2I(x, y));
       if (!tile) return std::unexpected(std::move(tile.error()));
       if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
-      auto result = callback(Vec2I(x, map->height() - 1 - y), **tile);
+      auto result = callback(Vec2I(x, map.height() - 1 - y), tile->get());
       if (!result) return std::unexpected(std::move(result.error()));
       if (*result) return true;
     }
@@ -90,7 +90,7 @@ String TMXObjectGroup::name() const {
   return m_name;
 }
 
-std::expected<bool, StarException> TMXObjectGroup::forEachTile(TMXMap const* map, TileCallback const& callback) const {
+std::expected<bool, StarException> TMXObjectGroup::forEachTile(TMXMap const& map, TileCallback const& callback) const {
   for (auto const& object : objects()) {
     auto result = object->forEachTile(map, callback);
     if (!result) return std::unexpected(std::move(result.error()));
@@ -99,21 +99,21 @@ std::expected<bool, StarException> TMXObjectGroup::forEachTile(TMXMap const* map
   return false;
 }
 
-std::expected<bool, StarException> TMXObject::forEachTile(TMXMap const* map, TileCallback const& callback) const {
+std::expected<bool, StarException> TMXObject::forEachTile(TMXMap const& map, TileCallback const& callback) const {
   if (m_kind == ObjectKind::Stagehand) {
     auto cPos = Vec2I(rect().center()[0], std::ceilf(RectF(rect()).center()[1]));
     if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
-    return callback(Vec2I(cPos[0], map->height() - cPos[1]), tile());
+    return callback(Vec2I(cPos[0], map.height() - cPos[1]), tile());
   }
   if (m_kind == ObjectKind::Tile) {
     if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
-    return callback(Vec2I(pos().x(), map->height() - pos().y()), tile());
+    return callback(Vec2I(pos().x(), map.height() - pos().y()), tile());
   }
   if (m_kind == ObjectKind::Rectangle) {
     for (int x = m_rect.min().x(); x < m_rect.max().x(); ++x) {
       for (int y = m_rect.min().y(); y < m_rect.max().y(); ++y) {
         if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
-        auto result = callback(Vec2I(x, map->height() - 1 - y), tile());
+        auto result = callback(Vec2I(x, map.height() - 1 - y), tile());
         if (!result) return std::unexpected(std::move(result.error()));
         if (*result) return true;
       }
@@ -123,7 +123,7 @@ std::expected<bool, StarException> TMXObject::forEachTile(TMXMap const* map, Til
   if constexpr (Star::DebugEnabled)
     Star::starAssertFailed((m_kind == ObjectKind::Polyline));
   for (Vec2I point : m_polyline) {
-    Vec2I position(m_rect.min().x() + point.x(), map->height() - 1 - m_rect.min().y() - point.y());
+    Vec2I position(m_rect.min().x() + point.x(), map.height() - 1 - m_rect.min().y() - point.y());
     if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
     auto result = callback(position, tile());
     if (!result) return std::unexpected(std::move(result.error()));
@@ -134,28 +134,28 @@ std::expected<bool, StarException> TMXObject::forEachTile(TMXMap const* map, Til
 
 std::expected<bool, StarException> TMXMap::forEachTileAt(Vec2I pos, TileCallback const& callback) const {
   for (auto const& layer : tileLayers()) {
-    auto result = layer->forEachTileAt(pos, this, callback);
+    auto result = layer->forEachTileAt(pos, *this, callback);
     if (!result) return std::unexpected(std::move(result.error()));
     if (*result) return true;
   }
   for (auto const& group : objectGroups()) {
-    auto result = group->forEachTileAt(pos, this, callback);
+    auto result = group->forEachTileAt(pos, *this, callback);
     if (!result) return std::unexpected(std::move(result.error()));
     if (*result) return true;
   }
   return false;
 }
 
-std::expected<bool, StarException> TMXTileLayer::forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const {
-  Vec2I tilePos(pos.x(), map->height() - 1 - pos.y());
+std::expected<bool, StarException> TMXTileLayer::forEachTileAt(Vec2I pos, TMXMap const& map, TileCallback const& callback) const {
+  Vec2I tilePos(pos.x(), map.height() - 1 - pos.y());
   if (!m_rect.contains(tilePos)) return false;
-  auto tile = getTile(map->tilesets(), tilePos);
+  auto tile = getTile(map.tilesets(), tilePos);
   if (!tile) return std::unexpected(std::move(tile.error()));
   if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
-  return callback(pos, **tile);
+  return callback(pos, tile->get());
 }
 
-std::expected<bool, StarException> TMXObjectGroup::forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const {
+std::expected<bool, StarException> TMXObjectGroup::forEachTileAt(Vec2I pos, TMXMap const& map, TileCallback const& callback) const {
   for (auto const& object : objects()) {
     auto result = object->forEachTileAt(pos, map, callback);
     if (!result) return std::unexpected(std::move(result.error()));
@@ -164,29 +164,29 @@ std::expected<bool, StarException> TMXObjectGroup::forEachTileAt(Vec2I pos, TMXM
   return false;
 }
 
-std::expected<bool, StarException> TMXObject::forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const {
+std::expected<bool, StarException> TMXObject::forEachTileAt(Vec2I pos, TMXMap const& map, TileCallback const& callback) const {
   if (m_kind == ObjectKind::Stagehand) {
     Vec2I cPos(rect().center()[0], std::ceilf(RectF(rect()).center()[1]));
     if (pos == cPos) {
       if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
-      return callback(Vec2I(pos[0], map->height() - 1 - pos[1]), tile());
+      return callback(Vec2I(pos[0], map.height() - 1 - pos[1]), tile());
     }
     return false;
   }
   if (m_kind == ObjectKind::Tile) {
-    if (Vec2I(pos.x(), map->height() - pos.y()) != m_rect.min()) return false;
+    if (Vec2I(pos.x(), map.height() - pos.y()) != m_rect.min()) return false;
     if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
     return callback(pos, tile());
   }
   if (m_kind == ObjectKind::Rectangle) {
-    if (!m_rect.contains(Vec2I(pos.x(), map->height() - 1 - pos.y()))) return false;
+    if (!m_rect.contains(Vec2I(pos.x(), map.height() - 1 - pos.y()))) return false;
     if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
     return callback(pos, tile());
   }
   if constexpr (Star::DebugEnabled)
     Star::starAssertFailed((m_kind == ObjectKind::Polyline));
   for (Vec2I point : m_polyline) {
-    Vec2I pointPos(m_rect.min().x() + point.x(), map->height() - 1 - m_rect.min().y() - point.y());
+    Vec2I pointPos(m_rect.min().x() + point.x(), map.height() - 1 - m_rect.min().y() - point.y());
     if (pos == pointPos) {
       if (!callback) return std::unexpected(DungeonException("Empty dungeon tile callback"));
       auto result = callback(pos, tile());
@@ -216,7 +216,7 @@ std::expected<std::shared_ptr<TMXTileLayer>, StarException> TMXTileLayer::create
   if (!Tiled::LayerNames) return std::unexpected(Tiled::LayerNames.error());
   auto tileLayer = Tiled::LayerNames->getLeft(result->m_name);
   if (!tileLayer) return std::unexpected(std::move(tileLayer.error()));
-  result->m_layer = **tileLayer;
+  result->m_layer = tileLayer->get();
   auto compressed = layer.contains("compression");
   if (!compressed) return std::unexpected(std::move(compressed.error()));
   if (!*compressed) {
@@ -296,8 +296,8 @@ std::expected<std::shared_ptr<TMXMap>, StarException> TMXMap::create(Root& root,
   return result;
 }
 
-std::expected<Tiled::Tile const*, StarException> TMXTileLayer::getTile(std::shared_ptr<TMXTilesets> const& tilesets, Vec2I pos) const {
-  if (!m_rect.contains(pos)) return &tilesets->nullTile();
+std::expected<std::reference_wrapper<Tiled::Tile const>, StarException> TMXTileLayer::getTile(std::shared_ptr<TMXTilesets> const& tilesets, Vec2I pos) const {
+  if (!m_rect.contains(pos)) return std::cref(tilesets->nullTile());
   int dx = pos.x() - m_rect.xMin();
   int dy = pos.y() - m_rect.yMin();
   return tilesets->getTile(m_tileData[dx + dy * width()], m_layer);
@@ -338,10 +338,10 @@ std::expected<std::shared_ptr<TMXTilesets>, StarException> TMXTilesets::create(R
     for (std::size_t i = 0; i < (*tileset)->size(); ++i) {
       auto front = (*tileset)->getTile(i, TileLayer::Foreground);
       if (!front) return std::unexpected(std::move(front.error()));
-      result->m_foregroundTilesByGid.set(*firstGid + i, front->get());
+      result->m_foregroundTilesByGid.set(*firstGid + i, optionalRef(*front));
       auto back = (*tileset)->getTile(i, TileLayer::Background);
       if (!back) return std::unexpected(std::move(back.error()));
-      result->m_backgroundTilesByGid.set(*firstGid + i, back->get());
+      result->m_backgroundTilesByGid.set(*firstGid + i, optionalRef(*back));
     }
   }
   auto nullTile = Tiled::Tile::create(root, Tiled::Properties(), TileLayer::Foreground);
@@ -355,17 +355,14 @@ std::expected<std::shared_ptr<TMXTilesets>, StarException> TMXTilesets::create(R
   return result;
 }
 
-std::expected<Tiled::Tile const*, StarException> TMXTilesets::getTile(unsigned gid, TileLayer layer) const {
+std::expected<std::reference_wrapper<Tiled::Tile const>, StarException> TMXTilesets::getTile(unsigned gid, TileLayer layer) const {
   auto const& tiles = layer == TileLayer::Foreground ? m_foregroundTilesByGid : m_backgroundTilesByGid;
   auto tile = tiles.at(gid);
   if (!tile) return std::unexpected(std::move(tile.error()));
-  if (**tile) return **tile;
-  return layer == TileLayer::Foreground ? m_nullTile.get() : m_emptyBackTile.get();
+  if (tile->get()) return *tile->get();
+  return std::cref(layer == TileLayer::Foreground ? *m_nullTile : *m_emptyBackTile);
 }
 
-bool TMXTilesets::tilesetComparator(TilesetInfo const& a, TilesetInfo const& b) {
-  return a.firstGid > b.firstGid;
-}
 
 std::expected<std::shared_ptr<TMXObject>, StarException> TMXObject::create(Root& root, std::optional<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets) {
   auto result = std::shared_ptr<TMXObject>(new TMXObject);
@@ -522,21 +519,22 @@ std::expected<std::optional<TMXObject::TileObjectInfo>, StarException> TMXObject
   }
   auto tile = tilesets->getTile(gid, layer);
   if (!tile) return std::unexpected(std::move(tile.error()));
-  return TileObjectInfo{(*tile)->properties, flipBits};
+  return TileObjectInfo{tile->get().properties, flipBits};
 }
 
 std::expected<TileLayer, StarException> TMXObject::getLayer(std::optional<Json> const& groupProperties, std::optional<Json> const& objectProperties) {
-  for (auto const* properties : {&objectProperties, &groupProperties}) {
-    if (*properties) {
-      auto hasLayer = (**properties).contains("layer");
+  for (auto propertiesRef : {std::cref(objectProperties), std::cref(groupProperties)}) {
+    auto const& properties = propertiesRef.get();
+    if (properties) {
+      auto hasLayer = properties->contains("layer");
       if (!hasLayer) return std::unexpected(std::move(hasLayer.error()));
       if (*hasLayer) {
-        auto layer = (**properties).getString("layer");
+        auto layer = properties->getString("layer");
         if (!layer) return std::unexpected(std::move(layer.error()));
         if (!Tiled::LayerNames) return std::unexpected(Tiled::LayerNames.error());
         auto value = Tiled::LayerNames->getLeft(*layer);
         if (!value) return std::unexpected(std::move(value.error()));
-        return **value;
+        return value->get();
       }
     }
   }

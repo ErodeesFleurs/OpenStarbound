@@ -150,30 +150,26 @@ std::expected<ObjectOrientation::ParticleEmissionEntry, StarException> ObjectOri
   return result;
 }
 
-std::expected<bool, StarException> ObjectOrientation::placementValid(World const* world, Vec2I const& position) const {
-  if (!world)
-    return false;
+std::expected<bool, StarException> ObjectOrientation::placementValid(World const& world, Vec2I const& position) const {
   for (Vec2I space : spaces) {
     space += position;
-    auto occupiedResult = world->tileIsOccupied(space, TileLayer::Foreground, false, true);
+    auto occupiedResult = world.tileIsOccupied(space, TileLayer::Foreground, false, true);
     if (!occupiedResult)
       return std::unexpected(std::move(occupiedResult.error()));
     auto occupied = std::move(*occupiedResult);
     if (occupied)
       return false;
-    auto protectedTile = world->isTileProtected(space);
+    auto protectedTile = world.isTileProtected(space);
     if (protectedTile)
       return false;
   }
   return true;
 }
 
-std::expected<bool, StarException> ObjectOrientation::anchorsValid(World const* world, Vec2I const& position) const {
-  if (!world)
-    return false;
+std::expected<bool, StarException> ObjectOrientation::anchorsValid(World const& world, Vec2I const& position) const {
   if (anchors.empty())
     return true;
-  auto materialDatabaseResult = world->root().materialDatabase();
+  auto materialDatabaseResult = world.root().materialDatabase();
   if (!materialDatabaseResult)
     return std::unexpected(std::move(materialDatabaseResult.error()));
   auto materialDatabase = std::move(*materialDatabaseResult);
@@ -181,14 +177,14 @@ std::expected<bool, StarException> ObjectOrientation::anchorsValid(World const* 
   for (auto const& anchor : anchors) {
     auto space = position + anchor.position;
     auto valid = [&]() -> std::expected<bool, StarException> {
-      auto connectableResult = world->isTileConnectable(space, anchor.layer);
+      auto connectableResult = world.isTileConnectable(space, anchor.layer);
       if (!connectableResult)
         return std::unexpected(std::move(connectableResult.error()));
       auto connectable = std::move(*connectableResult);
       if (!connectable)
         return false;
       if (anchor.tilled) {
-        auto tilledResult = materialDatabase->isTilledMod(world->mod(space, anchor.layer));
+        auto tilledResult = materialDatabase->isTilledMod(world.mod(space, anchor.layer));
         if (!tilledResult)
           return std::unexpected(std::move(tilledResult.error()));
         auto tilled = std::move(*tilledResult);
@@ -196,14 +192,14 @@ std::expected<bool, StarException> ObjectOrientation::anchorsValid(World const* 
           return false;
       }
       if (anchor.soil) {
-        auto soilResult = materialDatabase->isSoil(world->material(space, anchor.layer));
+        auto soilResult = materialDatabase->isSoil(world.material(space, anchor.layer));
         if (!soilResult)
           return std::unexpected(std::move(soilResult.error()));
         auto soil = std::move(*soilResult);
         if (!soil)
           return false;
       }
-      if (anchor.material && world->material(space, anchor.layer) != *anchor.material)
+      if (anchor.material && world.material(space, anchor.layer) != *anchor.material)
         return false;
       return true;
     }();
@@ -217,8 +213,8 @@ std::expected<bool, StarException> ObjectOrientation::anchorsValid(World const* 
   return anyValid;
 }
 
-std::expected<std::size_t, StarException> ObjectConfig::findValidOrientation(World const* world, Vec2I const& position, std::optional<Direction> directionAffinity) const {
-  auto valid = [&](std::size_t index) -> std::expected<bool, StarException> {
+std::expected<std::size_t, StarException> ObjectConfig::findValidOrientation(World const& world, Vec2I const& position, std::optional<Direction> directionAffinity) const {
+  auto valid = [&orientations = orientations, &world, &position](std::size_t index) -> std::expected<bool, StarException> {
     auto placementResult = orientations[index]->placementValid(world, position);
     if (!placementResult)
       return std::unexpected(std::move(placementResult.error()));
@@ -574,8 +570,7 @@ std::expected<List<std::shared_ptr<ObjectOrientation>>, StarException> ObjectDat
       auto affinityResult = DirectionNames->getLeft(direction);
       if (!affinityResult)
         return std::unexpected(std::move(affinityResult.error()));
-      auto affinity = std::move(*affinityResult);
-      orientation->directionAffinity = *affinity;
+      orientation->directionAffinity = affinityResult->get();
     }
     auto collisionTypeResult = orientationSettings.getString("collision", "none");
     if (!collisionTypeResult)
@@ -720,10 +715,10 @@ std::expected<std::shared_ptr<ObjectDatabase>, StarException> ObjectDatabase::cr
   auto files = (*assets)->scanExtension("object");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  auto queued = (*assets)->queueJsons(**files);
+  auto queued = (*assets)->queueJsons(files->get());
   if (!queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& entry : **files) {
+  for (auto const& entry : files->get()) {
     auto const& file = entry.string();
     auto name = [&]() -> std::expected<String, StarException> {
       auto config = (*assets)->json(file);
@@ -764,21 +759,22 @@ bool ObjectDatabase::isObject(String const& objectName) const {
 std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::getConfig(String const& objectName) const {
   std::lock_guard locker(m_cacheMutex);
   auto result = m_configCache.get(objectName,
-      [this](String const& name) -> std::expected<std::shared_ptr<ObjectConfig>, StarException> {
-        if (auto path = m_paths.maybe(name))
-          return readConfig(*path);
+      [&database = *this](String const& name) -> std::expected<std::shared_ptr<ObjectConfig>, StarException> {
+        if (auto path = database.m_paths.maybeRef(name))
+          return database.readConfig(path->get());
         return std::unexpected(ObjectException::format("No such object named '{}'", name));
       });
   if (!result)
     return std::unexpected(std::move(result.error()));
-  return **result;
+  return result->get();
 }
 
-std::expected<List<std::shared_ptr<ObjectOrientation>> const*, StarException> ObjectDatabase::getOrientations(String const& objectName) const {
+std::expected<std::shared_ptr<List<std::shared_ptr<ObjectOrientation>> const>, StarException> ObjectDatabase::getOrientations(String const& objectName) const {
   auto config = getConfig(objectName);
   if (!config)
     return std::unexpected(std::move(config.error()));
-  return &(*config)->orientations;
+  auto const& orientations = (*config)->orientations;
+  return std::shared_ptr<List<std::shared_ptr<ObjectOrientation>> const>(std::move(*config), std::addressof(orientations));
 }
 
 std::expected<std::shared_ptr<Object>, StarException> ObjectDatabase::createObject(String const& objectName, Json const& parameters) const {
@@ -810,14 +806,14 @@ std::expected<std::shared_ptr<Object>, StarException> ObjectDatabase::diskLoadOb
     return std::unexpected(std::move(originalParams.error()));
   Json newStore = diskStore;
   std::shared_ptr<Object> object;
-  auto attempt = [&](Json const& store) -> std::expected<void, StarException> {
+  auto attempt = [&, &database = *this](Json const& store) -> std::expected<void, StarException> {
     auto name = store.getString("name");
     if (!name)
       return std::unexpected(std::move(name.error()));
     auto parameters = store.get("parameters");
     if (!parameters)
       return std::unexpected(std::move(parameters.error()));
-    auto candidate = createObject(*name, *parameters);
+    auto candidate = database.createObject(*name, *parameters);
     if (!candidate)
       return std::unexpected(std::move(candidate.error()));
     auto loaded = (*candidate)->readStoredData(store);
@@ -882,7 +878,7 @@ std::expected<std::shared_ptr<Object>, StarException> ObjectDatabase::netLoadObj
   return createObject(*name, *parameters);
 }
 
-std::expected<bool, StarException> ObjectDatabase::canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const {
+std::expected<bool, StarException> ObjectDatabase::canPlaceObject(World const& world, Vec2I const& position, String const& objectName) const {
   auto config = getConfig(objectName);
   if (!config)
     return std::unexpected(std::move(config.error()));
@@ -892,7 +888,7 @@ std::expected<bool, StarException> ObjectDatabase::canPlaceObject(World const* w
   return *orientation != NPos;
 }
 
-std::expected<std::shared_ptr<Object>, StarException> ObjectDatabase::createForPlacement(World const* world, String const& objectName, Vec2I const& position,
+std::expected<std::shared_ptr<Object>, StarException> ObjectDatabase::createForPlacement(World const& world, String const& objectName, Vec2I const& position,
     Direction direction, Json const& parameters) const {
   auto placeable = canPlaceObject(world, position, objectName);
   if (!placeable)
@@ -902,7 +898,7 @@ std::expected<std::shared_ptr<Object>, StarException> ObjectDatabase::createForP
   auto object = createObject(objectName, parameters);
   if (!object)
     return std::unexpected(std::move(object.error()));
-  auto positioned = (*object)->setTilePosition(world->geometry().xwrap(position));
+  auto positioned = (*object)->setTilePosition(world.geometry().xwrap(position));
   if (!positioned)
     return std::unexpected(std::move(positioned.error()));
   (*object)->setDirection(direction);
@@ -910,8 +906,8 @@ std::expected<std::shared_ptr<Object>, StarException> ObjectDatabase::createForP
 }
 
 std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::readConfig(String const& path) const {
-  auto result = [&]() -> std::expected<std::shared_ptr<ObjectConfig>, StarException> {
-    auto assetsResult = m_root.assets();
+  auto result = [&, &root = m_root]() -> std::expected<std::shared_ptr<ObjectConfig>, StarException> {
+    auto assetsResult = root.assets();
     if (!assetsResult)
       return std::unexpected(std::move(assetsResult.error()));
     auto assets = std::move(*assetsResult);
@@ -1164,8 +1160,7 @@ std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::read
     auto field20Result = TeamTypeNames->getLeft(field19);
     if (!field20Result)
       return std::unexpected(std::move(field20Result.error()));
-    auto field20 = std::move(*field20Result);
-      objectConfig->damageTeam.type = *field20;
+      objectConfig->damageTeam.type = field20Result->get();
     auto field21Result = field18.getUInt("team", 0);
     if (!field21Result)
       return std::unexpected(std::move(field21Result.error()));
@@ -1209,8 +1204,7 @@ std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::read
     auto field27Result = LightTypeNames->getLeft(*field26);
     if (!field27Result)
       return std::unexpected(std::move(field27Result.error()));
-    auto field27 = std::move(*field27Result);
-      objectConfig->lightType = *field27;
+      objectConfig->lightType = field27Result->get();
     } else {
     auto field28Result = config.getBool("pointLight", false);
     if (!field28Result)
@@ -1251,7 +1245,7 @@ std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::read
     if (!field33Result)
       return std::unexpected(std::move(field33Result.error()));
     auto field33 = std::move(*field33Result);
-      objectConfig->lightFlickering = PeriodicFunction<float>(m_root.random(), field29, field30, field31, field32, field33);
+      objectConfig->lightFlickering = PeriodicFunction<float>(root.random(), field29, field30, field31, field32, field33);
     }
     auto soundEffectResult = config.getString("soundEffect", "");
     if (!soundEffectResult)
@@ -1274,7 +1268,7 @@ std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::read
     auto field35 = std::move(*field35Result);
       objectConfig->statusEffects.append(std::move(field35));
     }
-    auto touchDamageConfigResult = parseTouchDamage(m_root, path, config);
+    auto touchDamageConfigResult = parseTouchDamage(root, path, config);
     if (!touchDamageConfigResult)
       return std::unexpected(std::move(touchDamageConfigResult.error()));
     auto touchDamageConfig = std::move(*touchDamageConfigResult);
@@ -1326,7 +1320,7 @@ std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::read
     if (!field40Result)
       return std::unexpected(std::move(field40Result.error()));
     auto field40 = std::move(*field40Result);
-    auto orientationsResult = parseOrientations(m_root, path, field40, config);
+    auto orientationsResult = parseOrientations(root, path, field40, config);
     if (!orientationsResult)
       return std::unexpected(std::move(orientationsResult.error()));
     auto orientations = std::move(*orientationsResult);
@@ -1340,7 +1334,7 @@ std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::read
     if (!field41Result)
       return std::unexpected(std::move(field41Result.error()));
     auto field41 = std::move(*field41Result);
-    auto field42Result = ObjectOrientation::parseParticleEmitter(m_root, path, field41);
+    auto field42Result = ObjectOrientation::parseParticleEmitter(root, path, field41);
     if (!field42Result)
       return std::unexpected(std::move(field42Result.error()));
     auto field42 = std::move(*field42Result);
@@ -1351,7 +1345,7 @@ std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::read
       return std::unexpected(std::move(field43Result.error()));
     auto field43 = std::move(*field43Result);
     for (auto const& emitter : field43) {
-    auto field44Result = ObjectOrientation::parseParticleEmitter(m_root, path, emitter);
+    auto field44Result = ObjectOrientation::parseParticleEmitter(root, path, emitter);
     if (!field44Result)
       return std::unexpected(std::move(field44Result.error()));
     auto field44 = std::move(*field44Result);
@@ -1376,7 +1370,7 @@ std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::read
   return result;
 }
 
-std::expected<List<Drawable>, StarException> ObjectDatabase::cursorHintDrawables(World const* world, String const& objectName, Vec2I const& position, Direction direction, Json parameters) const {
+std::expected<List<Drawable>, StarException> ObjectDatabase::cursorHintDrawables(World const& world, String const& objectName, Vec2I const& position, Direction direction, Json parameters) const {
   List<Drawable> drawables;
   auto configResult = getConfig(objectName);
   if (!configResult)
@@ -1424,8 +1418,7 @@ std::expected<List<Drawable>, StarException> ObjectDatabase::cursorHintDrawables
     auto orientationEntryResult = config->orientations.at(orientationIndex);
     if (!orientationEntryResult)
       return std::unexpected(std::move(orientationEntryResult.error()));
-    auto orientationEntry = std::move(*orientationEntryResult);
-    auto const& orientation = *orientationEntry;
+    auto const& orientation = orientationEntryResult->get();
     StringMap<String> imageKeys;
     auto colorConfigResult = orientation->config.get("color", "default");
     if (!colorConfigResult)

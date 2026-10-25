@@ -124,7 +124,7 @@ private:
 
   PanelValues determinePanelValues(std::shared_ptr<Panel> panel, float timecode);
 
-  GuiContext* m_guiContext;
+  std::reference_wrapper<GuiContext> m_guiContext;
 
   List<TimeSkip> m_timeSkips;
   std::optional<TimeSkip> m_currentTimeSkip;

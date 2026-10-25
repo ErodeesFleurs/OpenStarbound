@@ -50,7 +50,7 @@ std::expected<EntityDamageTeam, StarException> EntityDamageTeam::create(Json con
   auto team = json.getUInt("team", 0);
   if (!team)
     return std::unexpected(std::move(team.error()));
-  return EntityDamageTeam(**type, *team);
+  return EntityDamageTeam(type->get(), *team);
 }
 
 std::expected<Json, StarException> EntityDamageTeam::toJson() const {
@@ -59,7 +59,7 @@ std::expected<Json, StarException> EntityDamageTeam::toJson() const {
   auto name = TeamTypeNames->getRight(type);
   if (!name)
     return std::unexpected(std::move(name.error()));
-  return JsonObject{{"type", **name}, {"team", team}};
+  return JsonObject{{"type", name->get()}, {"team", team}};
 }
 
 bool EntityDamageTeam::canDamage(EntityDamageTeam victim, bool victimIsSelf) const {
@@ -104,18 +104,18 @@ bool EntityDamageTeam::operator==(EntityDamageTeam const& rhs) const {
   return std::tie(type, team) == std::tie(rhs.type, rhs.team);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityDamageTeam const& team) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EntityDamageTeam const& team) {
   auto result = ds << team.type << team.team;
   if (!result)
     return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityDamageTeam& team) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EntityDamageTeam& team) {
   auto result = ds >> team.type >> team.team;
   if (!result)
     return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 TeamNumber soloPvpTeam(ConnectionId clientId) {

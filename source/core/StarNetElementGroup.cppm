@@ -32,12 +32,12 @@ public:
   NetElementGroup& operator=(NetElementGroup const&) = delete;
 
   // Add an element to the group.
-  [[nodiscard]] std::expected<void, StarException> addNetElement(NetElement* element, bool propagateInterpolation = true);
+  [[nodiscard]] std::expected<void, StarException> addNetElement(NetElement& element, bool propagateInterpolation = true);
 
   // Removes all previously added elements
   void clearNetElements();
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version = std::nullopt) override;
 
   [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -50,13 +50,13 @@ public:
   [[nodiscard]] std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   [[nodiscard]] std::expected<void, StarException> blankNetDelta(float interpolationTime) override;
 
-  NetElementVersion const* netVersion() const;
+  std::optional<std::reference_wrapper<NetElementVersion const>> netVersion() const;
   bool netInterpolationEnabled() const;
   float netExtrapolationHint() const;
 
 private:
-  List<std::pair<NetElement*, bool>> m_elements;
-  NetElementVersion const* m_version = nullptr;
+  List<std::pair<std::reference_wrapper<NetElement>, bool>> m_elements;
+  std::optional<std::reference_wrapper<NetElementVersion const>> m_version = std::nullopt;
   bool m_interpolationEnabled = false;
   float m_extrapolationHint = 0.0f;
 
@@ -65,7 +65,7 @@ private:
   mutable DataStreamBuffer m_buffer;
 };
 
-inline NetElementVersion const* NetElementGroup::netVersion() const {
+inline std::optional<std::reference_wrapper<NetElementVersion const>> NetElementGroup::netVersion() const {
   return m_version;
 }
 

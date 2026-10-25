@@ -9,7 +9,7 @@ import star.data_stream;
 namespace Star {
 
 struct IdMapExceptionTag {
-  static constexpr char const* name() { return "IdMapException"; }
+  static constexpr std::string_view name() { return "IdMapException"; }
 };
 using IdMapException = StarError<IdMapExceptionTag, StarException>;
 
@@ -63,8 +63,8 @@ public:
   using BaseMap::size;
   using BaseMap::empty;
   using BaseMap::get;
-  using BaseMap::ptr;
   using BaseMap::maybe;
+  using BaseMap::maybeRef;
   using BaseMap::take;
   using BaseMap::maybeTake;
   using BaseMap::remove;
@@ -74,9 +74,9 @@ public:
   using BaseMap::erase;
 
   template <typename Base>
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, IdMapWrapper<Base>& map);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, IdMapWrapper<Base>& map);
   template <typename Base>
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, IdMapWrapper<Base> const& map);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, IdMapWrapper<Base> const& map);
 
 private:
   IdType m_min;
@@ -149,7 +149,7 @@ bool IdMapWrapper<BaseMap>::operator!=(IdMapWrapper const& rhs) const {
 }
 
 template <typename BaseMap>
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, IdMapWrapper<BaseMap>& map) {
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, IdMapWrapper<BaseMap>& map) {
   auto entries = ds.readMapContainer((BaseMap&)map);
   if (!entries) return std::unexpected(std::move(entries.error()));
   auto min = ds.read(map.m_min);
@@ -158,11 +158,11 @@ template <typename BaseMap>
   if (!max) return std::unexpected(std::move(max.error()));
   auto next = ds.read(map.m_nextId);
   if (!next) return std::unexpected(std::move(next.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 template <typename BaseMap>
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, IdMapWrapper<BaseMap> const& map) {
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, IdMapWrapper<BaseMap> const& map) {
   auto entries = ds.writeMapContainer((BaseMap const&)map);
   if (!entries) return std::unexpected(std::move(entries.error()));
   auto min = ds.write(map.m_min);
@@ -171,7 +171,7 @@ template <typename BaseMap>
   if (!max) return std::unexpected(std::move(max.error()));
   auto next = ds.write(map.m_nextId);
   if (!next) return std::unexpected(std::move(next.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 }

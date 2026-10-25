@@ -36,10 +36,10 @@ import star.behavior_state;
 
 namespace Star {
 
-std::expected<LuaCallbacks, StarException> LuaBindings::makeBehaviorCallbacks(Root& root, List<std::shared_ptr<BehaviorState>>* list) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeBehaviorCallbacks(Root& root, List<std::shared_ptr<BehaviorState>>& list) {
   LuaCallbacks callbacks;
 
-  auto registration = callbacks.registerCallback("behavior", [&root, list](Json const& config, JsonObject const& parameters, LuaTable context, std::optional<LuaUserData> blackboard) -> std::expected<std::weak_ptr<BehaviorState>, StarException> {
+  auto registration = callbacks.registerCallback("behavior", [&root, &list](Json const& config, JsonObject const& parameters, LuaTable context, std::optional<LuaUserData> blackboard) -> std::expected<std::weak_ptr<BehaviorState>, StarException> {
     auto behaviorDatabase = root.behaviorDatabase();
     if (!behaviorDatabase)
       return std::unexpected(std::move(behaviorDatabase.error()));
@@ -52,7 +52,7 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeBehaviorCallbacks(Ro
         auto value = blackboard->get<std::weak_ptr<Blackboard>>();
         if (!value)
           return std::unexpected(std::move(value.error()));
-        board = **value;
+        board = value->get();
       }
     }
 
@@ -73,7 +73,7 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeBehaviorCallbacks(Ro
         auto parameter = object->get("parameters");
         if (!parameter)
           return std::unexpected(std::move(parameter.error()));
-        object->set("parameters", jsonMerge(**parameter, parameters));
+        object->set("parameters", jsonMerge(parameter->get(), parameters));
         tree = (*behaviorDatabase)->buildTree(*object);
       }
     } else {
@@ -90,7 +90,7 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeBehaviorCallbacks(Ro
     auto state = BehaviorState::create(*tree, std::move(context), board);
     if (!state)
       return std::unexpected(std::move(state.error()));
-    list->append(*state);
+    list.append(*state);
     return std::weak_ptr<BehaviorState>(*state);
   });
   if (!registration)

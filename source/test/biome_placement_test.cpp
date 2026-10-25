@@ -35,11 +35,11 @@ const GameTestRegistration storageRoundTrip("BiomePlacement", "ConfigAndStorageP
   auto names = (*database)->allObjects();
   ASSERT_FALSE(names.empty());
   constexpr std::uint64_t seed = 0xfedcba9876543210ULL;
-  std::array<std::pair<char const*, BiomePlacementMode>, 4> modes{{
+  std::array<std::pair<std::string_view, BiomePlacementMode>, 4> modes{{
       {"FlOoR", BiomePlacementMode::Floor}, {"CeIlInG", BiomePlacementMode::Ceiling},
       {"BaCkGrOuNd", BiomePlacementMode::Background}, {"OcEaN", BiomePlacementMode::Ocean}}};
   for (auto const& [mode, expectedMode] : modes) {
-    for (auto type : {"RaNdOm", "PeRiOdIc"}) {
+    for (std::string_view type : {"RaNdOm", "PeRiOdIc"}) {
       SCOPED_TRACE(mode);
       SCOPED_TRACE(type);
       auto config = distributionConfig(mode, type, names[0]);

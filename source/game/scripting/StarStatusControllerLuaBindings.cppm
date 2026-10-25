@@ -11,5 +11,5 @@ class StatusController;
 export module star.status_controller_lua_bindings;
 
 export namespace Star::LuaBindings {
-  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeStatusControllerCallbacks(StatusController* statController);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeStatusControllerCallbacks(StatusController& statController);
 }

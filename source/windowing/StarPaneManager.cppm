@@ -132,7 +132,7 @@ private:
   [[nodiscard]] std::expected<Vec2I, StarException> calculateNewInterfacePosition(std::shared_ptr<Pane> const& pane, float interfaceScaleRatio) const;
   [[nodiscard]] std::expected<bool, StarException> dismiss(std::shared_ptr<Pane> const& pane);
 
-  GuiContext* m_context;
+  GuiContext& m_context;
   float m_prevInterfaceScale;
 
   // Map of each pane layer, where the 0th pane is the topmost pane in each layer.

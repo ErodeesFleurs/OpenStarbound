@@ -31,8 +31,9 @@ public:
     return Star::typeName<ActorEntity>();
   }
 
-  virtual ActorMovementController* movementController() override = 0;
-  virtual StatusController* statusController() = 0;
+  // Successfully constructed actors always own both controllers.
+  virtual ActorMovementController& movementController() override = 0;
+  virtual StatusController& statusController() = 0;
 };
 }
 

@@ -10,7 +10,7 @@ namespace Star {
 class Root;
 
 struct StagehandDatabaseExceptionTag {
-  static constexpr char const* name() { return "StagehandDatabaseException"; }
+  static constexpr std::string_view name() { return "StagehandDatabaseException"; }
 };
 using StagehandDatabaseException = StarError<StagehandDatabaseExceptionTag, StarException>;
 

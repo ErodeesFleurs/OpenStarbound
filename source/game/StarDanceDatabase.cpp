@@ -33,7 +33,7 @@ std::expected<std::shared_ptr<DanceDatabase>, StarException> DanceDatabase::crea
   auto files = assets->scanExtension("dance");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  for (auto const& file : **files) {
+  for (auto const& file : files->get()) {
     auto dance = readDance(*assets, file.string());
     if (!dance) {
       auto logged = logger.error("Error loading dance file {}: {}", file.string(), outputException(ExceptionDiagnostic(dance.error()), true));
@@ -47,13 +47,13 @@ std::expected<std::shared_ptr<DanceDatabase>, StarException> DanceDatabase::crea
 }
 
 std::expected<std::shared_ptr<Dance>, StarException> DanceDatabase::getDance(String const& name) const {
-  if (auto dance = m_dances.ptr(name))
-    return *dance;
+  if (auto dance = m_dances.maybeRef(name))
+    return dance->get();
   auto logged = m_logger.error("Invalid dance '{}', using default", name);
   if (!logged)
     return std::unexpected(std::move(logged.error()));
-  if (auto fallback = m_dances.ptr("assetmissing"))
-    return *fallback;
+  if (auto fallback = m_dances.maybeRef("assetmissing"))
+    return fallback->get();
   return std::unexpected(StarException("Missing fallback dance 'assetmissing'"));
 }
 

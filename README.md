@@ -134,9 +134,9 @@ nix build .#benchmarks
 nix build .#benchmarks-gui -o result-benchmarks-gui
 ```
 
-For native presets, configure from `source/` with `-DSTAR_BUILD_BENCHMARKS=ON -DVCPKG_MANIFEST_FEATURES="qt-tools;benchmarks"`. Targets: `core_benchmarks`, `worker_benchmarks`, `game_benchmarks`, Linux/MinGW-only `allocator_benchmarks`, and GUI-only `frontend_benchmarks`. Nix development shells include the dependency.
+For native presets, configure from `source/` with `-DSTAR_BUILD_BENCHMARKS=ON -DVCPKG_MANIFEST_FEATURES="qt-tools;benchmarks"`. Targets: `core_benchmarks`, `worker_benchmarks`, `game_benchmarks`, `ownership_benchmarks`, Linux/MinGW-only `allocator_benchmarks`, and GUI-only `frontend_benchmarks`. Nix development shells include the dependency.
 
-`game_benchmarks`, `frontend_benchmarks` and GUI-only `frontend_tests` need owned assets and a fresh, private bootconfig; never point them at saves. For example:
+`game_benchmarks`, `ownership_benchmarks`, `frontend_benchmarks` and GUI-only `frontend_tests` need owned assets and a fresh, private bootconfig; never point them at saves. For example:
 
 ```json
 {
@@ -150,7 +150,7 @@ For native presets, configure from `source/` with `-DSTAR_BUILD_BENCHMARKS=ON -D
 ./result/bin/game_benchmarks -bootconfig /path/to/benchmark.config --benchmark_repetitions=7 --benchmark_out=game.json --benchmark_out_format=json
 ```
 
-Core cases cover JSON encoding, fixed enum lookups and reserved string-key hash maps. Worker cases submit 256 checked tasks per batch, varying capture size, producer results and queue-only versus one-worker execution. Frontend cases exercise dense mixed-size bubble separation and an explicit representative gameplay-key fixture, not the user's bindings or the complete client frame. Game cases cover object/projectile parsing, generated world serialization and genuine nested Lua profile export. Asset caches are warmed; fixture setup and validation are untimed. Core/allocator cases report CPU time; worker/frontend/game cases report wall time, and profile export includes file writes.
+Core cases cover JSON encoding, fixed enum lookups and reserved string-key hash maps. Worker cases submit 256 checked tasks per batch, varying capture size, producer results and queue-only versus one-worker execution. Frontend cases exercise dense mixed-size bubble separation and an explicit representative gameplay-key fixture, not the user's bindings or the complete client frame. Game cases cover object/projectile parsing, generated world serialization and genuine nested Lua profile export. Ownership cases cover small-record serialization/readback, real ItemBag stacking/matching, valid PCM WAV and real Ogg cloning/seeking/reading/reclamation, and real image/bytes cache getters and mixed-resource eviction. Asset caches are warmed; fixture setup and validation are untimed. Core/allocator cases report CPU time; worker/frontend/game/ownership cases report wall time, and profile export includes file writes.
 
 `allocator_benchmarks` compares `BlockAllocator`, default PMR and bounded PMR pools. Allocation counters run outside timed samples and measure outstanding C++ `new` requests, not RSS or fragmentation. Production retains `BlockAllocator`: default PMR retained substantially more memory in the representative statistics-list workload; bounded PMR reduced retention but was much slower.
 
@@ -165,6 +165,13 @@ Reuse owned sequence buffers for nonfallible path conversion and sorting; keep r
 
 `IODevice` byte transfers accept `std::span<char>`/`std::span<char const>`; pointer/count overloads are removed. Short-transfer, EOF, closed-device and absolute-position semantics are unchanged. JSON serialization borrows retained string storage and writes UTF-8 directly, preserving sink/encoding error order.
 
+`DataStreamBuffer` value-owns its `Buffer` and is move-only. `DataStreamIODevice` and `IODeviceCallbacks` borrow an `IODevice&`; retain the device through every operation/callback and keep its address fixed while a decoder uses it. Audio owns its decoder and cursor; clones share immutable audio bytes, not mutable decoder state. Item comparison/stack queries use required or optional references; inventory ownership-transfer APIs still transfer owning handles.
+
+Prefer values or `unique_ptr` for exclusive ownership. Business code uses `T&`/`T const&` for required borrows, `reference_wrapper<T>` for rebindable borrows, `optional<reference_wrapper<T>>` for nullable borrows, and spans/views for ranges. Checked borrowed results use `expected<reference_wrapper<T>, StarException>`; access the referent with `.get()`. `optionalRef` accepts named owners only; neither it nor `asRef` extends lifetime. Container references remain subject to erasure/invalidation. Raw pointers are confined to C/OS APIs, native resource/memory adapters, storage/iterator internals and type-identity machinery.
+Client interface/configuration/helper objects and atlas management nodes are exclusive owners; preserve audio/HTTP/Lua shutdown barriers before releasing them. Root reloadable services, asset payloads, asynchronous completion state and escapable WirePane painter handles retain real shared ownership. Root staying alive does not pin a replaced service generation; `use_count()` is not a concurrency/exclusivity guarantee.
+
+Widget parents are borrowed; children and pane handles retain their actual owners. Escaping callbacks use weak owners, and serialized UI/Lua callbacks borrow the client interface behind its standard stop token. Terminal interface detachment requests cancellation and clears service bindings; ordinary pane dismissal must remain reversible.
+
 Worker submissions retain concrete constrained callables until queue-boundary erasure; move-only and lvalue-callable work is supported. Client gameplay input snapshots held/edge actions only within a stable focus/configuration interval, never across frames. Radio scroll length is cached per message; bubble separation folds candidates without a filtered temporary list.
 
 `BTree<Storage>` owns a `BTreeStorage` implementation. Lua scripts use fixed-address, nonmovable hosts with value-owned features; preserve each host's initialization, storage-snapshot and shutdown ordering.
@@ -174,6 +181,7 @@ Synchronization uses standard mutexes, guards and condition variables; clock acq
 Numeric lexical conversion uses `std::from_chars` and requires full tokens. Integer overflow leaves existing destinations unchanged; value-initialized conversions yield `0`, including oversized `uint64_t` inputs that previously wrapped. JSON numbers use bounded UTF-32 stack buffers with `std::format_to_n`, preserving default formatting.
 
 Fixed input, renderer, biome, log-level and Perlin name tables are `constexpr` arrays. Use `enumName<Names>`, `enumValue<Names>` or `maybeEnumValue<Names>` for checked lookup; returned names borrow static storage. ASCII reverse lookup uses byte views and `std::ranges::lower_bound` over precomputed indices. Non-ASCII input is fully UTF-8-validated before returning a checked miss; case folding remains ASCII-only. Wire-network traversal uses an explicit-object recursive lambda rather than local type erasure.
+Hash text with explicit byte views. Literal adapters preserve first-NUL C-text semantics; explicit views retain their full extent. Boolean hash overloads accept only actual `bool`, so text seeds cannot silently select pointer-to-boolean conversion and change generated worlds.
 
 For clangd 23, run `nix develop -c bash scripts/ide/configure-clangd.sh`. Use `--experimental-modules-support`, `--compile-commands-dir=/absolute/path/to/OpenStarbound/build/clangd` and `--query-driver=/nix/store/*-xclang-wrapper-*/bin/clang++,/nix/store/*-xclang-wrapper-*/bin/clang`; set `LC_ALL=C` and `LANGUAGE=C`.
 

@@ -14,7 +14,7 @@ import star.terrain_database;
 export namespace Star {
 
 struct PerlinSelector : TerrainSelector {
-  static char const* const Name;
+  static std::string_view const Name;
 
   [[nodiscard]] static std::expected<std::shared_ptr<PerlinSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters);
 private:
@@ -35,7 +35,7 @@ public:
 
 namespace Star {
 
-char const* const PerlinSelector::Name = "perlin";
+std::string_view const PerlinSelector::Name = "perlin";
 
 std::expected<std::shared_ptr<PerlinSelector>, StarException> PerlinSelector::create(Json const& config, TerrainSelectorParameters const& parameters) {
   RandomSource random(parameters.seed);

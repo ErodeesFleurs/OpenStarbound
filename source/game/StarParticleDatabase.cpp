@@ -73,10 +73,10 @@ std::expected<std::shared_ptr<ParticleDatabase>, StarException> ParticleDatabase
   auto files = (*assets)->scanExtension("particle");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  auto queued = (*assets)->queueJsons(**files);
+  auto queued = (*assets)->queueJsons(files->get());
   if (!queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& file : **files) {
+  for (auto const& file : files->get()) {
     auto json = (*assets)->json(file.string());
     if (!json)
       return std::unexpected(std::move(json.error()));
@@ -94,8 +94,8 @@ std::expected<std::shared_ptr<ParticleConfig>, StarException> ParticleDatabase::
   auto key = kind.toLower();
   if (!key)
     return std::unexpected(std::move(key.error()));
-  if (auto config = m_configs.ptr(*key))
-    return *config;
+  if (auto config = m_configs.maybeRef(*key))
+    return config->get();
   return std::unexpected(StarException(strf("Unknown particle definition with kind {}.", kind)));
 }
 

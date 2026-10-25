@@ -54,9 +54,9 @@ std::expected<std::shared_ptr<StagehandDatabase>, StarException> StagehandDataba
   auto files = (*assets)->scanExtension("stagehand");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  if (auto queued = (*assets)->queueJsons(**files); !queued)
+  if (auto queued = (*assets)->queueJsons(files->get()); !queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& scannedFile : **files) {
+  for (auto const& scannedFile : files->get()) {
     String file = scannedFile.string();
     auto load = [&]() -> std::expected<void, StarException> {
       auto config = (*assets)->json(file);
@@ -80,7 +80,7 @@ std::expected<std::shared_ptr<Stagehand>, StarException> StagehandDatabase::crea
   auto config = m_stagehandTypes.get(stagehandType);
   if (!config)
     return std::unexpected(std::move(config.error()));
-  return Stagehand::create(m_root, jsonMerge(**config, extraConfig));
+  return Stagehand::create(m_root, jsonMerge(config->get(), extraConfig));
 }
 
 }

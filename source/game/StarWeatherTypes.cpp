@@ -147,7 +147,7 @@ std::expected<Json, StarException> WeatherType::toJson() const {
       {"statusEffects", jsonFromStringList(statusEffects)}, {"parallax", parallax ? Json(*parallax) : Json()}};
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, WeatherType& weatherType) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, WeatherType& weatherType) {
   auto name = ds.read(weatherType.name);
   if (!name) return std::unexpected(std::move(name.error()));
   auto particles = ds.readContainer(weatherType.particles,
@@ -167,10 +167,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, WeatherType
   if (!projectiles) return std::unexpected(std::move(projectiles.error()));
   auto result = ds >> weatherType.maximumWind >> weatherType.duration >> weatherType.weatherNoises >> weatherType.statusEffects;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, WeatherType const& weatherType) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, WeatherType const& weatherType) {
   auto name = ds.write(weatherType.name);
   if (!name) return std::unexpected(std::move(name.error()));
   auto particles = ds.writeContainer(weatherType.particles,
@@ -190,7 +190,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, WeatherType
   if (!projectiles) return std::unexpected(std::move(projectiles.error()));
   auto result = ds << weatherType.maximumWind << weatherType.duration << weatherType.weatherNoises << weatherType.statusEffects;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 }

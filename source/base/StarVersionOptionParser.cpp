@@ -61,8 +61,12 @@ std::expected<VersionOptionParser::Options, StarException> VersionOptionParser::
 }
 
 std::expected<VersionOptionParser::Options, StarException> VersionOptionParser::commandParseOrDie(int argc, char** argv) {
-  setCommandName(File::baseName(argv[0]));
-  return parseOrDie(StringList(argc - 1, argv + 1));
+  setCommandName(File::baseName(String(std::string_view(argv[0]))));
+  StringList arguments;
+  arguments.reserve(argc > 0 ? static_cast<std::size_t>(argc - 1) : 0);
+  for (int i = 1; i < argc; ++i)
+    arguments.append(String(std::string_view(argv[i])));
+  return parseOrDie(arguments);
 }
 
 }

@@ -36,7 +36,7 @@ public:
   [[nodiscard]] std::expected<UserGeneratedContentService::UGCState, StarException> triggerContentDownload() override;
 
 private:
-  std::expected<void, StarException> onDownloadResult(DownloadItemResult_t* result);
+  std::expected<void, StarException> onDownloadResult(DownloadItemResult_t& result);
 
   std::shared_ptr<PcPlatformServicesState> m_state;
   SteamCallback<SteamUserGeneratedContentService, DownloadItemResult_t> m_callbackDownloadResult;

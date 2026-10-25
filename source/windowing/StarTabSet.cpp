@@ -78,9 +78,9 @@ std::expected<std::shared_ptr<TabSetWidget>, StarException> TabSetWidget::create
   auto metadata = context.root().imageMetadataDatabase();
   if (!metadata)
     return std::unexpected(std::move(metadata.error()));
-  for (auto image : {&config.tabButtonBaseImage, &config.tabButtonHoverImage, &config.tabButtonPressedImage,
-           &config.tabButtonBaseImageSelected, &config.tabButtonHoverImageSelected, &config.tabButtonPressedImageSelected}) {
-    auto size = (*metadata)->imageSize(*image);
+  for (auto image : {std::cref(config.tabButtonBaseImage), std::cref(config.tabButtonHoverImage), std::cref(config.tabButtonPressedImage),
+           std::cref(config.tabButtonBaseImageSelected), std::cref(config.tabButtonHoverImageSelected), std::cref(config.tabButtonPressedImageSelected)}) {
+    auto size = (*metadata)->imageSize(image.get());
     if (!size)
       return std::unexpected(std::move(size.error()));
     tabs->m_tabHeight = std::max<int>(tabs->m_tabHeight, size->y());
@@ -107,7 +107,7 @@ void TabSetWidget::setSize(Vec2I const& size) {
 }
 
 std::expected<void, StarException> TabSetWidget::addTab(String const& widgetName, std::shared_ptr<Widget> widget, String const& title) {
-  auto created = ButtonWidget::create(*context());
+  auto created = ButtonWidget::create(context());
   if (!created)
     return std::unexpected(std::move(created.error()));
   auto button = *created;
@@ -124,7 +124,11 @@ std::expected<void, StarException> TabSetWidget::addTab(String const& widgetName
   button->setTextOffset(m_tabSetConfig.tabButtonTextOffset);
   button->setPressedOffset(m_tabSetConfig.tabButtonPressedOffset);
   auto page = m_tabBar->numChildren();
-  button->setCallback([this, page](Widget*) { return tabSelect(page); });
+  button->setCallback([owner = std::weak_ptr<TabSetWidget>(as<TabSetWidget>(shared_from_this())), page](Widget&) -> std::expected<void, StarException> {
+    auto tabs = owner.lock();
+    if (!tabs) return std::unexpected(GuiException("Tab set callback target no longer exists"));
+    return tabs->tabSelect(page);
+  });
   auto addedButton = m_tabBar->addChild(toString(page), button);
   if (!addedButton)
     return std::unexpected(std::move(addedButton.error()));
@@ -155,7 +159,7 @@ std::expected<void, StarException> TabSetWidget::tabSelect(std::size_t page) {
       (*button)->setChecked(i == page);
     }
     if (m_callback)
-      return m_callback(this);
+      return m_callback(*this);
   } else {
     auto button = m_tabBar->getChildNum<ButtonWidget>(page);
     if (!button)

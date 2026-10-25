@@ -52,7 +52,7 @@ struct GrassVariant;
 struct BushVariant;
 
 struct PlantExceptionTag {
-  static constexpr char const* name() { return "PlantException"; }
+  static constexpr std::string_view name() { return "PlantException"; }
 };
 using PlantException = StarError<PlantExceptionTag, StarException>;
 
@@ -113,7 +113,7 @@ public:
 
   EntityType entityType() const override;
 
-  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> init(World& world, EntityId entityId, EntityMode mode) override;
 
   [[nodiscard]] virtual std::expected<String, StarException> description() const override;
 
@@ -146,7 +146,7 @@ public:
 
   [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback) override;
 
   [[nodiscard]] std::expected<bool, StarException> damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
 

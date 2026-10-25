@@ -13,7 +13,7 @@ class Logger;
 
 // Returned when a socket is closed or shutdown; other failures use NetworkException.
 struct SocketClosedExceptionTag {
-  static constexpr char const* name() { return "SocketClosedException"; }
+  static constexpr std::string_view name() { return "SocketClosedException"; }
 };
 using SocketClosedException = StarError<SocketClosedExceptionTag, NetworkException>;
 
@@ -97,7 +97,7 @@ protected:
   [[nodiscard]] std::expected<void, StarException> configure();
   Socket(NetworkMode networkMode, std::shared_ptr<SocketImpl> impl, SocketMode socketMode);
 
-  [[nodiscard]] std::expected<void, StarException> checkOpen(char const* methodName) const;
+  [[nodiscard]] std::expected<void, StarException> checkOpen(std::string_view methodName) const;
   void doShutdown();
   void doClose();
 

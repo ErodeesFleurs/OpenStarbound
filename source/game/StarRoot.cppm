@@ -202,17 +202,17 @@ public:
   GameTiming& timing() { return m_timing; }
   Curve25519::KeySet const& identity() const { return m_identity; }
   SongbookSynchronization& songbookSynchronization() { return m_songbookSynchronization; }
-  [[nodiscard]] std::expected<WorkerPool*, StarException> workers();
-  [[nodiscard]] std::expected<bool*, StarException> humanoidHeadRotation();
+  [[nodiscard]] std::expected<std::reference_wrapper<WorkerPool>, StarException> workers();
+  [[nodiscard]] std::expected<std::reference_wrapper<bool>, StarException> humanoidHeadRotation();
 
 private:
   explicit Root(Settings settings);
   [[nodiscard]] std::expected<void, StarException> initialize();
   [[nodiscard]] std::expected<StringList, StarException> scanForAssetSources(StringList const& directories, StringList const& manual = {});
   template <typename T, typename... Params>
-  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> loadMember(std::shared_ptr<T>& ptr, std::mutex& mutex, char const* name, Params&&... params);
+  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> loadMember(std::shared_ptr<T>& ptr, std::mutex& mutex, std::string_view name, Params&&... params);
   template <typename T>
-  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> loadMemberFunction(std::shared_ptr<T>& ptr, std::mutex& mutex, char const* name, std::function<std::expected<std::shared_ptr<T>, StarException>()> loadFunction);
+  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> loadMemberFunction(std::shared_ptr<T>& ptr, std::mutex& mutex, std::string_view name, std::function<std::expected<std::shared_ptr<T>, StarException>()> loadFunction);
 
   // m_configurationMutex must be held when calling.
   [[nodiscard]] std::expected<void, StarException> writeConfig();

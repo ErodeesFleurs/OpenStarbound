@@ -18,9 +18,9 @@ class Root;
 // stacking them / consuming them.  As items are taken out of the ItemBag, any
 // Item with a zero count is set to null, so no shared item pointer returned by this
 // class should ever be empty.  They will either be null, or of count >= 1.
-// All methods are safe to call with null item pointers. Any non-const item pointer
-// given to the ItemBag may be used internally depending on how the item
-// stacks, so should not be used after passing to the method.
+// Nullable item parameters accept null. Query parameters borrow their items only
+// for the call. Owning item parameters may be retained internally depending on
+// how the item stacks, so should not be reused after passing to the method.
 class ItemBag {
 public:
   struct ItemsFitWhereResult {
@@ -61,7 +61,7 @@ public:
   [[nodiscard]]
   std::expected<std::shared_ptr<Item>, StarException> at(std::size_t i) const;
   [[nodiscard]]
-  std::expected<std::shared_ptr<Item>*, StarException> at(std::size_t i);
+  std::expected<std::reference_wrapper<std::shared_ptr<Item>>, StarException> at(std::size_t i);
 
   // Returns all non-empty items and clears container contents
   List<std::shared_ptr<Item>> takeAll();
@@ -96,13 +96,13 @@ public:
 
   // Returns the number of items that can fit anywhere in the bag, including
   // being split up.
-  std::uint64_t itemsCanFit(std::shared_ptr<Item const> const& items) const;
+  std::uint64_t itemsCanFit(std::optional<std::reference_wrapper<Item const>> items) const;
   // Returns the number of items that can be stacked with existing items
   // anywhere in the bag.
-  std::uint64_t itemsCanStack(std::shared_ptr<Item const> const& items) const;
+  std::uint64_t itemsCanStack(std::optional<std::reference_wrapper<Item const>> items) const;
 
   // Returns where the items would fit if inserted, including any splitting up
-  ItemsFitWhereResult itemsFitWhere(std::shared_ptr<Item const> const& items, std::uint64_t max = std::numeric_limits<std::uint64_t>::max()) const;
+  ItemsFitWhereResult itemsFitWhere(std::optional<std::reference_wrapper<Item const>> items, std::uint64_t max = std::numeric_limits<std::uint64_t>::max()) const;
 
   // Add items anywhere in the bag. Tries to stack items first.  If any items
   // are left over, addItems returns them, otherwise null.
@@ -127,15 +127,15 @@ public:
 private:
   // If the from item can stack into the given to item, returns the amount that
   // would be transfered.
-  static std::uint64_t stackTransfer(std::shared_ptr<Item const> const& to, std::shared_ptr<Item const> const& from);
+  static std::uint64_t stackTransfer(std::optional<std::reference_wrapper<Item const>> to, std::optional<std::reference_wrapper<Item const>> from);
 
   // Returns the slot that contains the item already and has the *highest*
   // stack count but not full, or an empty slot, or NPos for no room.
-  std::size_t bestSlotAvailable(std::shared_ptr<Item const> const& item, bool stacksOnly, std::function<bool(std::size_t)> test) const;
-  std::size_t bestSlotAvailable(std::shared_ptr<Item const> const& item, bool stacksOnly) const;
+  std::size_t bestSlotAvailable(Item const& item, bool stacksOnly, std::function<bool(std::size_t)> test) const;
+  std::size_t bestSlotAvailable(Item const& item, bool stacksOnly) const;
 
   // Borrowed for the bag's lifetime; deserialization resolves the current catalog.
-  Root* m_root;
+  std::reference_wrapper<Root> m_root;
 
   // Empty stacks and null slots represent the same logical contents.
   mutable List<std::shared_ptr<Item>> m_items;

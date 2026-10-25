@@ -57,7 +57,7 @@ namespace {
 class RootIsolationErrorSink : public LogSink {
 public:
   RootIsolationErrorSink() { setLevel(LogLevel::Error); }
-  [[nodiscard]] std::expected<void, StarException> log(char const* message, LogLevel) override {
+  [[nodiscard]] std::expected<void, StarException> log(std::string_view message, LogLevel) override {
     ADD_FAILURE() << "Error was logged: " << message;
     return {};
   }
@@ -312,7 +312,7 @@ const GameTestRegistration simultaneousRoots("RootTest", "SimultaneousRoots", []
     // not prevent a subsequent successful Root construction.
     auto failedSettings = settingsA;
     failedSettings.storageDirectory = File::relativeTo(*directoryA, "not-a-directory");
-    ASSERT_TRUE(File::writeFile("regular file", failedSettings.storageDirectory));
+    ASSERT_TRUE(File::writeFile(String("regular file"), failedSettings.storageDirectory));
     auto failedRoot = Root::create(failedSettings);
     EXPECT_FALSE(failedRoot);
     auto recoveredSettings = settingsA;
@@ -428,14 +428,14 @@ const GameTestRegistration simultaneousRoots("RootTest", "SimultaneousRoots", []
   auto tile = world.modifyServerTile(position, true);
   if (!tile) return std::unexpected(std::move(tile.error()));
   if (!*tile) return std::unexpected(StarException("Isolation material tile is unavailable"));
-  EXPECT_EQ((*tile)->foreground, EmptyMaterialId);
-  if ((*tile)->foreground != EmptyMaterialId)
+  EXPECT_EQ((*tile)->get().foreground, EmptyMaterialId);
+  if ((*tile)->get().foreground != EmptyMaterialId)
     return std::unexpected(StarException("Isolation material tile is not empty"));
   auto center = Vec2F(position) + Vec2F(0.5f, 0.5f);
   EXPECT_EQ(world.pointTileCollision(center), false);
   // Supply a legitimate attachment surface, then let WorldServer perform the
   // placement and derive its collision from this world's MaterialDatabase.
-  (*tile)->background = StructureMaterialId;
+  (*tile)->get().background = StructureMaterialId;
   auto placed = world.forceModifyTile(
       position, PlaceMaterial{TileLayer::Foreground, material, MaterialHue(0)}, true);
   if (!placed) return std::unexpected(std::move(placed.error()));
@@ -529,9 +529,9 @@ const GameTestRegistration animatorPartDrawableFirstAdd("AnimatorTest", "PartDra
       ASSERT_TRUE(created) << created.error().what();
       auto animator = std::move(*created);
       auto callbacks = scripted
-          ? LuaBindings::makeScriptedAnimatorCallbacks(animator.get(),
+          ? LuaBindings::makeScriptedAnimatorCallbacks(*animator,
               [](String const&, Json const& fallback) -> std::expected<Json, StarException> { return fallback; })
-          : LuaBindings::makeNetworkedAnimatorCallbacks(animator.get());
+          : LuaBindings::makeNetworkedAnimatorCallbacks(*animator);
       ASSERT_TRUE(callbacks) << callbacks.error().what();
       auto engine = LuaEngine::create();
       ASSERT_TRUE(engine) << engine.error().what();
@@ -569,7 +569,7 @@ const GameTestRegistration animatorPartDrawableFirstAdd("AnimatorTest", "PartDra
       ASSERT_TRUE(appendedOutput) << appendedOutput.error().what();
       EXPECT_EQ(*appendedOutput, (std::vector<float>{11, 22}));
 
-      for (auto operation : {"addPartJsonDrawables", "setPartJsonDrawables"}) {
+      for (std::string_view operation : {"addPartJsonDrawables", "setPartJsonDrawables"}) {
         String script = String("animator.") + operation
             + R"LUA(('body', {{line = {{0,0}, {3,3}}, width = 33}, {line = {{0,0}, {4,4}}, width = 'invalid'}}))LUA";
         auto failed = context.load(script);

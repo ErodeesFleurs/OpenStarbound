@@ -67,7 +67,7 @@ import star.algorithm;
 namespace Star {
 
 #ifdef STAR_SYSTEM_WINDOWS
-static bool copyDibToClipboard(const std::uint8_t* buf, unsigned int width, unsigned int height) {
+static bool copyDibToClipboard(std::span<std::uint8_t const> buf, unsigned int width, unsigned int height) {
   std::size_t size = (std::size_t)(width * height * 4u);
 
   BITMAPV5HEADER hV5{};
@@ -84,11 +84,11 @@ static bool copyDibToClipboard(const std::uint8_t* buf, unsigned int width, unsi
   hV5.bV5AlphaMask = 0xFF000000;
   hV5.bV5CSType = LCS_WINDOWS_COLOR_SPACE;
   hV5.bV5Intent = LCS_GM_GRAPHICS;
-  if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(hV5) + size)) {
-    if (auto dst = (char*)GlobalLock(handle)) {
+  if (std::unique_ptr<std::remove_pointer_t<HGLOBAL>, decltype(&GlobalFree)> handle(GlobalAlloc(GMEM_MOVEABLE, sizeof(hV5) + size), GlobalFree); handle) {
+    if (auto dst = static_cast<char*>(GlobalLock(handle.get()))) {
       std::memcpy(dst, &hV5, sizeof(hV5));
       unsigned int sizeI = width * height;
-      unsigned int* data = (unsigned int*)buf;
+      auto data = reinterpret_cast<unsigned int const*>(buf.data());
       unsigned int* rgba = (unsigned int*)(dst + sizeof(hV5));
       for (unsigned int x = 0; x != sizeI; ++x) {
         unsigned int c = data[x];
@@ -97,23 +97,31 @@ static bool copyDibToClipboard(const std::uint8_t* buf, unsigned int width, unsi
         v |= c >> 16 & 0x000000FF;       // b
         rgba[x] = v;
       }
-      GlobalUnlock(handle);
+      GlobalUnlock(handle.get());
+    } else {
+      return false;
     }
 
-    SetClipboardData(CF_DIBV5, handle);
+    if (!SetClipboardData(CF_DIBV5, handle.get()))
+      return false;
+    handle.release();
     return true;
   }
 
   return false;
 }
 
-static bool copyPngToClipboard(void* buf, std::size_t size) {
-  if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, size)) {
-    if (auto dst = (char*)GlobalLock(handle)) {
-      std::memcpy(dst, buf, size);
-      GlobalUnlock(handle);
+static bool copyPngToClipboard(std::span<char const> buf) {
+  if (std::unique_ptr<std::remove_pointer_t<HGLOBAL>, decltype(&GlobalFree)> handle(GlobalAlloc(GMEM_MOVEABLE, buf.size()), GlobalFree); handle) {
+    if (auto dst = static_cast<char*>(GlobalLock(handle.get()))) {
+      std::memcpy(dst, buf.data(), buf.size());
+      GlobalUnlock(handle.get());
+    } else {
+      return false;
     }
-    SetClipboardData(RegisterClipboardFormatA("PNG"), handle);
+    if (!SetClipboardData(RegisterClipboardFormatA("PNG"), handle.get()))
+      return false;
+    handle.release();
     return true;
   }
   return false;
@@ -145,13 +153,17 @@ static bool copyPngToClipboard(void* buf, std::size_t size) {
   wide.push_back(0);
   wide.push_back(0);
   std::size_t wideSize = wide.size() * sizeof(std::wstring::value_type);
-  if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(DROPFILES) + wideSize)) {
-    if (auto dst = (char*)GlobalLock(handle)) {
+  if (std::unique_ptr<std::remove_pointer_t<HGLOBAL>, decltype(&GlobalFree)> handle(GlobalAlloc(GMEM_MOVEABLE, sizeof(DROPFILES) + wideSize), GlobalFree); handle) {
+    if (auto dst = static_cast<char*>(GlobalLock(handle.get()))) {
       std::memcpy(dst, &drop, sizeof(drop));
       std::memcpy(dst + sizeof(DROPFILES), wide.data(), wideSize);
-      GlobalUnlock(handle);
+      GlobalUnlock(handle.get());
+    } else {
+      return false;
     }
-    SetClipboardData(CF_HDROP, handle);
+    if (!SetClipboardData(CF_HDROP, handle.get()))
+      return false;
+    handle.release();
     return true;
   }
   return false;
@@ -527,7 +539,7 @@ public:
       return std::unexpected(std::move(contextScope.error()));
 
     if (auto basePath = SDL_GetBasePath()) {
-      auto result = File::changeDirectory(basePath);
+      auto result = File::changeDirectory(String(std::string_view(basePath)));
       if (!result)
         return std::unexpected(std::move(result.error()));
     }
@@ -550,8 +562,7 @@ public:
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
       return std::unexpected(ApplicationException(strf("Couldn't initialize SDL Video: {}", SDL_GetError())));
 
-    m_videoDriver = SDL_GetCurrentVideoDriver();
-    if (auto result = m_application->logger().info("Application: using Video Driver '{}'", m_videoDriver); !result)
+    if (auto result = m_application->logger().info("Application: using Video Driver '{}'", SDL_GetCurrentVideoDriver()); !result)
       return std::unexpected(std::move(result.error()));
 
     if (auto result = m_application->logger().info("Application: Initializing SDL Controller"); !result)
@@ -564,8 +575,7 @@ public:
     if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
       return std::unexpected(ApplicationException(strf("Couldn't initialize SDL Audio: {}", SDL_GetError())));
 
-    m_audioDriver = SDL_GetCurrentAudioDriver();
-    if (auto result = m_application->logger().info("Application: using Audio Driver '{}'", m_audioDriver); !result)
+    if (auto result = m_application->logger().info("Application: using Audio Driver '{}'", SDL_GetCurrentAudioDriver()); !result)
       return std::unexpected(std::move(result.error()));
 
     SDL_SetJoystickEventsEnabled(true);
@@ -581,15 +591,15 @@ public:
     if (auto result = m_application->logger().info("Application: Creating SDL window"); !result)
       return std::unexpected(std::move(result.error()));
 #ifdef STAR_SYSTEM_MACOS
-    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    m_sdlWindow.reset(SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE));
 #else
-    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    m_sdlWindow.reset(SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY));
 #endif
     if (!m_sdlWindow)
       return std::unexpected(ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError()));
     
 #ifndef STAR_SYSTEM_MACOS
-    m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
+    m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow.get());
 #endif
     
 #ifdef STAR_SYSTEM_LINUX
@@ -620,17 +630,16 @@ public:
         int h = static_cast<int>(flipped.height());
         int pitch = static_cast<int>(flipped.bytesPerPixel() * flipped.width());
 
-        SDL_Surface* iconSurface = SDL_CreateSurfaceFrom(
+        std::unique_ptr<SDL_Surface, decltype(&SDL_DestroySurface)> iconSurface(SDL_CreateSurfaceFrom(
           w,
           h,
           sdlFmt,
-          (void*)flipped.data(),
+          flipped.data().data(),
           pitch
-        );
+        ), SDL_DestroySurface);
 
         if (iconSurface) {
-          SDL_SetWindowIcon(m_sdlWindow, iconSurface);
-          SDL_DestroySurface(iconSurface);
+          SDL_SetWindowIcon(m_sdlWindow.get(), iconSurface.get());
         } else {
           if (auto result = m_application->logger().warn("Could not create SDL surface for icon '{}': {}", ".icon/openstarbound.png", SDL_GetError()); !result)
             return std::unexpected(std::move(result.error()));
@@ -643,12 +652,12 @@ public:
       const char* Home = std::getenv("HOME");
 
       if (XdgDataHome && XdgDataHome[0] != '\0') {
-        auto path = String::joinWith("", XdgDataHome, "/icons");
+        auto path = String::joinWith("", String(std::string_view(XdgDataHome)), "/icons");
         if (!path)
           return std::unexpected(std::move(path.error()));
         XdgIconsPath = std::move(*path);
       } else if (Home && Home[0] != '\0') {
-        auto path = String::joinWith("", Home, "/.local/share/icons");
+        auto path = String::joinWith("", String(std::string_view(Home)), "/.local/share/icons");
         if (!path)
           return std::unexpected(std::move(path.error()));
         XdgIconsPath = std::move(*path);
@@ -688,50 +697,50 @@ public:
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, majorVersion);
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minorVersion);
-      m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
+      m_sdlGlContext.reset(SDL_GL_CreateContext(m_sdlWindow.get()));
       if (m_sdlGlContext) break;
     }
     if (!m_sdlGlContext)
       return std::unexpected(ApplicationException::format("Application: Could not create OpenGL context: {}", SDL_GetError()));
 
-    SDL_ShowWindow(m_sdlWindow);
-    SDL_RaiseWindow(m_sdlWindow);
+    SDL_ShowWindow(m_sdlWindow.get());
+    SDL_RaiseWindow(m_sdlWindow.get());
 
     int width;
     int height;
-    SDL_GetWindowSize(m_sdlWindow, &width, &height);
+    SDL_GetWindowSize(m_sdlWindow.get(), &width, &height);
     m_windowSize = Vec2U(width, height);
 
-    SDL_GL_SwapWindow(m_sdlWindow);
+    SDL_GL_SwapWindow(m_sdlWindow.get());
     if (auto result = setVSyncEnabled(m_windowVSync); !result)
       return std::unexpected(std::move(result.error()));
 
-    SDL_StopTextInput(m_sdlWindow);
+    SDL_StopTextInput(m_sdlWindow.get());
 
     if (auto result = m_application->logger().info("Application: Opening audio device"); !result)
       return std::unexpected(std::move(result.error()));
     m_audioOutputData.clear();
     SDL_AudioSpec desired = {SDL_AUDIO_S16, 2, 44100};
-    m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired,
+    m_sdlAudioOutputStream.reset(SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired,
     [](void* userdata, SDL_AudioStream* stream, int len, int) {
       if (len > 0) {
-        auto sdlPlatform = ((SdlPlatform*)(userdata));
-        sdlPlatform->m_audioOutputData.resize(len);
-        auto result = sdlPlatform->getAudioData(sdlPlatform->m_audioOutputData.data(), len);
+        auto& sdlPlatform = *static_cast<SdlPlatform*>(userdata);
+        sdlPlatform.m_audioOutputData.resize(len / sizeof(std::int16_t));
+        auto result = sdlPlatform.getAudioData(sdlPlatform.m_audioOutputData);
         if (!result) {
-          sdlPlatform->recordAudioError(std::move(result.error()));
+          sdlPlatform.recordAudioError(std::move(result.error()));
           return;
         }
-        SDL_PutAudioStreamData(stream, sdlPlatform->m_audioOutputData.data(), len);
+        SDL_PutAudioStreamData(stream, sdlPlatform.m_audioOutputData.data(), len);
       }
-    }, this);
+    }, this));
     if (!m_sdlAudioOutputStream) {
       if (auto result = m_application->logger().error("Application: Could not open audio device, no sound available!"); !result)
         return std::unexpected(std::move(result.error()));
     } else {
       if (auto result = m_application->logger().info("Application: Opened default audio device with 44.1khz / 16 bit stereo audio"); !result)
         return std::unexpected(std::move(result.error()));
-      SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioOutputStream));
+      SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioOutputStream.get()));
     }
 
     auto renderer = OpenGlRenderer::create(m_application->logger());
@@ -744,10 +753,10 @@ public:
     m_cursorCache.setTimeToLive(30000);
 
     IMGUI_CHECKVERSION();
-    m_imguiContext = ImGui::CreateContext();
+    m_imguiContext.reset(ImGui::CreateContext());
     if (!m_imguiContext)
       return std::unexpected(ApplicationException("Application: Could not create ImGui context"));
-    ImGui::SetCurrentContext(m_imguiContext);
+    ImGui::SetCurrentContext(m_imguiContext.get());
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigNavCaptureKeyboard = false;
 
@@ -756,7 +765,7 @@ public:
     float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
     style.ScaleAllSizes(main_scale);
 
-    m_imguiSdlInitialized = ImGui_ImplSDL3_InitForOpenGL(m_sdlWindow, m_sdlGlContext);
+    m_imguiSdlInitialized = ImGui_ImplSDL3_InitForOpenGL(m_sdlWindow.get(), m_sdlGlContext.get());
     if (!m_imguiSdlInitialized)
       return std::unexpected(ApplicationException::format("Application: Could not initialize ImGui SDL backend: {}", SDL_GetError()));
     m_imguiOpenGlInitialized = ImGui_ImplOpenGL3_Init(nullptr);
@@ -771,7 +780,7 @@ public:
       EmergencyLog::error("Application: cleanup failed: {}", outputException(ExceptionDiagnostic(result.error()), true));
   }
 
-  typedef std::function<void(std::uint8_t*, int)> AudioCallback;
+  using AudioCallback = ApplicationController::AudioCallback;
   [[nodiscard]] std::expected<bool, StarException> openAudioInputDevice(SDL_AudioDeviceID deviceId, int freq, int channels, AudioCallback callback) {
     closeAudioInputDevice();
     if (!callback) {
@@ -781,26 +790,26 @@ public:
     }
     m_audioInputCallback = std::move(callback);
     SDL_AudioSpec desired = {SDL_AUDIO_S16, channels, freq};
-    m_sdlAudioInputStream = SDL_OpenAudioDeviceStream(deviceId, &desired,
+    m_sdlAudioInputStream.reset(SDL_OpenAudioDeviceStream(deviceId, &desired,
     [](void* userdata, SDL_AudioStream* stream, int len, int) {
       if (len > 0) {
-        auto sdlPlatform = ((SdlPlatform*)(userdata));
-        sdlPlatform->m_audioInputData.resize(len);
-        int received = SDL_GetAudioStreamData(stream, sdlPlatform->m_audioInputData.data(), len);
+        auto& sdlPlatform = *static_cast<SdlPlatform*>(userdata);
+        sdlPlatform.m_audioInputData.resize(len);
+        int received = SDL_GetAudioStreamData(stream, sdlPlatform.m_audioInputData.data(), len);
         if (received > 0)
-          sdlPlatform->m_audioInputCallback(sdlPlatform->m_audioInputData.data(), received);
+          sdlPlatform.m_audioInputCallback(std::span(sdlPlatform.m_audioInputData).first(received));
         else if (received < 0)
-          if (auto result = sdlPlatform->m_application->logger().error("Could not read audio input stream: {}", SDL_GetError()); !result)
-            sdlPlatform->recordAudioError(std::move(result.error()));
+          if (auto result = sdlPlatform.m_application->logger().error("Could not read audio input stream: {}", SDL_GetError()); !result)
+            sdlPlatform.recordAudioError(std::move(result.error()));
       }
-    }, this);
+    }, this));
 
     if (m_sdlAudioInputStream) {
-      if (auto result = m_application->logger().info("Opened audio input device '{}'", SDL_GetAudioDeviceName(SDL_GetAudioStreamDevice(m_sdlAudioInputStream))); !result) {
+      if (auto result = m_application->logger().info("Opened audio input device '{}'", SDL_GetAudioDeviceName(SDL_GetAudioStreamDevice(m_sdlAudioInputStream.get()))); !result) {
         closeAudioInputDevice();
         return std::unexpected(std::move(result.error()));
       }
-      SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioInputStream));
+      SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioInputStream.get()));
     }
     else {
       m_audioInputCallback = {};
@@ -808,7 +817,7 @@ public:
         return std::unexpected(std::move(result.error()));
     }
 
-    return m_sdlAudioInputStream != 0;
+    return static_cast<bool>(m_sdlAudioInputStream);
   }
 
   bool closeAudioInputDevice() {
@@ -816,8 +825,8 @@ public:
       if (auto result = m_application->logger().info("Closing audio input device"); !result)
         EmergencyLog::error("Application: cleanup logging failed: {}", outputException(ExceptionDiagnostic(result.error()), true));
       // Detaching takes the stream lock and waits for an in-flight callback.
-      SDL_SetAudioStreamPutCallback(m_sdlAudioInputStream, nullptr, nullptr);
-      SDL_DestroyAudioStream(std::exchange(m_sdlAudioInputStream, nullptr));
+      SDL_SetAudioStreamPutCallback(m_sdlAudioInputStream.get(), nullptr, nullptr);
+      m_sdlAudioInputStream.reset();
       m_audioInputCallback = {};
       return true;
     }
@@ -825,21 +834,21 @@ public:
   }
 
   [[nodiscard]] std::expected<void, StarException> cleanup() {
-    if (auto result = m_cursorCache.ptr(m_currentCursor); !result)
+    if (auto result = m_cursorCache.maybeRef(m_currentCursor); !result)
       return std::unexpected(std::move(result.error()));
     m_cursorCache.cleanup();
     return {};
   }
 
   [[nodiscard]] std::expected<void, StarException> run() {
-    auto contextScope = NativeUiContextScope::create(m_sdlWindow, m_sdlGlContext, m_imguiContext);
+    auto contextScope = NativeUiContextScope::create(m_sdlWindow.get(), m_sdlGlContext.get(), m_imguiContext.get());
     bool imguiFrameActive = false;
     auto result = [&]() -> std::expected<void, StarException> {
       if (!contextScope)
         return std::unexpected(std::move(contextScope.error()));
       if (auto result = m_application->logger().info("Application: initialization..."); !result)
         return std::unexpected(std::move(result.error()));
-      if (auto result = m_application->applicationInit(std::make_shared<Controller>(this)); !result)
+      if (auto result = m_application->applicationInit(std::make_shared<Controller>(*this)); !result)
         return std::unexpected(std::move(result.error()));
 
       if (auto result = m_application->logger().info("Application: renderer initialization..."); !result)
@@ -900,7 +909,7 @@ public:
         ImGui::Render();
         imguiFrameActive = false;
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        SDL_GL_SwapWindow(m_sdlWindow);
+        SDL_GL_SwapWindow(m_sdlWindow.get());
         m_renderRate = m_renderTicker.tick();
 
         if (m_quitRequested) {
@@ -994,8 +1003,8 @@ private:
 
   void closeAudioOutputDevice() {
     if (m_sdlAudioOutputStream) {
-      SDL_SetAudioStreamGetCallback(m_sdlAudioOutputStream, nullptr, nullptr);
-      SDL_DestroyAudioStream(std::exchange(m_sdlAudioOutputStream, nullptr));
+      SDL_SetAudioStreamGetCallback(m_sdlAudioOutputStream.get(), nullptr, nullptr);
+      m_sdlAudioOutputStream.reset();
     }
   }
 
@@ -1004,9 +1013,9 @@ private:
       m_application.reset();
       return {};
     }
-    auto contextScope = NativeUiContextScope::create(m_sdlWindow, m_sdlGlContext, m_imguiContext);
+    auto contextScope = NativeUiContextScope::create(m_sdlWindow.get(), m_sdlGlContext.get(), m_imguiContext.get());
     if (!contextScope && m_imguiContext)
-      ImGui::SetCurrentContext(m_imguiContext);
+      ImGui::SetCurrentContext(m_imguiContext.get());
     // Stop callbacks before destroying their application/userdata and buffers.
     closeAudioOutputDevice();
     closeAudioInputDevice();
@@ -1019,19 +1028,19 @@ private:
       ImGui_ImplSDL3_Shutdown();
     if (m_imguiContext) {
       if (contextScope)
-        contextScope->discardImguiContext(m_imguiContext);
-      ImGui::DestroyContext(std::exchange(m_imguiContext, nullptr));
+        contextScope->discardImguiContext(m_imguiContext.get());
+      m_imguiContext.reset();
     }
     m_SdlControllers.clear();
     SDL_SetCursor(nullptr);
     m_cursorCache.clear();
     if (m_sdlGlContext) {
       if (contextScope)
-        contextScope->discardGlContext(m_sdlGlContext);
-      SDL_GL_DestroyContext(std::exchange(m_sdlGlContext, nullptr));
+        contextScope->discardGlContext(m_sdlGlContext.get());
+      m_sdlGlContext.reset();
     }
     if (m_sdlWindow)
-      SDL_DestroyWindow(std::exchange(m_sdlWindow, nullptr));
+      m_sdlWindow.reset();
     if (std::exchange(m_sdlInitialized, false))
       SDL_Quit();
     if (!contextScope)
@@ -1040,7 +1049,7 @@ private:
   }
 
   struct Controller : public ApplicationController {
-    Controller(SdlPlatform* parent)
+    Controller(SdlPlatform& parent)
       : parent(parent) {}
 
     bool hasClipboard() override {
@@ -1052,7 +1061,7 @@ private:
       if (SDL_HasClipboardText()) {
         if (auto text = SDL_GetClipboardText()) {
           if (*text != '\0')
-            string.emplace(text);
+            string.emplace(std::string_view(text));
           SDL_free(text);
         }
       }
@@ -1064,70 +1073,70 @@ private:
     }
 
     bool setClipboardData(StringMap<ByteArray> data) override {
-      return parent->setClipboardData(std::move(data));
+      return parent.setClipboardData(std::move(data));
     }
 
-    [[nodiscard]] std::expected<bool, StarException> setClipboardImage(Image const& image, ByteArray* png, String const* path) override {
-      return parent->setClipboardImage(image, png, path);
+    [[nodiscard]] std::expected<bool, StarException> setClipboardImage(Image const& image, std::optional<std::reference_wrapper<ByteArray>> png, std::optional<std::reference_wrapper<String const>> path) override {
+      return parent.setClipboardImage(image, png, path);
     }
 
     [[nodiscard]] std::expected<bool, StarException> setClipboardFile(String const& path) override {
-      return parent->setClipboardFile(path);
+      return parent.setClipboardFile(path);
     }
 
     bool isFocused() const override {
-      return (SDL_GetWindowFlags(parent->m_sdlWindow) & SDL_WINDOW_INPUT_FOCUS) != 0;
+      return (SDL_GetWindowFlags(parent.m_sdlWindow.get()) & SDL_WINDOW_INPUT_FOCUS) != 0;
     }
 
     void setTargetUpdateRate(float targetUpdateRate) override {
-      parent->m_updateTicker.setTargetTickRate(targetUpdateRate);
+      parent.m_updateTicker.setTargetTickRate(targetUpdateRate);
     }
 
     void setUpdateTrackWindow(float updateTrackWindow) override {
-      parent->m_updateTicker.setWindow(updateTrackWindow);
+      parent.m_updateTicker.setWindow(updateTrackWindow);
     }
 
     void setApplicationTitle(String title) override {
-      parent->m_windowTitle = std::move(title);
-      if (parent->m_sdlWindow)
-        SDL_SetWindowTitle(parent->m_sdlWindow, parent->m_windowTitle.utf8Ptr());
+      parent.m_windowTitle = std::move(title);
+      if (parent.m_sdlWindow)
+        SDL_SetWindowTitle(parent.m_sdlWindow.get(), parent.m_windowTitle.utf8Ptr());
     }
 
     [[nodiscard]] std::expected<void, StarException> setFullscreenWindow(Vec2U fullScreenResolution) override {
-      if (parent->m_windowMode != WindowMode::Fullscreen || parent->m_windowSize != fullScreenResolution) {
-        int currentDisplayIndex = SDL_GetDisplayForWindow(parent->m_sdlWindow);
+      if (parent.m_windowMode != WindowMode::Fullscreen || parent.m_windowSize != fullScreenResolution) {
+        int currentDisplayIndex = SDL_GetDisplayForWindow(parent.m_sdlWindow.get());
 
         SDL_DisplayMode closestDisplayMode;
         if (SDL_GetClosestFullscreenDisplayMode(currentDisplayIndex, (int)fullScreenResolution[0], (int)fullScreenResolution[1], 0.f, true, &closestDisplayMode)) {
-          if (SDL_SetWindowFullscreenMode(parent->m_sdlWindow, &closestDisplayMode)) {
-            if (parent->m_windowMode == WindowMode::Fullscreen)
-              SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
-            else if (parent->m_windowMode == WindowMode::Borderless)
-              SDL_SetWindowBordered(parent->m_sdlWindow, true);
-            else if (parent->m_windowMode == WindowMode::Maximized)
-              SDL_RestoreWindow(parent->m_sdlWindow);
+          if (SDL_SetWindowFullscreenMode(parent.m_sdlWindow.get(), &closestDisplayMode)) {
+            if (parent.m_windowMode == WindowMode::Fullscreen)
+              SDL_SetWindowFullscreen(parent.m_sdlWindow.get(), 0);
+            else if (parent.m_windowMode == WindowMode::Borderless)
+              SDL_SetWindowBordered(parent.m_sdlWindow.get(), true);
+            else if (parent.m_windowMode == WindowMode::Maximized)
+              SDL_RestoreWindow(parent.m_sdlWindow.get());
 
-            parent->m_windowMode = WindowMode::Fullscreen;
-            SDL_SetWindowFullscreen(parent->m_sdlWindow, SDL_WINDOW_FULLSCREEN);
+            parent.m_windowMode = WindowMode::Fullscreen;
+            SDL_SetWindowFullscreen(parent.m_sdlWindow.get(), SDL_WINDOW_FULLSCREEN);
           } else {
-            if (auto result = parent->m_application->logger().warn("Failed to set resolution {}, {}", (unsigned)closestDisplayMode.w, (unsigned)closestDisplayMode.h); !result)
+            if (auto result = parent.m_application->logger().warn("Failed to set resolution {}, {}", (unsigned)closestDisplayMode.w, (unsigned)closestDisplayMode.h); !result)
               return std::unexpected(std::move(result.error()));
           }
         } else {
-          if (auto result = parent->m_application->logger().warn("Unable to set requested display resolution {}, {}", (int)fullScreenResolution[0], (int)fullScreenResolution[1]); !result)
+          if (auto result = parent.m_application->logger().warn("Unable to set requested display resolution {}, {}", (int)fullScreenResolution[0], (int)fullScreenResolution[1]); !result)
             return std::unexpected(std::move(result.error()));
         }
 
-        if (auto displayMode = SDL_GetWindowFullscreenMode(parent->m_sdlWindow)) {
-          parent->m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
+        if (auto displayMode = SDL_GetWindowFullscreenMode(parent.m_sdlWindow.get())) {
+          parent.m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
 
           // call these manually since no SDL_WindowEvent is triggered when changing between fullscreen resolutions for some reason
-          if (auto result = parent->m_renderer->setScreenSize(parent->m_windowSize); !result)
+          if (auto result = parent.m_renderer->setScreenSize(parent.m_windowSize); !result)
             return std::unexpected(std::move(result.error()));
-          if (auto result = parent->m_application->windowChanged(parent->m_windowMode, parent->m_windowSize); !result)
+          if (auto result = parent.m_application->windowChanged(parent.m_windowMode, parent.m_windowSize); !result)
             return std::unexpected(std::move(result.error()));
         } else {
-          if (auto result = parent->m_application->logger().error("Couldn't get window display mode!"); !result)
+          if (auto result = parent.m_application->logger().error("Couldn't get window display mode!"); !result)
             return std::unexpected(std::move(result.error()));
         }
       }
@@ -1135,65 +1144,65 @@ private:
     }
 
     void setNormalWindow(Vec2U windowSize) override {
-      auto window = parent->m_sdlWindow;
-      if (parent->m_windowMode != WindowMode::Normal || parent->m_windowSize != windowSize) {
-        if (parent->m_windowMode == WindowMode::Fullscreen)
-          SDL_SetWindowFullscreen(window, 0);
-        else if (parent->m_windowMode == WindowMode::Borderless)
-          SDL_SetWindowBordered(window, true);
-        else if (parent->m_windowMode == WindowMode::Maximized)
-          SDL_RestoreWindow(window);
+      auto const& window = parent.m_sdlWindow;
+      if (parent.m_windowMode != WindowMode::Normal || parent.m_windowSize != windowSize) {
+        if (parent.m_windowMode == WindowMode::Fullscreen)
+          SDL_SetWindowFullscreen(window.get(), 0);
+        else if (parent.m_windowMode == WindowMode::Borderless)
+          SDL_SetWindowBordered(window.get(), true);
+        else if (parent.m_windowMode == WindowMode::Maximized)
+          SDL_RestoreWindow(window.get());
 
-        SDL_SetWindowBordered(window, true);
-        SDL_SetWindowSize(window, windowSize[0], windowSize[1]);
-        SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+        SDL_SetWindowBordered(window.get(), true);
+        SDL_SetWindowSize(window.get(), windowSize[0], windowSize[1]);
+        SDL_SetWindowPosition(window.get(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
-        parent->m_windowMode = WindowMode::Normal;
-        parent->m_windowSize = windowSize;
+        parent.m_windowMode = WindowMode::Normal;
+        parent.m_windowSize = windowSize;
       }
     }
 
     void setMaximizedWindow() override {
-      if (parent->m_windowMode != WindowMode::Maximized) {
-        if (parent->m_windowMode == WindowMode::Fullscreen)
-          SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
-        else if (parent->m_windowMode == WindowMode::Borderless)
-          SDL_SetWindowBordered(parent->m_sdlWindow, true);
+      if (parent.m_windowMode != WindowMode::Maximized) {
+        if (parent.m_windowMode == WindowMode::Fullscreen)
+          SDL_SetWindowFullscreen(parent.m_sdlWindow.get(), 0);
+        else if (parent.m_windowMode == WindowMode::Borderless)
+          SDL_SetWindowBordered(parent.m_sdlWindow.get(), true);
 
-        SDL_RestoreWindow(parent->m_sdlWindow);
-        SDL_MaximizeWindow(parent->m_sdlWindow);
-        parent->m_windowMode = WindowMode::Maximized;
+        SDL_RestoreWindow(parent.m_sdlWindow.get());
+        SDL_MaximizeWindow(parent.m_sdlWindow.get());
+        parent.m_windowMode = WindowMode::Maximized;
       }
     }
 
     [[nodiscard]] std::expected<void, StarException> setBorderlessWindow() override {
-      if (parent->m_windowMode != WindowMode::Borderless) {
-        if (parent->m_windowMode == WindowMode::Fullscreen)
-          SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
-        else if (parent->m_windowMode == WindowMode::Maximized)
-          SDL_RestoreWindow(parent->m_sdlWindow);
+      if (parent.m_windowMode != WindowMode::Borderless) {
+        if (parent.m_windowMode == WindowMode::Fullscreen)
+          SDL_SetWindowFullscreen(parent.m_sdlWindow.get(), 0);
+        else if (parent.m_windowMode == WindowMode::Maximized)
+          SDL_RestoreWindow(parent.m_sdlWindow.get());
 
-        SDL_SetWindowBordered(parent->m_sdlWindow, false);
-        parent->m_windowMode = WindowMode::Borderless;
+        SDL_SetWindowBordered(parent.m_sdlWindow.get(), false);
+        parent.m_windowMode = WindowMode::Borderless;
 
-        if (auto displayMode = SDL_GetDesktopDisplayMode(SDL_GetDisplayForWindow(parent->m_sdlWindow))) {
-          parent->m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
+        if (auto displayMode = SDL_GetDesktopDisplayMode(SDL_GetDisplayForWindow(parent.m_sdlWindow.get()))) {
+          parent.m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
           #ifdef STAR_SYSTEM_WINDOWS
           if (m_borderlessWorkaround) { // breaks brightness on some setups god what the fuck fuck microsoft fuck nvidia
-            auto handle = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(parent->m_sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+            auto handle = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(parent.m_sdlWindow.get()), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
             SetWindowLongPtr(handle, GWL_STYLE, WS_OVERLAPPED);
             SetWindowLongPtr(handle, GWL_EXSTYLE, WS_EX_APPWINDOW);
             SetWindowPos(handle, HWND_TOP, 0, 0, displayMode->w, displayMode->h, SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
           } // fuck everything dude it's all so fucked. everything is so fucked
           #endif
-          SDL_SetWindowPosition(parent->m_sdlWindow, 0, 0);
-          SDL_SetWindowSize(parent->m_sdlWindow, parent->m_windowSize[0], parent->m_windowSize[1]);
-          if (auto result = parent->m_renderer->setScreenSize(parent->m_windowSize); !result)
+          SDL_SetWindowPosition(parent.m_sdlWindow.get(), 0, 0);
+          SDL_SetWindowSize(parent.m_sdlWindow.get(), parent.m_windowSize[0], parent.m_windowSize[1]);
+          if (auto result = parent.m_renderer->setScreenSize(parent.m_windowSize); !result)
             return std::unexpected(std::move(result.error()));
-          if (auto result = parent->m_application->windowChanged(parent->m_windowMode, parent->m_windowSize); !result)
+          if (auto result = parent.m_application->windowChanged(parent.m_windowMode, parent.m_windowSize); !result)
             return std::unexpected(std::move(result.error()));
         } else {
-          if (auto result = parent->m_application->logger().error("Couldn't get desktop display mode!"); !result)
+          if (auto result = parent.m_application->logger().error("Couldn't get desktop display mode!"); !result)
             return std::unexpected(std::move(result.error()));
         }
       }
@@ -1208,125 +1217,125 @@ private:
     #endif
 
     [[nodiscard]] std::expected<void, StarException> setVSyncEnabled(bool vSync) override {
-      if (parent->m_windowVSync != vSync) {
-        if (auto result = parent->setVSyncEnabled(vSync); !result)
+      if (parent.m_windowVSync != vSync) {
+        if (auto result = parent.setVSyncEnabled(vSync); !result)
           return std::unexpected(std::move(result.error()));
-        parent->m_windowVSync = vSync;
+        parent.m_windowVSync = vSync;
       }
       return {};
     }
 
     void setMaxFrameSkip(unsigned maxFrameSkip) override {
-      parent->m_maxFrameSkip = maxFrameSkip;
+      parent.m_maxFrameSkip = maxFrameSkip;
     }
 
     void setCursorVisible(bool cursorVisible) override {
-      parent->m_cursorVisible = cursorVisible;
+      parent.m_cursorVisible = cursorVisible;
     }
 
     void setCursorPosition(Vec2I cursorPosition) override {
-      SDL_WarpMouseInWindow(parent->m_sdlWindow, cursorPosition[0], cursorPosition[1]);
+      SDL_WarpMouseInWindow(parent.m_sdlWindow.get(), cursorPosition[0], cursorPosition[1]);
     }
 
     void setCursorHardware(bool hardware) override {
-      parent->m_cursorHardware = hardware;
+      parent.m_cursorHardware = hardware;
     }
 
     [[nodiscard]] std::expected<bool, StarException> setCursorImage(const String& id, const std::shared_ptr<Image const>& image, unsigned scale, const Vec2I& offset) override {
-      return parent->setCursorImage(id, image, scale, offset);
+      return parent.setCursorImage(id, image, scale, offset);
     }
 
     void setAcceptingTextInput(bool acceptingTextInput) override {
-      if (acceptingTextInput != parent->m_acceptingTextInput) {
+      if (acceptingTextInput != parent.m_acceptingTextInput) {
         if (acceptingTextInput)
-          SDL_StartTextInput(parent->m_sdlWindow);
+          SDL_StartTextInput(parent.m_sdlWindow.get());
         else
-          SDL_StopTextInput(parent->m_sdlWindow);
+          SDL_StopTextInput(parent.m_sdlWindow.get());
 
-        parent->m_acceptingTextInput = acceptingTextInput;
+        parent.m_acceptingTextInput = acceptingTextInput;
       }
     }
 
     void setTextArea(std::optional<std::pair<RectI, int>> area) override {
-      if (parent->m_textInputArea == area)
+      if (parent.m_textInputArea == area)
         return;
-      parent->m_textInputArea = area;
+      parent.m_textInputArea = area;
       if (area) {
         RectI& r = area->first;
         SDL_Rect rect{
-          r.xMin(), (int)parent->m_windowSize.y() - r.yMax(),
+          r.xMin(), (int)parent.m_windowSize.y() - r.yMax(),
           r.width(), r.height()
         };
-        SDL_SetTextInputArea(parent->m_sdlWindow, &rect, area->second);
+        SDL_SetTextInputArea(parent.m_sdlWindow.get(), &rect, area->second);
       } else {
-        SDL_SetTextInputArea(parent->m_sdlWindow, NULL, 0);
+        SDL_SetTextInputArea(parent.m_sdlWindow.get(), NULL, 0);
       }
     }
 
     AudioFormat enableAudio() override {
-      parent->m_audioEnabled = true;
-      SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(parent->m_sdlAudioOutputStream));
+      parent.m_audioEnabled = true;
+      SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(parent.m_sdlAudioOutputStream.get()));
       return AudioFormat{44100, 2};
     }
 
     void disableAudio() override {
-      parent->m_audioEnabled = false;
-      SDL_PauseAudioDevice(SDL_GetAudioStreamDevice(parent->m_sdlAudioOutputStream));
+      parent.m_audioEnabled = false;
+      SDL_PauseAudioDevice(SDL_GetAudioStreamDevice(parent.m_sdlAudioOutputStream.get()));
     }
 
     [[nodiscard]] std::expected<bool, StarException> openAudioInputDevice(std::uint32_t deviceId, int freq, int channels, AudioCallback callback) override {
-      return parent->openAudioInputDevice(deviceId, freq, channels, callback);
+      return parent.openAudioInputDevice(deviceId, freq, channels, callback);
     };
 
     bool closeAudioInputDevice() override {
-      return parent->closeAudioInputDevice();
+      return parent.closeAudioInputDevice();
     };
 
     float updateRate() const override {
-      return parent->m_updateRate;
+      return parent.m_updateRate;
     }
 
     float renderFps() const override {
-      return parent->m_renderRate;
+      return parent.m_renderRate;
     }
 
   float getDisplayScale() const override {
-    return parent->m_displayScale;
+    return parent.m_displayScale;
   }
 
     std::shared_ptr<StatisticsService> statisticsService() const override {
-      if (parent->m_platformServices)
-        return parent->m_platformServices->statisticsService();
+      if (parent.m_platformServices)
+        return parent.m_platformServices->statisticsService();
       return {};
     }
 
     std::shared_ptr<P2PNetworkingService> p2pNetworkingService() const override {
-      if (parent->m_platformServices)
-        return parent->m_platformServices->p2pNetworkingService();
+      if (parent.m_platformServices)
+        return parent.m_platformServices->p2pNetworkingService();
       return {};
     }
 
     std::shared_ptr<UserGeneratedContentService> userGeneratedContentService() const override {
-      if (parent->m_platformServices)
-        return parent->m_platformServices->userGeneratedContentService();
+      if (parent.m_platformServices)
+        return parent.m_platformServices->userGeneratedContentService();
       return {};
     }
 
     std::shared_ptr<DesktopService> desktopService() const override {
-      if (parent->m_platformServices)
-        return parent->m_platformServices->desktopService();
+      if (parent.m_platformServices)
+        return parent.m_platformServices->desktopService();
       return {};
     }
 
     bool steamIsFlatpak() const override {
-      return parent->m_platformServices && parent->m_platformServices->steamIsFlatpak();
+      return parent.m_platformServices && parent.m_platformServices->steamIsFlatpak();
     }
 
     void quit() override {
-      parent->m_quitRequested = true;
+      parent.m_quitRequested = true;
     }
 
-    SdlPlatform* parent;
+    SdlPlatform& parent;
   };
 
   [[nodiscard]] std::expected<List<InputEvent>, StarException> processEvents() {
@@ -1335,11 +1344,11 @@ private:
     ImGuiIO& io = ImGui::GetIO();
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-      SDL_ConvertEventToRenderCoordinates(SDL_GetRenderer(m_sdlWindow), &event);
+      SDL_ConvertEventToRenderCoordinates(SDL_GetRenderer(m_sdlWindow.get()), &event);
       ImGui_ImplSDL3_ProcessEvent(&event);
       std::optional<InputEvent> starEvent;
       if (event.type == SDL_EVENT_WINDOW_MAXIMIZED || event.type == SDL_EVENT_WINDOW_RESTORED) {
-        auto windowFlags = SDL_GetWindowFlags(m_sdlWindow);
+        auto windowFlags = SDL_GetWindowFlags(m_sdlWindow.get());
 
         if (windowFlags & SDL_WINDOW_MAXIMIZED)
           m_windowMode = WindowMode::Maximized;
@@ -1361,7 +1370,7 @@ private:
       }
 #ifndef STAR_SYSTEM_MACOS
       else if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
-        m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
+        m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow.get());
       }
 #endif
       else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
@@ -1379,7 +1388,7 @@ private:
         if (key)
           starEvent.emplace(KeyUpEvent{*key});
       } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantTextInput) {
-        starEvent.emplace(TextInputEvent{String(event.text.text)});
+        starEvent.emplace(TextInputEvent{String(std::string_view(event.text.text))});
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
         starEvent.emplace(MouseMoveEvent{
           {event.motion.xrel, -event.motion.yrel},
@@ -1428,10 +1437,10 @@ private:
     return inputEvents;
   }
 
-  [[nodiscard]] std::expected<void, StarException> getAudioData(Uint8* stream, int len) {
+  [[nodiscard]] std::expected<void, StarException> getAudioData(std::span<std::int16_t> samples) {
     if (m_audioEnabled)
-      return m_application->getAudioData((std::int16_t*)stream, len / 4);
-    std::memset(stream, 0, len);
+      return m_application->getAudioData(samples, samples.size() / 2);
+    std::ranges::fill(samples, 0);
     return {};
   }
 
@@ -1509,7 +1518,7 @@ private:
       entry->sdlSurface.reset(SDL_CreateSurfaceFrom(
         size[0], size[1],
         pixelFormat,
-        (void*)entry->image->data(),
+        const_cast<std::uint8_t*>(entry->image->data().data()),
         entry->image->bytesPerPixel() * size[0])
       );
       if (!entry->sdlSurface)
@@ -1523,52 +1532,54 @@ private:
 
     if (!entryResult)
       return std::unexpected(std::move(entryResult.error()));
-    auto& entry = **entryResult;
+    auto& entry = entryResult->get();
     if (!SDL_SetCursor(entry->sdlCursor.get()))
       return std::unexpected(ApplicationException::format("Could not activate color cursor: {}", SDL_GetError()));
     return m_cursorVisible = true;
   }
 
   bool setClipboardData(StringMap<ByteArray> data) {
-    auto heldData = new StringMap<ByteArray>(std::move(data));
+    auto heldData = std::make_unique<StringMap<ByteArray>>(std::move(data));
     std::vector<const char*> types;
     for (auto& entry : *heldData)
       types.push_back(entry.first.utf8Ptr());
     auto request = [](void* userdata, const char* mime_type, std::size_t* size) -> const void* {
-      if (auto entry = ((StringMap<ByteArray>*)userdata)->ptr(mime_type)) {
-        *size = entry->size();
-        return entry->ptr();
+      if (auto entry = static_cast<StringMap<ByteArray>*>(userdata)->maybeRef(String(std::string_view(mime_type)))) {
+        *size = entry->get().size();
+        return entry->get().ptr();
       }
       *size = 0;
       return NULL;
     };
     auto cleanup = [](void* userdata) { delete ((StringMap<ByteArray>*)userdata); };
-    if (SDL_SetClipboardData(request, cleanup, heldData, types.data(), types.size()))
+    if (SDL_SetClipboardData(request, cleanup, heldData.get(), types.data(), types.size())) {
+      heldData.release();
       return true;
-
-    cleanup(heldData);
+    }
     return false;
   }
 
-  [[nodiscard]] std::expected<bool, StarException> setClipboardImage(Image const& image, ByteArray* png, String const* path) {
+  [[nodiscard]] std::expected<bool, StarException> setClipboardImage(Image const& image, std::optional<std::reference_wrapper<ByteArray>> png, std::optional<std::reference_wrapper<String const>> path) {
     #ifdef STAR_SYSTEM_WINDOWS // wow, SDL3's implementation is so bad!!
-    return duringClipboard(m_sdlWindow, [&]() -> std::expected<void, StarException> {
+    return duringClipboard(m_sdlWindow.get(), [&]() -> std::expected<void, StarException> {
       if (path) {
-        auto result = copyFileToClipboard(*path);
+        auto result = copyFileToClipboard(path->get());
         if (!result)
           return std::unexpected(std::move(result.error()));
       }
       if (png)
-        copyPngToClipboard(png->ptr(), png->size());
+        copyPngToClipboard(png->get().span());
       auto converted = image.convert(PixelFormat::RGBA32);
-      copyDibToClipboard(converted.data(), converted.width(), converted.height());
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      copyDibToClipboard(converted->data(), converted->width(), converted->height());
       return {};
     });
     #else
     ((void)(image));
     ((void)(path));
     if (png) {
-      StringMap<ByteArray> clipboardData = {{"image/png", std::move(*png)}};
+      StringMap<ByteArray> clipboardData = {{"image/png", std::move(png->get())}};
       return setClipboardData(std::move(clipboardData));
     }
     return false;
@@ -1577,7 +1588,7 @@ private:
 
   [[nodiscard]] std::expected<bool, StarException> setClipboardFile(String const& path) {
     #ifdef STAR_SYSTEM_WINDOWS
-    return duringClipboard(m_sdlWindow, [&]() -> std::expected<void, StarException> {
+    return duringClipboard(m_sdlWindow.get(), [&]() -> std::expected<void, StarException> {
       auto result = copyFileToClipboard(path);
       if (!result)
         return std::unexpected(std::move(result.error()));
@@ -1596,17 +1607,17 @@ private:
   TickRateMonitor m_renderTicker = TickRateMonitor(1.0f);
   float m_renderRate = 0.0f;
 
-  SDL_Window* m_sdlWindow = nullptr;
-  SDL_GLContext m_sdlGlContext = nullptr;
-  ImGuiContext* m_imguiContext = nullptr;
+  std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> m_sdlWindow{nullptr, SDL_DestroyWindow};
+  std::unique_ptr<std::remove_pointer_t<SDL_GLContext>, decltype(&SDL_GL_DestroyContext)> m_sdlGlContext{nullptr, SDL_GL_DestroyContext};
+  std::unique_ptr<ImGuiContext, decltype(&ImGui::DestroyContext)> m_imguiContext{nullptr, ImGui::DestroyContext};
   bool m_imguiSdlInitialized = false;
   bool m_imguiOpenGlInitialized = false;
   bool m_sdlInitialized = false;
-  SDL_AudioStream* m_sdlAudioOutputStream = 0;
-  SDL_AudioStream* m_sdlAudioInputStream = 0;
+  std::unique_ptr<SDL_AudioStream, decltype(&SDL_DestroyAudioStream)> m_sdlAudioOutputStream{nullptr, SDL_DestroyAudioStream};
+  std::unique_ptr<SDL_AudioStream, decltype(&SDL_DestroyAudioStream)> m_sdlAudioInputStream{nullptr, SDL_DestroyAudioStream};
   AudioCallback m_audioInputCallback;
   std::vector<std::uint8_t> m_audioInputData;
-  std::vector<std::uint8_t> m_audioOutputData;
+  std::vector<std::int16_t> m_audioOutputData;
   std::mutex m_audioErrorMutex;
   std::optional<StarException> m_audioError;
   std::optional<std::pair<RectI, int>> m_textInputArea;
@@ -1640,8 +1651,6 @@ private:
   bool m_audioEnabled = false;
   bool m_quitRequested = false;
   float m_displayScale = 1.0f;
-  const char* m_videoDriver;
-  const char* m_audioDriver;
 
   std::shared_ptr<OpenGlRenderer> m_renderer;
   std::unique_ptr<Application> m_application;

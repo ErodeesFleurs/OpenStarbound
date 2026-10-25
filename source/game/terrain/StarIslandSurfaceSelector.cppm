@@ -2,6 +2,7 @@ module;
 import std;
 import star.format;
 import star.json;
+import star.string;
 import star.json_extra;
 
 import star.ordered_map;
@@ -24,7 +25,7 @@ struct IslandColumn {
 };
 
 struct IslandSurfaceSelector : TerrainSelector {
-  static char const* const Name;
+  static std::string_view const Name;
 
   [[nodiscard]] static std::expected<std::shared_ptr<IslandSurfaceSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters);
 private:
@@ -53,7 +54,7 @@ public:
 
 namespace Star {
 
-char const* const IslandSurfaceSelector::Name = "islandSurface";
+std::string_view const IslandSurfaceSelector::Name = "islandSurface";
 
 std::expected<std::shared_ptr<IslandSurfaceSelector>, StarException> IslandSurfaceSelector::create(Json const& config, TerrainSelectorParameters const& parameters) {
   auto result = std::make_shared<IslandSurfaceSelector>(ConstructionKey{}, config, parameters);
@@ -67,7 +68,7 @@ std::expected<std::shared_ptr<IslandSurfaceSelector>, StarException> IslandSurfa
   if (!taper)
     return std::unexpected(std::move(taper.error()));
   result->islandTaperPoint = *taper;
-  auto readFunction = [&](char const* name) -> std::expected<PerlinF, StarException> {
+  auto readFunction = [&](String const& name) -> std::expected<PerlinF, StarException> {
     auto functionConfig = config.getObject(name);
     if (!functionConfig)
       return std::unexpected(std::move(functionConfig.error()));
@@ -122,7 +123,7 @@ std::expected<float, StarException> IslandSurfaceSelector::get(int x, int y) con
   });
   if (!col)
     return std::unexpected(std::move(col.error()));
-  return ((*col)->topLevel - (*col)->bottomLevel) / 2 - std::abs(((*col)->topLevel + (*col)->bottomLevel) / 2 - y);
+  return (col->get().topLevel - col->get().bottomLevel) / 2 - std::abs((col->get().topLevel + col->get().bottomLevel) / 2 - y);
 }
 
 }

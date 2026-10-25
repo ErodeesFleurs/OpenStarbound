@@ -215,14 +215,16 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeUtilityCallbacks(Ran
     XXHash64 hash;
 
     for (auto const& value : values) {
-      if (auto b = std::get_if<LuaBoolean>(&value))
-        xxHash64Push(hash, *b);
-      else if (auto i = std::get_if<LuaInt>(&value))
-        xxHash64Push(hash, *i);
-      else if (auto f = std::get_if<LuaFloat>(&value))
-        xxHash64Push(hash, *f);
-      else if (auto s = std::get_if<LuaString>(&value))
-        xxHash64Push(hash, s->ptr());
+      if (std::holds_alternative<LuaBoolean>(value))
+        xxHash64Push(hash, std::get<LuaBoolean>(value));
+      else if (std::holds_alternative<LuaInt>(value))
+        xxHash64Push(hash, std::get<LuaInt>(value));
+      else if (std::holds_alternative<LuaFloat>(value))
+        xxHash64Push(hash, std::get<LuaFloat>(value));
+      else if (std::holds_alternative<LuaString>(value)) {
+        auto text = std::get<LuaString>(value).view().utf8();
+        xxHash64Push(hash, text.substr(0, text.find('\0')));
+      }
       else
         return std::unexpected(LuaException("Unhashable lua type passed to staticRandomXX binding"));
     }
@@ -297,21 +299,21 @@ std::expected<void, StarException> LuaBindings::UtilityCallbacks::logInfo(Logger
   auto text = formatLua(str, args);
   if (!text)
     return std::unexpected(std::move(text.error()));
-  return logger.log(LogLevel::Info, text->utf8Ptr());
+  return logger.log(LogLevel::Info, std::string_view(text->utf8()).substr(0, text->utf8().find('\0')));
 }
 
 std::expected<void, StarException> LuaBindings::UtilityCallbacks::logWarn(Logger& logger, String const& str, LuaVariadic<LuaValue> const& args) {
   auto text = formatLua(str, args);
   if (!text)
     return std::unexpected(std::move(text.error()));
-  return logger.log(LogLevel::Warn, text->utf8Ptr());
+  return logger.log(LogLevel::Warn, std::string_view(text->utf8()).substr(0, text->utf8().find('\0')));
 }
 
 std::expected<void, StarException> LuaBindings::UtilityCallbacks::logError(Logger& logger, String const& str, LuaVariadic<LuaValue> const& args) {
   auto text = formatLua(str, args);
   if (!text)
     return std::unexpected(std::move(text.error()));
-  return logger.log(LogLevel::Error, text->utf8Ptr());
+  return logger.log(LogLevel::Error, std::string_view(text->utf8()).substr(0, text->utf8().find('\0')));
 }
 
 std::expected<void, StarException> LuaBindings::UtilityCallbacks::setLogMap(LogMap& logMap, String const& key, String const& value, LuaVariadic<LuaValue> const& args) {

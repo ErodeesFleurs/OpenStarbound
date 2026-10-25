@@ -60,116 +60,116 @@ ModUploader::ModUploader(Logger& logger, RandomService& random)
     m_closing = true;
   });
 
-  auto selectDirectoryButton = new QPushButton("Select Mod Directory");
-  m_directoryLabel = new QLabel();
-  m_reloadButton = new QPushButton("Reload");
-  m_nameEditor = new QLineEdit();
-  m_titleEditor = new QLineEdit();
-  m_authorEditor = new QLineEdit();
-  m_versionEditor = new QLineEdit();
-  m_descriptionEditor = new SPlainTextEdit();
-  m_previewImageLabel = new QLabel();
-  auto selectPreviewImageButton = new QPushButton("Select");
-  m_modIdLabel = new QLabel();
-  auto resetModIdButton = new QPushButton("Reset Steam Mod Information");
-  auto userAgreementLabel = new QLabel("By submitting this item, you agree to the <a href=\"http://steamcommunity.com/sharedfiles/workshoplegalagreement\">workshop terms of service</a>");
-  auto uploadButton = new QPushButton("Upload to Steam!");
+  auto& selectDirectoryButton = *new QPushButton("Select Mod Directory", this);
+  m_directoryLabel = std::make_unique<QLabel>();
+  m_reloadButton = std::make_unique<QPushButton>("Reload");
+  m_nameEditor = std::make_unique<QLineEdit>();
+  m_titleEditor = std::make_unique<QLineEdit>();
+  m_authorEditor = std::make_unique<QLineEdit>();
+  m_versionEditor = std::make_unique<QLineEdit>();
+  m_descriptionEditor = std::make_unique<SPlainTextEdit>();
+  m_previewImageLabel = std::make_unique<QLabel>();
+  auto& selectPreviewImageButton = *new QPushButton("Select", this);
+  m_modIdLabel = std::make_unique<QLabel>();
+  auto& resetModIdButton = *new QPushButton("Reset Steam Mod Information", this);
+  auto& userAgreementLabel = *new QLabel("By submitting this item, you agree to the <a href=\"http://steamcommunity.com/sharedfiles/workshoplegalagreement\">workshop terms of service</a>", this);
+  auto& uploadButton = *new QPushButton("Upload to Steam!", this);
 
-  m_categorySelectors.set("Armor and Clothes", new QCheckBox("Armor and Clothes"));
-  m_categorySelectors.set("Character Improvements", new QCheckBox("Character Improvements"));
-  m_categorySelectors.set("Cheats and God Items", new QCheckBox("Cheats and God Items"));
-  m_categorySelectors.set("Crafting and Building", new QCheckBox("Crafting and Building"));
-  m_categorySelectors.set("Dungeons", new QCheckBox("Dungeons"));
-  m_categorySelectors.set("Food and Farming", new QCheckBox("Food and Farming"));
-  m_categorySelectors.set("Furniture and Objects", new QCheckBox("Furniture and Objects"));
-  m_categorySelectors.set("In-Game Tools", new QCheckBox("In-Game Tools"));
-  m_categorySelectors.set("Mechanics", new QCheckBox("Mechanics"));
-  m_categorySelectors.set("Miscellaneous", new QCheckBox("Miscellaneous"));
-  m_categorySelectors.set("Musical Instruments and Songs", new QCheckBox("Musical Instruments and Songs"));
-  m_categorySelectors.set("NPCs and Creatures", new QCheckBox("NPCs and Creatures"));
-  m_categorySelectors.set("Planets and Environments", new QCheckBox("Planets and Environments"));
-  m_categorySelectors.set("Quests", new QCheckBox("Quests"));
-  m_categorySelectors.set("Species", new QCheckBox("Species"));
-  m_categorySelectors.set("Ships", new QCheckBox("Ships"));
-  m_categorySelectors.set("User Interface", new QCheckBox("User Interface"));
-  m_categorySelectors.set("Vehicles and Mounts", new QCheckBox("Vehicles and Mounts"));
-  m_categorySelectors.set("Weapons", new QCheckBox("Weapons"));
+  m_categorySelectors.set("Armor and Clothes", std::make_unique<QCheckBox>("Armor and Clothes"));
+  m_categorySelectors.set("Character Improvements", std::make_unique<QCheckBox>("Character Improvements"));
+  m_categorySelectors.set("Cheats and God Items", std::make_unique<QCheckBox>("Cheats and God Items"));
+  m_categorySelectors.set("Crafting and Building", std::make_unique<QCheckBox>("Crafting and Building"));
+  m_categorySelectors.set("Dungeons", std::make_unique<QCheckBox>("Dungeons"));
+  m_categorySelectors.set("Food and Farming", std::make_unique<QCheckBox>("Food and Farming"));
+  m_categorySelectors.set("Furniture and Objects", std::make_unique<QCheckBox>("Furniture and Objects"));
+  m_categorySelectors.set("In-Game Tools", std::make_unique<QCheckBox>("In-Game Tools"));
+  m_categorySelectors.set("Mechanics", std::make_unique<QCheckBox>("Mechanics"));
+  m_categorySelectors.set("Miscellaneous", std::make_unique<QCheckBox>("Miscellaneous"));
+  m_categorySelectors.set("Musical Instruments and Songs", std::make_unique<QCheckBox>("Musical Instruments and Songs"));
+  m_categorySelectors.set("NPCs and Creatures", std::make_unique<QCheckBox>("NPCs and Creatures"));
+  m_categorySelectors.set("Planets and Environments", std::make_unique<QCheckBox>("Planets and Environments"));
+  m_categorySelectors.set("Quests", std::make_unique<QCheckBox>("Quests"));
+  m_categorySelectors.set("Species", std::make_unique<QCheckBox>("Species"));
+  m_categorySelectors.set("Ships", std::make_unique<QCheckBox>("Ships"));
+  m_categorySelectors.set("User Interface", std::make_unique<QCheckBox>("User Interface"));
+  m_categorySelectors.set("Vehicles and Mounts", std::make_unique<QCheckBox>("Vehicles and Mounts"));
+  m_categorySelectors.set("Weapons", std::make_unique<QCheckBox>("Weapons"));
 
   m_modIdLabel->setOpenExternalLinks(true);
-  userAgreementLabel->setOpenExternalLinks(true);
+  userAgreementLabel.setOpenExternalLinks(true);
 
-  connect(selectDirectoryButton, SIGNAL(clicked()), this, SLOT(selectDirectory()));
-  connect(m_reloadButton, SIGNAL(clicked()), this, SLOT(loadDirectory()));
-  connect(selectPreviewImageButton, SIGNAL(clicked()), this, SLOT(selectPreview()));
-  connect(m_nameEditor, SIGNAL(editingFinished()), this, SLOT(writeMetadata()));
-  connect(m_titleEditor, SIGNAL(editingFinished()), this, SLOT(writeMetadata()));
-  connect(m_authorEditor, SIGNAL(editingFinished()), this, SLOT(writeMetadata()));
-  connect(m_versionEditor, SIGNAL(editingFinished()), this, SLOT(writeMetadata()));
-  connect(m_descriptionEditor, SIGNAL(editingFinished()), this, SLOT(writeMetadata()));
-  connect(resetModIdButton, SIGNAL(clicked()), this, SLOT(resetModId()));
-  connect(uploadButton, SIGNAL(clicked()), this, SLOT(uploadToSteam()));
+  connect(&selectDirectoryButton, SIGNAL(clicked()), this, SLOT(selectDirectory()));
+  connect(m_reloadButton.get(), SIGNAL(clicked()), this, SLOT(loadDirectory()));
+  connect(&selectPreviewImageButton, SIGNAL(clicked()), this, SLOT(selectPreview()));
+  connect(m_nameEditor.get(), SIGNAL(editingFinished()), this, SLOT(writeMetadata()));
+  connect(m_titleEditor.get(), SIGNAL(editingFinished()), this, SLOT(writeMetadata()));
+  connect(m_authorEditor.get(), SIGNAL(editingFinished()), this, SLOT(writeMetadata()));
+  connect(m_versionEditor.get(), SIGNAL(editingFinished()), this, SLOT(writeMetadata()));
+  connect(m_descriptionEditor.get(), SIGNAL(editingFinished()), this, SLOT(writeMetadata()));
+  connect(&resetModIdButton, SIGNAL(clicked()), this, SLOT(resetModId()));
+  connect(&uploadButton, SIGNAL(clicked()), this, SLOT(uploadToSteam()));
 
-  for (auto pair : m_categorySelectors) {
-    connect(pair.second, SIGNAL(clicked()), this, SLOT(writeMetadata()));
+  for (auto const& pair : m_categorySelectors) {
+    connect(pair.second.get(), SIGNAL(clicked()), this, SLOT(writeMetadata()));
   }
 
-  auto loadDirectoryLayout = new QHBoxLayout();
-  loadDirectoryLayout->addWidget(selectDirectoryButton);
-  loadDirectoryLayout->addWidget(m_directoryLabel, 1);
-  loadDirectoryLayout->addWidget(m_reloadButton);
+  auto& loadDirectoryLayout = *new QHBoxLayout();
+  loadDirectoryLayout.addWidget(&selectDirectoryButton);
+  loadDirectoryLayout.addWidget(m_directoryLabel.get(), 1);
+  loadDirectoryLayout.addWidget(m_reloadButton.get());
 
-  QGridLayout* editorLeftLayout = new QGridLayout();
-  editorLeftLayout->addWidget(new QLabel("Name"), 0, 0);
-  editorLeftLayout->addWidget(m_nameEditor, 0, 1, 1, 2);
+  auto& editorLeftLayout = *new QGridLayout();
+  editorLeftLayout.addWidget(new QLabel("Name"), 0, 0);
+  editorLeftLayout.addWidget(m_nameEditor.get(), 0, 1, 1, 2);
 
-  editorLeftLayout->addWidget(new QLabel("Title"), 1, 0);
-  editorLeftLayout->addWidget(m_titleEditor, 1, 1, 1, 2);
+  editorLeftLayout.addWidget(new QLabel("Title"), 1, 0);
+  editorLeftLayout.addWidget(m_titleEditor.get(), 1, 1, 1, 2);
 
-  editorLeftLayout->addWidget(new QLabel("Author"), 2, 0);
-  editorLeftLayout->addWidget(m_authorEditor, 2, 1, 1, 2);
+  editorLeftLayout.addWidget(new QLabel("Author"), 2, 0);
+  editorLeftLayout.addWidget(m_authorEditor.get(), 2, 1, 1, 2);
 
-  editorLeftLayout->addWidget(new QLabel("Version"), 3, 0);
-  editorLeftLayout->addWidget(m_versionEditor, 3, 1, 1, 2);
+  editorLeftLayout.addWidget(new QLabel("Version"), 3, 0);
+  editorLeftLayout.addWidget(m_versionEditor.get(), 3, 1, 1, 2);
 
-  editorLeftLayout->addWidget(new QLabel("Description"), 4, 0);
-  editorLeftLayout->addWidget(m_descriptionEditor, 4, 1, 1, 2);
+  editorLeftLayout.addWidget(new QLabel("Description"), 4, 0);
+  editorLeftLayout.addWidget(m_descriptionEditor.get(), 4, 1, 1, 2);
 
-  editorLeftLayout->addWidget(new QLabel("Preview Image"), 5, 0);
-  editorLeftLayout->addWidget(m_previewImageLabel, 5, 1);
-  editorLeftLayout->addWidget(selectPreviewImageButton, 5, 2);
+  editorLeftLayout.addWidget(new QLabel("Preview Image"), 5, 0);
+  editorLeftLayout.addWidget(m_previewImageLabel.get(), 5, 1);
+  editorLeftLayout.addWidget(&selectPreviewImageButton, 5, 2);
 
-  editorLeftLayout->addWidget(new QLabel("Mod ID"), 6, 0);
-  editorLeftLayout->addWidget(m_modIdLabel, 6, 1);
-  editorLeftLayout->addWidget(resetModIdButton, 6, 2);
+  editorLeftLayout.addWidget(new QLabel("Mod ID"), 6, 0);
+  editorLeftLayout.addWidget(m_modIdLabel.get(), 6, 1);
+  editorLeftLayout.addWidget(&resetModIdButton, 6, 2);
 
-  editorLeftLayout->addWidget(userAgreementLabel, 7, 0, 1, 3, Qt::AlignCenter);
-  editorLeftLayout->addWidget(uploadButton, 8, 0, 1, 3);
+  editorLeftLayout.addWidget(&userAgreementLabel, 7, 0, 1, 3, Qt::AlignCenter);
+  editorLeftLayout.addWidget(&uploadButton, 8, 0, 1, 3);
 
-  editorLeftLayout->setColumnStretch(1, 1);
+  editorLeftLayout.setColumnStretch(1, 1);
 
-  QVBoxLayout* categoryLayout = new QVBoxLayout();
-  categoryLayout->addWidget(new QLabel("Categories"));
+  auto& categoryLayout = *new QVBoxLayout();
+  categoryLayout.addWidget(new QLabel("Categories"));
   auto categoryKeys = m_categorySelectors.keys();
   categoryKeys.sort();
-  for (auto k : categoryKeys) {
-    categoryLayout->addWidget(m_categorySelectors[k]);
+  for (auto const& k : categoryKeys) {
+    categoryLayout.addWidget(m_categorySelectors[k].get());
   }
-  categoryLayout-> addWidget(new QWidget(), 1);
+  categoryLayout.addWidget(new QWidget(), 1);
 
-  QHBoxLayout* editorLayout = new QHBoxLayout();
-  editorLayout->addLayout(editorLeftLayout, 1);
-  editorLayout->addLayout(categoryLayout);
+  auto& editorLayout = *new QHBoxLayout();
+  editorLayout.addLayout(&editorLeftLayout, 1);
+  editorLayout.addLayout(&categoryLayout);
 
-  m_editorSection = new QWidget();
-  m_editorSection->setLayout(editorLayout);
+  m_editorSection = std::make_unique<QWidget>();
+  m_editorSection->setLayout(&editorLayout);
 
-  auto mainLayout = new QVBoxLayout();
-  mainLayout->addLayout(loadDirectoryLayout);
-  mainLayout->addWidget(m_editorSection);
+  auto& mainLayout = *new QVBoxLayout();
+  mainLayout.addLayout(&loadDirectoryLayout);
+  mainLayout.addWidget(m_editorSection.get());
 
-  auto* centralWidget = new QWidget(this);
-  centralWidget->setLayout(mainLayout);
-  setCentralWidget(centralWidget);
+  auto& background = *new QWidget(this);
+  background.setLayout(&mainLayout);
+  setCentralWidget(&background);
 
   m_reloadButton->setEnabled(false);
   m_editorSection->setEnabled(false);
@@ -224,7 +224,7 @@ std::expected<void, StarException> ModUploader::loadDirectoryImpl() {
 
   auto metadata = (*source)->metadata();
   std::array<String, 7> fields;
-  std::array<char const*, 7> keys = {"name", "friendlyName", "author", "version", "description", "tags", "steamContentId"};
+  std::array<std::string_view, 7> keys = {"name", "friendlyName", "author", "version", "description", "tags", "steamContentId"};
   for (std::size_t i = 0; i < keys.size(); ++i) {
     auto field = metadata.value(keys[i], "").toString();
     if (!field)
@@ -327,7 +327,7 @@ std::expected<void, StarException> ModUploader::savePreview(QImage const& previe
   if (!buffer.open(QIODevice::WriteOnly) || !preview.save(&buffer, "PNG"))
     return std::unexpected(StarException("Could not encode preview image"));
   buffer.close();
-  return File::overwriteFileWithRename(encoded.constData(), static_cast<std::size_t>(encoded.size()),
+  return File::overwriteFileWithRename(std::span(encoded.constData(), static_cast<std::size_t>(encoded.size())),
       File::relativeTo(*m_modDirectory, "_previewimage"));
 }
 
@@ -389,7 +389,7 @@ std::expected<void, StarException> ModUploader::uploadToSteamImpl(QProgressDialo
     if (call == k_uAPICallInvalid)
       return std::unexpected(StarException("Could not create a new Steam UGC item. Make sure Steam is online."));
     SteamCallResult<ModUploader, CreateItemResult_t> callResultCreate(m_steamDispatch,
-        call, this, &ModUploader::onSteamCreateItem);
+        call, *this, &ModUploader::onSteamCreateItem);
 
     progress.setLabelText("Creating new Steam UGC Item");
     while (!m_steamItemCreateResult && !m_closing) {
@@ -474,7 +474,7 @@ std::expected<void, StarException> ModUploader::uploadToSteamImpl(QProgressDialo
     if (call == k_uAPICallInvalid)
       return std::unexpected(StarException("Could not submit changes to the Steam UGC item. Make sure Steam is online."));
     SteamCallResult<ModUploader, SubmitItemUpdateResult_t> callResultSubmit(m_steamDispatch,
-        call, this, &ModUploader::onSteamSubmitItem);
+        call, *this, &ModUploader::onSteamSubmitItem);
     progress.setLabelText("Updating Steam UGC Item");
     while (!m_steamItemSubmitResult && !m_closing) {
       uint64 bytesProcessed = 0;
@@ -513,13 +513,13 @@ std::expected<void, StarException> ModUploader::uploadToSteamImpl(QProgressDialo
   return upload;
 }
 
-std::expected<void, StarException> ModUploader::onSteamCreateItem(CreateItemResult_t* result, bool ioFailure) {
-  m_steamItemCreateResult = std::make_pair(*result, ioFailure);
+std::expected<void, StarException> ModUploader::onSteamCreateItem(CreateItemResult_t& result, bool ioFailure) {
+  m_steamItemCreateResult = std::make_pair(result, ioFailure);
   return {};
 }
 
-std::expected<void, StarException> ModUploader::onSteamSubmitItem(SubmitItemUpdateResult_t* result, bool ioFailure) {
-  m_steamItemSubmitResult = std::make_pair(*result, ioFailure);
+std::expected<void, StarException> ModUploader::onSteamSubmitItem(SubmitItemUpdateResult_t& result, bool ioFailure) {
+  m_steamItemSubmitResult = std::make_pair(result, ioFailure);
   return {};
 }
 

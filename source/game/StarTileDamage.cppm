@@ -18,7 +18,7 @@ namespace Star {
 class Assets;
 
 struct TileDamageExceptionTag {
-  static constexpr char const* name() { return "TileDamageException"; }
+  static constexpr std::string_view name() { return "TileDamageException"; }
 };
 using TileDamageException = StarError<TileDamageExceptionTag, StarException>;
 
@@ -45,8 +45,8 @@ extern std::expected<EnumMap<TileDamageType>, StarException> const TileDamageTyp
 bool tileDamageIsPenetrating(TileDamageType damageType);
 
 struct TileDamage {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamage& tileDamage);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, TileDamage const& tileDamage);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, TileDamage& tileDamage);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, TileDamage const& tileDamage);
   TileDamage();
   TileDamage(TileDamageType type, float amount, unsigned harvestLevel = 1);
 
@@ -55,8 +55,8 @@ struct TileDamage {
   unsigned harvestLevel;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamage& tileDamage);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, TileDamage const& tileDamage);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, TileDamage& tileDamage);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, TileDamage const& tileDamage);
 
 class TileDamageParameters {
 public:
@@ -76,8 +76,8 @@ public:
 
   [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamageParameters& tileDamage);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, TileDamageParameters const& tileDamage);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, TileDamageParameters& tileDamage);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, TileDamageParameters const& tileDamage);
 
 private:
   Map<TileDamageType, float> m_damages;
@@ -106,8 +106,8 @@ public:
   bool dead() const;
   bool harvested() const;
 
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamageStatus& tileDamageStatus);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, TileDamageStatus const& tileDamageStatus);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, TileDamageStatus& tileDamageStatus);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, TileDamageStatus const& tileDamageStatus);
 
 private:
   void updateDamageEffectPercentage();

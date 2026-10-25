@@ -29,9 +29,9 @@ namespace Star {
 
 SteamStatisticsService::SteamStatisticsService(std::shared_ptr<PcPlatformServicesState> state)
 : m_state(std::move(state)),
-  m_callbackUserStatsReceived(m_state->steamDispatch, this, &SteamStatisticsService::onUserStatsReceived),
-  m_callbackUserStatsStored(m_state->steamDispatch, this, &SteamStatisticsService::onUserStatsStored),
-  m_callbackAchievementStored(m_state->steamDispatch, this, &SteamStatisticsService::onAchievementStored) {
+  m_callbackUserStatsReceived(m_state->steamDispatch, *this, &SteamStatisticsService::onUserStatsReceived),
+  m_callbackUserStatsStored(m_state->steamDispatch, *this, &SteamStatisticsService::onUserStatsStored),
+  m_callbackAchievementStored(m_state->steamDispatch, *this, &SteamStatisticsService::onAchievementStored) {
   m_appId = SteamAPI_ISteamUtils_GetAppID(SteamAPI_SteamUtils());
 }
 
@@ -104,7 +104,7 @@ std::expected<bool, StarException> SteamStatisticsService::unlockAchievement(Str
 StringSet SteamStatisticsService::achievementsUnlocked() const {
   StringSet achievements;
   for (std::uint32_t i = 0; i < SteamAPI_ISteamUserStats_GetNumAchievements(SteamAPI_SteamUserStats()); ++i) {
-    String achievement = SteamAPI_ISteamUserStats_GetAchievementName(SteamAPI_SteamUserStats(), i);
+    String achievement(std::string_view(SteamAPI_ISteamUserStats_GetAchievementName(SteamAPI_SteamUserStats(), i)));
 
     bool unlocked = false;
     if (SteamAPI_ISteamUserStats_GetAchievement(SteamAPI_SteamUserStats(), achievement.utf8Ptr(), &unlocked) && unlocked) {
@@ -138,12 +138,12 @@ bool SteamStatisticsService::reset() {
   return SteamAPI_ISteamUserStats_ResetAllStats(SteamAPI_SteamUserStats(), true);
 }
 
-std::expected<void, StarException> SteamStatisticsService::onUserStatsReceived(UserStatsReceived_t* callback) {
-  if (callback->m_nGameID != m_appId)
+std::expected<void, StarException> SteamStatisticsService::onUserStatsReceived(UserStatsReceived_t& callback) {
+  if (callback.m_nGameID != m_appId)
     return {};
 
-  if (callback->m_eResult != k_EResultOK) {
-    m_error = ApplicationException::format("Steam RequestCurrentStats failed with code {}", (int)callback->m_eResult);
+  if (callback.m_eResult != k_EResultOK) {
+    m_error = ApplicationException::format("Steam RequestCurrentStats failed with code {}", (int)callback.m_eResult);
     return {};
   }
 
@@ -155,28 +155,28 @@ std::expected<void, StarException> SteamStatisticsService::onUserStatsReceived(U
   return {};
 }
 
-std::expected<void, StarException> SteamStatisticsService::onUserStatsStored(UserStatsStored_t* callback) {
-  if (callback->m_nGameID != m_appId)
+std::expected<void, StarException> SteamStatisticsService::onUserStatsStored(UserStatsStored_t& callback) {
+  if (callback.m_nGameID != m_appId)
     return {};
 
-  if (callback->m_eResult == k_EResultOK) {
+  if (callback.m_eResult == k_EResultOK) {
     return m_state->logger.debug("Steam StoreStats successful");
   }
 
-  if (callback->m_eResult == k_EResultInvalidParam) {
+  if (callback.m_eResult == k_EResultInvalidParam) {
     // A stat we set broke a constraint and was reverted on the service.
     return m_state->logger.info("Steam StoreStats: Some stats failed validation");
   }
 
-  m_error = ApplicationException::format("Steam StoreStats failed with code {}", (int)callback->m_eResult);
+  m_error = ApplicationException::format("Steam StoreStats failed with code {}", (int)callback.m_eResult);
   return {};
 }
 
-std::expected<void, StarException> SteamStatisticsService::onAchievementStored(UserAchievementStored_t* callback) {
-  if (callback->m_nGameID != m_appId)
+std::expected<void, StarException> SteamStatisticsService::onAchievementStored(UserAchievementStored_t& callback) {
+  if (callback.m_nGameID != m_appId)
     return {};
 
-  return m_state->logger.debug("Steam achievement {} stored successfully", callback->m_rgchAchievementName);
+  return m_state->logger.debug("Steam achievement {} stored successfully", callback.m_rgchAchievementName);
 }
 
 }

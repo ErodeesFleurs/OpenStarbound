@@ -36,7 +36,7 @@ public:
     RpcPromiseKeeper<Json> promise;
   };
 
-  typedef std::function<std::expected<void, StarException>(WorldServerThread*, WorldServer*)> WorldServerAction;
+  typedef std::function<std::expected<void, StarException>(WorldServerThread&, WorldServer&)> WorldServerAction;
 
   [[nodiscard]]
   static std::expected<std::shared_ptr<WorldServerThread>, StarException> create(std::shared_ptr<WorldServer> server, WorldId worldId);

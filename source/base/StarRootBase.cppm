@@ -11,7 +11,7 @@ class Assets;
 class Configuration;
 
 struct RootExceptionTag {
-  static constexpr char const* name() { return "RootException"; }
+  static constexpr std::string_view name() { return "RootException"; }
 };
 using RootException = StarError<RootExceptionTag, StarException>;
 

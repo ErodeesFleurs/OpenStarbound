@@ -40,7 +40,7 @@ public:
   [[nodiscard]] std::expected<void, StarException> setJoinUnavailable() override;
   [[nodiscard]] std::expected<void, StarException> setJoinLocal(std::uint32_t capacity) override;
   [[nodiscard]] std::expected<void, StarException> setJoinRemote(HostAddressWithPort location) override;
-  [[nodiscard]] std::expected<void, StarException> setActivityData(const char* title, const char* details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) override;
+  [[nodiscard]] std::expected<void, StarException> setActivityData(std::string_view title, std::string_view details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) override;
 
   std::variant<std::monostate, P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() override;
   std::optional<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
@@ -132,7 +132,7 @@ private:
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 
   struct SteamP2PSocket : P2PSocket {
-    SteamP2PSocket() = default;
+    explicit SteamP2PSocket(PcP2PNetworkingService& service) : parent(service) {}
     ~SteamP2PSocket();
 
     bool isOpen() override;
@@ -141,7 +141,7 @@ private:
 
     std::mutex mutex;
     std::optional<StarException> error;
-    PcP2PNetworkingService* parent = nullptr;
+    std::reference_wrapper<PcP2PNetworkingService> parent;
     CSteamID steamId = CSteamID();
     Deque<ByteArray> incoming;
     bool connected = false;
@@ -149,11 +149,11 @@ private:
 
   std::unique_ptr<SteamP2PSocket> createSteamP2PSocket(CSteamID steamId);
 
-  std::expected<void, StarException> steamOnConnectionFailure(P2PSessionConnectFail_t* callback);
-  std::expected<void, StarException> steamOnJoinRequested(GameRichPresenceJoinRequested_t* callback);
-  std::expected<void, StarException> steamOnSessionRequest(P2PSessionRequest_t* callback);
+  std::expected<void, StarException> steamOnConnectionFailure(P2PSessionConnectFail_t& callback);
+  std::expected<void, StarException> steamOnJoinRequested(GameRichPresenceJoinRequested_t& callback);
+  std::expected<void, StarException> steamOnSessionRequest(P2PSessionRequest_t& callback);
 
-  void steamCloseSocket(SteamP2PSocket* socket);
+  void steamCloseSocket(SteamP2PSocket& socket);
   std::expected<void, StarException> steamReceiveAll();
 
 #endif
@@ -164,7 +164,7 @@ private:
   // PcPlatformServicesState::discordMutex (always before m_mutex).
   // SDK callbacks retain only this token, never the service or its Core owner.
   struct DiscordCallbackLifetime {
-    PcP2PNetworkingService* service = nullptr;
+    std::optional<std::reference_wrapper<PcP2PNetworkingService>> service;
   };
 
   enum class DiscordSocketMode {
@@ -193,10 +193,10 @@ private:
   };
 
   std::expected<std::unique_ptr<P2PSocket>, StarException> discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret);
-  void discordCloseSocket(DiscordP2PSocket* socket);
+  void discordCloseSocket(DiscordP2PSocket& socket);
   void discordDisconnectCallbacks();
 
-  void discordOnReceiveMessage(discord::LobbyId lobbyId, discord::UserId userId, discord::NetworkChannelId channel, std::uint8_t* data, std::uint32_t size);
+  void discordOnReceiveMessage(discord::LobbyId lobbyId, discord::UserId userId, discord::NetworkChannelId channel, std::span<std::uint8_t const> data);
   void discordOnLobbyMemberConnect(discord::LobbyId lobbyId, discord::UserId userId);
   void discordOnLobbyMemberUpdate(discord::LobbyId lobbyId, discord::UserId userId);
   void discordOnLobbyMemberDisconnect(discord::LobbyId lobbyId, discord::UserId userId);
@@ -220,7 +220,7 @@ private:
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 
-  HashMap<uint64, SteamP2PSocket*> m_steamOpenSockets;
+  HashMap<uint64, std::reference_wrapper<SteamP2PSocket>> m_steamOpenSockets;
 
 #endif
 
@@ -233,7 +233,7 @@ private:
   List<std::pair<discord::UserId, String>> m_discordJoinRequests;
   List<std::pair<discord::UserId, RpcPromise<P2PJoinRequestReply>>> m_pendingDiscordJoinRequests;
 
-  HashMap<discord::UserId, DiscordP2PSocket*> m_discordOpenSockets;
+  HashMap<discord::UserId, std::reference_wrapper<DiscordP2PSocket>> m_discordOpenSockets;
   String m_discordActivityTitle;
   String m_discordActivityDetails;
   std::int64_t m_discordActivityStartTime = 0;

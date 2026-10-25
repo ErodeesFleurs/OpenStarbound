@@ -13,7 +13,7 @@ import star.algorithm;
 namespace Star {
 
 struct MapExceptionTag {
-  static constexpr char const* name() { return "MapException"; }
+  static constexpr std::string_view name() { return "MapException"; }
 };
 using MapException = StarError<MapExceptionTag, StarException>;
 
@@ -29,7 +29,7 @@ template <typename T>
     std::ostringstream stream;
     stream.imbue(std::locale::classic());
     using PrintResult = decltype(stream << outputAny(value));
-    if constexpr (std::same_as<PrintResult, std::expected<std::ostream*, StarException>>) {
+    if constexpr (std::same_as<PrintResult, std::expected<std::reference_wrapper<std::ostream>, StarException>>) {
       auto printed = stream << outputAny(value);
       if (!printed)
         return std::unexpected(std::move(printed.error()));
@@ -62,8 +62,6 @@ public:
   using size_type = typename Storage::size_type;
   using difference_type = typename Storage::difference_type;
   using allocator_type = Allocator;
-  using mapped_ptr = mapped_type*;
-  using mapped_const_ptr = mapped_type const*;
   using key_compare = Compare;
   using value_compare = typename Storage::value_compare;
 
@@ -139,22 +137,22 @@ public:
 
   template <typename LookupKey = key_type>
     requires requires(Storage& storage, LookupKey const& key) { storage.find(key); }
-  [[nodiscard]] std::expected<mapped_type*, StarException> get(LookupKey const& key) {
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type>, StarException> get(LookupKey const& key) {
     auto position = find(key);
     if (position == end())
       return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()", "Map::get: key not found while rendering its diagnostic", key));
-    return &position->second;
+    return std::reference_wrapper<mapped_type>(position->second);
   }
   template <typename LookupKey = key_type>
     requires requires(Storage const& storage, LookupKey const& key) { storage.find(key); }
-  [[nodiscard]] std::expected<mapped_type const*, StarException> get(LookupKey const& key) const {
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type const>, StarException> get(LookupKey const& key) const {
     auto position = find(key);
     if (position == end())
       return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()", "Map::get: key not found while rendering its diagnostic", key));
-    return &position->second;
+    return std::reference_wrapper<mapped_type const>(position->second);
   }
-  [[nodiscard]] std::expected<mapped_type*, StarException> at(key_type const& key) { return get(key); }
-  [[nodiscard]] std::expected<mapped_type const*, StarException> at(key_type const& key) const { return get(key); }
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type>, StarException> at(key_type const& key) { return get(key); }
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type const>, StarException> at(key_type const& key) const { return get(key); }
   template <typename LookupKey = key_type>
     requires requires(Storage const& storage, LookupKey const& key) { storage.find(key); }
   mapped_type value(LookupKey const& key, mapped_type fallback = mapped_type()) const {
@@ -170,15 +168,18 @@ public:
   }
   template <typename LookupKey = key_type>
     requires requires(Storage& storage, LookupKey const& key) { storage.find(key); }
-  mapped_ptr ptr(LookupKey const& key) {
+  // Borrow the mapped slot itself, including when mapped_type is a reference_wrapper.
+  std::optional<std::reference_wrapper<mapped_type>> maybeRef(LookupKey const& key) {
     auto position = find(key);
-    return position == end() ? nullptr : &position->second;
+    if (position == end()) return std::nullopt;
+    return std::reference_wrapper<mapped_type>(position->second);
   }
   template <typename LookupKey = key_type>
     requires requires(Storage const& storage, LookupKey const& key) { storage.find(key); }
-  mapped_const_ptr ptr(LookupKey const& key) const {
+  std::optional<std::reference_wrapper<mapped_type const>> maybeRef(LookupKey const& key) const {
     auto position = find(key);
-    return position == end() ? nullptr : &position->second;
+    if (position == end()) return std::nullopt;
+    return std::reference_wrapper<mapped_type const>(position->second);
   }
   bool remove(key_type const& key) { return m_storage.erase(key) != 0; }
   bool removeValues(mapped_type const& value) {
@@ -249,11 +250,11 @@ public:
   size_type erase(key_type const& key) { return m_storage.erase(key); }
   auto equal_range(key_type const& key) { return m_storage.equal_range(key); }
   auto equal_range(key_type const& key) const { return m_storage.equal_range(key); }
-  [[nodiscard]] std::expected<mapped_type*, StarException> add(key_type key, mapped_type value) {
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type>, StarException> add(key_type key, mapped_type value) {
     auto result = m_storage.try_emplace(std::move(key), std::move(value));
     if (!result.second)
       return std::unexpected(mapDiagnosticError("Entry with key '{}' already present.", "Map::add: key already present while rendering its diagnostic", result.first->first));
-    return &result.first->second;
+    return std::reference_wrapper<mapped_type>(result.first->second);
   }
   mapped_type& set(key_type key, mapped_type value) { return m_storage.insert_or_assign(std::move(key), std::move(value)).first->second; }
   template <typename OtherMap>
@@ -289,8 +290,6 @@ public:
   using size_type = typename Storage::size_type;
   using difference_type = typename Storage::difference_type;
   using allocator_type = Allocator;
-  using mapped_ptr = mapped_type*;
-  using mapped_const_ptr = mapped_type const*;
   using hasher = Hash;
   using key_equal = Equals;
 
@@ -371,22 +370,22 @@ public:
 
   template <typename LookupKey = key_type>
     requires requires(Storage& storage, LookupKey const& key) { storage.find(key); }
-  [[nodiscard]] std::expected<mapped_type*, StarException> get(LookupKey const& key) {
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type>, StarException> get(LookupKey const& key) {
     auto position = find(key);
     if (position == end())
       return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()", "Map::get: key not found while rendering its diagnostic", key));
-    return &position->second;
+    return std::reference_wrapper<mapped_type>(position->second);
   }
   template <typename LookupKey = key_type>
     requires requires(Storage const& storage, LookupKey const& key) { storage.find(key); }
-  [[nodiscard]] std::expected<mapped_type const*, StarException> get(LookupKey const& key) const {
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type const>, StarException> get(LookupKey const& key) const {
     auto position = find(key);
     if (position == end())
       return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()", "Map::get: key not found while rendering its diagnostic", key));
-    return &position->second;
+    return std::reference_wrapper<mapped_type const>(position->second);
   }
-  [[nodiscard]] std::expected<mapped_type*, StarException> at(key_type const& key) { return get(key); }
-  [[nodiscard]] std::expected<mapped_type const*, StarException> at(key_type const& key) const { return get(key); }
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type>, StarException> at(key_type const& key) { return get(key); }
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type const>, StarException> at(key_type const& key) const { return get(key); }
   template <typename LookupKey = key_type>
     requires requires(Storage const& storage, LookupKey const& key) { storage.find(key); }
   mapped_type value(LookupKey const& key, mapped_type fallback = mapped_type()) const {
@@ -402,15 +401,17 @@ public:
   }
   template <typename LookupKey = key_type>
     requires requires(Storage& storage, LookupKey const& key) { storage.find(key); }
-  mapped_ptr ptr(LookupKey const& key) {
+  std::optional<std::reference_wrapper<mapped_type>> maybeRef(LookupKey const& key) {
     auto position = find(key);
-    return position == end() ? nullptr : &position->second;
+    if (position == end()) return std::nullopt;
+    return std::reference_wrapper<mapped_type>(position->second);
   }
   template <typename LookupKey = key_type>
     requires requires(Storage const& storage, LookupKey const& key) { storage.find(key); }
-  mapped_const_ptr ptr(LookupKey const& key) const {
+  std::optional<std::reference_wrapper<mapped_type const>> maybeRef(LookupKey const& key) const {
     auto position = find(key);
-    return position == end() ? nullptr : &position->second;
+    if (position == end()) return std::nullopt;
+    return std::reference_wrapper<mapped_type const>(position->second);
   }
   bool remove(key_type const& key) { return m_storage.erase(key) != 0; }
   bool removeValues(mapped_type const& value) {
@@ -481,11 +482,11 @@ public:
   size_type erase(key_type const& key) { return m_storage.erase(key); }
   auto equal_range(key_type const& key) { return m_storage.equal_range(key); }
   auto equal_range(key_type const& key) const { return m_storage.equal_range(key); }
-  [[nodiscard]] std::expected<mapped_type*, StarException> add(key_type key, mapped_type value) {
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type>, StarException> add(key_type key, mapped_type value) {
     auto result = m_storage.try_emplace(std::move(key), std::move(value));
     if (!result.second)
       return std::unexpected(mapDiagnosticError("Entry with key '{}' already present.", "Map::add: key already present while rendering its diagnostic", result.first->first));
-    return &result.first->second;
+    return std::reference_wrapper<mapped_type>(result.first->second);
   }
   mapped_type& set(key_type key, mapped_type value) { return m_storage.insert_or_assign(std::move(key), std::move(value)).first->second; }
   template <typename OtherMap>
@@ -510,8 +511,6 @@ public:
   using size_type = typename Storage::size_type;
   using difference_type = typename Storage::difference_type;
   using allocator_type = Allocator;
-  using mapped_ptr = mapped_type*;
-  using mapped_const_ptr = mapped_type const*;
   using hasher = Hash;
   using key_equal = Equals;
 
@@ -592,22 +591,22 @@ public:
 
   template <typename LookupKey = key_type>
     requires requires(Storage& storage, LookupKey const& key) { storage.find(key); }
-  [[nodiscard]] std::expected<mapped_type*, StarException> get(LookupKey const& key) {
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type>, StarException> get(LookupKey const& key) {
     auto position = find(key);
     if (position == end())
       return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()", "Map::get: key not found while rendering its diagnostic", key));
-    return &position->second;
+    return std::reference_wrapper<mapped_type>(position->second);
   }
   template <typename LookupKey = key_type>
     requires requires(Storage const& storage, LookupKey const& key) { storage.find(key); }
-  [[nodiscard]] std::expected<mapped_type const*, StarException> get(LookupKey const& key) const {
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type const>, StarException> get(LookupKey const& key) const {
     auto position = find(key);
     if (position == end())
       return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()", "Map::get: key not found while rendering its diagnostic", key));
-    return &position->second;
+    return std::reference_wrapper<mapped_type const>(position->second);
   }
-  [[nodiscard]] std::expected<mapped_type*, StarException> at(key_type const& key) { return get(key); }
-  [[nodiscard]] std::expected<mapped_type const*, StarException> at(key_type const& key) const { return get(key); }
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type>, StarException> at(key_type const& key) { return get(key); }
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type const>, StarException> at(key_type const& key) const { return get(key); }
   template <typename LookupKey = key_type>
     requires requires(Storage const& storage, LookupKey const& key) { storage.find(key); }
   mapped_type value(LookupKey const& key, mapped_type fallback = mapped_type()) const {
@@ -623,15 +622,17 @@ public:
   }
   template <typename LookupKey = key_type>
     requires requires(Storage& storage, LookupKey const& key) { storage.find(key); }
-  mapped_ptr ptr(LookupKey const& key) {
+  std::optional<std::reference_wrapper<mapped_type>> maybeRef(LookupKey const& key) {
     auto position = find(key);
-    return position == end() ? nullptr : &position->second;
+    if (position == end()) return std::nullopt;
+    return std::reference_wrapper<mapped_type>(position->second);
   }
   template <typename LookupKey = key_type>
     requires requires(Storage const& storage, LookupKey const& key) { storage.find(key); }
-  mapped_const_ptr ptr(LookupKey const& key) const {
+  std::optional<std::reference_wrapper<mapped_type const>> maybeRef(LookupKey const& key) const {
     auto position = find(key);
-    return position == end() ? nullptr : &position->second;
+    if (position == end()) return std::nullopt;
+    return std::reference_wrapper<mapped_type const>(position->second);
   }
   bool remove(key_type const& key) { return m_storage.erase(key) != 0; }
   bool removeValues(mapped_type const& value) {
@@ -702,11 +703,11 @@ public:
   size_type erase(key_type const& key) { return m_storage.erase(key); }
   auto equal_range(key_type const& key) { return m_storage.equal_range(key); }
   auto equal_range(key_type const& key) const { return m_storage.equal_range(key); }
-  [[nodiscard]] std::expected<mapped_type*, StarException> add(key_type key, mapped_type value) {
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type>, StarException> add(key_type key, mapped_type value) {
     auto result = m_storage.try_emplace(std::move(key), std::move(value));
     if (!result.second)
       return std::unexpected(mapDiagnosticError("Entry with key '{}' already present.", "Map::add: key already present while rendering its diagnostic", result.first->first));
-    return &result.first->second;
+    return std::reference_wrapper<mapped_type>(result.first->second);
   }
   mapped_type& set(key_type key, mapped_type value) { return m_storage.insert_or_assign(std::move(key), std::move(value)).first->second; }
   template <typename OtherMap>
@@ -742,15 +743,15 @@ template <typename MapType>
 using MapOutputResult = std::conditional_t<
     std::same_as<MapElementOutputResult<typename MapType::key_type>, std::ostream&>
         && std::same_as<MapElementOutputResult<typename MapType::mapped_type>, std::ostream&>,
-    std::ostream&, std::expected<std::ostream*, StarException>>;
+    std::ostream&, std::expected<std::reference_wrapper<std::ostream>, StarException>>;
 
 template <MapContainer Container>
 std::ostream& operator<<(std::ostream& os, Container const& map)
     requires std::same_as<MapOutputResult<Container>, std::ostream&>;
 
 template <MapContainer Container>
-[[nodiscard]] std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Container const& map)
-    requires std::same_as<MapOutputResult<Container>, std::expected<std::ostream*, StarException>>;
+[[nodiscard]] std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, Container const& map)
+    requires std::same_as<MapOutputResult<Container>, std::expected<std::reference_wrapper<std::ostream>, StarException>>;
 
 template <typename MapType>
 MapOutputResult<MapType> printMap(std::ostream& os, MapType const& map) {
@@ -776,7 +777,7 @@ MapOutputResult<MapType> printMap(std::ostream& os, MapType const& map) {
   if constexpr (std::same_as<MapOutputResult<MapType>, std::ostream&>)
     return os;
   else
-    return &os;
+    return std::ref(os);
 }
 
 template <MapContainer Container>
@@ -786,8 +787,8 @@ std::ostream& operator<<(std::ostream& os, Container const& map)
 }
 
 template <MapContainer Container>
-[[nodiscard]] std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Container const& map)
-    requires std::same_as<MapOutputResult<Container>, std::expected<std::ostream*, StarException>> {
+[[nodiscard]] std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, Container const& map)
+    requires std::same_as<MapOutputResult<Container>, std::expected<std::reference_wrapper<std::ostream>, StarException>> {
   return printMap(os, map);
 }
 

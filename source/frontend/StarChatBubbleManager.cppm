@@ -42,7 +42,7 @@ class StoredFunction;
 
 class ChatBubbleManager {
 public:
-  [[nodiscard]] static std::expected<std::shared_ptr<ChatBubbleManager>, StarException> create(GuiContext& context);
+  [[nodiscard]] static std::expected<std::unique_ptr<ChatBubbleManager>, StarException> create(GuiContext& context);
 
   [[nodiscard]] std::expected<void, StarException> setCamera(WorldCamera const& camera);
 
@@ -87,7 +87,7 @@ private:
   [[nodiscard]] std::expected<void, StarException> drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha);
   [[nodiscard]] std::expected<void, StarException> drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait);
 
-  GuiContext* m_guiContext;
+  std::reference_wrapper<GuiContext> m_guiContext;
 
   WorldCamera m_camera;
 

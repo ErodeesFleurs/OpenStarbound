@@ -38,10 +38,10 @@ std::expected<std::shared_ptr<TechDatabase>, StarException> TechDatabase::create
   auto files = assets->scanExtension("tech");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  auto queued = assets->queueJsons(**files);
+  auto queued = assets->queueJsons(files->get());
   if (!queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& assetFile : **files) {
+  for (auto const& assetFile : files->get()) {
     auto const& file = assetFile.string();
     auto config = assets->json(file);
     if (!config)
@@ -61,8 +61,8 @@ bool TechDatabase::contains(String const& techName) const {
 }
 
 std::expected<TechConfig, StarException> TechDatabase::tech(String const& techName) const {
-  if (auto p = m_tech.ptr(techName))
-    return *p;
+  if (auto tech = m_tech.maybeRef(techName))
+    return tech->get();
   return std::unexpected(TechDatabaseException::format("No such tech '{}'", techName));
 }
 
@@ -82,12 +82,12 @@ std::expected<TechConfig, StarException> TechDatabase::parseTech(Json const& con
     auto typeName = config.getString("type");
     if (!typeName)
       return std::unexpected(std::move(typeName.error()));
-    auto type = TechTypeNames->leftPtr(*typeName);
+    auto type = TechTypeNames->maybeLeftRef(*typeName);
     if (!type)
       return std::unexpected(std::move(type.error()));
     if (!*type)
       return std::unexpected(TechDatabaseException::format("Unknown tech type '{}'", *typeName));
-    tech.type = **type;
+    tech.type = (*type)->get();
     auto scripts = config.get("scripts").and_then([](Json const& value) { return value.iterateArray(); });
     if (!scripts)
       return std::unexpected(std::move(scripts.error()));
@@ -113,12 +113,12 @@ std::expected<TechConfig, StarException> TechDatabase::parseTech(Json const& con
     auto rarityName = config.getString("rarity");
     if (!rarityName)
       return std::unexpected(std::move(rarityName.error()));
-    auto rarity = RarityNames->leftPtr(*rarityName);
+    auto rarity = RarityNames->maybeLeftRef(*rarityName);
     if (!rarity)
       return std::unexpected(std::move(rarity.error()));
     if (!*rarity)
       return std::unexpected(TechDatabaseException::format("Unknown tech rarity '{}'", *rarityName));
-    tech.rarity = **rarity;
+    tech.rarity = (*rarity)->get();
     auto icon = config.getString("icon");
     if (!icon)
       return std::unexpected(std::move(icon.error()));

@@ -247,13 +247,13 @@ std::expected<void, StarException> File::rename(String const& source, String con
   return {};
 }
 
-std::expected<void, StarException> File::overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix) {
+std::expected<void, StarException> File::overwriteFileWithRename(std::span<char const> data, String const& filename, String const& newSuffix) {
   auto newFile = filename + newSuffix;
   auto atomicWrite = [&]() -> std::expected<void, StarException> {
     auto file = open(newFile, IOMode::Write | IOMode::Truncate);
     if (!file)
       return std::unexpected(std::move(file.error()));
-    auto written = (*file)->writeFull({data, len});
+    auto written = (*file)->writeFull(data);
     if (!written)
       return std::unexpected(std::move(written.error()));
     auto synced = (*file)->sync();
@@ -273,11 +273,11 @@ std::expected<void, StarException> File::overwriteFileWithRename(char const* dat
   if (!path)
     return std::unexpected(std::move(path.error()));
   ::_wremove(path->get());
-  return writeFile(data, len, filename);
+  return writeFile(data, filename);
 }
 
 std::expected<void*, StarException> File::fopen(char const* filename, IOMode mode) {
-  auto path = stringToUtf16(String(filename));
+  auto path = stringToUtf16(String(std::string_view(filename)));
   if (!path)
     return std::unexpected(std::move(path.error()));
   DWORD access = 0;

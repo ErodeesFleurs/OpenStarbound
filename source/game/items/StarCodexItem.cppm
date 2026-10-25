@@ -132,7 +132,7 @@ public:
   [[nodiscard]]
   std::expected<List<Drawable>, StarException> iconDrawables() const override;
   [[nodiscard]]
-  std::expected<List<Drawable>, StarException> dropDrawables(TileDrawer*) const override;
+  std::expected<List<Drawable>, StarException> dropDrawables(std::optional<std::reference_wrapper<TileDrawer>>) const override;
 
 private:
   explicit CodexItem(Root& root) : Item(root) {}
@@ -189,8 +189,8 @@ std::expected<void, StarException> CodexItem::fireTriggered() {
   auto itemOwner = owner();
   if (!itemOwner)
     return std::unexpected(std::move(itemOwner.error()));
-  if (auto player = as<Player>(*itemOwner)) {
-    auto codexLearned = player->codexes()->learnCodex(m_codexId);
+  if (auto player = asRef<Player>(itemOwner->get())) {
+    auto codexLearned = player->get().codexes()->learnCodex(m_codexId);
     if (!codexLearned)
       return std::unexpected(std::move(codexLearned.error()));
     auto assets = root().assets();
@@ -200,13 +200,13 @@ std::expected<void, StarException> CodexItem::fireTriggered() {
       auto message = (*assets)->json("/codex.config:messages.learned").and_then([](Json const& value) { return value.toString(); });
       if (!message)
         return std::unexpected(std::move(message.error()));
-      return player->queueUIMessage(*message);
+      return player->get().queueUIMessage(*message);
     }
-    player->codexes()->markCodexUnread(m_codexId);
+    player->get().codexes()->markCodexUnread(m_codexId);
     auto message = (*assets)->json("/codex.config:messages.alreadyKnown").and_then([](Json const& value) { return value.toString(); });
     if (!message)
       return std::unexpected(std::move(message.error()));
-    return player->queueUIMessage(*message);
+    return player->get().queueUIMessage(*message);
   }
   return {};
 }
@@ -215,7 +215,7 @@ std::expected<List<Drawable>, StarException> CodexItem::iconDrawables() const {
   return m_iconDrawables;
 }
 
-std::expected<List<Drawable>, StarException> CodexItem::dropDrawables(TileDrawer*) const {
+std::expected<List<Drawable>, StarException> CodexItem::dropDrawables(std::optional<std::reference_wrapper<TileDrawer>>) const {
   return m_worldDrawables;
 }
 

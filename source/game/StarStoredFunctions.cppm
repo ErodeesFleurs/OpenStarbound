@@ -13,7 +13,7 @@ class Assets;
 
 
 struct StoredFunctionExceptionTag {
-  static constexpr char const* name() { return "StoredFunctionException"; }
+  static constexpr std::string_view name() { return "StoredFunctionException"; }
 };
 using StoredFunctionException = StarError<StoredFunctionExceptionTag, StarException>;
 

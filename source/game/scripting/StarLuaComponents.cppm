@@ -22,7 +22,7 @@ import star.root;
 namespace Star {
 
 struct LuaComponentExceptionTag {
-  static constexpr char const* name() { return "LuaComponentException"; }
+  static constexpr std::string_view name() { return "LuaComponentException"; }
 };
 using LuaComponentException = StarError<LuaComponentExceptionTag, LuaException>;
 
@@ -160,7 +160,7 @@ public:
   explicit LuaScriptWorld(LuaBaseComponent& host) : m_host(host) {}
   LuaScriptWorld(LuaScriptWorld const&) = delete;
   LuaScriptWorld& operator=(LuaScriptWorld const&) = delete;
-  [[nodiscard]] std::expected<void, StarException> init(World* world);
+  [[nodiscard]] std::expected<void, StarException> init(World& world);
   [[nodiscard]] std::expected<void, StarException> uninit();
 private:
   LuaBaseComponent& m_host;
@@ -250,8 +250,8 @@ template <typename Ret, typename... V>
         error = std::move(response.error());
     } else if (!*response) {
       settled = message.promise.fail("Message not handled");
-    } else if (auto promise = std::get_if<RpcPromise<Json>>(&**response)) {
-      settled = message.promise.chain(*promise);
+    } else if (std::holds_alternative<RpcPromise<Json>>(**response)) {
+      settled = message.promise.chain(std::get<RpcPromise<Json>>(**response));
     } else {
       settled = message.promise.fulfill(std::get<Json>(**response));
     }
@@ -274,7 +274,7 @@ template <typename Ret, typename... V>
 class LuaWorldScript final : public LuaBaseComponent {
 public:
   explicit LuaWorldScript(Root& root) : LuaBaseComponent(root), m_world(*this) {}
-  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> init(World& world) { return m_world.init(world); }
   [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
 protected:
   using LuaBaseComponent::setLuaRoot;
@@ -376,7 +376,7 @@ class LuaWorldUpdateScript final : public LuaBaseComponent {
 public:
   explicit LuaWorldUpdateScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this) {}
   ~LuaWorldUpdateScript() override { m_update.destroy(); }
-  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> init(World& world) { return m_world.init(world); }
   [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
   unsigned updateDelta() const { return m_update.updateDelta(); }
   float updateDt(float dt) const { return m_update.updateDt(dt); }
@@ -421,7 +421,7 @@ class LuaEntityScript final : public LuaBaseComponent {
 public:
   explicit LuaEntityScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_messages(*this) {}
   ~LuaEntityScript() override { m_update.destroy(); }
-  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> init(World& world) { return m_world.init(world); }
   [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
   unsigned updateDelta() const { return m_update.updateDelta(); }
   float updateDt(float dt) const { return m_update.updateDt(dt); }
@@ -474,7 +474,7 @@ class LuaStoredEntityScript final : public LuaBaseComponent {
 public:
   explicit LuaStoredEntityScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_storage(*this), m_messages(*this) {}
   ~LuaStoredEntityScript() override { m_update.destroy(); }
-  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> init(World& world) { return m_world.init(world); }
   [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
   unsigned updateDelta() const { return m_update.updateDelta(); }
   float updateDt(float dt) const { return m_update.updateDt(dt); }

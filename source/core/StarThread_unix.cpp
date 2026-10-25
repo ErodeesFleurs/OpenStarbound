@@ -33,16 +33,16 @@ namespace Star {
 
 struct ThreadImpl {
   static void* runThread(void* data) {
-    ThreadImpl* ptr = static_cast<ThreadImpl*>(data);
+    auto& state = *static_cast<ThreadImpl*>(data);
 #ifdef STAR_SYSTEM_MACOS
     char tname[MaxThreadNameLength];
-    std::snprintf(tname, sizeof(tname), "%s", ptr->name.utf8Ptr());
+    std::snprintf(tname, sizeof(tname), "%s", state.name.utf8Ptr());
     pthread_setname_np(tname);
 #endif
-    auto result = ptr->function();
+    auto result = state.function();
     if (!result)
-      EmergencyLog::error("Thread {} failed: {}", ptr->name, outputException(ExceptionDiagnostic(result.error()), true));
-    ptr->stopped = true;
+      EmergencyLog::error("Thread {} failed: {}", state.name, outputException(ExceptionDiagnostic(result.error()), true));
+    state.stopped = true;
     return nullptr;
   }
 
@@ -118,9 +118,9 @@ void lockWithDiagnostics(std::unique_lock<std::recursive_mutex>& lock) {
   timespec deadline;
   clock_gettime(CLOCK_REALTIME, &deadline);
   deadline.tv_sec += 15;
-  auto* mutex = lock.mutex();
-  if (pthread_mutex_timedlock(mutex->native_handle(), &deadline) == 0) {
-    lock = std::unique_lock<std::recursive_mutex>(*mutex, std::adopt_lock);
+  auto& mutex = *lock.mutex();
+  if (pthread_mutex_timedlock(mutex.native_handle(), &deadline) == 0) {
+    lock = std::unique_lock<std::recursive_mutex>(mutex, std::adopt_lock);
     return;
   }
   printStack("Recursive mutex lock is taking too long");

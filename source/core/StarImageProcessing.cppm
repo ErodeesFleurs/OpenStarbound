@@ -17,7 +17,7 @@ typedef List<Json> JsonArray;
 class Image;
 
 struct ImageOperationExceptionTag {
-  static constexpr char const* name() { return "ImageOperationException"; }
+  static constexpr std::string_view name() { return "ImageOperationException"; }
 };
 using ImageOperationException = StarError<ImageOperationExceptionTag, StarException>;
 
@@ -164,7 +164,7 @@ void addImageOperationReferences(ImageOperation const& operation, StringList& ou
 
 StringList imageOperationReferences(List<ImageOperation> const& operations);
 
-typedef std::function<std::expected<Image const*, StarException>(String const& refName)> ImageReferenceCallback;
+typedef std::function<std::expected<std::optional<std::reference_wrapper<Image const>>, StarException>(String const& refName)> ImageReferenceCallback;
 
 [[nodiscard]] std::expected<void, StarException> processImageOperation(ImageOperation const& operation, Image& input, ImageReferenceCallback refCallback = {});
 

@@ -14,9 +14,9 @@ import star.terrain_database;
 export namespace Star {
 
 struct MaxSelector : TerrainSelector {
-  static char const* const Name;
+  static std::string_view const Name;
 
-  [[nodiscard]] static std::expected<std::shared_ptr<MaxSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+  [[nodiscard]] static std::expected<std::shared_ptr<MaxSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database);
 private:
   struct ConstructionKey { explicit ConstructionKey() = default; };
 public:
@@ -30,9 +30,9 @@ public:
 
 
 struct MinMaxSelector : TerrainSelector {
-  static char const* const Name;
+  static std::string_view const Name;
 
-  [[nodiscard]] static std::expected<std::shared_ptr<MinMaxSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+  [[nodiscard]] static std::expected<std::shared_ptr<MinMaxSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database);
 private:
   struct ConstructionKey { explicit ConstructionKey() = default; };
 public:
@@ -46,9 +46,9 @@ public:
 
 
 struct MixSelector : TerrainSelector {
-  static char const* const Name;
+  static std::string_view const Name;
 
-  [[nodiscard]] static std::expected<std::shared_ptr<MixSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+  [[nodiscard]] static std::expected<std::shared_ptr<MixSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database);
 private:
   struct ConstructionKey { explicit ConstructionKey() = default; };
 public:
@@ -65,10 +65,10 @@ public:
 
 namespace Star {
 
-char const* const MaxSelector::Name = "max";
+std::string_view const MaxSelector::Name = "max";
 
 std::expected<std::shared_ptr<MaxSelector>, StarException> MaxSelector::create(
-    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database) {
+    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database) {
   auto result = std::make_shared<MaxSelector>(ConstructionKey{}, config, parameters);
   auto sources = config.getArray("sources");
   if (!sources)
@@ -82,7 +82,7 @@ std::expected<std::shared_ptr<MaxSelector>, StarException> MaxSelector::create(
       return std::unexpected(std::move(seedBias.error()));
     TerrainSelectorParameters sourceParameters = parameters;
     sourceParameters.seed += *seedBias;
-    auto source = database->createSelectorType(*sourceType, sourceConfig, sourceParameters);
+    auto source = database.createSelectorType(*sourceType, sourceConfig, sourceParameters);
     if (!source)
       return std::unexpected(std::move(source.error()));
     result->m_sources.append(std::move(*source));
@@ -103,10 +103,10 @@ std::expected<float, StarException> MaxSelector::get(int x, int y) const {
 
 
 
-char const* const MinMaxSelector::Name = "minmax";
+std::string_view const MinMaxSelector::Name = "minmax";
 
 std::expected<std::shared_ptr<MinMaxSelector>, StarException> MinMaxSelector::create(
-    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database) {
+    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database) {
   auto result = std::make_shared<MinMaxSelector>(ConstructionKey{}, config, parameters);
   auto sources = config.getArray("sources");
   if (!sources)
@@ -120,7 +120,7 @@ std::expected<std::shared_ptr<MinMaxSelector>, StarException> MinMaxSelector::cr
       return std::unexpected(std::move(seedBias.error()));
     TerrainSelectorParameters sourceParameters = parameters;
     sourceParameters.seed += *seedBias;
-    auto source = database->createSelectorType(*sourceType, sourceConfig, sourceParameters);
+    auto source = database.createSelectorType(*sourceType, sourceConfig, sourceParameters);
     if (!source)
       return std::unexpected(std::move(source.error()));
     result->m_sources.append(std::move(*source));
@@ -145,19 +145,19 @@ std::expected<float, StarException> MinMaxSelector::get(int x, int y) const {
 
 
 
-char const* const MixSelector::Name = "mix";
+std::string_view const MixSelector::Name = "mix";
 
 std::expected<std::shared_ptr<MixSelector>, StarException> MixSelector::create(
-    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database) {
+    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const& database) {
   auto result = std::make_shared<MixSelector>(ConstructionKey{}, config, parameters);
-  auto readSource = [&](char const* name) -> std::expected<std::shared_ptr<TerrainSelector const>, StarException> {
+  auto readSource = [&](String const& name) -> std::expected<std::shared_ptr<TerrainSelector const>, StarException> {
     auto sourceConfig = config.get(name);
     if (!sourceConfig)
       return std::unexpected(std::move(sourceConfig.error()));
     auto type = sourceConfig->getString("type");
     if (!type)
       return std::unexpected(std::move(type.error()));
-    return database->createSelectorType(*type, *sourceConfig, parameters);
+    return database.createSelectorType(*type, *sourceConfig, parameters);
   };
   auto mixSource = readSource("mixSource");
   if (!mixSource)

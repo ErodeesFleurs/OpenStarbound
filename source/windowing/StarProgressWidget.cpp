@@ -104,14 +104,14 @@ std::expected<void, StarException> ProgressWidget::renderImpl() {
   };
 
   if (!m_background.empty()) {
-    auto result = context()->drawInterfaceQuad(m_background, shift(0, 1, RectF(Vec2F(), Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
+    auto result = context().drawInterfaceQuad(m_background, shift(0, 1, RectF(Vec2F(), Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
     if (!result) return std::unexpected(std::move(result.error()));
   }
 
-  auto result = context()->drawImageStretchSet(m_bar, shift(0, progress, RectF(screenBoundRect())), m_direction, m_color.toRgba());
+  auto result = context().drawImageStretchSet(m_bar, shift(0, progress, RectF(screenBoundRect())), m_direction, m_color.toRgba());
   if (!result) return std::unexpected(std::move(result.error()));
   if (!m_overlay.empty())
-    return context()->drawInterfaceQuad(m_overlay, shift(0, 1, RectF({}, Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
+    return context().drawInterfaceQuad(m_overlay, shift(0, 1, RectF({}, Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
   return {};
 }
 

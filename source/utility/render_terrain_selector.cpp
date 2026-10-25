@@ -45,10 +45,10 @@ using namespace Star;
 template <typename T>
 [[nodiscard]]
 static std::expected<T, StarException> numericOption(OptionParser::Options const& options, String const& name, T fallback) {
-  auto values = options.parameters.ptr(name);
-  if (!values || values->empty())
+  auto values = options.parameters.maybeRef(name);
+  if (!values || values->get().empty())
     return fallback;
-  return lexicalCast<T>((*values)[0]);
+  return lexicalCast<T>(values->get()[0]);
 }
 
 [[nodiscard]]
@@ -89,10 +89,10 @@ static std::expected<void, StarException> run(int argc, char** argv) {
   auto sizeValues = options.parameters.get("size");
   if (!sizeValues)
     return std::unexpected(std::move(sizeValues.error()));
-  auto sizeText = (*sizeValues)->first();
+  auto sizeText = sizeValues->get().first();
   if (!sizeText)
     return std::unexpected(std::move(sizeText.error()));
-  auto components = (**sizeText).split(",");
+  auto components = sizeText->get().split(",");
   if (!components)
     return std::unexpected(std::move(components.error()));
   auto widthText = components->at(0);
@@ -101,10 +101,10 @@ static std::expected<void, StarException> run(int argc, char** argv) {
   auto heightText = components->at(1);
   if (!heightText)
     return std::unexpected(std::move(heightText.error()));
-  auto width = lexicalCast<unsigned>(**widthText);
+  auto width = lexicalCast<unsigned>(widthText->get());
   if (!width)
     return std::unexpected(std::move(width.error()));
-  auto height = lexicalCast<unsigned>(**heightText);
+  auto height = lexicalCast<unsigned>(heightText->get());
   if (!height)
     return std::unexpected(std::move(height.error()));
   Vec2U size(*width, *height);
@@ -119,12 +119,12 @@ static std::expected<void, StarException> run(int argc, char** argv) {
   if (!requestedScale)
     return std::unexpected(std::move(requestedScale.error()));
   float scale = *requestedScale;
-  auto scaleValues = options.parameters.ptr("scale");
-  bool autoScale = !scaleValues || scaleValues->empty();
+  auto scaleValues = options.parameters.maybeRef("scale");
+  bool autoScale = !scaleValues || scaleValues->get().empty();
 
   String mode = "heatmap";
-  if (auto modeValues = options.parameters.ptr("mode"); modeValues && !modeValues->empty())
-    mode = (*modeValues)[0];
+  if (auto modeValues = options.parameters.maybeRef("mode"); modeValues && !modeValues->get().empty())
+    mode = modeValues->get()[0];
 
   auto selectorParameters = TerrainSelectorParameters::create(JsonObject{
       {"worldWidth", size[0]},
@@ -140,10 +140,10 @@ static std::expected<void, StarException> run(int argc, char** argv) {
   auto selectorValues = options.parameters.get("selector");
   if (!selectorValues)
     return std::unexpected(std::move(selectorValues.error()));
-  auto selectorName = (*selectorValues)->first();
+  auto selectorName = selectorValues->get().first();
   if (!selectorName)
     return std::unexpected(std::move(selectorName.error()));
-  auto selector = (*terrainDatabase)->createNamedSelector(**selectorName, *selectorParameters);
+  auto selector = (*terrainDatabase)->createNamedSelector(selectorName->get(), *selectorParameters);
   if (!selector)
     return std::unexpected(std::move(selector.error()));
 

@@ -27,7 +27,7 @@ public:
   typedef typename BaseMap::mapped_type mapped_type;
   typedef typename BaseMap::value_type value_type;
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version = std::nullopt) override;
 
   [[nodiscard]] std::expected<void, StarException> enableNetInterpolation(float extrapolationHint = 0.0f) override;
   [[nodiscard]] std::expected<void, StarException> disableNetInterpolation() override;
@@ -40,8 +40,8 @@ public:
   [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   [[nodiscard]] std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  [[nodiscard]] std::expected<mapped_type const*, StarException> get(key_type const& key) const;
-  mapped_type const* ptr(key_type const& key) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type const>, StarException> get(key_type const& key) const;
+  std::optional<std::reference_wrapper<mapped_type const>> maybeRef(key_type const& key) const;
 
   const_iterator begin() const;
   const_iterator end() const;
@@ -113,7 +113,7 @@ private:
 
   Deque<std::pair<std::uint64_t, ElementChange>> m_changeData;
   Deque<std::pair<float, ElementChange>> m_pendingChangeData;
-  NetElementVersion const* m_netVersion = nullptr;
+  std::optional<std::reference_wrapper<NetElementVersion const>> m_netVersion = std::nullopt;
   std::uint64_t m_changeDataLastVersion = 0;
   bool m_updated = false;
   bool m_interpolationEnabled = false;
@@ -126,7 +126,7 @@ template <typename Key, typename Value>
 using NetElementHashMap = NetElementMapWrapper<HashMap<Key, Value>>;
 
 template <typename BaseMap>
-void NetElementMapWrapper<BaseMap>::initNetVersion(NetElementVersion const* version) {
+void NetElementMapWrapper<BaseMap>::initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version) {
   m_netVersion = version;
 
   m_changeData.clear();
@@ -182,7 +182,7 @@ template <typename BaseMap>
 [[nodiscard]] std::expected<void, StarException> NetElementMapWrapper<BaseMap>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return {};
   m_changeData.clear();
-  m_changeDataLastVersion = m_netVersion ? m_netVersion->current() : 0;
+  m_changeDataLastVersion = m_netVersion ? m_netVersion->get().current() : 0;
   m_pendingChangeData.clear();
   BaseMap::clear();
 
@@ -269,13 +269,13 @@ template <typename BaseMap>
 }
 
 template <typename BaseMap>
-[[nodiscard]] auto NetElementMapWrapper<BaseMap>::get(key_type const& key) const -> std::expected<mapped_type const*, StarException> {
+[[nodiscard]] auto NetElementMapWrapper<BaseMap>::get(key_type const& key) const -> std::expected<std::reference_wrapper<mapped_type const>, StarException> {
   return BaseMap::get(key);
 }
 
 template <typename BaseMap>
-auto NetElementMapWrapper<BaseMap>::ptr(key_type const& key) const -> mapped_type const * {
-  return BaseMap::ptr(key);
+auto NetElementMapWrapper<BaseMap>::maybeRef(key_type const& key) const -> std::optional<std::reference_wrapper<mapped_type const>> {
+  return BaseMap::maybeRef(key);
 }
 
 template <typename BaseMap>
@@ -403,8 +403,8 @@ void NetElementMapWrapper<BaseMap>::reset(BaseMap values) {
   }
 
   for (auto const& p : values) {
-    auto v = ptr(p.first);
-    if (!v || !(*v == p.second)) {
+    auto v = maybeRef(p.first);
+    if (!v || !(v->get() == p.second)) {
       addChangeData(SetChange{p.first, p.second});
       m_updated = true;
     }
@@ -431,13 +431,13 @@ std::uint64_t NetElementMapWrapper<BaseMap>::changeDataLastVersion() const {
 
 template <typename BaseMap>
 [[nodiscard]] std::expected<void, StarException> NetElementMapWrapper<BaseMap>::writeChange(DataStream& ds, ElementChange const& change) {
-  if (auto sc = std::get_if<SetChange>(&change)) {
+  if (std::holds_alternative<SetChange>(change)) {
     { auto result = ds.write<std::uint8_t>(0); if (!result) return std::unexpected(std::move(result.error())); }
-    { auto result = ds.write(sc->key); if (!result) return std::unexpected(std::move(result.error())); }
-    { auto result = ds.write(sc->value); if (!result) return std::unexpected(std::move(result.error())); }
-  } else if (auto rc = std::get_if<RemoveChange>(&change)) {
+    { auto result = ds.write(std::get<SetChange>(change).key); if (!result) return std::unexpected(std::move(result.error())); }
+    { auto result = ds.write(std::get<SetChange>(change).value); if (!result) return std::unexpected(std::move(result.error())); }
+  } else if (std::holds_alternative<RemoveChange>(change)) {
     { auto result = ds.write<std::uint8_t>(1); if (!result) return std::unexpected(std::move(result.error())); }
-    { auto result = ds.write(rc->key); if (!result) return std::unexpected(std::move(result.error())); }
+    { auto result = ds.write(std::get<RemoveChange>(change).key); if (!result) return std::unexpected(std::move(result.error())); }
   } else {
     { auto result = ds.write<std::uint8_t>(2); if (!result) return std::unexpected(std::move(result.error())); }
   }
@@ -465,7 +465,7 @@ template <typename BaseMap>
 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::addChangeData(ElementChange change) {
-  std::uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
+  std::uint64_t currentVersion = m_netVersion ? m_netVersion->get().current() : 0;
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((m_changeData.empty() || m_changeData.back().first <= currentVersion));
   }
@@ -488,10 +488,10 @@ void NetElementMapWrapper<BaseMap>::addPendingChangeData(ElementChange change, f
 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::applyChange(ElementChange change) {
-  if (auto set = std::get_if<SetChange>(&change))
-    BaseMap::set(std::move(set->key), std::move(set->value));
-  else if (auto remove = std::get_if<RemoveChange>(&change))
-    BaseMap::remove(std::move(remove->key));
+  if (std::holds_alternative<SetChange>(change))
+    BaseMap::set(std::move(std::get<SetChange>(change).key), std::move(std::get<SetChange>(change).value));
+  else if (std::holds_alternative<RemoveChange>(change))
+    BaseMap::remove(std::move(std::get<RemoveChange>(change).key));
   else
     BaseMap::clear();
   m_updated = true;

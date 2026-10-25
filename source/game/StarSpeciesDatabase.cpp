@@ -88,9 +88,9 @@ std::expected<std::shared_ptr<SpeciesDatabase>, StarException> SpeciesDatabase::
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto files = (*assets)->scanExtension("species");
   if (!files) return std::unexpected(std::move(files.error()));
-  auto queued = (*assets)->queueJsons(**files);
+  auto queued = (*assets)->queueJsons(files->get());
   if (!queued) return std::unexpected(std::move(queued.error()));
-  for (auto const& file : **files) {
+  for (auto const& file : files->get()) {
     auto config = (*assets)->json(file.string());
     if (!config) return std::unexpected(std::move(config.error()));
     auto definition = SpeciesDefinition::create(root, *config);
@@ -117,7 +117,7 @@ StringMap<std::shared_ptr<SpeciesDefinition>> SpeciesDatabase::allSpecies() cons
   return m_species;
 }
 
-std::expected<Json, StarException> SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config, ItemDatabase const* itemCatalog) const {
+std::expected<Json, StarException> SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
   auto definition = species(identity.species);
   if (!definition) return std::unexpected(std::move(definition.error()));
   if ((*definition)->m_buildScripts.empty() && config.isType(Json::Type::Object))
@@ -160,7 +160,7 @@ std::expected<CharacterCreationResult, StarException> SpeciesDatabase::createHum
   std::size_t pantsColor,
   std::size_t personality,
   LuaVariadic<LuaValue> ext,
-  ItemDatabase const* itemCatalog
+  std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog
 ) const {
   CharacterCreationResult result;
 
@@ -195,10 +195,10 @@ std::expected<CharacterCreationResult, StarException> SpeciesDatabase::createHum
     auto species = speciesDefinition->options();
     auto genderResult = species.genderOptions.wrap(genderChoice);
     if (!genderResult) return std::unexpected(std::move(genderResult.error()));
-    auto const& gender = **genderResult;
+    auto const& gender = genderResult->get();
     auto bodyResult = species.bodyColorDirectives.wrap(bodyColorChoice);
     if (!bodyResult) return std::unexpected(std::move(bodyResult.error()));
-    auto bodyColor = **bodyResult;
+    auto bodyColor = bodyResult->get();
 
     String altColor;
 
@@ -206,7 +206,7 @@ std::expected<CharacterCreationResult, StarException> SpeciesDatabase::createHum
       // undyColor
       auto selected = species.undyColorDirectives.wrap(alty);
       if (!selected) return std::unexpected(std::move(selected.error()));
-      altColor = **selected;
+      altColor = selected->get();
     }
 
     auto hair = gender.hairOptions.wrap(hairChoice);
@@ -215,11 +215,11 @@ std::expected<CharacterCreationResult, StarException> SpeciesDatabase::createHum
     if (species.headOptionAsHairColor) {
       auto selected = species.hairColorDirectives.wrap(heady);
       if (!selected) return std::unexpected(std::move(selected.error()));
-      hairColor = **selected;
+      hairColor = selected->get();
       if (species.altOptionAsHairColor) {
         auto alt = species.undyColorDirectives.wrap(alty);
         if (!alt) return std::unexpected(std::move(alt.error()));
-        hairColor += **alt;
+        hairColor += alt->get();
       }
     }
 
@@ -232,7 +232,7 @@ std::expected<CharacterCreationResult, StarException> SpeciesDatabase::createHum
     if (species.headOptionAsFacialhair) {
       auto selected = gender.facialHairOptions.wrap(heady);
       if (!selected) return std::unexpected(std::move(selected.error()));
-      facialHair = **selected;
+      facialHair = selected->get();
       facialHairGroup = gender.facialHairGroup;
       facialHairDirective = hairColor;
     }
@@ -243,7 +243,7 @@ std::expected<CharacterCreationResult, StarException> SpeciesDatabase::createHum
     if (species.altOptionAsFacialMask) {
       auto selected = gender.facialMaskOptions.wrap(alty);
       if (!selected) return std::unexpected(std::move(selected.error()));
-      facialMask = **selected;
+      facialMask = selected->get();
       facialMaskGroup = gender.facialMaskGroup;
       facialMaskDirective = "";
     }
@@ -266,9 +266,9 @@ std::expected<CharacterCreationResult, StarException> SpeciesDatabase::createHum
     if (!GenderNames) return std::unexpected(GenderNames.error());
     auto selectedGender = GenderNames->getLeft(gender.name);
     if (!selectedGender) return std::unexpected(std::move(selectedGender.error()));
-    result.identity.gender = **selectedGender;
+    result.identity.gender = selectedGender->get();
     result.identity.hairGroup = gender.hairGroup;
-    result.identity.hairType = **hair;
+    result.identity.hairType = hair->get();
     result.identity.hairDirectives = hairColor;
     result.identity.emoteDirectives = bodyColor + altColor;
     result.identity.facialHairGroup = facialHairGroup;
@@ -277,19 +277,19 @@ std::expected<CharacterCreationResult, StarException> SpeciesDatabase::createHum
     result.identity.facialMaskGroup = facialMaskGroup;
     result.identity.facialMaskType = facialMask;
     result.identity.facialMaskDirectives = facialMaskDirective;
-    result.identity.personality = **personalityResult;
+    result.identity.personality = personalityResult->get();
 
     if (!EquipmentSlotNames) return std::unexpected(EquipmentSlotNames.error());
     auto chestSlot = EquipmentSlotNames->getRight(EquipmentSlot::Chest);
     if (!chestSlot) return std::unexpected(std::move(chestSlot.error()));
     auto legSlot = EquipmentSlotNames->getRight(EquipmentSlot::Legs);
     if (!legSlot) return std::unexpected(std::move(legSlot.error()));
-    auto chest = ItemDescriptor::create(**shirt, 1, JsonObject{{"colorIndex", shirtColor}});
+    auto chest = ItemDescriptor::create(shirt->get(), 1, JsonObject{{"colorIndex", shirtColor}});
     if (!chest) return std::unexpected(std::move(chest.error()));
-    auto legs = ItemDescriptor::create(**pants, 1, JsonObject{{"colorIndex", pantsColor}});
+    auto legs = ItemDescriptor::create(pants->get(), 1, JsonObject{{"colorIndex", pantsColor}});
     if (!legs) return std::unexpected(std::move(legs.error()));
-    result.armor.set(**chestSlot, chest->toJson());
-    result.armor.set(**legSlot, legs->toJson());
+    result.armor.set(chestSlot->get(), chest->toJson());
+    result.armor.set(legSlot->get(), legs->toJson());
 
     result.humanoidParameters.set("choices", JsonArray({genderChoice, bodyColorChoice, alty, hairChoice, heady, shirtChoice, shirtColor, pantsChoice, pantsColor, personality}));
   }
@@ -297,7 +297,7 @@ std::expected<CharacterCreationResult, StarException> SpeciesDatabase::createHum
   return result;
 }
 
-std::expected<CharacterCreationResult, StarException> SpeciesDatabase::generateHumanoid(String speciesChoice, std::int64_t seed, std::optional<Gender> gender, ItemDatabase const* itemCatalog) const {
+std::expected<CharacterCreationResult, StarException> SpeciesDatabase::generateHumanoid(String speciesChoice, std::int64_t seed, std::optional<Gender> gender, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
   RandomSource randSource(seed);
   auto definition = species(speciesChoice);
   if (!definition) return std::unexpected(std::move(definition.error()));

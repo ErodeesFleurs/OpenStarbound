@@ -48,10 +48,10 @@ std::expected<std::shared_ptr<EffectSourceDatabase>, StarException> EffectSource
   auto files = (*assets)->scanExtension("effectsource");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  auto queued = (*assets)->queueJsons(**files);
+  auto queued = (*assets)->queueJsons(files->get());
   if (!queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& file : **files) {
+  for (auto const& file : files->get()) {
     auto json = (*assets)->json(file.string());
     if (!json)
       return std::unexpected(std::move(json.error()));
@@ -72,8 +72,8 @@ std::expected<std::shared_ptr<EffectSourceConfig>, StarException> EffectSourceDa
   auto key = kind.toLower();
   if (!key)
     return std::unexpected(std::move(key.error()));
-  if (auto config = m_sourceConfigs.ptr(*key))
-    return *config;
+  if (auto config = m_sourceConfigs.maybeRef(*key))
+    return config->get();
   return std::unexpected(StarException(strf("Unknown effect source definition with kind '{}'.", kind)));
 }
 
@@ -152,11 +152,11 @@ void EffectSource::tick(float dt) {
 }
 
 std::expected<List<String>, StarException> EffectSource::particles() {
-  auto pick = [this](Json const& config, List<String>& particles) -> std::expected<void, StarException> {
+  auto pick = [&root = m_root](Json const& config, List<String>& particles) -> std::expected<void, StarException> {
     auto options = config.toArray();
     if (!options)
       return std::unexpected(std::move(options.error()));
-    auto selected = jsonToStringList(m_root.random().randValueFrom(*options, JsonArray()));
+    auto selected = jsonToStringList(root.random().randValueFrom(*options, JsonArray()));
     if (!selected)
       return std::unexpected(std::move(selected.error()));
     particles.appendAll(*selected);

@@ -207,13 +207,12 @@ std::expected<Json, StarException> PlayerCompanions::diskStore() const {
 }
 
 List<std::shared_ptr<Companion>> PlayerCompanions::getCompanions(String const& category) const {
-  if (auto companions = m_companions.ptr(category))
-    return *companions;
+  if (auto companions = m_companions.maybeRef(category))
+    return companions->get();
   return {};
 }
 
-std::expected<void, StarException> PlayerCompanions::init(Entity* player, World* world) {
-  m_world = world;
+std::expected<void, StarException> PlayerCompanions::init(Player& player, World& world) {
   auto setup = [&]() -> std::expected<void, StarException> {
     auto scriptsJson = m_config.get("scripts", JsonArray());
     if (!scriptsJson)
@@ -235,9 +234,9 @@ std::expected<void, StarException> PlayerCompanions::init(Entity* player, World*
     };
     if (auto result = add("entity", LuaBindings::makeEntityCallbacks(player)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = add("player", LuaBindings::makePlayerCallbacks(m_root, as<Player>(player))); !result)
+    if (auto result = add("player", LuaBindings::makePlayerCallbacks(m_root, player)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = add("status", LuaBindings::makeStatusControllerCallbacks(as<Player>(player)->statusController())); !result)
+    if (auto result = add("status", LuaBindings::makeStatusControllerCallbacks(player.statusController())); !result)
       return std::unexpected(std::move(result.error()));
     if (auto result = add("playerCompanions", makeCompanionsCallbacks()); !result)
       return std::unexpected(std::move(result.error()));
@@ -265,9 +264,8 @@ std::expected<void, StarException> PlayerCompanions::uninit() {
     }
   };
   remember(m_scriptComponent.uninit());
-  for (auto const& name : {"entity", "player", "status", "playerCompanions", "config"})
+  for (auto const& name : std::initializer_list<std::string_view>{"entity", "player", "status", "playerCompanions", "config"})
     remember(m_scriptComponent.removeCallbacks(name));
-  m_world = nullptr;
   if (error)
     return std::unexpected(std::move(*error));
   return {};

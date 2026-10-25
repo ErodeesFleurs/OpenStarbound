@@ -61,7 +61,7 @@ struct LuaUserDataMethods<std::shared_ptr<CanvasWidget>> {
 };
 
 namespace LuaBindings {
-  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& context, Widget* parentWidget, std::shared_ptr<GuiReader> reader = {});
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& context, Widget& parentWidget, std::shared_ptr<GuiReader> reader = {});
 }
 
 }

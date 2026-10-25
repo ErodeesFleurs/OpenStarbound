@@ -12,11 +12,11 @@ import star.algorithm;
 namespace Star {
 
 struct JsonExceptionTag {
-  static constexpr char const* name() { return "JsonException"; }
+  static constexpr std::string_view name() { return "JsonException"; }
 };
 using JsonException = StarError<JsonExceptionTag, StarException>;
 struct JsonParsingExceptionTag {
-  static constexpr char const* name() { return "JsonParsingException"; }
+  static constexpr std::string_view name() { return "JsonParsingException"; }
 };
 using JsonParsingException = StarError<JsonParsingExceptionTag, StarException>;
 
@@ -32,6 +32,7 @@ class Json {
 public:
   template <typename Container>
   struct IteratorWrapper {
+    // Keep the immutable container alive when iterating a temporary Json.
     typedef typename Container::const_iterator const_iterator;
     typedef const_iterator iterator;
 
@@ -70,16 +71,23 @@ public:
   Json();
 
   Json(double);
-  Json(bool);
+  // Pointer-to-bool conversions must not steal UTF-8 view construction.
+  template <typename Bool> requires std::same_as<std::remove_cvref_t<Bool>, bool>
+  Json(Bool b) : m_data(b) {}
   Json(int);
   Json(long);
   Json(long long);
   Json(unsigned int);
   Json(unsigned long);
   Json(unsigned long long);
-  Json(char const*);
-  static std::expected<Json, StarException> create(String::Char const*);
-  static std::expected<Json, StarException> create(String::Char const*, std::size_t);
+  Json(std::string_view);
+  template <std::size_t Size>
+  Json(char const (&text)[Size]) : Json(std::string_view(text, Size - 1)) {}
+  static std::expected<Json, StarException> create(std::span<String::Char const>);
+  template <std::size_t Size>
+  static std::expected<Json, StarException> create(String::Char const (&text)[Size]) {
+    return create(std::span<String::Char const>(text, Size - 1));
+  }
   Json(String);
   Json(std::string);
   Json(JsonArray);
@@ -279,27 +287,28 @@ private:
   friend Json jsonMergeNulling(Json const& base, Json const& merger);
   friend bool jsonPartialMatch(Json const& base, Json const& compare);
 
-  std::expected<Json const*, StarException> ptr(std::size_t index) const;
-  std::expected<Json const*, StarException> ptr(String const& key) const;
+  // Distinguish missing entries from present JSON null and conversion errors.
+  std::expected<std::optional<std::reference_wrapper<Json const>>, StarException> maybeRef(std::size_t index) const;
+  std::expected<std::optional<std::reference_wrapper<Json const>>, StarException> maybeRef(String const& key) const;
 
   std::variant<Empty, double, bool, std::int64_t, std::shared_ptr<String const>, std::shared_ptr<JsonArray const>, std::shared_ptr<JsonObject const>> m_data;
 };
 
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Json const& v);
+std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, Json const& v);
 
 // Fixes ambiguity with OrderedHashMap operator<<
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, JsonObject const& v);
+std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, JsonObject const& v);
 
 // Serialize json to DataStream.  Strings are stored as UTF-8, ints are stored
 // as VLQ, doubles as 64 bit.
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, Json const& v);
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, Json& v);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Json const& v);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Json& v);
 
 // Convenience methods for Json containers
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, JsonArray const& l);
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, JsonArray& l);
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, JsonObject const& m);
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, JsonObject& m);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, JsonArray const& l);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, JsonArray& l);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, JsonObject const& m);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, JsonObject& m);
 
 // Merges the two given json values and returns the result, by the following
 // rules (applied in order):  If the base value is null, returns the merger.

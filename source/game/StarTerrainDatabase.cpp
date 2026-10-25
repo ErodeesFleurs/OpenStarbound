@@ -96,10 +96,10 @@ std::expected<std::shared_ptr<TerrainDatabase>, StarException> TerrainDatabase::
     auto files = assets->scanExtension(type);
     if (!files)
       return std::unexpected(std::move(files.error()));
-    auto queued = assets->queueJsons(**files);
+    auto queued = assets->queueJsons(files->get());
     if (!queued)
       return std::unexpected(std::move(queued.error()));
-    for (auto const& path : **files) {
+    for (auto const& path : files->get()) {
       auto parameters = assets->json(path.string());
       if (!parameters)
         return std::unexpected(std::move(parameters.error()));
@@ -119,7 +119,7 @@ std::expected<std::shared_ptr<TerrainDatabase>, StarException> TerrainDatabase::
     }
     return {};
   };
-  for (char const* type : {KarstCaveSelector::Name, WormCaveSelector::Name, RidgeBlocksSelector::Name}) {
+  for (std::string_view type : {KarstCaveSelector::Name, WormCaveSelector::Name, RidgeBlocksSelector::Name}) {
     auto scanned = scanFiles(type, false);
     if (!scanned)
       return std::unexpected(std::move(scanned.error()));
@@ -184,25 +184,25 @@ std::expected<std::shared_ptr<TerrainSelector const>, StarException> TerrainData
   else if (type == ConstantSelector::Name)
     return ConstantSelector::create(config, parameters);
   else if (type == MaxSelector::Name)
-    return MaxSelector::create(config, parameters, this);
+    return MaxSelector::create(config, parameters, *this);
   else if (type == MinMaxSelector::Name)
-    return MinMaxSelector::create(config, parameters, this);
+    return MinMaxSelector::create(config, parameters, *this);
   else if (type == IslandSurfaceSelector::Name)
     return IslandSurfaceSelector::create(config, parameters);
   else if (type == FlatSurfaceSelector::Name)
     return FlatSurfaceSelector::create(config, parameters);
   else if (type == DisplacementSelector::Name)
-    return DisplacementSelector::create(config, parameters, this);
+    return DisplacementSelector::create(config, parameters, *this);
   else if (type == RotateSelector::Name)
-    return RotateSelector::create(config, parameters, this);
+    return RotateSelector::create(config, parameters, *this);
   else if (type == MixSelector::Name)
-    return MixSelector::create(config, parameters, this);
+    return MixSelector::create(config, parameters, *this);
   else if (type == PerlinSelector::Name)
     return PerlinSelector::create(config, parameters);
   else if (type == RidgeBlocksSelector::Name)
     return RidgeBlocksSelector::create(config, parameters);
   else if (type == CacheSelector::Name)
-    return CacheSelector::create(config, parameters, this);
+    return CacheSelector::create(config, parameters, *this);
   return std::unexpected(TerrainException(strf("Unknown terrain selector type '{}'", type)));
 }
 

@@ -219,52 +219,52 @@ import star.statistics;
 namespace Star {
 
 ClientCommandProcessor::ClientCommandProcessor(GuiContext& context, std::shared_ptr<UniverseClient> universeClient, std::shared_ptr<Cinematic> cinematicOverlay,
-  MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands)
+  MainInterfacePaneManager& paneManager, StringMap<StringList> macroCommands)
   : m_context(context), m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
   m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {}
 
 std::expected<CaseInsensitiveStringMap<ClientCommandProcessor::BuiltinCommand>, StarException> ClientCommandProcessor::makeBuiltinCommands() {
-  std::pair<char const*, BuiltinCommand> const entries[] = {
-    {"reload", &invokeBuiltin<&ClientCommandProcessor::reload>},
-    {"hotReload", &invokeBuiltin<&ClientCommandProcessor::hotReload>},
-    {"whoami", &invokeBuiltin<&ClientCommandProcessor::whoami>},
-    {"gravity", &invokeBuiltin<&ClientCommandProcessor::gravity>},
-    {"debug", &invokeBuiltin<&ClientCommandProcessor::debug>},
-    {"boxes", &invokeBuiltin<&ClientCommandProcessor::boxes>},
-    {"fullbright", &invokeBuiltin<&ClientCommandProcessor::fullbright>},
-    {"asyncLighting", &invokeBuiltin<&ClientCommandProcessor::asyncLighting>},
-    {"setGravity", &invokeBuiltin<&ClientCommandProcessor::setGravity>},
-    {"resetGravity", &invokeBuiltin<&ClientCommandProcessor::resetGravity>},
-    {"fixedCamera", &invokeBuiltin<&ClientCommandProcessor::fixedCamera>},
-    {"monochromeLighting", &invokeBuiltin<&ClientCommandProcessor::monochromeLighting>},
-    {"radioMessage", &invokeBuiltin<&ClientCommandProcessor::radioMessage>},
-    {"clearRadioMessages", &invokeBuiltin<&ClientCommandProcessor::clearRadioMessages>},
-    {"clearCinematics", &invokeBuiltin<&ClientCommandProcessor::clearCinematics>},
-    {"startQuest", &invokeBuiltin<&ClientCommandProcessor::startQuest>},
-    {"completeQuest", &invokeBuiltin<&ClientCommandProcessor::completeQuest>},
-    {"failQuest", &invokeBuiltin<&ClientCommandProcessor::failQuest>},
-    {"previewNewQuest", &invokeBuiltin<&ClientCommandProcessor::previewNewQuest>},
-    {"previewQuestComplete", &invokeBuiltin<&ClientCommandProcessor::previewQuestComplete>},
-    {"previewQuestFailed", &invokeBuiltin<&ClientCommandProcessor::previewQuestFailed>},
-    {"clearScannedObjects", &invokeBuiltin<&ClientCommandProcessor::clearScannedObjects>},
-    {"played", &invokeBuiltin<&ClientCommandProcessor::playTime>},
-    {"deaths", &invokeBuiltin<&ClientCommandProcessor::deathCount>},
-    {"cinema", &invokeBuiltin<&ClientCommandProcessor::cinema>},
-    {"suicide", &invokeBuiltin<&ClientCommandProcessor::suicide>},
-    {"naked", &invokeBuiltin<&ClientCommandProcessor::naked>},
-    {"resetAchievements", &invokeBuiltin<&ClientCommandProcessor::resetAchievements>},
-    {"statistic", &invokeBuiltin<&ClientCommandProcessor::statistic>},
-    {"giveessentialitem", &invokeBuiltin<&ClientCommandProcessor::giveEssentialItem>},
-    {"maketechavailable", &invokeBuiltin<&ClientCommandProcessor::makeTechAvailable>},
-    {"enabletech", &invokeBuiltin<&ClientCommandProcessor::enableTech>},
-    {"upgradeship", &invokeBuiltin<&ClientCommandProcessor::upgradeShip>},
-    {"swap", &invokeBuiltin<&ClientCommandProcessor::swap>},
-    {"respawnInWorld", &invokeBuiltin<&ClientCommandProcessor::respawnInWorld>},
-    {"render", &invokeBuiltin<&ClientCommandProcessor::render>}
+  std::pair<std::string_view, BuiltinCommand> const entries[] = {
+    {"reload", invokeBuiltin<&ClientCommandProcessor::reload>},
+    {"hotReload", invokeBuiltin<&ClientCommandProcessor::hotReload>},
+    {"whoami", invokeBuiltin<&ClientCommandProcessor::whoami>},
+    {"gravity", invokeBuiltin<&ClientCommandProcessor::gravity>},
+    {"debug", invokeBuiltin<&ClientCommandProcessor::debug>},
+    {"boxes", invokeBuiltin<&ClientCommandProcessor::boxes>},
+    {"fullbright", invokeBuiltin<&ClientCommandProcessor::fullbright>},
+    {"asyncLighting", invokeBuiltin<&ClientCommandProcessor::asyncLighting>},
+    {"setGravity", invokeBuiltin<&ClientCommandProcessor::setGravity>},
+    {"resetGravity", invokeBuiltin<&ClientCommandProcessor::resetGravity>},
+    {"fixedCamera", invokeBuiltin<&ClientCommandProcessor::fixedCamera>},
+    {"monochromeLighting", invokeBuiltin<&ClientCommandProcessor::monochromeLighting>},
+    {"radioMessage", invokeBuiltin<&ClientCommandProcessor::radioMessage>},
+    {"clearRadioMessages", invokeBuiltin<&ClientCommandProcessor::clearRadioMessages>},
+    {"clearCinematics", invokeBuiltin<&ClientCommandProcessor::clearCinematics>},
+    {"startQuest", invokeBuiltin<&ClientCommandProcessor::startQuest>},
+    {"completeQuest", invokeBuiltin<&ClientCommandProcessor::completeQuest>},
+    {"failQuest", invokeBuiltin<&ClientCommandProcessor::failQuest>},
+    {"previewNewQuest", invokeBuiltin<&ClientCommandProcessor::previewNewQuest>},
+    {"previewQuestComplete", invokeBuiltin<&ClientCommandProcessor::previewQuestComplete>},
+    {"previewQuestFailed", invokeBuiltin<&ClientCommandProcessor::previewQuestFailed>},
+    {"clearScannedObjects", invokeBuiltin<&ClientCommandProcessor::clearScannedObjects>},
+    {"played", invokeBuiltin<&ClientCommandProcessor::playTime>},
+    {"deaths", invokeBuiltin<&ClientCommandProcessor::deathCount>},
+    {"cinema", invokeBuiltin<&ClientCommandProcessor::cinema>},
+    {"suicide", invokeBuiltin<&ClientCommandProcessor::suicide>},
+    {"naked", invokeBuiltin<&ClientCommandProcessor::naked>},
+    {"resetAchievements", invokeBuiltin<&ClientCommandProcessor::resetAchievements>},
+    {"statistic", invokeBuiltin<&ClientCommandProcessor::statistic>},
+    {"giveessentialitem", invokeBuiltin<&ClientCommandProcessor::giveEssentialItem>},
+    {"maketechavailable", invokeBuiltin<&ClientCommandProcessor::makeTechAvailable>},
+    {"enabletech", invokeBuiltin<&ClientCommandProcessor::enableTech>},
+    {"upgradeship", invokeBuiltin<&ClientCommandProcessor::upgradeShip>},
+    {"swap", invokeBuiltin<&ClientCommandProcessor::swap>},
+    {"respawnInWorld", invokeBuiltin<&ClientCommandProcessor::respawnInWorld>},
+    {"render", invokeBuiltin<&ClientCommandProcessor::render>}
   };
   CaseInsensitiveStringMap<BuiltinCommand> commands;
   for (auto const& entry : entries) {
-    auto key = CaseInsensitiveString::create(entry.first);
+    auto key = CaseInsensitiveString::create(String(entry.first));
     if (!key) return std::unexpected(std::move(key.error()));
     commands.emplace(std::move(*key), entry.second);
   }
@@ -286,12 +286,13 @@ std::expected<bool, StarException> ClientCommandProcessor::adminCommandAllowed()
 std::expected<String, StarException> ClientCommandProcessor::previewQuestPane(StringList const& arguments, std::function<std::expected<std::shared_ptr<Pane>, StarException>(std::shared_ptr<Quest>)> createPane) {
   if (arguments.size() < 3)
     return std::unexpected(StarException("Quest preview requires a template, title, and text"));
-  auto quest = createPreviewQuest(m_context.root(), arguments[0], arguments[1], arguments[2], m_universeClient->mainPlayer().get());
+  auto quest = createPreviewQuest(m_context.root(), arguments[0], arguments[1], arguments[2], *m_universeClient->mainPlayer());
   if (!quest) return std::unexpected(std::move(quest.error()));
   if (*quest) {
     auto pane = createPane(std::move(*quest));
     if (!pane) return std::unexpected(std::move(pane.error()));
-    if (auto displayed = m_paneManager->displayPane(PaneLayer::ModalWindow, std::move(*pane)); !displayed)
+    if (!m_paneManager) return std::unexpected(StarException("Command processor is detached from its interface"));
+    if (auto displayed = m_paneManager->get().displayPane(PaneLayer::ModalWindow, std::move(*pane)); !displayed)
       return std::unexpected(std::move(displayed.error()));
     return "Previewed quest";
   }
@@ -303,7 +304,7 @@ std::expected<StringList, StarException> ClientCommandProcessor::handleCommand(S
   if (userInput) {
     auto input = m_context.input();
     if (!input) return std::unexpected(std::move(input.error()));
-    unlock.emplace((*input)->unlockClipboard());
+    unlock.emplace(input->get().unlockClipboard());
   }
   auto result = executeCommand(commandLine);
   if (result) return result;
@@ -351,13 +352,14 @@ std::expected<StringList, StarException> ClientCommandProcessor::executeCommand(
     auto response = player->receiveMessage(connectionForEntity(player->entityId()), "/" + *command, {*arguments});
     if (!response) return std::unexpected(std::move(response.error()));
     if (*response) {
-      if (auto value = std::get_if<Json>(&**response)) {
-        if (value->isType(Json::Type::String)) {
-          auto text = value->stringPtr();
+      if (std::holds_alternative<Json>(**response)) {
+        auto const& value = std::get<Json>(**response);
+        if (value.isType(Json::Type::String)) {
+          auto text = value.stringPtr();
           if (!text) return std::unexpected(std::move(text.error()));
           result.append(**text);
-        } else if (!value->isNull()) {
-          auto printed = value->repr(1, true);
+        } else if (!value.isNull()) {
+          auto printed = value.repr(1, true);
           if (!printed) return std::unexpected(std::move(printed.error()));
           result.append(std::move(*printed));
         }
@@ -433,7 +435,7 @@ std::expected<String, StarException> ClientCommandProcessor::hotReload() {
 std::expected<String, StarException> ClientCommandProcessor::whoami() {
   auto name = m_universeClient->mainPlayer()->name();
   if (!name) return std::unexpected(std::move(name.error()));
-  return strf("Client: You are {}. You are {}an Admin.", *name, m_universeClient->mainPlayer()->isAdmin() ? "" : "not ");
+  return strf("Client: You are {}. You are {}an Admin.", *name, m_universeClient->mainPlayer()->isAdmin() ? std::string_view("") : std::string_view("not "));
 }
 
 std::expected<String, StarException> ClientCommandProcessor::gravity() {
@@ -456,31 +458,31 @@ std::expected<String, StarException> ClientCommandProcessor::debug(String const&
   }
   if (hud) {
     m_debugHudEnabled = !m_debugHudEnabled;
-    return strf("Debug HUD {}", m_debugHudEnabled ? "enabled" : "disabled");
+    return strf("Debug HUD {}", m_debugHudEnabled ? std::string_view("enabled") : std::string_view("disabled"));
   }
   m_debugDisplayEnabled = !m_debugDisplayEnabled;
-  return strf("Debug display {}", m_debugDisplayEnabled ? "enabled" : "disabled");
+  return strf("Debug display {}", m_debugDisplayEnabled ? std::string_view("enabled") : std::string_view("disabled"));
 }
 
 std::expected<String, StarException> ClientCommandProcessor::boxes() {
   auto worldClient = m_universeClient->worldClient();
   bool state = !worldClient->collisionDebug();
   worldClient->setCollisionDebug(state);
-  return strf("Geometry debug display {}", state ? "enabled" : "disabled");
+  return strf("Geometry debug display {}", state ? std::string_view("enabled") : std::string_view("disabled"));
 }
 
 std::expected<String, StarException> ClientCommandProcessor::fullbright() {
   auto worldClient = m_universeClient->worldClient();
   bool state = !worldClient->fullBright();
   worldClient->setFullBright(state);
-  return strf("Fullbright render lighting {}", state ? "enabled" : "disabled");
+  return strf("Fullbright render lighting {}", state ? std::string_view("enabled") : std::string_view("disabled"));
 }
 
 std::expected<String, StarException> ClientCommandProcessor::asyncLighting() {
   auto worldClient = m_universeClient->worldClient();
   bool state = !worldClient->asyncLighting();
   worldClient->setAsyncLighting(state);
-  return strf("Asynchronous render lighting {}", state ? "enabled" : "disabled");
+  return strf("Asynchronous render lighting {}", state ? std::string_view("enabled") : std::string_view("disabled"));
 }
 
 std::expected<String, StarException> ClientCommandProcessor::setGravity(String const& argumentsString) {
@@ -491,10 +493,10 @@ std::expected<String, StarException> ClientCommandProcessor::setGravity(String c
   if (!*allowed) return "You must be an admin to use this command.";
   auto argument = arguments->at(0);
   if (!argument) return std::unexpected(std::move(argument.error()));
-  auto value = lexicalCast<float>(**argument);
+  auto value = lexicalCast<float>(argument->get());
   if (!value) return std::unexpected(std::move(value.error()));
   m_universeClient->worldClient()->overrideGravity(*value);
-  return strf("Gravity set to {} (This is client-side!)", **argument);
+  return strf("Gravity set to {} (This is client-side!)", argument->get());
 }
 
 std::expected<String, StarException> ClientCommandProcessor::resetGravity() {
@@ -507,7 +509,7 @@ std::expected<String, StarException> ClientCommandProcessor::resetGravity() {
 
 std::expected<String, StarException> ClientCommandProcessor::fixedCamera() {
   m_fixedCameraEnabled = !m_fixedCameraEnabled;
-  return strf("Fixed camera {}", m_fixedCameraEnabled ? "enabled" : "disabled");
+  return strf("Fixed camera {}", m_fixedCameraEnabled ? std::string_view("enabled") : std::string_view("disabled"));
 }
 
 std::expected<String, StarException> ClientCommandProcessor::monochromeLighting() {
@@ -520,7 +522,7 @@ std::expected<String, StarException> ClientCommandProcessor::monochromeLighting(
   bool monochrome = !*enabled;
   if (auto set = (*config)->set("monochromeLighting", monochrome); !set)
     return std::unexpected(std::move(set.error()));
-  return strf("Monochrome lighting {}", monochrome ? "enabled" : "disabled");
+  return strf("Monochrome lighting {}", monochrome ? std::string_view("enabled") : std::string_view("disabled"));
 }
 
 std::expected<String, StarException> ClientCommandProcessor::radioMessage(String const& argumentsString) {
@@ -559,13 +561,13 @@ std::expected<String, StarException> ClientCommandProcessor::startQuest(String c
   if (!*allowed) return "You must be an admin to use this command.";
   auto argument = arguments->at(0);
   if (!argument) return std::unexpected(std::move(argument.error()));
-  auto parsed = Json::parseSequence(**argument);
+  auto parsed = Json::parseSequence(argument->get());
   if (!parsed) return std::unexpected(std::move(parsed.error()));
   auto descriptor = parsed->get(0);
   if (!descriptor) return std::unexpected(std::move(descriptor.error()));
   auto arc = QuestArcDescriptor::fromJson(m_context.root(), *descriptor);
   if (!arc) return std::unexpected(std::move(arc.error()));
-  auto quest = Quest::create(m_context.root(), *arc, 0, m_universeClient->mainPlayer().get());
+  auto quest = Quest::create(m_context.root(), *arc, 0, *m_universeClient->mainPlayer());
   if (!quest) return std::unexpected(std::move(quest.error()));
   if (auto offered = m_universeClient->questManager()->offer(std::move(*quest)); !offered)
     return std::unexpected(std::move(offered.error()));
@@ -580,10 +582,10 @@ std::expected<String, StarException> ClientCommandProcessor::completeQuest(Strin
   if (!*allowed) return "You must be an admin to use this command.";
   auto argument = arguments->at(0);
   if (!argument) return std::unexpected(std::move(argument.error()));
-  auto quest = m_universeClient->questManager()->getQuest(**argument);
+  auto quest = m_universeClient->questManager()->getQuest(argument->get());
   if (!quest) return std::unexpected(std::move(quest.error()));
   if (auto complete = (*quest)->complete(); !complete) return std::unexpected(std::move(complete.error()));
-  return strf("Quest {} complete", **argument);
+  return strf("Quest {} complete", argument->get());
 }
 
 std::expected<String, StarException> ClientCommandProcessor::failQuest(String const& argumentsString) {
@@ -594,10 +596,10 @@ std::expected<String, StarException> ClientCommandProcessor::failQuest(String co
   if (!*allowed) return "You must be an admin to use this command.";
   auto argument = arguments->at(0);
   if (!argument) return std::unexpected(std::move(argument.error()));
-  auto quest = m_universeClient->questManager()->getQuest(**argument);
+  auto quest = m_universeClient->questManager()->getQuest(argument->get());
   if (!quest) return std::unexpected(std::move(quest.error()));
   if (auto failed = (*quest)->fail(); !failed) return std::unexpected(std::move(failed.error()));
-  return strf("Quest {} failed", **argument);
+  return strf("Quest {} failed", argument->get());
 }
 
 std::expected<String, StarException> ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
@@ -666,7 +668,7 @@ std::expected<String, StarException> ClientCommandProcessor::cinema(String const
   if (!argument) return std::unexpected(std::move(argument.error()));
   auto assets = m_context.root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
-  auto config = (*assets)->json(**argument);
+  auto config = (*assets)->json(argument->get());
   if (!config) return std::unexpected(std::move(config.error()));
   if (auto loaded = m_cinematicOverlay->load(*config); !loaded) return std::unexpected(std::move(loaded.error()));
   if (arguments->size() > 1) {
@@ -674,7 +676,7 @@ std::expected<String, StarException> ClientCommandProcessor::cinema(String const
     if (!time) return std::unexpected(std::move(time.error()));
     m_cinematicOverlay->setTime(*time);
   }
-  return strf("Started cinematic {} at {}", **argument, arguments->size() > 1 ? (*arguments)[1] : "beginning");
+  return strf("Started cinematic {} at {}", argument->get(), arguments->size() > 1 ? (*arguments)[1] : "beginning");
 }
 
 std::expected<String, StarException> ClientCommandProcessor::suicide() {
@@ -699,7 +701,7 @@ std::expected<String, StarException> ClientCommandProcessor::resetAchievements()
   auto allowed = adminCommandAllowed();
   if (!allowed) return std::unexpected(std::move(allowed.error()));
   if (!*allowed) return "You must be an admin to use this command.";
-  return m_universeClient->statistics()->reset() ? "Achievements reset" : "Unable to reset achievements";
+  return m_universeClient->statistics()->reset() ? String("Achievements reset") : String("Unable to reset achievements");
 }
 
 std::expected<String, StarException> ClientCommandProcessor::statistic(String const& argumentsString) {
@@ -737,7 +739,7 @@ std::expected<String, StarException> ClientCommandProcessor::giveEssentialItem(S
     if (slot.error().is<MapException>()) return strf("Invalid essential item slot {}.", (*arguments)[1]);
     return std::unexpected(std::move(slot.error()));
   }
-  m_universeClient->mainPlayer()->inventory()->setEssentialItem(**slot, *item);
+  m_universeClient->mainPlayer()->inventory()->setEssentialItem(slot->get(), *item);
   return strf("Put {} in player slot {}", (*item)->name(), (*arguments)[1]);
 }
 
@@ -783,13 +785,14 @@ std::expected<String, StarException> ClientCommandProcessor::swap(String const& 
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!arguments) return std::unexpected(std::move(arguments.error()));
   if (arguments->empty()) {
-    auto displayed = m_paneManager->displayRegisteredPane(MainInterfacePanes::CharacterSwap);
+    if (!m_paneManager) return std::unexpected(StarException("Command processor is detached from its interface"));
+    auto displayed = m_paneManager->get().displayRegisteredPane(MainInterfacePanes::CharacterSwap);
     if (!displayed) return std::unexpected(std::move(displayed.error()));
     return "";
   }
   auto switched = m_universeClient->switchPlayer((*arguments)[0]);
   if (!switched) return std::unexpected(std::move(switched.error()));
-  return *switched ? "Successfully swapped player" : "Failed to swap player";
+  return *switched ? String("Successfully swapped player") : String("Failed to swap player");
 }
 
 std::expected<String, StarException> ClientCommandProcessor::respawnInWorld(String const& argumentsString) {
@@ -797,13 +800,13 @@ std::expected<String, StarException> ClientCommandProcessor::respawnInWorld(Stri
   if (!arguments) return std::unexpected(std::move(arguments.error()));
   auto worldClient = m_universeClient->worldClient();
   if (arguments->empty())
-    return strf("Respawn in this world is currently {}", worldClient->respawnInWorld() ? "true" : "false");
+    return strf("Respawn in this world is currently {}", worldClient->respawnInWorld() ? std::string_view("true") : std::string_view("false"));
   auto parsed = Json::parse((*arguments)[0]);
   if (!parsed) return std::unexpected(std::move(parsed.error()));
   auto enabled = parsed->toBool();
   if (!enabled) return std::unexpected(std::move(enabled.error()));
   worldClient->setRespawnInWorld(*enabled);
-  return strf("Respawn in this world set to {} (This is client-side!)", *enabled ? "true" : "false");
+  return strf("Respawn in this world set to {} (This is client-side!)", *enabled ? std::string_view("true") : std::string_view("false"));
 }
 
 // Hardcoded render command, future version will write to the clipboard and possibly be implemented in Lua
@@ -995,7 +998,7 @@ std::expected<String, StarException> ClientCommandProcessor::render(String const
   if (!file) return std::unexpected(std::move(file.error()));
   auto size = buffer->size();
   if (!size) return std::unexpected(std::move(size.error()));
-  auto written = (*file)->writeFull({buffer->ptr(), static_cast<std::size_t>(*size)});
+  auto written = (*file)->writeFull(buffer->span().first(static_cast<std::size_t>(*size)));
   auto closed = (*file)->close();
   if (!written) {
     if (!closed)
@@ -1005,7 +1008,7 @@ std::expected<String, StarException> ClientCommandProcessor::render(String const
   if (!closed) return std::unexpected(std::move(closed.error()));
   auto fullPath = File::fullPath(outputPath);
   if (!fullPath) return std::unexpected(std::move(fullPath.error()));
-  auto copied = m_context.setClipboardImage(*image, &buffer->data(), &*fullPath);
+  auto copied = m_context.setClipboardImage(*image, std::ref(buffer->data()), std::cref(*fullPath));
   if (!copied) return std::unexpected(std::move(copied.error()));
   return strf("Saved '{}.png' ({}x{}) and copied to clipboard", outputName, image->width(), image->height());
 }

@@ -174,14 +174,14 @@ std::expected<std::shared_ptr<Cinematic>, StarException> Cinematic::create(GuiCo
   return std::shared_ptr<Cinematic>(new Cinematic(context));
 }
 
-Cinematic::Cinematic(GuiContext& context) : m_guiContext(&context) {
+Cinematic::Cinematic(GuiContext& context) : m_guiContext(context) {
   m_completable = false;
   m_suppressInput = false;
 }
 
 std::expected<void, StarException> Cinematic::load(Json const& definition) {
   stop();
-  Cinematic pending(*m_guiContext);
+  Cinematic pending(m_guiContext.get());
   auto loaded = pending.loadDefinition(definition);
   if (!loaded)
     return std::unexpected(std::move(loaded.error()));
@@ -486,18 +486,18 @@ std::expected<void, StarException> Cinematic::render() {
   if (completed())
     return {};
 
-  auto& guiContext = *m_guiContext;
+  auto& guiContext = m_guiContext.get();
   auto mixer = guiContext.mixer();
   auto rendererResult = guiContext.renderer();
   if (!rendererResult)
     return std::unexpected(std::move(rendererResult.error()));
-  auto renderer = *rendererResult;
+  auto& renderer = rendererResult->get();
   auto textPainterResult = guiContext.textPainter();
   if (!textPainterResult)
     return std::unexpected(std::move(textPainterResult.error()));
-  auto textPainter = *textPainterResult;
+  auto& textPainter = textPainterResult->get();
 
-  m_windowSize = Vec2F(renderer->screenSize());
+  m_windowSize = Vec2F(renderer.screenSize());
   Vec2F screenWindowSize = Vec2F(vWidth * m_drawableScale, vHeight * m_drawableScale);
   m_drawableScale = std::min(m_windowSize[0] / vWidth, m_windowSize[1] / vHeight);
   m_drawableTranslation = Vec2F(0.5f * (m_windowSize[0] - vWidth * m_drawableScale), 0.5f * (m_windowSize[1] - vHeight * m_drawableScale));
@@ -516,17 +516,17 @@ std::expected<void, StarException> Cinematic::render() {
   if (m_backgroundColor) {
     Vec4B backgroundColor = *m_backgroundColor;
     backgroundColor[3] *= fadeFactor;
-    renderer->render(renderFlatRect(RectF::withSize(Vec2F(0, 0), m_windowSize), backgroundColor, 0.0f));
+    renderer.render(renderFlatRect(RectF::withSize(Vec2F(0, 0), m_windowSize), backgroundColor, 0.0f));
   }
 
   if (m_letterbox && !m_backgroundColor) {
     Vec4B letterboxColor = Vec4B(0, 0, 0, 255 * fadeFactor);
     if (m_windowSize[0] / vWidth > m_windowSize[1] / vHeight) {
-      renderer->render(renderFlatRect(RectF(0, 0, m_scissorRect.xMin(), m_windowSize[1]), letterboxColor, 0.0f));
-      renderer->render(renderFlatRect(RectF(m_scissorRect.xMax(), 0, m_windowSize[0], m_windowSize[1]), letterboxColor, 0.0f));
+      renderer.render(renderFlatRect(RectF(0, 0, m_scissorRect.xMin(), m_windowSize[1]), letterboxColor, 0.0f));
+      renderer.render(renderFlatRect(RectF(m_scissorRect.xMax(), 0, m_windowSize[0], m_windowSize[1]), letterboxColor, 0.0f));
     } else {
-      renderer->render(renderFlatRect(RectF(0, 0, m_windowSize[0], m_scissorRect.yMin()), letterboxColor, 0.0f));
-      renderer->render(renderFlatRect(RectF(0, m_scissorRect.yMax(), m_windowSize[0], m_windowSize[1]), letterboxColor, 0.0f));
+      renderer.render(renderFlatRect(RectF(0, 0, m_windowSize[0], m_scissorRect.yMin()), letterboxColor, 0.0f));
+      renderer.render(renderFlatRect(RectF(0, m_scissorRect.yMax(), m_windowSize[0], m_windowSize[1]), letterboxColor, 0.0f));
     }
   }
 
@@ -534,7 +534,7 @@ std::expected<void, StarException> Cinematic::render() {
     return {};
 
   if (m_scissor) {
-    auto scissor = renderer->setScissorRect(m_scissorRect);
+    auto scissor = renderer.setScissorRect(m_scissorRect);
     if (!scissor)
       return std::unexpected(std::move(scissor.error()));
   }
@@ -560,7 +560,7 @@ std::expected<void, StarException> Cinematic::render() {
       auto frame = toString(static_cast<int>(values.frame) % panel->animationFrames);
       auto alphaColor = Color::rgbaf(1.0f, 1.0f, 1.0f, values.alpha);
       for (auto const& d : panel->drawables) {
-        auto metadata = m_guiContext->root().imageMetadataDatabase();
+        auto metadata = m_guiContext.get().root().imageMetadataDatabase();
         if (!metadata)
           return std::unexpected(std::move(metadata.error()));
         auto image = d.getString("image");
@@ -586,7 +586,7 @@ std::expected<void, StarException> Cinematic::render() {
         auto portraitMode = PortraitModeNames->getLeft(panel->avatar);
         if (!portraitMode)
           return std::unexpected(std::move(portraitMode.error()));
-        auto portrait = m_player->portrait(**portraitMode);
+        auto portrait = m_player->portrait(portraitMode->get());
         if (!portrait)
           return std::unexpected(std::move(portrait.error()));
         for (auto& drawable : *portrait) {
@@ -600,13 +600,13 @@ std::expected<void, StarException> Cinematic::render() {
         }
       }
       if (!panel->text.empty()) {
-        auto style = textPainter->setTextStyle(panel->textStyle);
+        auto style = textPainter.setTextStyle(panel->textStyle);
         if (!style)
           return std::unexpected(std::move(style.error()));
-        textPainter->setFontSize(std::floor(panel->textStyle.fontSize * drawableScale));
+        textPainter.setFontSize(std::floor(panel->textStyle.fontSize * drawableScale));
         auto fontColor = panel->textStyle.color;
         fontColor[3] *= values.alpha;
-        textPainter->setFontColor(fontColor);
+        textPainter.setFontColor(fontColor);
         Vec2F position = (m_offset + values.position + Vec2F(panel->textPosition.pos)) * drawableScale + drawableTranslation;
         TextPositioning tp(position, panel->textPosition.hAnchor, panel->textPosition.vAnchor, {}, {});
         if (panel->textPosition.wrapWidth)
@@ -617,7 +617,7 @@ std::expected<void, StarException> Cinematic::render() {
             return std::unexpected(std::move(length.error()));
           tp.charLimit = std::floor(*length * values.textPercentage);
         }
-        auto text = textPainter->renderText(panel->text, tp);
+        auto text = textPainter.renderText(panel->text, tp);
         if (!text)
           return std::unexpected(std::move(text.error()));
       }
@@ -627,7 +627,7 @@ std::expected<void, StarException> Cinematic::render() {
   auto panelsRendered = renderPanels();
 
   if (m_scissor) {
-    auto resetScissor = renderer->setScissorRect({});
+    auto resetScissor = renderer.setScissorRect({});
     if (!resetScissor) {
       if (!panelsRendered)
         return std::unexpected(panelsRendered.error().withContext(
@@ -647,7 +647,7 @@ std::expected<void, StarException> Cinematic::render() {
     } else if (m_audioCues[i].timecode <= currentTimecode()) {
       if (m_activeAudio[i])
         continue;
-      auto assets = m_guiContext->root().assets();
+      auto assets = m_guiContext.get().root().assets();
       if (!assets)
         return std::unexpected(std::move(assets.error()));
       auto audio = (*assets)->audio(m_audioCues[i].resource);
@@ -668,7 +668,7 @@ std::expected<void, StarException> Cinematic::render() {
 }
 
 std::expected<void, StarException> Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2F const& drawableTranslation) {
-  auto& guiContext = *m_guiContext;
+  auto& guiContext = m_guiContext.get();
   auto renderer = guiContext.renderer();
   if (!renderer)
     return std::unexpected(std::move(renderer.error()));
@@ -676,11 +676,11 @@ std::expected<void, StarException> Cinematic::drawDrawable(Drawable const& drawa
   if (!textureGroup)
     return std::unexpected(std::move(textureGroup.error()));
 
-  auto& primitives = (*renderer)->immediatePrimitives();
+  auto& primitives = renderer->get().immediatePrimitives();
 
   if (drawable.isImage()) {
     auto const& imagePart = drawable.imagePart();
-    auto texture = (*textureGroup)->loadTexture(imagePart.image);
+    auto texture = textureGroup->get().loadTexture(imagePart.image);
     if (!texture)
       return std::unexpected(std::move(texture.error()));
     auto size = Vec2F((*texture)->size());
@@ -973,7 +973,7 @@ std::expected<bool, StarException> Cinematic::handleInputEvent(InputEvent const&
         return std::unexpected(std::move(timeSkip.error()));
       setTime(timeSkip->skipToTime);
       return true;
-    } else if (m_skippable && m_guiContext->actions(event).contains(InterfaceAction::CinematicSkip)) {
+    } else if (m_skippable && m_guiContext.get().actions(event).contains(InterfaceAction::CinematicSkip)) {
       stop();
       return true;
     }

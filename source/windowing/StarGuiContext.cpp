@@ -83,30 +83,30 @@ Root& GuiContext::root() const {
 }
 
 void GuiContext::bindInput(Input& input) {
-  m_input = &input;
+  m_input = std::ref(input);
 }
 
-std::expected<Input*, StarException> GuiContext::input() const {
+std::expected<std::reference_wrapper<Input>, StarException> GuiContext::input() const {
   if (!m_input)
     return std::unexpected(GuiContextException("GuiContext::input() called before bindInput"));
-  return m_input;
+  return *m_input;
 }
 
 void GuiContext::bindVoice(Voice& voice) {
-  m_voice = &voice;
+  m_voice = std::ref(voice);
 }
 
-std::expected<Voice*, StarException> GuiContext::voice() const {
+std::expected<std::reference_wrapper<Voice>, StarException> GuiContext::voice() const {
   if (!m_voice)
     return std::unexpected(GuiContextException("GuiContext::voice() called before bindVoice"));
-  return m_voice;
+  return *m_voice;
 }
 
-void GuiContext::setTileDrawer(TileDrawer* tileDrawer) {
+void GuiContext::setTileDrawer(std::optional<std::reference_wrapper<TileDrawer>> tileDrawer) {
   m_tileDrawer = tileDrawer;
 }
 
-TileDrawer* GuiContext::tileDrawer() const {
+std::optional<std::reference_wrapper<TileDrawer>> GuiContext::tileDrawer() const {
   return m_tileDrawer;
 }
 
@@ -134,22 +134,22 @@ std::shared_ptr<ApplicationController> const& GuiContext::applicationController(
   return m_applicationController;
 }
 
-std::expected<Renderer*, StarException> GuiContext::renderer() const {
+std::expected<std::reference_wrapper<Renderer>, StarException> GuiContext::renderer() const {
   if (!m_renderer)
     return std::unexpected(GuiContextException("GuiContext::renderer() called before renderInit"));
-  return m_renderer.get();
+  return std::ref(*m_renderer);
 }
 
-std::expected<AssetTextureGroup*, StarException> GuiContext::assetTextureGroup() const {
+std::expected<std::reference_wrapper<AssetTextureGroup>, StarException> GuiContext::assetTextureGroup() const {
   if (!m_textureCollection)
     return std::unexpected(GuiContextException("GuiContext::assetTextureGroup() called before renderInit"));
-  return m_textureCollection.get();
+  return std::ref(*m_textureCollection);
 }
 
-std::expected<TextPainter*, StarException> GuiContext::textPainter() const {
+std::expected<std::reference_wrapper<TextPainter>, StarException> GuiContext::textPainter() const {
   if (!m_textPainter)
     return std::unexpected(GuiContextException("GuiContext::textPainter() called before renderInit"));
-  return m_textPainter.get();
+  return std::ref(*m_textPainter);
 }
 
 std::expected<unsigned, StarException> GuiContext::windowWidth() const {
@@ -170,7 +170,7 @@ std::expected<Vec2U, StarException> GuiContext::windowSize() const {
   auto target = renderer();
   if (!target)
     return std::unexpected(std::move(target.error()));
-  return (*target)->screenSize();
+  return target->get().screenSize();
 }
 
 std::expected<Vec2U, StarException> GuiContext::windowInterfaceSize() const {
@@ -194,14 +194,14 @@ std::optional<Vec2I> GuiContext::mousePosition(InputEvent const& event, float pi
     return Vec2I(pos / pixelRatio);
   };
 
-  if (auto mouseMoveEvent = std::get_if<MouseMoveEvent>(&event))
-    return getInterfacePosition(mouseMoveEvent->mousePosition);
-  else if (auto mouseDownEvent = std::get_if<MouseButtonDownEvent>(&event))
-    return getInterfacePosition(mouseDownEvent->mousePosition);
-  else if (auto mouseUpEvent = std::get_if<MouseButtonUpEvent>(&event))
-    return getInterfacePosition(mouseUpEvent->mousePosition);
-  else if (auto mouseWheelEvent = std::get_if<MouseWheelEvent>(&event))
-    return getInterfacePosition(mouseWheelEvent->mousePosition);
+  if (std::holds_alternative<MouseMoveEvent>(event))
+    return getInterfacePosition(std::get<MouseMoveEvent>(event).mousePosition);
+  else if (std::holds_alternative<MouseButtonDownEvent>(event))
+    return getInterfacePosition(std::get<MouseButtonDownEvent>(event).mousePosition);
+  else if (std::holds_alternative<MouseButtonUpEvent>(event))
+    return getInterfacePosition(std::get<MouseButtonUpEvent>(event).mousePosition);
+  else if (std::holds_alternative<MouseWheelEvent>(event))
+    return getInterfacePosition(std::get<MouseWheelEvent>(event).mousePosition);
   else
     return {};
 }
@@ -236,21 +236,21 @@ std::expected<void, StarException> GuiContext::setInterfaceScissorRect(RectI con
   auto target = renderer();
   if (!target)
     return std::unexpected(std::move(target.error()));
-  return (*target)->setScissorRect(RectI(RectF(scissor).scaled(interfaceScale())));
+  return target->get().setScissorRect(RectI(RectF(scissor).scaled(interfaceScale())));
 }
 
 std::expected<void, StarException> GuiContext::resetInterfaceScissorRect() {
   auto target = renderer();
   if (!target)
     return std::unexpected(std::move(target.error()));
-  return (*target)->setScissorRect({});
+  return target->get().setScissorRect({});
 }
 
 std::expected<Vec2U, StarException> GuiContext::textureSize(AssetPath const& texName) {
   auto textures = assetTextureGroup();
   if (!textures)
     return std::unexpected(std::move(textures.error()));
-  auto texture = (*textures)->loadTexture(texName);
+  auto texture = textures->get().loadTexture(texName);
   if (!texture)
     return std::unexpected(std::move(texture.error()));
   return (*texture)->size();
@@ -260,7 +260,7 @@ std::expected<void, StarException> GuiContext::drawQuad(RectF const& screenCoord
   auto target = renderer();
   if (!target)
     return std::unexpected(std::move(target.error()));
-  (*target)->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), screenCoords, color, 0.0f);
+  target->get().immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), screenCoords, color, 0.0f);
   return {};
 }
 
@@ -271,10 +271,10 @@ std::expected<void, StarException> GuiContext::drawQuad(AssetPath const& texName
   auto textures = assetTextureGroup();
   if (!textures)
     return std::unexpected(std::move(textures.error()));
-  auto texture = (*textures)->loadTexture(texName);
+  auto texture = textures->get().loadTexture(texName);
   if (!texture)
     return std::unexpected(std::move(texture.error()));
-  (*target)->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), *texture, screenCoords, color, 0.0f);
+  target->get().immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), *texture, screenCoords, color, 0.0f);
   return {};
 }
 
@@ -285,10 +285,10 @@ std::expected<void, StarException> GuiContext::drawQuad(AssetPath const& texName
   auto textures = assetTextureGroup();
   if (!textures)
     return std::unexpected(std::move(textures.error()));
-  auto texture = (*textures)->loadTexture(texName);
+  auto texture = textures->get().loadTexture(texName);
   if (!texture)
     return std::unexpected(std::move(texture.error()));
-  (*target)->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), *texture, screenPos, pixelRatio, color, 0.0f);
+  target->get().immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), *texture, screenPos, pixelRatio, color, 0.0f);
   return {};
 }
 
@@ -299,10 +299,10 @@ std::expected<void, StarException> GuiContext::drawQuad(AssetPath const& texName
   auto textures = assetTextureGroup();
   if (!textures)
     return std::unexpected(std::move(textures.error()));
-  auto texture = (*textures)->loadTexture(texName);
+  auto texture = textures->get().loadTexture(texName);
   if (!texture)
     return std::unexpected(std::move(texture.error()));
-  (*target)->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), *texture,
+  target->get().immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), *texture,
       screenCoords.min(), texCoords.min(),
       Vec2F(screenCoords.xMax(), screenCoords.yMin()), Vec2F(texCoords.xMax(), texCoords.yMin()),
       screenCoords.max(), texCoords.max(),
@@ -327,7 +327,7 @@ std::expected<void, StarException> GuiContext::drawLine(Vec2F const& begin, Vec2
   if (!target)
     return std::unexpected(std::move(target.error()));
   Vec2F left = vnorm(Vec2F(end) - Vec2F(begin)).rot90() * lineWidth / 2.0f;
-  (*target)->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), begin + left, begin - left, end - left, end + left, color, 0.0f);
+  target->get().immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), begin + left, begin - left, end - left, end + left, color, 0.0f);
   return {};
 }
 
@@ -345,7 +345,7 @@ std::expected<void, StarException> GuiContext::drawTriangles(List<std::tuple<Vec
   if (!target)
     return std::unexpected(std::move(target.error()));
   for (auto const& poly : triangles)
-    (*target)->immediatePrimitives().emplace_back(std::in_place_type_t<RenderTriangle>(), std::get<0>(poly), std::get<1>(poly), std::get<2>(poly), color, 0.0f);
+    target->get().immediatePrimitives().emplace_back(std::in_place_type_t<RenderTriangle>(), std::get<0>(poly), std::get<1>(poly), std::get<2>(poly), color, 0.0f);
   return {};
 }
 
@@ -457,7 +457,7 @@ std::expected<RectF, StarException> GuiContext::renderText(String const& s, Text
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  return (*painter)->renderText(s, position);
+  return painter->get().renderText(s, position);
 }
 
 std::expected<RectF, StarException> GuiContext::renderInterfaceText(String const& s, TextPositioning const& position) {
@@ -472,7 +472,7 @@ std::expected<RectF, StarException> GuiContext::determineTextSize(String const& 
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  return (*painter)->determineTextSize(s, positioning);
+  return painter->get().determineTextSize(s, positioning);
 }
 
 std::expected<RectF, StarException> GuiContext::determineInterfaceTextSize(String const& s, TextPositioning const& positioning) {
@@ -491,7 +491,7 @@ std::expected<void, StarException> GuiContext::setFontSize(unsigned size, float 
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  (*painter)->setFontSize(size * pixelRatio);
+  painter->get().setFontSize(size * pixelRatio);
   return {};
 }
 
@@ -499,7 +499,7 @@ std::expected<void, StarException> GuiContext::setFontColor(Vec4B const& color) 
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  (*painter)->setFontColor(color);
+  painter->get().setFontColor(color);
   return {};
 }
 
@@ -507,7 +507,7 @@ std::expected<void, StarException> GuiContext::setFontMode(FontMode mode) {
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  (*painter)->setMode(mode);
+  painter->get().setMode(mode);
   return {};
 }
 
@@ -515,32 +515,32 @@ std::expected<void, StarException> GuiContext::setFontProcessingDirectives(Strin
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  return (*painter)->setProcessingDirectives(directives);
+  return painter->get().setProcessingDirectives(directives);
 }
 
 std::expected<void, StarException> GuiContext::setFont(String const& font) {
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  return (*painter)->setFont(font);
+  return painter->get().setFont(font);
 }
 
 std::expected<void, StarException> GuiContext::setDefaultFont() {
   return setFont("");
 }
 
-std::expected<TextStyle*, StarException> GuiContext::setTextStyle(TextStyle const& textStyle, float pixelRatio) {
+std::expected<std::reference_wrapper<TextStyle>, StarException> GuiContext::setTextStyle(TextStyle const& textStyle, float pixelRatio) {
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  auto style = (*painter)->setTextStyle(textStyle);
+  auto style = painter->get().setTextStyle(textStyle);
   if (!style)
     return std::unexpected(std::move(style.error()));
-  (*style)->fontSize *= pixelRatio;
+  style->get().fontSize *= pixelRatio;
   return *style;
 }
 
-std::expected<TextStyle*, StarException> GuiContext::setTextStyle(TextStyle const& textStyle) {
+std::expected<std::reference_wrapper<TextStyle>, StarException> GuiContext::setTextStyle(TextStyle const& textStyle) {
   return setTextStyle(textStyle, interfaceScale());
 }
 
@@ -548,14 +548,14 @@ std::expected<void, StarException> GuiContext::clearTextStyle() {
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  return (*painter)->clearTextStyle();
+  return painter->get().clearTextStyle();
 }
 
 std::expected<void, StarException> GuiContext::setLineSpacing(float lineSpacing) {
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  (*painter)->setLineSpacing(lineSpacing);
+  painter->get().setLineSpacing(lineSpacing);
   return {};
 }
 
@@ -567,7 +567,7 @@ std::expected<int, StarException> GuiContext::stringWidth(String const& s) {
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  return (*painter)->stringWidth(s);
+  return painter->get().stringWidth(s);
 }
 
 std::expected<int, StarException> GuiContext::stringInterfaceWidth(String const& s) {
@@ -583,7 +583,7 @@ std::expected<StringList, StarException> GuiContext::wrapText(String const& s, s
   auto painter = textPainter();
   if (!painter)
     return std::unexpected(std::move(painter.error()));
-  return (*painter)->wrapText(s, wrapWidth);
+  return painter->get().wrapText(s, wrapWidth);
 }
 
 std::expected<StringList, StarException> GuiContext::wrapInterfaceText(String const& s, std::optional<unsigned> wrapWidth) {
@@ -635,7 +635,7 @@ bool GuiContext::setClipboardData(StringMap<ByteArray> data) {
   return m_applicationController->setClipboardData(std::move(data));
 }
 
-std::expected<bool, StarException> GuiContext::setClipboardImage(Image const& image, ByteArray* png, String const* path) {
+std::expected<bool, StarException> GuiContext::setClipboardImage(Image const& image, std::optional<std::reference_wrapper<ByteArray>> png, std::optional<std::reference_wrapper<String const>> path) {
   return m_applicationController->setClipboardImage(image, png, path);
 }
 

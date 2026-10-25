@@ -32,7 +32,7 @@ class ProjectileDatabase;
 class NpcDatabase;
 
 struct EntityFactoryExceptionTag {
-  static constexpr char const* name() { return "EntityFactoryException"; }
+  static constexpr std::string_view name() { return "EntityFactoryException"; }
 };
 using EntityFactoryException = StarError<EntityFactoryExceptionTag, StarException>;
 

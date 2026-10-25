@@ -241,10 +241,10 @@ namespace Star {
 
 namespace {
 
-template <typename Armor>
+template <typename Armor, typename SetItem>
 std::expected<void, StarException> applyLoungeCosmeticOverride(
     JsonObject const& overrides, String const& key, EquipmentSlot slot, ItemDatabase const& itemDatabase,
-    ArmorWearer& armor, void (ArmorWearer::*setItem)(std::shared_ptr<Armor>)) {
+    ArmorWearer& armor, SetItem&& setItem) {
   auto overrideJson = overrides.maybe(key);
   if (!overrideJson)
     return {};
@@ -255,7 +255,7 @@ std::expected<void, StarException> applyLoungeCosmeticOverride(
   if (!item)
     return std::unexpected(std::move(item.error()));
   if (PlayerInventory::itemAllowedAsEquipment(*item, slot))
-    (armor.*setItem)(as<Armor>(*item));
+    setItem(armor, as<Armor>(*item));
   return {};
 }
 
@@ -281,6 +281,13 @@ std::expected<std::shared_ptr<Player>, StarException> Player::create(Root& root,
 
 Player::Player(Root& rootOwner) : Entity(rootOwner), m_netHumanoid([&rootOwner] { return NetHumanoid::create(rootOwner); }), m_scriptedAnimator(rootOwner) {}
 
+Player::~Player() {
+  if (m_inventory)
+    m_inventory->setPlayer(std::nullopt);
+  if (m_questManager)
+    m_questManager->detachPlayer();
+}
+
 std::expected<std::shared_ptr<Player>, StarException> Player::create(Root& root, std::shared_ptr<PlayerConfig> config, Uuid uuid) {
   auto player = std::shared_ptr<Player>(new Player(root));
   auto initialized = player->initialize(std::move(config), std::move(uuid));
@@ -296,7 +303,7 @@ std::expected<void, StarException> Player::initialize(std::shared_ptr<PlayerConf
   auto assets = std::move(*assetsResult);
 
   m_config = std::move(config);
-  m_client = nullptr;
+  m_client.reset();
 
   m_state = State::Idle;
   m_emoteState = HumanoidEmote::Idle;
@@ -313,7 +320,7 @@ std::expected<void, StarException> Player::initialize(std::shared_ptr<PlayerConf
   m_identity = m_config->defaultIdentity;
   m_identityUpdated = true;
 
-  auto questManagerResult = QuestManager::create(root(), this);
+  auto questManagerResult = QuestManager::create(root(), *this);
   if (!questManagerResult)
     return std::unexpected(std::move(questManagerResult.error()));
   auto questManager = std::move(*questManagerResult);
@@ -374,7 +381,7 @@ std::expected<void, StarException> Player::initialize(std::shared_ptr<PlayerConf
     return std::unexpected(std::move(inventoryResult.error()));
   auto inventory = std::move(*inventoryResult);
   m_inventory = std::move(inventory);
-  m_inventory->setPlayer(this);
+  m_inventory->setPlayer(std::ref(*this));
 
   m_blueprints = std::make_shared<PlayerBlueprints>();
   m_universeMap = std::make_shared<PlayerUniverseMap>();
@@ -564,43 +571,43 @@ std::expected<void, StarException> Player::initialize(std::shared_ptr<PlayerConf
   setKeepAlive(true);
 
   {
-    if (auto result = m_netGroup.addNetElement(&m_stateNetState); !result)
+    if (auto result = m_netGroup.addNetElement(m_stateNetState); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(&m_shiftingNetState); !result)
+    if (auto result = m_netGroup.addNetElement(m_shiftingNetState); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(&m_xAimPositionNetState); !result)
+    if (auto result = m_netGroup.addNetElement(m_xAimPositionNetState); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(&m_yAimPositionNetState); !result)
+    if (auto result = m_netGroup.addNetElement(m_yAimPositionNetState); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(&m_identityNetState); !result)
+    if (auto result = m_netGroup.addNetElement(m_identityNetState); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(&m_teamNetState); !result)
+    if (auto result = m_netGroup.addNetElement(m_teamNetState); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(&m_landedNetState); !result)
+    if (auto result = m_netGroup.addNetElement(m_landedNetState); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(&m_chatMessageNetState); !result)
+    if (auto result = m_netGroup.addNetElement(m_chatMessageNetState); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(&m_newChatMessageNetState); !result)
+    if (auto result = m_netGroup.addNetElement(m_newChatMessageNetState); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(&m_emoteNetState); !result)
+    if (auto result = m_netGroup.addNetElement(m_emoteNetState); !result)
       return std::unexpected(std::move(result.error()));
   }
 
@@ -609,73 +616,73 @@ std::expected<void, StarException> Player::initialize(std::shared_ptr<PlayerConf
   m_yAimPositionNetState.setInterpolator(lerp<float, float>);
 
   {
-    if (auto result = m_netGroup.addNetElement(m_inventory.get()); !result)
+    if (auto result = m_netGroup.addNetElement(*m_inventory); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(m_tools.get()); !result)
+    if (auto result = m_netGroup.addNetElement(*m_tools); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(m_armor.get()); !result)
+    if (auto result = m_netGroup.addNetElement(*m_armor); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(m_songbook.get()); !result)
+    if (auto result = m_netGroup.addNetElement(*m_songbook); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(m_movementController.get()); !result)
+    if (auto result = m_netGroup.addNetElement(*m_movementController); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(m_effectEmitter.get()); !result)
+    if (auto result = m_netGroup.addNetElement(*m_effectEmitter); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(m_effectsAnimator.get()); !result)
+    if (auto result = m_netGroup.addNetElement(*m_effectsAnimator); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(m_statusController.get()); !result)
+    if (auto result = m_netGroup.addNetElement(*m_statusController); !result)
       return std::unexpected(std::move(result.error()));
   }
   {
-    if (auto result = m_netGroup.addNetElement(m_techController.get()); !result)
+    if (auto result = m_netGroup.addNetElement(*m_techController); !result)
       return std::unexpected(std::move(result.error()));
   }
 
   m_netHumanoid.setCompatibilityVersion(10);
   {
-    if (auto result = m_netGroup.addNetElement(&m_netHumanoid); !result)
+    if (auto result = m_netGroup.addNetElement(m_netHumanoid); !result)
       return std::unexpected(std::move(result.error()));
   }
   m_refreshedHumanoidParameters.setCompatibilityVersion(10);
   {
-    if (auto result = m_netGroup.addNetElement(&m_refreshedHumanoidParameters); !result)
+    if (auto result = m_netGroup.addNetElement(m_refreshedHumanoidParameters); !result)
       return std::unexpected(std::move(result.error()));
   }
 
   m_scriptedAnimationParameters.setCompatibilityVersion(10);
   {
-    if (auto result = m_netGroup.addNetElement(&m_scriptedAnimationParameters); !result)
+    if (auto result = m_netGroup.addNetElement(m_scriptedAnimationParameters); !result)
       return std::unexpected(std::move(result.error()));
   }
 
   m_deathParticleBurst.setCompatibilityVersion(10);
   {
-    if (auto result = m_netGroup.addNetElement(&m_deathParticleBurst); !result)
+    if (auto result = m_netGroup.addNetElement(m_deathParticleBurst); !result)
       return std::unexpected(std::move(result.error()));
   }
 
   m_humanoidDanceNetState.setCompatibilityVersion(13);
   {
-    if (auto result = m_netGroup.addNetElement(&m_humanoidDanceNetState); !result)
+    if (auto result = m_netGroup.addNetElement(m_humanoidDanceNetState); !result)
       return std::unexpected(std::move(result.error()));
   }
 
-  m_netGroup.setNeedsLoadCallback(std::bind(&Player::getNetStates, this, std::placeholders::_1));
-  m_netGroup.setNeedsStoreCallback(std::bind(&Player::setNetStates, this));
+  m_netGroup.setNeedsLoadCallback(std::bind(&Player::getNetStates, std::ref(*this), std::placeholders::_1));
+  m_netGroup.setNeedsStoreCallback(std::bind(&Player::setNetStates, std::ref(*this)));
   return {};
 }
 
@@ -762,7 +769,7 @@ std::expected<void, StarException> Player::diskLoad(Json const& diskStore) {
   auto modeResult = PlayerModeNames->getLeft(modeName);
   if (!modeResult)
     return std::unexpected(std::move(modeResult.error()));
-  auto const& mode = **modeResult;
+  auto const& mode = modeResult->get();
   if (auto result = setModeType(mode); !result)
     return std::unexpected(std::move(result.error()));
   auto shipResult = diskStore.get("shipUpgrades");
@@ -984,12 +991,12 @@ void Player::setStatistics(std::shared_ptr<Statistics> statistics) {
   m_statistics = statistics;
 }
 
-void Player::setUniverseClient(UniverseClient* client) {
+void Player::setUniverseClient(std::optional<std::reference_wrapper<UniverseClient>> client) {
   m_client = client;
   m_questManager->setUniverseClient(client);
 }
 
-UniverseClient* Player::universeClient() const {
+std::optional<std::reference_wrapper<UniverseClient>> Player::universeClient() const {
   return m_client;
 }
 
@@ -1001,16 +1008,16 @@ ClientEntityMode Player::clientEntityMode() const {
   return ClientEntityMode::ClientPresenceMaster;
 }
 
-std::expected<void, StarException> Player::init(World* world, EntityId entityId, EntityMode mode) {
+std::expected<void, StarException> Player::init(World& world, EntityId entityId, EntityMode mode) {
   if (auto result = Entity::init(world, entityId, mode); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = m_tools->init(this); !result)
+  if (auto result = m_tools->init(*this); !result)
     return std::unexpected(std::move(result.error()));
   m_movementController->init(world);
   m_movementController->setIgnorePhysicsEntities({entityId});
-  if (auto result = m_statusController->init(this, m_movementController.get()); !result)
+  if (auto result = m_statusController->init(*this, *m_movementController); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = m_techController->init(this, m_movementController.get(), m_statusController.get()); !result)
+  if (auto result = m_techController->init(*this, *m_movementController, *m_statusController); !result)
     return std::unexpected(std::move(result.error()));
   auto speciesDatabaseResult = root().speciesDatabase();
   if (!speciesDatabaseResult)
@@ -1025,50 +1032,50 @@ std::expected<void, StarException> Player::init(World* world, EntityId entityId,
     m_movementController->setRotation(0);
     m_statusController->setStatusProperty("ouchNoise", speciesDefinition->ouchNoise(m_identity.gender));
     m_emoteState = HumanoidEmote::Idle;
-    if (auto result = m_questManager->init(world); !result)
+    if (auto result = m_questManager->init(*this, world); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = m_companions->init(this, world); !result)
+    if (auto result = m_companions->init(*this, world); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = m_deployment->init(this, world); !result)
+    if (auto result = m_deployment->init(*this, world); !result)
       return std::unexpected(std::move(result.error()));
     m_missionRadioMessages.clear();
     if (auto result = m_statusController->setPersistentEffects("species", speciesDefinition->statusEffects()); !result)
       return std::unexpected(std::move(result.error()));
     for (auto& p : m_genericScriptContexts) {
-      if (auto result = p.second->addActorMovementCallbacks(m_movementController.get()); !result)
+      if (auto result = p.second->addActorMovementCallbacks(*m_movementController); !result)
         return std::unexpected(std::move(result.error()));
-      auto playerCallbacksResult = LuaBindings::makePlayerCallbacks(root(), this);
+      auto playerCallbacksResult = LuaBindings::makePlayerCallbacks(root(), *this);
       if (!playerCallbacksResult)
         return std::unexpected(std::move(playerCallbacksResult.error()));
       auto playerCallbacks = std::move(*playerCallbacksResult);
       if (auto result = p.second->addCallbacks("player", std::move(playerCallbacks)); !result)
         return std::unexpected(std::move(result.error()));
-      auto entityCallbacksResult = LuaBindings::makeEntityCallbacks(this);
+      auto entityCallbacksResult = LuaBindings::makeEntityCallbacks(*this);
       if (!entityCallbacksResult)
         return std::unexpected(std::move(entityCallbacksResult.error()));
       auto entityCallbacks = std::move(*entityCallbacksResult);
       if (auto result = p.second->addCallbacks("entity", std::move(entityCallbacks)); !result)
         return std::unexpected(std::move(result.error()));
-      auto statusCallbacksResult = LuaBindings::makeStatusControllerCallbacks(m_statusController.get());
+      auto statusCallbacksResult = LuaBindings::makeStatusControllerCallbacks(*m_statusController);
       if (!statusCallbacksResult)
         return std::unexpected(std::move(statusCallbacksResult.error()));
       auto statusCallbacks = std::move(*statusCallbacksResult);
       if (auto result = p.second->addCallbacks("status", std::move(statusCallbacks)); !result)
         return std::unexpected(std::move(result.error()));
-      auto songbookCallbacksResult = LuaBindings::makeSongbookCallbacks(m_songbook.get());
+      auto songbookCallbacksResult = LuaBindings::makeSongbookCallbacks(*m_songbook);
       if (!songbookCallbacksResult)
         return std::unexpected(std::move(songbookCallbacksResult.error()));
       auto songbookCallbacks = std::move(*songbookCallbacksResult);
       if (auto result = p.second->addCallbacks("songbook", std::move(songbookCallbacks)); !result)
         return std::unexpected(std::move(result.error()));
-      auto animatorCallbacksResult = LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator());
+      auto animatorCallbacksResult = LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()->get());
       if (!animatorCallbacksResult)
         return std::unexpected(std::move(animatorCallbacksResult.error()));
       auto animatorCallbacks = std::move(*animatorCallbacksResult);
       if (auto result = p.second->addCallbacks("animator", std::move(animatorCallbacks)); !result)
         return std::unexpected(std::move(result.error()));
       if (m_client) {
-        auto celestialCallbacksResult = LuaBindings::makeCelestialCallbacks(root(), m_client);
+        auto celestialCallbacksResult = LuaBindings::makeCelestialCallbacks(root(), m_client->get());
         if (!celestialCallbacksResult)
           return std::unexpected(std::move(celestialCallbacksResult.error()));
         auto celestialCallbacks = std::move(*celestialCallbacksResult);
@@ -1083,25 +1090,25 @@ std::expected<void, StarException> Player::init(World* world, EntityId entityId,
       if (!dropResult)
         return std::unexpected(std::move(dropResult.error()));
       auto drop = std::move(*dropResult);
-      if (auto result = world->addEntity(std::move(drop)); !result)
+      if (auto result = world.addEntity(std::move(drop)); !result)
         return std::unexpected(std::move(result.error()));
     }
     if (auto result = setNetArmorSecrets(); !result)
       return std::unexpected(std::move(result.error()));
   }
-  if (world->isClient()) {
+  if (world.isClient()) {
     if (auto result = m_scriptedAnimator.setScripts(humanoid()->animationScripts()); !result)
       return std::unexpected(std::move(result.error()));
-    auto animationCallbacksResult = LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
-      [this](String const& name, Json const& defaultValue) -> std::expected<Json, StarException> {
-        return m_scriptedAnimationParameters.value(name, defaultValue);
+    auto animationCallbacksResult = LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator()->get(),
+      [&parameters = m_scriptedAnimationParameters](String const& name, Json const& defaultValue) -> std::expected<Json, StarException> {
+        return parameters.value(name, defaultValue);
       });
     if (!animationCallbacksResult)
       return std::unexpected(std::move(animationCallbacksResult.error()));
     auto animationCallbacks = std::move(*animationCallbacksResult);
     if (auto result = m_scriptedAnimator.addCallbacks("animationConfig", std::move(animationCallbacks)); !result)
       return std::unexpected(std::move(result.error()));
-    auto entityCallbacksResult = LuaBindings::makeEntityCallbacks(this);
+    auto entityCallbacksResult = LuaBindings::makeEntityCallbacks(*this);
     if (!entityCallbacksResult)
       return std::unexpected(std::move(entityCallbacksResult.error()));
     auto entityCallbacks = std::move(*entityCallbacksResult);
@@ -1110,7 +1117,7 @@ std::expected<void, StarException> Player::init(World* world, EntityId entityId,
     if (auto result = m_scriptedAnimator.init(world); !result)
       return std::unexpected(std::move(result.error()));
   }
-  m_xAimPositionNetState.setInterpolator(world->geometry().xLerpFunction());
+  m_xAimPositionNetState.setInterpolator(world.geometry().xLerpFunction());
   return refreshEquipment();
 }
 
@@ -1126,6 +1133,7 @@ std::expected<void, StarException> Player::uninit() {
   };
   remember(m_techController->uninit());
   m_movementController->uninit();
+  setWireConnector(std::nullopt);
   remember(m_tools->uninit());
   remember(m_statusController->uninit());
   if (isMaster()) {
@@ -1134,13 +1142,13 @@ std::expected<void, StarException> Player::uninit() {
     remember(m_deployment->uninit());
     for (auto& p : m_genericScriptContexts) {
       remember(p.second->uninit());
-      for (auto const& group : {"animator", "entity", "player", "mcontroller", "status", "songbook", "world"})
+      for (auto group : std::array<std::string_view, 7>{"animator", "entity", "player", "mcontroller", "status", "songbook", "world"})
         remember(p.second->removeCallbacks(group));
       if (m_client)
         remember(p.second->removeCallbacks("celestial"));
     }
   }
-  if (auto world = worldPtr(); world && world->isClient()) {
+  if (auto world = maybeWorld(); world && world->get().isClient()) {
     remember(m_scriptedAnimator.uninit());
     remember(m_scriptedAnimator.removeCallbacks("animationConfig"));
     remember(m_scriptedAnimator.removeCallbacks("entity"));
@@ -1240,7 +1248,7 @@ std::expected<List<Particle>, StarException> Player::particles() {
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
+  auto& currentWorld = currentWorldResult->get();
   auto splashResult = m_config->splashConfig.doSplash(position(), m_movementController->velocity(), currentWorld);
   if (!splashResult)
     return std::unexpected(std::move(splashResult.error()));
@@ -1289,7 +1297,7 @@ bool Player::wireToolInUse() const {
   return (bool)as<WireTool>(m_tools->primaryHandItem());
 }
 
-void Player::setWireConnector(WireConnector* wireConnector) const {
+void Player::setWireConnector(std::optional<std::reference_wrapper<WireConnector>> wireConnector) const {
   if (auto wireTool = as<WireTool>(m_tools->primaryHandItem()))
     wireTool->setConnector(wireConnector);
 }
@@ -1309,7 +1317,7 @@ std::expected<List<Drawable>, StarException> Player::portrait(PortraitMode mode)
 bool Player::underwater() const {
   if (!inWorld())
     return false;
-  return worldPtr()->liquidLevel(Vec2I(position() + m_config->underwaterSensor)).level >= m_config->underwaterMinWaterLevel;
+  return maybeWorld()->get().liquidLevel(Vec2I(position() + m_config->underwaterSensor)).level >= m_config->underwaterMinWaterLevel;
 }
 
 std::expected<List<LightSource>, StarException> Player::lightSources() const {
@@ -1329,7 +1337,7 @@ std::expected<List<LightSource>, StarException> Player::lightSources() const {
     return std::unexpected(std::move(techResult.error()));
   auto tech = std::move(*techResult);
   lights.appendAll(std::move(tech));
-  auto humanoidLightsResult = humanoid()->networkedAnimator()->lightSources();
+  auto humanoidLightsResult = humanoid()->networkedAnimator()->get().lightSources();
   if (!humanoidLightsResult)
     return std::unexpected(std::move(humanoidLightsResult.error()));
   auto humanoidLights = std::move(*humanoidLightsResult);
@@ -1353,8 +1361,8 @@ std::expected<std::optional<HitType>, StarException> Player::queryHit(DamageSour
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  auto intersectsResult = source.intersectsWithPoly(currentWorld->geometry(), m_movementController->collisionBody());
+  auto& currentWorld = currentWorldResult->get();
+  auto intersectsResult = source.intersectsWithPoly(currentWorld.geometry(), m_movementController->collisionBody());
   if (!intersectsResult)
     return std::unexpected(std::move(intersectsResult.error()));
   auto intersects = std::move(*intersectsResult);
@@ -1385,8 +1393,8 @@ std::expected<void, StarException> Player::hitOther(EntityId targetEntityId, Dam
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  if (as<DamageBarEntity>(currentWorld->entity(targetEntityId))) {
+  auto& currentWorld = currentWorldResult->get();
+  if (as<DamageBarEntity>(currentWorld.entity(targetEntityId))) {
     m_lastDamagedOtherTimer = 0;
     m_lastDamagedTarget = targetEntityId;
   }
@@ -1407,7 +1415,7 @@ std::expected<bool, StarException> Player::shouldDestroy() const {
   return isDead();
 }
 
-std::expected<void, StarException> Player::destroy(RenderCallback* renderCallback) {
+std::expected<void, StarException> Player::destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) {
   m_state = State::Idle;
   m_emoteState = HumanoidEmote::Idle;
   if (renderCallback && m_deathParticleBurst.get()) {
@@ -1415,7 +1423,7 @@ std::expected<void, StarException> Player::destroy(RenderCallback* renderCallbac
     if (!particlesResult)
       return std::unexpected(std::move(particlesResult.error()));
     auto particles = std::move(*particlesResult);
-    if (auto result = renderCallback->addParticles(std::move(particles), position()); !result)
+    if (auto result = renderCallback->get().addParticles(std::move(particles), position()); !result)
       return std::unexpected(std::move(result.error()));
   }
   if (isMaster()) {
@@ -1423,8 +1431,8 @@ std::expected<void, StarException> Player::destroy(RenderCallback* renderCallbac
     auto currentWorldResult = world();
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
-    auto currentWorld = std::move(*currentWorldResult);
-    auto disabledResult = currentWorld->disableDeathDrops();
+    auto& currentWorld = currentWorldResult->get();
+    auto disabledResult = currentWorld.disableDeathDrops();
     if (!disabledResult)
       return std::unexpected(std::move(disabledResult.error()));
     auto disabled = std::move(*disabledResult);
@@ -1439,7 +1447,7 @@ std::expected<void, StarException> Player::destroy(RenderCallback* renderCallbac
         auto namesResult = config.deathDropItemTypes.right();
         if (!namesResult)
           return std::unexpected(std::move(namesResult.error()));
-        auto const& names = **namesResult;
+        auto const& names = namesResult->get();
         if (!ItemTypeNames)
           return std::unexpected(ItemTypeNames.error());
         Set<ItemType> types;
@@ -1447,7 +1455,7 @@ std::expected<void, StarException> Player::destroy(RenderCallback* renderCallbac
           auto typeResult = ItemTypeNames->getLeft(name);
           if (!typeResult)
             return std::unexpected(std::move(typeResult.error()));
-          auto const& type = **typeResult;
+          auto const& type = typeResult->get();
           types.add(type);
         }
         auto databaseResult = root().itemDatabase();
@@ -1481,8 +1489,8 @@ std::expected<bool, StarException> Player::lounge(EntityId loungeableEntityId, s
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  auto loungeableEntity = currentWorld->get<LoungeableEntity>(loungeableEntityId);
+  auto& currentWorld = currentWorldResult->get();
+  auto loungeableEntity = currentWorld.get<LoungeableEntity>(loungeableEntityId);
   if (!loungeableEntity || anchorIndex >= loungeableEntity->anchorCount())
     return false;
   auto loungersResult = loungeableEntity->entitiesLoungingIn(anchorIndex);
@@ -1636,8 +1644,8 @@ std::expected<void, StarException> Player::special(int specialKey) {
       auto currentWorldResult = world();
       if (!currentWorldResult)
         return std::unexpected(std::move(currentWorldResult.error()));
-      auto currentWorld = std::move(*currentWorldResult);
-      if (auto loungeableEntity = currentWorld->get<LoungeableEntity>(anchorState->entityId)) {
+      auto& currentWorld = currentWorldResult->get();
+      if (auto loungeableEntity = currentWorld.get<LoungeableEntity>(anchorState->entityId)) {
         if (specialKey == 1)
           return loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::Special1);
         if (specialKey == 2)
@@ -1677,10 +1685,10 @@ void Player::jump() {
 }
 
 std::expected<void, StarException> Player::dropItem() {
-  auto currentWorld = worldPtr();
+  auto currentWorld = maybeWorld();
   if (!currentWorld || !canUseTool())
     return {};
-  Vec2F throwDirection = currentWorld->geometry().diff(m_aimPosition, position());
+  Vec2F throwDirection = currentWorld->get().geometry().diff(m_aimPosition, position());
   auto primarySlotResult = m_inventory->primaryHeldSlot();
   if (!primarySlotResult)
     return std::unexpected(std::move(primarySlotResult.error()));
@@ -1700,7 +1708,7 @@ std::expected<void, StarException> Player::dropItem() {
         if (!entityResult)
           return std::unexpected(std::move(entityResult.error()));
         auto entity = std::move(*entityResult);
-        return currentWorld->addEntity(std::move(entity));
+        return currentWorld->get().addEntity(std::move(entity));
       }
     }
   }
@@ -1711,8 +1719,8 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Player
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  bool localMessage = fromConnection == currentWorld->connection();
+  auto& currentWorld = currentWorldResult->get();
+  bool localMessage = fromConnection == currentWorld.connection();
   if (message == "queueRadioMessage" && !args.empty()) {
     float delay = 0;
     if (args.size() > 1 && args[1].canConvert(Json::Type::Float)) {
@@ -1803,11 +1811,11 @@ std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Player
     auto eventJsonResult = args.at(0);
     if (!eventJsonResult)
       return std::unexpected(std::move(eventJsonResult.error()));
-    auto const& eventJson = **eventJsonResult;
+    auto const& eventJson = eventJsonResult->get();
     auto fieldsResult = args.at(1);
     if (!fieldsResult)
       return std::unexpected(std::move(fieldsResult.error()));
-    auto const& fields = **fieldsResult;
+    auto const& fields = fieldsResult->get();
     auto eventResult = eventJson.toString();
     if (!eventResult)
       return std::unexpected(std::move(eventResult.error()));
@@ -1895,7 +1903,7 @@ std::expected<void, StarException> Player::update(float dt, std::uint64_t) {
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
+  auto& currentWorld = currentWorldResult->get();
   m_movementController->setTimestep(dt);
 
   if (isMaster()) {
@@ -2006,17 +2014,17 @@ std::expected<void, StarException> Player::update(float dt, std::uint64_t) {
             return std::unexpected(std::move(itemDatabaseResult.error()));
           auto itemDatabase = std::move(*itemDatabaseResult);
           auto const& overrides = loungeAnchor->armorCosmeticOverrides;
-          if (auto result = applyLoungeCosmeticOverride(overrides, "head", EquipmentSlot::HeadCosmetic,
-                  *itemDatabase, *m_armor, &ArmorWearer::setHeadCosmeticItem); !result)
+          if (auto result = applyLoungeCosmeticOverride<HeadArmor>(overrides, "head", EquipmentSlot::HeadCosmetic,
+                  *itemDatabase, *m_armor, [](ArmorWearer& armor, std::shared_ptr<HeadArmor> item) { armor.setHeadCosmeticItem(std::move(item)); }); !result)
             return std::unexpected(std::move(result.error()));
-          if (auto result = applyLoungeCosmeticOverride(overrides, "chest", EquipmentSlot::ChestCosmetic,
-                  *itemDatabase, *m_armor, &ArmorWearer::setChestCosmeticItem); !result)
+          if (auto result = applyLoungeCosmeticOverride<ChestArmor>(overrides, "chest", EquipmentSlot::ChestCosmetic,
+                  *itemDatabase, *m_armor, [](ArmorWearer& armor, std::shared_ptr<ChestArmor> item) { armor.setChestCosmeticItem(std::move(item)); }); !result)
             return std::unexpected(std::move(result.error()));
-          if (auto result = applyLoungeCosmeticOverride(overrides, "legs", EquipmentSlot::LegsCosmetic,
-                  *itemDatabase, *m_armor, &ArmorWearer::setLegsCosmeticItem); !result)
+          if (auto result = applyLoungeCosmeticOverride<LegsArmor>(overrides, "legs", EquipmentSlot::LegsCosmetic,
+                  *itemDatabase, *m_armor, [](ArmorWearer& armor, std::shared_ptr<LegsArmor> item) { armor.setLegsCosmeticItem(std::move(item)); }); !result)
             return std::unexpected(std::move(result.error()));
-          if (auto result = applyLoungeCosmeticOverride(overrides, "back", EquipmentSlot::BackCosmetic,
-                  *itemDatabase, *m_armor, &ArmorWearer::setBackCosmeticItem); !result)
+          if (auto result = applyLoungeCosmeticOverride<BackArmor>(overrides, "back", EquipmentSlot::BackCosmetic,
+                  *itemDatabase, *m_armor, [](ArmorWearer& armor, std::shared_ptr<BackArmor> item) { armor.setBackCosmeticItem(std::move(item)); }); !result)
             return std::unexpected(std::move(result.error()));
         } else {
           m_state = State::Idle;
@@ -2047,7 +2055,7 @@ std::expected<void, StarException> Player::update(float dt, std::uint64_t) {
           return std::unexpected(std::move(result.error()));
       }
 
-      auto aimRelative = currentWorld->geometry().diff(m_aimPosition, position()); // dumb, but due to how things are ordered
+      auto aimRelative = currentWorld.geometry().diff(m_aimPosition, position()); // dumb, but due to how things are ordered
       {
         if (auto result = m_movementController->tickMaster(dt); !result)
           return std::unexpected(std::move(result.error()));
@@ -2181,7 +2189,7 @@ std::expected<void, StarException> Player::update(float dt, std::uint64_t) {
           if (auto chat = addChatMessage(ir.message, JsonObject{
             {"message", JsonObject{
               {"context", JsonObject{{"mode", "RadioMessage"}}},
-              {"fromConnection", currentWorld->connection()},
+              {"fromConnection", currentWorld.connection()},
               {"text", ir.message}
             }}
           }); !chat)
@@ -2240,7 +2248,7 @@ std::expected<void, StarException> Player::update(float dt, std::uint64_t) {
         return std::unexpected(std::move(result.error()));
     }
   }
-  bool isClient = currentWorld->isClient();
+  bool isClient = currentWorld.isClient();
 
   m_tools->suppressItems(suppressedItems);
   {
@@ -2281,13 +2289,13 @@ std::expected<void, StarException> Player::update(float dt, std::uint64_t) {
 
   if (isClient) {
     {
-      if (auto result = m_effectsAnimator->update(dt, &m_effectsAnimatorDynamicTarget); !result)
+      if (auto result = m_effectsAnimator->update(dt, std::ref(m_effectsAnimatorDynamicTarget)); !result)
         return std::unexpected(std::move(result.error()));
     }
     m_effectsAnimatorDynamicTarget.updatePosition(position() + m_techController->parentOffset());
   } else {
     {
-      if (auto result = m_effectsAnimator->update(dt, nullptr); !result)
+      if (auto result = m_effectsAnimator->update(dt, std::nullopt); !result)
         return std::unexpected(std::move(result.error()));
     }
   }
@@ -2381,7 +2389,10 @@ std::expected<void, StarException> Player::update(float dt, std::uint64_t) {
     }
     if (calculateHeadRotation) { // master or not an OpenStarbound player
       float headRotation = 0.f;
-      if (root().humanoidHeadRotation() && (humanoid()->handHoldingItem(ToolHand::Primary) || humanoid()->handHoldingItem(ToolHand::Alt) || humanoid()->dance())) {
+      auto headRotationEnabled = root().humanoidHeadRotation();
+      if (!headRotationEnabled)
+        return std::unexpected(std::move(headRotationEnabled.error()));
+      if (headRotationEnabled->get() && (humanoid()->handHoldingItem(ToolHand::Primary) || humanoid()->handHoldingItem(ToolHand::Alt) || humanoid()->dance())) {
         auto primary = m_tools->primaryHandItem();
         auto alt = m_tools->altHandItem();
         String const disableFlag = "disableHeadRotation";
@@ -2413,7 +2424,7 @@ std::expected<void, StarException> Player::update(float dt, std::uint64_t) {
           if (!mouthResult)
             return std::unexpected(std::move(mouthResult.error()));
           auto mouth = std::move(*mouthResult);
-          auto diff = currentWorld->geometry().diff(m_aimPosition, mouth);
+          auto diff = currentWorld.geometry().diff(m_aimPosition, mouth);
           diff.setX(std::fabsf(diff.x()));
           headRotation = diff.angle() * .25f * numericalDirection(humanoid()->facingDirection());
         }
@@ -2449,7 +2460,7 @@ EntityId Player::lastDamagedTarget() const {
   return m_lastDamagedTarget;
 }
 
-std::expected<void, StarException> Player::render(RenderCallback* renderCallback) {
+std::expected<void, StarException> Player::render(RenderCallback& renderCallback) {
   if (invisible()) {
     m_techController->pullNewAudios();
     m_techController->pullNewParticles();
@@ -2484,7 +2495,7 @@ std::expected<void, StarException> Player::render(RenderCallback* renderCallback
       auto offset = std::move(*offsetResult);
       noise->setPosition(position() + offset);
       noise->setVolume(m_landingVolume);
-      if (auto result = renderCallback->addAudio(std::move(noise)); !result)
+      if (auto result = renderCallback.addAudio(std::move(noise)); !result)
         return std::unexpected(std::move(result.error()));
     }
     if (m_footstepPending) {
@@ -2502,7 +2513,7 @@ std::expected<void, StarException> Player::render(RenderCallback* renderCallback
         return std::unexpected(std::move(varianceResult.error()));
       auto variance = std::move(*varianceResult);
       noise->setVolume(1 - variance);
-      if (auto result = renderCallback->addAudio(std::move(noise)); !result)
+      if (auto result = renderCallback.addAudio(std::move(noise)); !result)
         return std::unexpected(std::move(result.error()));
     }
   } else {
@@ -2510,15 +2521,15 @@ std::expected<void, StarException> Player::render(RenderCallback* renderCallback
   }
   m_footstepPending = false;
   m_landingNoisePending = false;
-  if (auto result = renderCallback->addAudios(m_effectsAnimatorDynamicTarget.pullNewAudios()); !result)
+  if (auto result = renderCallback.addAudios(m_effectsAnimatorDynamicTarget.pullNewAudios()); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = renderCallback->addParticles(m_effectsAnimatorDynamicTarget.pullNewParticles()); !result)
+  if (auto result = renderCallback.addParticles(m_effectsAnimatorDynamicTarget.pullNewParticles()); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = renderCallback->addAudios(m_techController->pullNewAudios()); !result)
+  if (auto result = renderCallback.addAudios(m_techController->pullNewAudios()); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = renderCallback->addAudios(m_statusController->pullNewAudios()); !result)
+  if (auto result = renderCallback.addAudios(m_statusController->pullNewAudios()); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = renderCallback->addAudios(m_humanoidDynamicTarget.pullNewAudios()); !result)
+  if (auto result = renderCallback.addAudios(m_humanoidDynamicTarget.pullNewAudios()); !result)
     return std::unexpected(std::move(result.error()));
   for (auto const& pending : take(m_callbackSounds)) {
     auto assetsResult = root().assets();
@@ -2536,7 +2547,7 @@ std::expected<void, StarException> Player::render(RenderCallback* renderCallback
     audio->setVolume(std::get<1>(pending));
     audio->setPitchMultiplier(std::get<2>(pending));
     audio->setPosition(position());
-    if (auto result = renderCallback->addAudio(std::move(audio)); !result)
+    if (auto result = renderCallback.addAudio(std::move(audio)); !result)
       return std::unexpected(std::move(result.error()));
   }
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
@@ -2558,21 +2569,21 @@ std::expected<void, StarException> Player::render(RenderCallback* renderCallback
   if (!renderedResult)
     return std::unexpected(std::move(renderedResult.error()));
   auto rendered = std::move(*renderedResult);
-  if (auto result = renderCallback->addDrawables(std::move(rendered), layer); !result)
+  if (auto result = renderCallback.addDrawables(std::move(rendered), layer); !result)
     return std::unexpected(std::move(result.error()));
   if (!isTeleporting()) {
     auto overheadResult = bars();
     if (!overheadResult)
       return std::unexpected(std::move(overheadResult.error()));
     auto overhead = std::move(*overheadResult);
-    if (auto result = renderCallback->addOverheadBars(std::move(overhead), position()); !result)
+    if (auto result = renderCallback.addOverheadBars(std::move(overhead), position()); !result)
       return std::unexpected(std::move(result.error()));
   }
   auto emittedResult = particles();
   if (!emittedResult)
     return std::unexpected(std::move(emittedResult.error()));
   auto emitted = std::move(*emittedResult);
-  if (auto result = renderCallback->addParticles(std::move(emitted)); !result)
+  if (auto result = renderCallback.addParticles(std::move(emitted)); !result)
     return std::unexpected(std::move(result.error()));
   auto rangeResult = inToolRange();
   if (!rangeResult)
@@ -2589,12 +2600,12 @@ std::expected<void, StarException> Player::render(RenderCallback* renderCallback
   return {};
 }
 
-std::expected<void, StarException> Player::renderLightSources(RenderCallback* renderCallback) {
+std::expected<void, StarException> Player::renderLightSources(RenderCallback& renderCallback) {
   auto lightsResult = lightSources();
   if (!lightsResult)
     return std::unexpected(std::move(lightsResult.error()));
   auto lights = std::move(*lightsResult);
-  if (auto result = renderCallback->addLightSources(std::move(lights)); !result)
+  if (auto result = renderCallback.addLightSources(std::move(lights)); !result)
     return std::unexpected(std::move(result.error()));
   return m_deployment->renderLightSources(renderCallback);
 }
@@ -2673,12 +2684,12 @@ std::expected<void, StarException> Player::giveItem(std::shared_ptr<Item> const&
     auto currentWorldResult = world();
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
-    auto currentWorld = std::move(*currentWorldResult);
+    auto& currentWorld = currentWorldResult->get();
     auto dropResult = ItemDrop::createRandomizedDrop(root(), spill->descriptor(), position());
     if (!dropResult)
       return std::unexpected(std::move(dropResult.error()));
     auto drop = std::move(*dropResult);
-    return currentWorld->addEntity(std::move(drop));
+    return currentWorld.addEntity(std::move(drop));
   }
   return {};
 }
@@ -2739,7 +2750,7 @@ std::expected<void, StarException> Player::triggerPickupEvents(std::shared_ptr<I
       return std::unexpected(std::move(canStartResult.error()));
     auto canStart = std::move(*canStartResult);
     if (canStart) {
-      auto questResult = Quest::create(root(), arc, 0, this);
+      auto questResult = Quest::create(root(), arc, 0, *this);
       if (!questResult)
         return std::unexpected(std::move(questResult.error()));
       auto quest = std::move(*questResult);
@@ -2801,7 +2812,7 @@ std::expected<void, StarException> Player::clearSwap() {
     return std::unexpected(std::move(clearedResult.error()));
   auto cleared = std::move(*clearedResult);
   if (!cleared) {
-    if (auto currentWorld = worldPtr()) {
+    if (auto currentWorld = maybeWorld()) {
       auto itemResult = m_inventory->takeSlot(SwapSlot());
       if (!itemResult)
         return std::unexpected(std::move(itemResult.error()));
@@ -2810,7 +2821,7 @@ std::expected<void, StarException> Player::clearSwap() {
       if (!dropResult)
         return std::unexpected(std::move(dropResult.error()));
       auto drop = std::move(*dropResult);
-      if (auto result = currentWorld->addEntity(std::move(drop)); !result)
+      if (auto result = currentWorld->get().addEntity(std::move(drop)); !result)
         return std::unexpected(std::move(result.error()));
     }
   }
@@ -3033,8 +3044,8 @@ std::expected<std::shared_ptr<InteractiveEntity>, StarException> Player::bestInt
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  auto entityResult = currentWorld->getInteractiveInRange(m_aimPosition, isAdmin() ? m_aimPosition : position(), m_interactRadius);
+  auto& currentWorld = currentWorldResult->get();
+  auto entityResult = currentWorld.getInteractiveInRange(m_aimPosition, isAdmin() ? m_aimPosition : position(), m_interactRadius);
   if (!entityResult)
     return std::unexpected(std::move(entityResult.error()));
   auto entity = std::move(*entityResult);
@@ -3042,7 +3053,7 @@ std::expected<std::shared_ptr<InteractiveEntity>, StarException> Player::bestInt
     Vec2F bias = m_walkIntoInteractBias;
     if (facingDirection() == Direction::Left)
       bias[0] *= -1;
-    auto nearbyResult = currentWorld->getInteractiveInRange(position() + bias, position(), m_interactRadius);
+    auto nearbyResult = currentWorld.getInteractiveInRange(position() + bias, position(), m_interactRadius);
     if (!nearbyResult)
       return std::unexpected(std::move(nearbyResult.error()));
     auto nearby = std::move(*nearbyResult);
@@ -3052,7 +3063,7 @@ std::expected<std::shared_ptr<InteractiveEntity>, StarException> Player::bestInt
     return std::shared_ptr<InteractiveEntity>{};
   if (isAdmin())
     return entity;
-  auto reachableResult = currentWorld->canReachEntity(position(), m_interactRadius, entity->entityId());
+  auto reachableResult = currentWorld.canReachEntity(position(), m_interactRadius, entity->entityId());
   if (!reachableResult)
     return std::unexpected(std::move(reachableResult.error()));
   auto reachable = std::move(*reachableResult);
@@ -3101,7 +3112,7 @@ std::expected<void, StarException> Player::interactWithEntity(std::shared_ptr<In
       return std::unexpected(std::move(canStartResult.error()));
     auto canStart = std::move(*canStartResult);
     if (canStart) {
-      auto questResult = Quest::create(root(), arc, 0, this);
+      auto questResult = Quest::create(root(), arc, 0, *this);
       if (!questResult)
         return std::unexpected(std::move(questResult.error()));
       auto quest = std::move(*questResult);
@@ -3115,8 +3126,8 @@ std::expected<void, StarException> Player::interactWithEntity(std::shared_ptr<In
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  auto actionResult = currentWorld->interact(InteractRequest{entityId(), position(), entity->entityId(), m_aimPosition});
+  auto& currentWorld = currentWorldResult->get();
+  auto actionResult = currentWorld.interact(InteractRequest{entityId(), position(), entity->entityId(), m_aimPosition});
   if (!actionResult)
     return std::unexpected(std::move(actionResult.error()));
   auto action = std::move(*actionResult);
@@ -3396,7 +3407,7 @@ std::expected<void, StarException> Player::processControls() {
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
+  auto& currentWorld = currentWorldResult->get();
   bool run = !m_shifting && !m_statusController->statPositive("encumberance");
 
   bool useMoveVector = m_moveVector.x() != 0.0f;
@@ -3443,7 +3454,7 @@ std::expected<void, StarException> Player::processControls() {
     auto anchorState = m_movementController->anchorState();
     if (!anchorState)
       return std::unexpected(PlayerException("Player lounge anchor has no anchor state"));
-    if (auto loungeableEntity = currentWorld->get<LoungeableEntity>(anchorState->entityId)) {
+    if (auto loungeableEntity = currentWorld.get<LoungeableEntity>(anchorState->entityId)) {
       for (auto move : m_pendingMoves) {
         if (move == MoveControlType::Up)
           {
@@ -3530,7 +3541,7 @@ std::expected<void, StarException> Player::processStateChanges(float dt) {
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
+  auto& currentWorld = currentWorldResult->get();
   if (isMaster()) {
 
     // Set the current player state based on what movement controller tells us
@@ -3595,9 +3606,9 @@ std::expected<void, StarException> Player::processStateChanges(float dt) {
       }
     }
   }
-  if (currentWorld->isClient()) {
+  if (currentWorld.isClient()) {
     {
-      if (auto result = humanoid()->animate(dt, &m_humanoidDynamicTarget); !result)
+      if (auto result = humanoid()->animate(dt, std::ref(m_humanoidDynamicTarget)); !result)
         return std::unexpected(std::move(result.error()));
     }
     m_humanoidDynamicTarget.updatePosition(position() + (m_techController->parentOffset()));
@@ -3740,11 +3751,11 @@ std::expected<String, StarException> Player::getFootstepSound(Vec2I const& senso
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
+  auto& currentWorld = currentWorldResult->get();
   String fallback = database->defaultFootstepSound();
   List<Vec2I> scanOrder{{0, 0}, {0, -1}, {-1, 0}, {1, 0}, {-1, -1}, {1, -1}};
   for (auto const& subSensor : scanOrder) {
-    auto soundResult = database->footstepSound(currentWorld->material(sensor + subSensor, TileLayer::Foreground), currentWorld->mod(sensor + subSensor, TileLayer::Foreground));
+    auto soundResult = database->footstepSound(currentWorld.material(sensor + subSensor, TileLayer::Foreground), currentWorld.mod(sensor + subSensor, TileLayer::Foreground));
     if (!soundResult)
       return std::unexpected(std::move(soundResult.error()));
     auto sound = std::move(*soundResult);
@@ -3764,8 +3775,8 @@ std::expected<bool, StarException> Player::inInteractionRange(Vec2F aimPos) cons
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  return currentWorld->geometry().diff(aimPos, position()).magnitude() < m_interactRadius;
+  auto& currentWorld = currentWorldResult->get();
+  return currentWorld.geometry().diff(aimPos, position()).magnitude() < m_interactRadius;
 }
 
 std::expected<bool, StarException> Player::inToolRange() const {
@@ -3778,12 +3789,12 @@ std::expected<bool, StarException> Player::inToolRange(Vec2F const& aimPos) cons
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
+  auto& currentWorld = currentWorldResult->get();
   auto radiusResult = toolRadius();
   if (!radiusResult)
     return std::unexpected(std::move(radiusResult.error()));
   auto radius = std::move(*radiusResult);
-  return currentWorld->geometry().diff(aimPos, position()).magnitude() < radius;
+  return currentWorld.geometry().diff(aimPos, position()).magnitude() < radius;
 }
 
 std::expected<void, StarException> Player::getNetStates(bool initial) {
@@ -3791,7 +3802,7 @@ std::expected<void, StarException> Player::getNetStates(bool initial) {
   auto elementsLastResult = elements.last();
   if (!elementsLastResult)
     return std::unexpected(std::move(elementsLastResult.error()));
-  auto elementsLast = std::move(**elementsLastResult);
+  auto elementsLast = std::move(elementsLastResult->get());
   m_currentNetHumanoid = std::move(elementsLast);
   m_state = (State)m_stateNetState.get();
   m_shifting = m_shiftingNetState.get();
@@ -3822,7 +3833,7 @@ std::expected<void, StarException> Player::getNetStates(bool initial) {
   auto emoteResult = HumanoidEmoteNames->getLeft(m_emoteNetState.get());
   if (!emoteResult)
     return std::unexpected(std::move(emoteResult.error()));
-  auto const& emote = **emoteResult;
+  auto const& emote = emoteResult->get();
   m_emoteState = emote;
   m_dance = m_humanoidDanceNetState.get();
   return getNetArmorSecrets();
@@ -3848,7 +3859,7 @@ std::expected<void, StarException> Player::setNetStates() {
   auto emoteResult = HumanoidEmoteNames->getRight(m_emoteState);
   if (!emoteResult)
     return std::unexpected(std::move(emoteResult.error()));
-  auto const& emote = **emoteResult;
+  auto const& emote = emoteResult->get();
   m_emoteNetState.set(emote);
   m_humanoidDanceNetState.set(m_dance);
   return {};
@@ -3860,7 +3871,7 @@ std::expected<void, StarException> Player::setNetArmorSecret(EquipmentSlot slot,
   auto slotNameResult = EquipmentSlotNames->getRight(slot);
   if (!slotNameResult)
     return std::unexpected(std::move(slotNameResult.error()));
-  auto const& slotName = **slotNameResult;
+  auto const& slotName = slotNameResult->get();
   ItemDescriptor descriptor = visible ? itemSafeDescriptor(armor) : ItemDescriptor();
   auto versioningResult = root().versioningDatabase();
   if (!versioningResult)
@@ -3899,7 +3910,7 @@ std::expected<void, StarException> Player::setNetArmorSecrets(bool includeEmpty)
 }
 
 std::expected<void, StarException> Player::getNetArmorSecrets() {
-  if (isSlave() && getSecretPropertyPtr("armorWearer.replicating")) {
+  if (isSlave() && getSecretPropertyRef("armorWearer.replicating")) {
     auto databaseResult = root().itemDatabase();
     if (!databaseResult)
       return std::unexpected(std::move(databaseResult.error()));
@@ -3911,7 +3922,7 @@ std::expected<void, StarException> Player::getNetArmorSecrets() {
       auto slotNameResult = EquipmentSlotNames->getRight(slot);
       if (!slotNameResult)
         return std::unexpected(std::move(slotNameResult.error()));
-      auto const& slotName = **slotNameResult;
+      auto const& slotName = slotNameResult->get();
       auto& currentVersion = m_armorSecretNetVersions[slot];
       std::uint64_t newVersion = 0;
       auto versionResult = getSecretProperty(strf("armorWearer.{}.version", slotName), 0);
@@ -3991,7 +4002,7 @@ std::expected<void, StarException> Player::setBusyState(PlayerBusyState busyStat
   auto nameResult = PlayerBusyStateNames->getRight(busyState);
   if (!nameResult)
     return std::unexpected(std::move(nameResult.error()));
-  auto const& name = **nameResult;
+  auto const& name = nameResult->get();
   if (auto result = m_effectsAnimator->setState("busy", name); !result)
     return std::unexpected(std::move(result.error()));
   return {};
@@ -4096,7 +4107,7 @@ std::expected<void, StarException> Player::setModeType(PlayerMode mode) {
   auto nameResult = PlayerModeNames->getRight(mode);
   if (!nameResult)
     return std::unexpected(std::move(nameResult.error()));
-  auto const& name = **nameResult;
+  auto const& name = nameResult->get();
   auto modeJsonResult = config.get(name);
   if (!modeJsonResult)
     return std::unexpected(std::move(modeJsonResult.error()));
@@ -4399,9 +4410,9 @@ List<ChatAction> Player::pullPendingChatActions() {
 
 std::expected<std::optional<String>, StarException> Player::inspectionLogName() const {
   auto identifier = uniqueId();
-  if (String* str = optionalPtr(identifier)) {
-    auto hash = xxHash3_128(str->utf8Ptr(), str->utf8Size());
-    return String("Player #") + hexEncode((const char*)&hash, sizeof(hash));
+  if (identifier) {
+    auto hash = xxHash3_128(std::span<char const>(identifier->utf8()));
+    return String("Player #") + hexEncode(std::span(reinterpret_cast<char const*>(&hash), sizeof(hash)));
   }
   return identifier;
 }
@@ -4451,18 +4462,18 @@ std::expected<void, StarException> Player::requestEmote(String const& emote) {
   auto stateResult = HumanoidEmoteNames->getLeft(emote);
   if (!stateResult)
     return std::unexpected(std::move(stateResult.error()));
-  auto const& state = **stateResult;
+  auto const& state = stateResult->get();
   if (state != HumanoidEmote::Idle && (m_emoteState == state || m_emoteState == HumanoidEmote::Idle || m_emoteState == HumanoidEmote::Blink))
     addEmote(state, {});
   return {};
 }
 
-ActorMovementController* Player::movementController() {
-  return m_movementController.get();
+ActorMovementController& Player::movementController() {
+  return *m_movementController;
 }
 
-StatusController* Player::statusController() {
-  return m_statusController.get();
+StatusController& Player::statusController() {
+  return *m_statusController;
 }
 
 std::expected<List<PhysicsForceRegion>, StarException> Player::forceRegions() const {
@@ -4508,7 +4519,7 @@ std::expected<Json, StarException> Player::diskStore() {
   auto modeResult = PlayerModeNames->getRight(m_modeType);
   if (!modeResult)
     return std::unexpected(std::move(modeResult.error()));
-  auto const& mode = **modeResult;
+  auto const& mode = modeResult->get();
   auto universeMapResult = m_universeMap->toJson();
   if (!universeMapResult)
     return std::unexpected(std::move(universeMapResult.error()));
@@ -4653,8 +4664,8 @@ std::expected<bool, StarException> Player::isOutside() {
   auto currentWorldResult = world();
   if (!currentWorldResult)
     return std::unexpected(std::move(currentWorldResult.error()));
-  auto currentWorld = std::move(*currentWorldResult);
-  auto undergroundResult = currentWorld->isUnderground(position());
+  auto& currentWorld = currentWorldResult->get();
+  auto undergroundResult = currentWorld.isUnderground(position());
   if (!undergroundResult)
     return std::unexpected(std::move(undergroundResult.error()));
   auto underground = std::move(*undergroundResult);
@@ -4664,7 +4675,7 @@ std::expected<bool, StarException> Player::isOutside() {
   if (!mouthResult)
     return std::unexpected(std::move(mouthResult.error()));
   auto mouth = std::move(*mouthResult);
-  auto occupiedResult = currentWorld->tileIsOccupied(Vec2I::floor(mouth), TileLayer::Background);
+  auto occupiedResult = currentWorld.tileIsOccupied(Vec2I::floor(mouth), TileLayer::Background);
   if (!occupiedResult)
     return std::unexpected(std::move(occupiedResult.error()));
   auto occupied = std::move(*occupiedResult);
@@ -4672,7 +4683,7 @@ std::expected<bool, StarException> Player::isOutside() {
 }
 
 std::expected<void, StarException> Player::dropSelectedItems(std::function<std::expected<bool, StarException>(std::shared_ptr<Item>)> filter) {
-  auto currentWorld = worldPtr();
+  auto currentWorld = maybeWorld();
   if (!currentWorld)
     return {};
   return m_inventory->forEveryItem([&](InventorySlot const&, std::shared_ptr<Item>& item) -> std::expected<void, StarException> {
@@ -4694,7 +4705,7 @@ std::expected<void, StarException> Player::dropSelectedItems(std::function<std::
     if (!dropResult)
       return std::unexpected(std::move(dropResult.error()));
     auto drop = std::move(*dropResult);
-    return currentWorld->addEntity(std::move(drop));
+    return currentWorld->get().addEntity(std::move(drop));
   });
 }
 
@@ -4931,18 +4942,18 @@ std::expected<EntityHighlightEffect, StarException> Player::inspectionHighlight(
 }
 
 std::expected<Vec2F, StarException> Player::cameraPosition() {
-  if (auto currentWorld = worldPtr()) {
+  if (auto currentWorld = maybeWorld()) {
     if (auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
       if (anchor->cameraFocus) {
         auto state = m_movementController->anchorState();
         if (!state)
           return std::unexpected(PlayerException("Player lounge anchor has no anchor state"));
-        if (auto entity = currentWorld->entity(state->entityId))
+        if (auto entity = currentWorld->get().entity(state->entityId))
           return entity->position();
       }
     }
     if (m_cameraFocusEntity) {
-      if (auto entity = currentWorld->entity(*m_cameraFocusEntity))
+      if (auto entity = currentWorld->get().entity(*m_cameraFocusEntity))
         return entity->position();
       m_cameraFocusEntity = {};
     }
@@ -4957,8 +4968,8 @@ std::shared_ptr<NetworkedAnimator> Player::effectsAnimator() {
 const String secretProprefix = std::string("\0JsonProperty\0", sizeof("\0JsonProperty\0") - 1);
 
 std::optional<StringView> Player::getSecretPropertyView(String const& name) const {
-  if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
-    auto const& view = tag->utf8();
+  if (auto tag = m_effectsAnimator->globalTag(secretProprefix + name)) {
+    auto const& view = tag->get().utf8();
     DataStreamExternalBuffer buffer{std::span<char const>(view)};
     auto type = buffer.read<std::uint8_t>();
     if (!type || (Json::Type)(*type - 1) != Json::Type::String)
@@ -4970,18 +4981,18 @@ std::optional<StringView> Player::getSecretPropertyView(String const& name) cons
     if (!pos)
       return {};
     if (*pos <= buffer.size() && *len == buffer.size() - *pos)
-      return StringView(buffer.ptr() + *pos, *len);
+      return StringView(std::string_view(view).substr(*pos, *len));
   }
   return {};
 }
 
-String const* Player::getSecretPropertyPtr(String const& name) const {
-  return m_effectsAnimator->globalTagPtr(secretProprefix + name);
+std::optional<std::reference_wrapper<String const>> Player::getSecretPropertyRef(String const& name) const {
+  return m_effectsAnimator->globalTag(secretProprefix + name);
 }
 
 std::expected<Json, StarException> Player::getSecretProperty(String const& name, Json defaultValue) const {
-  if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
-    DataStreamExternalBuffer buffer{std::span<char const>(tag->utf8Ptr(), tag->utf8Size())};
+  if (auto tag = m_effectsAnimator->globalTag(secretProprefix + name)) {
+    DataStreamExternalBuffer buffer{std::span<char const>(tag->get().utf8())};
     auto value = buffer.read<Json>();
     if (value)
       return std::move(*value);
@@ -4997,7 +5008,7 @@ std::expected<void, StarException> Player::setSecretProperty(String const& name,
     if (auto result = ds.write(value); !result)
       return std::unexpected(std::move(result.error()));
     auto const& data = ds.data();
-    m_effectsAnimator->setGlobalTag(secretProprefix + name, String(data.ptr(), data.size()));
+    m_effectsAnimator->setGlobalTag(secretProprefix + name, String(std::string_view(data.span().data(), data.size())));
   } else {
     m_effectsAnimator->removeGlobalTag(secretProprefix + name);
   }
@@ -5045,7 +5056,7 @@ std::expected<void, StarException> Player::refreshHumanoidParameters() {
         if (script.second->initialized()) {
           if (auto result = script.second->removeCallbacks("animator"); !result)
             return std::unexpected(std::move(result.error()));
-          auto callbacksResult = LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator());
+          auto callbacksResult = LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()->get());
           if (!callbacksResult)
             return std::unexpected(std::move(callbacksResult.error()));
           auto callbacks = std::move(*callbacksResult);
@@ -5059,8 +5070,8 @@ std::expected<void, StarException> Player::refreshHumanoidParameters() {
     auto currentWorldResult = world();
     if (!currentWorldResult)
       return std::unexpected(std::move(currentWorldResult.error()));
-    auto currentWorld = std::move(*currentWorldResult);
-    if (currentWorld->isClient() && m_scriptedAnimator.initialized()) {
+    auto& currentWorld = currentWorldResult->get();
+    if (currentWorld.isClient() && m_scriptedAnimator.initialized()) {
       if (auto result = m_scriptedAnimator.uninit(); !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = m_scriptedAnimator.removeCallbacks("animationConfig"); !result)
@@ -5069,16 +5080,16 @@ std::expected<void, StarException> Player::refreshHumanoidParameters() {
         return std::unexpected(std::move(result.error()));
       if (auto result = m_scriptedAnimator.setScripts(humanoid()->animationScripts()); !result)
         return std::unexpected(std::move(result.error()));
-      auto animationCallbacksResult = LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
-        [this](String const& name, Json const& defaultValue) -> std::expected<Json, StarException> {
-          return m_scriptedAnimationParameters.value(name, defaultValue);
+      auto animationCallbacksResult = LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator()->get(),
+        [&parameters = m_scriptedAnimationParameters](String const& name, Json const& defaultValue) -> std::expected<Json, StarException> {
+          return parameters.value(name, defaultValue);
         });
       if (!animationCallbacksResult)
         return std::unexpected(std::move(animationCallbacksResult.error()));
       auto animationCallbacks = std::move(*animationCallbacksResult);
       if (auto result = m_scriptedAnimator.addCallbacks("animationConfig", std::move(animationCallbacks)); !result)
         return std::unexpected(std::move(result.error()));
-      auto entityCallbacksResult = LuaBindings::makeEntityCallbacks(this);
+      auto entityCallbacksResult = LuaBindings::makeEntityCallbacks(*this);
       if (!entityCallbacksResult)
         return std::unexpected(std::move(entityCallbacksResult.error()));
       auto entityCallbacks = std::move(*entityCallbacksResult);

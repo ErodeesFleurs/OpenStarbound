@@ -60,23 +60,35 @@ void ButtonGroup::setCallback(WidgetCallbackFunc callback) {
   m_callback = std::move(callback);
 }
 
-ButtonWidget* ButtonGroup::button(int id) const {
-  return m_buttons.value(id);
+std::optional<std::reference_wrapper<ButtonWidget>> ButtonGroup::button(int id) const {
+  auto link = m_buttons.maybeRef(id);
+  if (!link)
+    return {};
+  auto owner = link->get().lock();
+  if (!owner)
+    return {};
+  return asRef<ButtonWidget>(*owner);
 }
 
-List<ButtonWidget*> ButtonGroup::buttons() const {
-  return m_buttons.values();
+List<std::reference_wrapper<ButtonWidget>> ButtonGroup::buttons() const {
+  List<std::reference_wrapper<ButtonWidget>> result;
+  for (auto const& entry : m_buttons) {
+    if (auto owner = entry.second.lock()) {
+      if (auto button = asRef<ButtonWidget>(*owner))
+        result.append(*button);
+    }
+  }
+  return result;
 }
 
 std::size_t ButtonGroup::buttonCount() const {
-  return m_buttons.size();
+  return std::ranges::count_if(m_buttons, [](auto const& entry) { return !entry.second.expired(); });
 }
 
-int ButtonGroup::addButton(ButtonWidget* button, int id) {
-  if (!button)
-    return NoButton;
-  else if (m_buttonIds.contains(button))
-    return *m_buttonIds.ptr(button);
+int ButtonGroup::addButton(ButtonWidget& button, int id) {
+  auto existingId = this->id(button);
+  if (existingId != NoButton)
+    return existingId;
 
   // If we are auto-generating an id, start at the last id and work forward.
   if (id == NoButton && !m_buttons.empty())
@@ -85,50 +97,51 @@ int ButtonGroup::addButton(ButtonWidget* button, int id) {
   while (m_buttons.contains(id))
     ++id;
 
-  m_buttons[id] = button;
-  m_buttonIds[button] = id;
+  m_buttons[id] = button.weak_from_this();
+  m_buttonIds[button.weak_from_this()] = id;
   return id;
 }
 
-void ButtonGroup::removeButton(ButtonWidget* button) {
-  if (m_buttonIds.contains(button)) {
-    m_buttons.remove(*m_buttonIds.ptr(button));
-    m_buttonIds.remove(button);
+void ButtonGroup::removeButton(ButtonWidget& button) {
+  auto link = button.weak_from_this();
+  if (auto id = m_buttonIds.maybeRef(link)) {
+    m_buttons.remove(id->get());
+    m_buttonIds.remove(link);
   }
 }
 
-int ButtonGroup::id(ButtonWidget* button) const {
-  if (m_buttonIds.contains(button))
-    return *m_buttonIds.ptr(button);
-  else
-    return NoButton;
+int ButtonGroup::id(ButtonWidget const& button) const {
+  if (auto id = m_buttonIds.maybeRef(button.weak_from_this()))
+    return id->get();
+  return NoButton;
 }
 
-ButtonWidget* ButtonGroup::checkedButton() const {
-  for (auto const& pair : m_buttons) {
-    if (pair.second->isChecked())
-      return pair.second;
+std::optional<std::reference_wrapper<ButtonWidget>> ButtonGroup::checkedButton() const {
+  for (auto const& entry : m_buttons) {
+    if (auto button = this->button(entry.first); button && button->get().isChecked())
+      return button;
   }
   return {};
 }
 
 int ButtonGroup::checkedId() const {
-  return id(checkedButton());
+  auto checked = checkedButton();
+  return checked ? id(checked->get()) : NoButton;
 }
 
 std::expected<void, StarException> ButtonGroup::select(int id) {
   auto b = button(id);
   if (!b)
     return std::unexpected(GuiException("Unknown button group id"));
-  if (!b->isChecked())
-    return b->check();
+  if (!b->get().isChecked())
+    return b->get().check();
   return {};
 }
 
-std::expected<void, StarException> ButtonGroup::wasChecked(ButtonWidget* self) {
-  for (auto const& pair : m_buttons) {
-    if (pair.second != self)
-      pair.second->setChecked(false);
+std::expected<void, StarException> ButtonGroup::wasChecked(ButtonWidget& self) {
+  for (auto const& entry : m_buttons) {
+    if (auto button = this->button(entry.first); button && &button->get() != &self)
+      button->get().setChecked(false);
   }
   if (m_callback)
     return m_callback(self);

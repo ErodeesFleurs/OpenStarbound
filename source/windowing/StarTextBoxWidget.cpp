@@ -95,7 +95,7 @@ std::expected<void, StarException> TextBoxWidget::initialize() {
   if (*length > std::numeric_limits<int>::max())
     return std::unexpected(GuiException("Text box content is too long"));
   m_cursorOffset = static_cast<int>(*length);
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   auto config = (*assets)->json("/interface.config");
@@ -148,13 +148,13 @@ std::expected<void, StarException> TextBoxWidget::renderImpl() {
   auto drawOffset = getCursorDrawOffset();
   if (!drawOffset)
     return std::unexpected(std::move(drawOffset.error()));
-  float cursorOffset = static_cast<float>(*drawOffset) / context()->interfaceScale();
+  float cursorOffset = static_cast<float>(*drawOffset) / context().interfaceScale();
   Vec2F pos(screenPosition());
   if (m_hAnchor == HorizontalAnchor::HMidAnchor)
     pos[0] += size()[0] / 2.0f;
   else if (m_hAnchor == HorizontalAnchor::RightAnchor)
     pos[0] += size()[0];
-  auto styled = context()->setTextStyle(m_textStyle);
+  auto styled = context().setTextStyle(m_textStyle);
   if (!styled)
     return std::unexpected(std::move(styled.error()));
   if (m_maxWidth != -1 && m_overfillMode)
@@ -162,14 +162,14 @@ std::expected<void, StarException> TextBoxWidget::renderImpl() {
   auto color = Color::rgba(m_textStyle.color);
   if (m_text.empty())
     color = color.mix(Color::rgbf(0.3f, 0.3f, 0.3f), 0.8f);
-  auto colored = context()->setFontColor(color.mix(Color::rgbf(0, 0, 1), blueRate).toRgba());
+  auto colored = context().setFontColor(color.mix(Color::rgbf(0, 0, 1), blueRate).toRgba());
   if (!colored)
     return std::unexpected(std::move(colored.error()));
   auto text = m_text.empty() ? std::expected<String, StarException>(m_hint) : displayText();
   if (!text)
     return std::unexpected(std::move(text.error()));
-  auto rendered = context()->renderInterfaceText(*text, {pos, m_hAnchor, m_vAnchor});
-  auto cleared = context()->clearTextStyle();
+  auto rendered = context().renderInterfaceText(*text, {pos, m_hAnchor, m_vAnchor});
+  auto cleared = context().clearTextStyle();
   if (!rendered)
     return std::unexpected(std::move(rendered.error()));
   if (!cleared)
@@ -181,24 +181,24 @@ std::expected<void, StarException> TextBoxWidget::renderImpl() {
     float cc = 0.6f + 0.4f * std::sin(static_cast<double>(Time::monotonicMilliseconds()) / 300.0);
     auto cursorColor = Color::rgbf(cc, cc, cc).toRgba();
     float fontSize = m_textStyle.fontSize;
-    auto vertical = context()->drawInterfaceLine(
+    auto vertical = context().drawInterfaceLine(
         pos + Vec2F(cursorOffset, fontSize * m_cursorVert[0]),
         pos + Vec2F(cursorOffset, fontSize * m_cursorVert[1]), cursorColor);
     if (!vertical)
       return std::unexpected(std::move(vertical.error()));
-    auto horizontal = context()->drawInterfaceLine(
+    auto horizontal = context().drawInterfaceLine(
         pos + Vec2F(cursorOffset + fontSize * m_cursorHoriz[0], fontSize * m_cursorVert[0]),
         pos + Vec2F(cursorOffset + fontSize * m_cursorHoriz[1], fontSize * m_cursorVert[0]), cursorColor);
     if (!horizontal)
       return std::unexpected(std::move(horizontal.error()));
   }
   if (m_drawBorder)
-    return context()->drawInterfacePolyLines(PolyF(screenBoundRect()), Color::White.toRgba());
+    return context().drawInterfacePolyLines(PolyF(screenBoundRect()), Color::White.toRgba());
   return {};
 }
 
 std::expected<int, StarException> TextBoxWidget::getCursorDrawOffset() const {
-  auto styled = context()->setTextStyle(m_textStyle);
+  auto styled = context().setTextStyle(m_textStyle);
   if (!styled)
     return std::unexpected(std::move(styled.error()));
   auto text = displayText();
@@ -207,10 +207,10 @@ std::expected<int, StarException> TextBoxWidget::getCursorDrawOffset() const {
   auto tail = text->substr(m_cursorOffset);
   if (!tail)
     return std::unexpected(std::move(tail.error()));
-  auto width = context()->stringWidth(*text);
+  auto width = context().stringWidth(*text);
   if (!width)
     return std::unexpected(std::move(width.error()));
-  auto tailWidth = context()->stringWidth(*tail);
+  auto tailWidth = context().stringWidth(*tail);
   if (!tailWidth)
     return std::unexpected(std::move(tailWidth.error()));
   if (m_hAnchor == HorizontalAnchor::RightAnchor)
@@ -277,7 +277,7 @@ std::expected<bool, StarException> TextBoxWidget::setText(String const& text, bo
   if (callback) {
     if (!m_callback)
       return std::unexpected(GuiException("Text box callback is not configured"));
-    auto called = m_callback(this);
+    auto called = m_callback(*this);
     if (!called)
       return std::unexpected(std::move(called.error()));
   }
@@ -396,7 +396,7 @@ std::expected<void, StarException> TextBoxWidget::blur() {
   if (!blurred)
     return std::unexpected(std::move(blurred.error()));
   if (m_onBlur) {
-    auto called = m_onBlur(this);
+    auto called = m_onBlur(*this);
     if (!called)
       return std::unexpected(std::move(called.error()));
   }
@@ -424,7 +424,7 @@ std::expected<std::optional<std::pair<RectI, int>>, StarException> TextBoxWidget
       auto offset = getCursorDrawOffset();
       if (!offset)
         return std::unexpected(std::move(offset.error()));
-      return std::make_pair(screenBoundRect().scaled(context()->interfaceScale()), *offset);
+      return std::make_pair(screenBoundRect().scaled(context().interfaceScale()), *offset);
     }
   }
   return std::nullopt;
@@ -440,7 +440,7 @@ std::expected<bool, StarException> TextBoxWidget::sendEvent(InputEvent const& ev
     m_repeatCode = SpecialRepeatKeyCodes::None;
     if (!m_callback)
       return std::unexpected(GuiException("Text box callback is not configured"));
-    auto called = m_callback(this);
+    auto called = m_callback(*this);
     if (!called)
       return std::unexpected(std::move(called.error()));
     return false;
@@ -451,7 +451,7 @@ std::expected<bool, StarException> TextBoxWidget::sendEvent(InputEvent const& ev
   if (*handled) {
     if (!m_callback)
       return std::unexpected(GuiException("Text box callback is not configured"));
-    auto called = m_callback(this);
+    auto called = m_callback(*this);
     if (!called)
       return std::unexpected(std::move(called.error()));
   }
@@ -459,19 +459,20 @@ std::expected<bool, StarException> TextBoxWidget::sendEvent(InputEvent const& ev
 }
 
 std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent const& event) {
-  if (auto keyDown = std::get_if<KeyDownEvent>(&event)) {
+  if (std::holds_alternative<KeyDownEvent>(event)) {
+    auto const& keyDown = std::get<KeyDownEvent>(event);
     m_repeatKeyThreshold = Time::monotonicMilliseconds() + 300LL;
-    if (keyDown->key == Key::Escape) {
+    if (keyDown.key == Key::Escape) {
       if (m_onEscapeKey) {
-        auto called = m_onEscapeKey(this);
+        auto called = m_onEscapeKey(*this);
         if (!called)
           return std::unexpected(std::move(called.error()));
         return true;
       }
       return false;
     }
-    if (keyDown->key == Key::Return || keyDown->key == Key::KeypadEnter) {
-      if ((keyDown->mods & (KeyMod::LShift | KeyMod::RShift)) != KeyMod::NoMod) {
+    if (keyDown.key == Key::Return || keyDown.key == Key::KeypadEnter) {
+      if ((keyDown.mods & (KeyMod::LShift | KeyMod::RShift)) != KeyMod::NoMod) {
         auto modified = editText(m_cursorOffset, 0, "\n");
         if (!modified)
           return std::unexpected(std::move(modified.error()));
@@ -480,18 +481,18 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
         return true;
       }
       if (m_onEnterKey) {
-        auto called = m_onEnterKey(this);
+        auto called = m_onEnterKey(*this);
         if (!called)
           return std::unexpected(std::move(called.error()));
         return true;
       }
       return false;
     }
-    if (keyDown->key == Key::Tab) {
-      bool reverse = (keyDown->mods & (KeyMod::LShift | KeyMod::RShift)) != KeyMod::NoMod;
+    if (keyDown.key == Key::Tab) {
+      bool reverse = (keyDown.mods & (KeyMod::LShift | KeyMod::RShift)) != KeyMod::NoMod;
       auto const& target = reverse ? m_prevFocus : m_nextFocus;
-      if (target) {
-        auto widget = parent()->fetchChild(*target);
+      if (auto owner = parent(); target && owner) {
+        auto widget = owner->get().fetchChild(*target);
         if (!widget)
           return std::unexpected(std::move(widget.error()));
         if (*widget) {
@@ -503,10 +504,10 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
       }
       return false;
     }
-    if ((keyDown->mods & (KeyMod::LCtrl | KeyMod::RCtrl)) != KeyMod::NoMod) {
-      if (keyDown->key == Key::C || keyDown->key == Key::X) {
-        context()->setClipboard(m_text);
-        if (keyDown->key == Key::X) {
+    if ((keyDown.mods & (KeyMod::LCtrl | KeyMod::RCtrl)) != KeyMod::NoMod) {
+      if (keyDown.key == Key::C || keyDown.key == Key::X) {
+        context().setClipboard(m_text);
+        if (keyDown.key == Key::X) {
           auto modified = modText("");
           if (!modified)
             return std::unexpected(std::move(modified.error()));
@@ -515,8 +516,8 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
         }
         return true;
       }
-      if (keyDown->key == Key::V) {
-        auto clipboard = context()->getClipboard();
+      if (keyDown.key == Key::V) {
+        auto clipboard = context().getClipboard();
         auto length = clipboard.size();
         if (!length)
           return std::unexpected(std::move(length.error()));
@@ -529,7 +530,7 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
       }
     }
     auto calculateSteps = [&](bool right) -> std::expected<int, StarException> {
-      if ((keyDown->mods & (KeyMod::LCtrl | KeyMod::RCtrl | KeyMod::LAlt | KeyMod::RAlt)) != KeyMod::NoMod) {
+      if ((keyDown.mods & (KeyMod::LCtrl | KeyMod::RCtrl | KeyMod::LAlt | KeyMod::RAlt)) != KeyMod::NoMod) {
         auto boundary = m_text.findNextBoundary(m_cursorOffset, !right);
         if (!boundary)
           return std::unexpected(std::move(boundary.error()));
@@ -538,16 +539,16 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
       }
       return 1;
     };
-    if (keyDown->key == Key::Backspace || keyDown->key == Key::Delete ||
-        keyDown->key == Key::Left || keyDown->key == Key::Right) {
-      bool right = keyDown->key == Key::Delete || keyDown->key == Key::Right;
+    if (keyDown.key == Key::Backspace || keyDown.key == Key::Delete ||
+        keyDown.key == Key::Left || keyDown.key == Key::Right) {
+      bool right = keyDown.key == Key::Delete || keyDown.key == Key::Right;
       auto steps = calculateSteps(right);
       if (!steps)
         return std::unexpected(std::move(steps.error()));
       auto length = m_text.size();
       if (!length)
         return std::unexpected(std::move(length.error()));
-      if (keyDown->key == Key::Backspace) {
+      if (keyDown.key == Key::Backspace) {
         m_repeatCode = SpecialRepeatKeyCodes::Backspace;
         for (int i = 0; i < *steps && m_cursorOffset > 0; ++i) {
           auto modified = editText(m_cursorOffset - 1, 1, "");
@@ -556,7 +557,7 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
           if (*modified)
             --m_cursorOffset;
         }
-      } else if (keyDown->key == Key::Delete) {
+      } else if (keyDown.key == Key::Delete) {
         m_repeatCode = SpecialRepeatKeyCodes::Delete;
         for (int i = 0; i < *steps; ++i) {
           auto currentLength = m_text.size();
@@ -568,7 +569,7 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
               return std::unexpected(std::move(modified.error()));
           }
         }
-      } else if (keyDown->key == Key::Left) {
+      } else if (keyDown.key == Key::Left) {
         m_repeatCode = SpecialRepeatKeyCodes::Left;
         m_cursorOffset = std::max(0, m_cursorOffset - *steps);
       } else {
@@ -577,11 +578,11 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
       }
       return true;
     }
-    if (keyDown->key == Key::Home) {
+    if (keyDown.key == Key::Home) {
       m_cursorOffset = 0;
       return true;
     }
-    if (keyDown->key == Key::End) {
+    if (keyDown.key == Key::End) {
       auto length = m_text.size();
       if (!length)
         return std::unexpected(std::move(length.error()));
@@ -589,11 +590,12 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
       return true;
     }
   }
-  if (auto textInput = std::get_if<TextInputEvent>(&event)) {
-    auto length = textInput->text.size();
+  if (std::holds_alternative<TextInputEvent>(event)) {
+    auto const& textInput = std::get<TextInputEvent>(event);
+    auto length = textInput.text.size();
     if (!length)
       return std::unexpected(std::move(length.error()));
-    auto modified = editText(m_cursorOffset, 0, textInput->text);
+    auto modified = editText(m_cursorOffset, 0, textInput.text);
     if (!modified)
       return std::unexpected(std::move(modified.error()));
     if (*modified)
@@ -645,10 +647,10 @@ std::expected<bool, StarException> TextBoxWidget::newTextValid(String const& tex
   if (!*matched)
     return false;
   if (m_maxWidth != -1 && !m_overfillMode) {
-    auto styled = context()->setTextStyle(m_textStyle);
+    auto styled = context().setTextStyle(m_textStyle);
     if (!styled)
       return std::unexpected(std::move(styled.error()));
-    auto width = context()->stringInterfaceWidth(text);
+    auto width = context().stringInterfaceWidth(text);
     if (!width)
       return std::unexpected(std::move(width.error()));
     return *width <= m_maxWidth;

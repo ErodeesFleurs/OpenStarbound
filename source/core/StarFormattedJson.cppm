@@ -50,7 +50,7 @@ struct CommaElement {
 using JsonElement = std::variant<ValueElement, ObjectKeyElement, WhitespaceElement, ColonElement, CommaElement>;
 
 
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, JsonElement const& elem);
+std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, JsonElement const& elem);
 
 // Class representing formatted JSON data. Preserves whitespace and comments.
 class FormattedJson {
@@ -121,7 +121,7 @@ private:
   std::expected<FormattedJson, StarException> objectInsert(String const& key, FormattedJson const& value, ElementLocation loc) const;
   std::expected<void, StarException> appendElement(JsonElement const& elem);
 
-  std::expected<FormattedJson const*, StarException> getFormattedJson(ElementLocation loc) const;
+  std::expected<std::reference_wrapper<FormattedJson const>, StarException> getFormattedJson(ElementLocation loc) const;
   std::expected<FormattedJson, StarException> formattedAs(String const& formatting) const;
 
   Json m_jsonValue;
@@ -134,7 +134,7 @@ private:
   List<ElementLocation> m_arrayElementLocations;
 };
 
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, FormattedJson const& json);
+std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, FormattedJson const& json);
 
 }
 

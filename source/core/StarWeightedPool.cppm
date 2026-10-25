@@ -27,9 +27,9 @@ public:
   ItemsList const& items() const;
 
   std::size_t size() const;
-  [[nodiscard]] std::expected<std::pair<double, Item> const*, StarException> at(std::size_t index) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<std::pair<double, Item> const>, StarException> at(std::size_t index) const;
   [[nodiscard]] std::expected<double, StarException> weight(std::size_t index) const;
-  [[nodiscard]] std::expected<Item const*, StarException> item(std::size_t index) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Item const>, StarException> item(std::size_t index) const;
   bool empty() const;
 
   // Return item using the given randomness source
@@ -95,7 +95,7 @@ std::size_t WeightedPool<Item>::size() const {
 }
 
 template <typename Item>
-std::expected<std::pair<double, Item> const*, StarException> WeightedPool<Item>::at(std::size_t index) const {
+std::expected<std::reference_wrapper<std::pair<double, Item> const>, StarException> WeightedPool<Item>::at(std::size_t index) const {
   return m_items.at(index);
 }
 
@@ -104,15 +104,15 @@ std::expected<double, StarException> WeightedPool<Item>::weight(std::size_t inde
   auto entry = at(index);
   if (!entry)
     return std::unexpected(std::move(entry.error()));
-  return (*entry)->first;
+  return entry->get().first;
 }
 
 template <typename Item>
-std::expected<Item const*, StarException> WeightedPool<Item>::item(std::size_t index) const {
+std::expected<std::reference_wrapper<Item const>, StarException> WeightedPool<Item>::item(std::size_t index) const {
   auto entry = at(index);
   if (!entry)
     return std::unexpected(std::move(entry.error()));
-  return &(*entry)->second;
+  return std::reference_wrapper<Item const>(entry->get().second);
 }
 
 template <typename Item>

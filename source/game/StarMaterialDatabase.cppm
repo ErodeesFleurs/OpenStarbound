@@ -29,7 +29,7 @@ class ItemDescriptor;
 class ParticleConfig;
 
 struct MaterialExceptionTag {
-  static constexpr char const* name() { return "MaterialException"; }
+  static constexpr std::string_view name() { return "MaterialException"; }
 };
 using MaterialException = StarError<MaterialExceptionTag, StarException>;
 
@@ -83,7 +83,7 @@ public:
   [[nodiscard]]
   std::expected<ModId, StarException> modId(String const& modName) const;
   [[nodiscard]]
-  std::expected<String const*, StarException> modName(ModId modId) const;
+  std::expected<std::reference_wrapper<String const>, StarException> modName(ModId modId) const;
   [[nodiscard]]
   std::expected<std::optional<String>, StarException> modPath(ModId modId) const;
   [[nodiscard]]
@@ -240,11 +240,11 @@ private:
   void setMod(ModId modId, ModInfo info);
 
   [[nodiscard]]
-  std::expected<MetaMaterialInfo const*, StarException> getMetaMaterialInfo(MaterialId materialId) const;
+  std::expected<std::reference_wrapper<MetaMaterialInfo const>, StarException> getMetaMaterialInfo(MaterialId materialId) const;
   [[nodiscard]]
-  std::expected<MaterialInfo const*, StarException> getMaterialInfo(MaterialId materialId) const;
+  std::expected<std::reference_wrapper<MaterialInfo const>, StarException> getMaterialInfo(MaterialId materialId) const;
   [[nodiscard]]
-  std::expected<ModInfo const*, StarException> getModInfo(ModId modId) const;
+  std::expected<std::reference_wrapper<ModInfo const>, StarException> getModInfo(ModId modId) const;
 
   List<std::shared_ptr<MetaMaterialInfo const>> m_metaMaterials;
   StringMap<MaterialId> m_metaMaterialIndex;
@@ -285,7 +285,7 @@ inline std::expected<bool, StarException> MaterialDatabase::foregroundLightTrans
   if (isRealMaterial(materialId)) {
     auto info = getMaterialInfo(materialId);
     if (!info) return std::unexpected(std::move(info.error()));
-    if ((*info)->materialRenderProfile) return (*info)->materialRenderProfile->foregroundLightTransparent;
+    if (info->get().materialRenderProfile) return info->get().materialRenderProfile->foregroundLightTransparent;
   }
   return materialId != StructureMaterialId;
 }
@@ -295,7 +295,7 @@ inline std::expected<bool, StarException> MaterialDatabase::backgroundLightTrans
   if (isRealMaterial(materialId)) {
     auto info = getMaterialInfo(materialId);
     if (!info) return std::unexpected(std::move(info.error()));
-    if ((*info)->materialRenderProfile) return (*info)->materialRenderProfile->backgroundLightTransparent;
+    if (info->get().materialRenderProfile) return info->get().materialRenderProfile->backgroundLightTransparent;
   }
   return materialId != StructureMaterialId;
 }
@@ -305,7 +305,7 @@ inline std::expected<bool, StarException> MaterialDatabase::occludesBehind(Mater
   if (isRealMaterial(materialId)) {
     auto info = getMaterialInfo(materialId);
     if (!info) return std::unexpected(std::move(info.error()));
-    if ((*info)->materialRenderProfile) return (*info)->materialRenderProfile->occludesBehind;
+    if (info->get().materialRenderProfile) return info->get().materialRenderProfile->occludesBehind;
   }
   return false;
 }
@@ -330,11 +330,11 @@ inline std::expected<bool, StarException> MaterialDatabase::blocksLiquidFlow(Mat
   if (isRealMaterial(materialId)) {
     auto info = getMaterialInfo(materialId);
     if (!info) return std::unexpected(std::move(info.error()));
-    return (*info)->blocksLiquidFlow;
+    return info->get().blocksLiquidFlow;
   }
   auto info = getMetaMaterialInfo(materialId);
   if (!info) return std::unexpected(std::move(info.error()));
-  return (*info)->blocksLiquidFlow;
+  return info->get().blocksLiquidFlow;
 }
 
 inline std::optional<LiquidMaterialInteraction> MaterialDatabase::liquidMaterialInteraction(

@@ -25,6 +25,7 @@ import star.ordered_map;
 import star.casting;
 import star.net_compatibility;
 import std;
+import star.optional;
 import star.set;
 import star.worker_pool;
 
@@ -201,7 +202,7 @@ std::expected<void, StarException> SystemWorldServerThread::update() {
   }
   for (auto const& entry : take(m_clientShipActions)) {
     auto ship = m_systemWorld->clientShip(entry.first);
-    auto acted = entry.second(ship.get());
+    auto acted = entry.second(optionalRef(ship));
     if (!acted)
       return std::unexpected(std::move(acted.error()));
   }
@@ -243,7 +244,7 @@ std::expected<void, StarException> SystemWorldServerThread::update() {
   }
   queueLocker.unlock();
   if (m_updateAction)
-    return m_updateAction(this);
+    return m_updateAction(*this);
   return {};
 }
 
@@ -267,7 +268,7 @@ std::expected<SystemLocation, StarException> SystemWorldServerThread::clientShip
   auto location = m_clientShipLocations.get(clientId);
   if (!location)
     return std::unexpected(std::move(location.error()));
-  return (*location)->first;
+  return location->get().first;
 }
 
 std::optional<std::pair<WarpAction, WarpMode>> SystemWorldServerThread::clientWarpAction(ConnectionId clientId) {
@@ -282,14 +283,14 @@ std::expected<SkyParameters, StarException> SystemWorldServerThread::clientSkyPa
   auto location = m_clientShipLocations.get(clientId);
   if (!location)
     return std::unexpected(std::move(location.error()));
-  return (*location)->second;
+  return location->get().second;
 }
 
 List<InstanceWorldId> SystemWorldServerThread::activeInstanceWorlds() const {
   return m_activeInstanceWorlds;
 }
 
-void SystemWorldServerThread::setUpdateAction(std::function<std::expected<void, StarException>(SystemWorldServerThread*)> updateAction) {
+void SystemWorldServerThread::setUpdateAction(std::function<std::expected<void, StarException>(SystemWorldServerThread&)> updateAction) {
   m_updateAction = updateAction;
 }
 

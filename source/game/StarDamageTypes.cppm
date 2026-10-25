@@ -39,8 +39,8 @@ extern std::expected<EnumMap<TeamType>, StarException> const TeamTypeNames;
 typedef std::uint16_t TeamNumber;
 
 struct EntityDamageTeam {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityDamageTeam& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityDamageTeam const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EntityDamageTeam& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EntityDamageTeam const& value);
   EntityDamageTeam();
   explicit EntityDamageTeam(TeamType type, TeamNumber team = 0);
   [[nodiscard]] static std::expected<EntityDamageTeam, StarException> create(Json const& json);
@@ -54,8 +54,8 @@ struct EntityDamageTeam {
   TeamType type;
   TeamNumber team;
 };
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityDamageTeam const& team);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityDamageTeam& team);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EntityDamageTeam const& team);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EntityDamageTeam& team);
 
 TeamNumber soloPvpTeam(ConnectionId clientId);
 }

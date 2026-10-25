@@ -304,14 +304,14 @@ SectorLoadLevel WorldStorage::sectorLoadLevel(Sector sector) const {
 }
 
 std::optional<SectorGenerationLevel> WorldStorage::sectorGenerationLevel(Sector sector) const {
-  if (auto p = m_sectorMetadata.ptr(sector))
-    return p->generationLevel;
+  if (auto p = m_sectorMetadata.maybeRef(sector))
+    return p->get().generationLevel;
   return {};
 }
 
 bool WorldStorage::sectorActive(Sector sector) const {
-  if (auto p = m_sectorMetadata.ptr(sector)) {
-    if (p->loadLevel == SectorLoadLevel::Loaded && p->generationLevel == SectorGenerationLevel::Complete)
+  if (auto p = m_sectorMetadata.maybeRef(sector)) {
+    if (p->get().loadLevel == SectorLoadLevel::Loaded && p->get().generationLevel == SectorGenerationLevel::Complete)
       return true;
   }
   return false;
@@ -350,12 +350,12 @@ std::expected<void, StarException> WorldStorage::activateSector(Sector sector) {
 }
 
 std::expected<void, StarException> WorldStorage::queueSectorActivation(Sector sector) {
-  if (auto p = m_sectorMetadata.ptr(sector)) {
+  if (auto p = m_sectorMetadata.maybeRef(sector)) {
     auto ptimeToLiveResult1 = randomizedSectorTTL();
     if (!ptimeToLiveResult1) return std::unexpected(std::move(ptimeToLiveResult1.error()));
-    p->timeToLive = std::move((*ptimeToLiveResult1));
+    p->get().timeToLive = std::move((*ptimeToLiveResult1));
     // Don't bother queueing the sector if it is already fully loaded
-    if (p->loadLevel == SectorLoadLevel::Loaded && p->generationLevel == SectorGenerationLevel::Complete)
+    if (p->get().loadLevel == SectorLoadLevel::Loaded && p->get().generationLevel == SectorGenerationLevel::Complete)
       return {};
   }
 
@@ -370,14 +370,14 @@ std::expected<void, StarException> WorldStorage::triggerTerraformSector(Sector s
       auto operationResult1 = loadSectorToLevel(sector, SectorLoadLevel::Loaded);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
-    if (auto p = m_sectorMetadata.ptr(sector)) {
-      if (p->generationLevel < SectorGenerationLevel::Complete)
+    if (auto p = m_sectorMetadata.maybeRef(sector)) {
+      if (p->get().generationLevel < SectorGenerationLevel::Complete)
         {
           auto operationResult1 = generateSectorToLevel(sector, SectorGenerationLevel::Complete);
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
         }
 
-      p->generationLevel = SectorGenerationLevel::Terraform;
+      p->get().generationLevel = SectorGenerationLevel::Terraform;
     } else {
       return std::unexpected(WorldStorageException(strf("Couldn't flag sector {} for terraforming; metadata unavailable", sector)));
     }
@@ -392,14 +392,14 @@ std::expected<RpcPromise<Vec2I>, StarException> WorldStorage::enqueuePlacement(L
 }
 
 std::optional<float> WorldStorage::sectorTimeToLive(Sector sector) const {
-  if (auto p = m_sectorMetadata.ptr(sector))
-    return p->timeToLive;
+  if (auto p = m_sectorMetadata.maybeRef(sector))
+    return p->get().timeToLive;
   return {};
 }
 
 bool WorldStorage::setSectorTimeToLive(Sector sector, float newTimeToLive) {
-  if (auto p = m_sectorMetadata.ptr(sector)) {
-    p->timeToLive = newTimeToLive;
+  if (auto p = m_sectorMetadata.maybeRef(sector)) {
+    p->get().timeToLive = newTimeToLive;
     return true;
   }
   return false;
@@ -452,7 +452,7 @@ std::expected<void, StarException> WorldStorage::generateQueue(std::optional<std
 
       auto first = m_generationQueue.firstKey();
       if (!first) return std::unexpected(std::move(first.error()));
-      auto autopResult1 = generateSectorToLevel(**first, SectorGenerationLevel::Complete, sectorGenerationLevelLimit.value_or(NPos));
+      auto autopResult1 = generateSectorToLevel(first->get(), SectorGenerationLevel::Complete, sectorGenerationLevelLimit.value_or(NPos));
       if (!autopResult1) return std::unexpected(std::move(autopResult1.error()));
       auto p = std::move((*autopResult1));
 
@@ -470,7 +470,7 @@ std::expected<void, StarException> WorldStorage::generateQueue(std::optional<std
   return result;
 }
 
-std::expected<void, StarException> WorldStorage::tick(float dt, String const* worldId) {
+std::expected<void, StarException> WorldStorage::tick(float dt, std::optional<std::reference_wrapper<String const>> worldId) {
   auto result = [&]() -> std::expected<void, StarException> {
     // Tick down generation queue entries, and erase any that are expired.
     eraseWhere(m_generationQueue, [dt](auto& p) {
@@ -506,7 +506,7 @@ std::expected<void, StarException> WorldStorage::tick(float dt, String const* wo
       auto scanned = m_entityMap->forEachEntity(RectF(m_tileArray->sectorRegion(sector)), [&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
           if (belongsInSector(sector, entity->position())) {
             if (!keepAlive) {
-              auto active = m_generatorFacade->entityKeepAlive(this, entity);
+              auto active = m_generatorFacade->entityKeepAlive(*this, entity);
               if (!active) return std::unexpected(std::move(active.error()));
               if (*active) {
                 keepAlive = true;
@@ -534,7 +534,7 @@ std::expected<void, StarException> WorldStorage::tick(float dt, String const* wo
         List<std::shared_ptr<Entity>> zombiesToStore;
         List<std::shared_ptr<Entity>> zombiesToRemove;
         for (auto const& entity : zombieEntities) {
-          auto autopersistentResult1 = m_generatorFacade->entityPersistent(this, entity);
+          auto autopersistentResult1 = m_generatorFacade->entityPersistent(*this, entity);
           if (!autopersistentResult1) return std::unexpected(std::move(autopersistentResult1.error()));
           auto persistent = std::move((*autopersistentResult1));
           if (persistent)
@@ -546,7 +546,7 @@ std::expected<void, StarException> WorldStorage::tick(float dt, String const* wo
         for (auto const& entity : zombiesToRemove) {
           m_entityMap->removeEntity(entity->entityId());
           {
-            auto operationResult1 = m_generatorFacade->destructEntity(this, entity);
+            auto operationResult1 = m_generatorFacade->destructEntity(*this, entity);
             if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
           }
         }
@@ -568,7 +568,7 @@ std::expected<void, StarException> WorldStorage::tick(float dt, String const* wo
           for (auto const& entity : zombiesToStore) {
             m_entityMap->removeEntity(entity->entityId());
             {
-              auto operationResult1 = m_generatorFacade->destructEntity(this, entity);
+              auto operationResult1 = m_generatorFacade->destructEntity(*this, entity);
               if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
             }
             if (auto uniqueId = entity->uniqueId()) {
@@ -596,7 +596,7 @@ std::expected<void, StarException> WorldStorage::tick(float dt, String const* wo
       }
     }
     if (worldId) {
-      this->root().logMap().set(strf("server_{}_storage", *worldId),
+      this->root().logMap().set(strf("server_{}_storage", worldId->get()),
         strf("{} active, {}/{} unloaded ({} held)", m_sectorMetadata.size(), unloaded, skipped + unloaded, skipped));
     }
     return {};
@@ -1090,7 +1090,7 @@ std::expected<std::pair<bool, std::size_t>, StarException> WorldStorage::generat
 
   if (targetGenerationLevel == SectorGenerationLevel::Complete && metadata.generationLevel == SectorGenerationLevel::Terraform) {
     {
-      auto operationResult1 = m_generatorFacade->terraformSector(this, sector);
+      auto operationResult1 = m_generatorFacade->terraformSector(*this, sector);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
     metadata.generationLevel = SectorGenerationLevel::Complete;
@@ -1125,7 +1125,7 @@ std::expected<std::pair<bool, std::size_t>, StarException> WorldStorage::generat
       }
     }
     {
-      auto operationResult1 = m_generatorFacade->generateSectorLevel(this, sector, currentGeneration);
+      auto operationResult1 = m_generatorFacade->generateSectorLevel(*this, sector, currentGeneration);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
     metadata.generationLevel = currentGeneration;
@@ -1179,7 +1179,7 @@ std::expected<void, StarException> WorldStorage::loadSectorToLevel(Sector const&
       }
       metadata.loadLevel = currentLoad;
       {
-        auto operationResult1 = m_generatorFacade->sectorLoadLevelChanged(this, sector, currentLoad);
+        auto operationResult1 = m_generatorFacade->sectorLoadLevelChanged(*this, sector, currentLoad);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
     } else if (currentLoad == SectorLoadLevel::Entities) {
@@ -1210,7 +1210,7 @@ std::expected<void, StarException> WorldStorage::loadSectorToLevel(Sector const&
         {
           auto operationResult1 = m_entityMap->reserveEntityId();
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
-          auto operationResult2 = m_generatorFacade->initEntity(this, (*operationResult1), entity);
+          auto operationResult2 = m_generatorFacade->initEntity(*this, (*operationResult1), entity);
           if (!operationResult2) return std::unexpected(std::move(operationResult2.error()));
         }
         {
@@ -1228,7 +1228,7 @@ std::expected<void, StarException> WorldStorage::loadSectorToLevel(Sector const&
       }
       metadata.loadLevel = currentLoad;
       {
-        auto operationResult1 = m_generatorFacade->sectorLoadLevelChanged(this, sector, currentLoad);
+        auto operationResult1 = m_generatorFacade->sectorLoadLevelChanged(*this, sector, currentLoad);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
     }
@@ -1259,18 +1259,18 @@ std::expected<bool, StarException> WorldStorage::unloadSectorToLevel(Sector cons
       auto position = entity->position();
       if (!belongsInSector(sector, position)) {
         if (auto entitySector = sectorForPosition(Vec2I(position))) {
-          if (auto p = m_sectorMetadata.ptr(*entitySector))
-            entitiesOverlap |= p->timeToLive > 0.0f;
+          if (auto p = m_sectorMetadata.maybeRef(*entitySector))
+            entitiesOverlap |= p->get().timeToLive > 0.0f;
         }
         continue;
       }
 
-      auto boolkeepAliveResult1 = m_generatorFacade->entityKeepAlive(this, entity);
+      auto boolkeepAliveResult1 = m_generatorFacade->entityKeepAlive(*this, entity);
       if (!boolkeepAliveResult1) return std::unexpected(std::move(boolkeepAliveResult1.error()));
       bool keepAlive = std::move((*boolkeepAliveResult1));
       if (keepAlive && !force)
         return false;
-      auto autopersistentResult1 = m_generatorFacade->entityPersistent(this, entity);
+      auto autopersistentResult1 = m_generatorFacade->entityPersistent(*this, entity);
       if (!autopersistentResult1) return std::unexpected(std::move(autopersistentResult1.error()));
       auto persistent = std::move((*autopersistentResult1));
 
@@ -1283,7 +1283,7 @@ std::expected<bool, StarException> WorldStorage::unloadSectorToLevel(Sector cons
     for (auto const& entity : entitiesToRemove) {
       m_entityMap->removeEntity(entity->entityId());
       {
-        auto operationResult1 = m_generatorFacade->destructEntity(this, entity);
+        auto operationResult1 = m_generatorFacade->destructEntity(*this, entity);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
     }
@@ -1310,7 +1310,7 @@ std::expected<bool, StarException> WorldStorage::unloadSectorToLevel(Sector cons
       for (auto const& entity : entitiesToStore) {
         m_entityMap->removeEntity(entity->entityId());
         {
-          auto operationResult1 = m_generatorFacade->destructEntity(this, entity);
+          auto operationResult1 = m_generatorFacade->destructEntity(*this, entity);
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
         }
         auto position = entity->position();
@@ -1345,7 +1345,7 @@ std::expected<bool, StarException> WorldStorage::unloadSectorToLevel(Sector cons
       if (metadata.loadLevel == SectorLoadLevel::Entities) {
         metadata.loadLevel = SectorLoadLevel::Tiles;
         {
-          auto operationResult1 = m_generatorFacade->sectorLoadLevelChanged(this, sector, SectorLoadLevel::Tiles);
+          auto operationResult1 = m_generatorFacade->sectorLoadLevelChanged(*this, sector, SectorLoadLevel::Tiles);
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
         }
       }
@@ -1367,7 +1367,7 @@ std::expected<bool, StarException> WorldStorage::unloadSectorToLevel(Sector cons
       }
       m_sectorMetadata.remove(sector);
       {
-        auto operationResult1 = m_generatorFacade->sectorLoadLevelChanged(this, sector, SectorLoadLevel::None);
+        auto operationResult1 = m_generatorFacade->sectorLoadLevelChanged(*this, sector, SectorLoadLevel::None);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
       return true;
@@ -1399,7 +1399,7 @@ std::expected<void, StarException> WorldStorage::syncSector(Sector const& sector
     for (auto const& entity : sectorEntities) {
       if (!belongsInSector(sector, entity->position()))
         continue;
-      auto autopersistentResult1 = m_generatorFacade->entityPersistent(this, entity);
+      auto autopersistentResult1 = m_generatorFacade->entityPersistent(*this, entity);
       if (!autopersistentResult1) return std::unexpected(std::move(autopersistentResult1.error()));
       auto persistent = std::move((*autopersistentResult1));
 

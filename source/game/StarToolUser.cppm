@@ -58,7 +58,7 @@ public:
   [[nodiscard]] std::expected<Json, StarException> diskStore() const;
   [[nodiscard]] std::expected<void, StarException> diskLoad(Json const& diskStore);
 
-  [[nodiscard]] std::expected<void, StarException> init(ToolUserEntity* user);
+  [[nodiscard]] std::expected<void, StarException> init(ToolUserEntity& user);
   [[nodiscard]] std::expected<void, StarException> uninit();
 
   std::shared_ptr<Item> primaryHandItem() const;
@@ -98,7 +98,7 @@ public:
   [[nodiscard]] std::expected<List<DamageSource>, StarException> damageSources() const;
   [[nodiscard]] std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const;
 
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback, bool inToolRange, bool shifting, EntityRenderLayer renderLayer);
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback, bool inToolRange, bool shifting, EntityRenderLayer renderLayer);
 
   [[nodiscard]] std::expected<void, StarException> setItems(std::shared_ptr<Item> primaryHandItem, std::shared_ptr<Item> altHandItem);
 
@@ -117,7 +117,7 @@ private:
   public:
     explicit NetItem(Root& root);
 
-    void initNetVersion(NetElementVersion const* version = nullptr) override;
+    void initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version = std::nullopt) override;
 
     [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
     [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -138,10 +138,10 @@ private:
   private:
     void updateItemDescriptor();
 
-    Root* m_root;
+    std::reference_wrapper<Root> m_root;
     NetElementData<ItemDescriptor> m_itemDescriptor;
     std::shared_ptr<Item> m_item;
-    NetElementVersion const* m_netVersion = nullptr;
+    std::optional<std::reference_wrapper<NetElementVersion const>> m_netVersion;
     bool m_netInterpolationEnabled = false;
     float m_netExtrapolationHint = 0;
     bool m_newItem = false;
@@ -156,14 +156,14 @@ private:
   [[nodiscard]] std::expected<void, StarException> netElementsNeedStore() override;
 
   // Borrowed for this tool user's lifetime; catalog lookups remain reload-aware.
-  Root* m_root;
+  std::reference_wrapper<Root> m_root;
 
   float m_beamGunRadius;
   unsigned m_beamGunGlowBorder;
   float m_objectPreviewInnerAlpha;
   float m_objectPreviewOuterAlpha;
 
-  ToolUserEntity* m_user;
+  std::optional<std::reference_wrapper<ToolUserEntity>> m_user;
 
   NetItem m_primaryHandItem;
   NetItem m_altHandItem;

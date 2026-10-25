@@ -151,7 +151,7 @@ if (!result1011) return std::unexpected(std::move(result1011.error()));
 if (!ClientEntityModeNames) return std::unexpected(ClientEntityModeNames.error());
 auto result1012 = ClientEntityModeNames->getLeft(std::move(*result1011));
 if (!result1012) return std::unexpected(std::move(result1012.error()));
-m_clientEntityMode = (**result1012);
+m_clientEntityMode = result1012->get();
 
   auto result1013 = configValue("script");
 if (!result1013) return std::unexpected(std::move(result1013.error()));
@@ -263,7 +263,7 @@ if (auto orientation = std::move(*result1050))
 if (!LoungeOrientationNames) return std::unexpected(LoungeOrientationNames.error());
 auto result1051 = LoungeOrientationNames->getLeft(*orientation);
 if (!result1051) return std::unexpected(std::move(result1051.error()));
-loungePosition.orientation.set((**result1051));
+loungePosition.orientation.set(result1051->get());
 }
     auto result1052 = pair.second.optString("emote");
 if (!result1052) return std::unexpected(std::move(result1052.error()));
@@ -387,54 +387,54 @@ auto movementParameters = std::move(*result1087);
   auto result1088 = m_movementController->resetParameters(movementParameters);
 if (!result1088) return std::unexpected(std::move(result1088.error()));
 
-  auto result1089 = m_netGroup.addNetElement(&m_interactive);
+  auto result1089 = m_netGroup.addNetElement(m_interactive);
 if (!result1089) return std::unexpected(std::move(result1089.error()));
-  auto result1090 = m_netGroup.addNetElement(m_movementController.get());
+  auto result1090 = m_netGroup.addNetElement(*m_movementController);
 if (!result1090) return std::unexpected(std::move(result1090.error()));
-  auto result1091 = m_netGroup.addNetElement(m_networkedAnimator.get());
+  auto result1091 = m_netGroup.addNetElement(*m_networkedAnimator);
 if (!result1091) return std::unexpected(std::move(result1091.error()));
-  auto result1092 = m_netGroup.addNetElement(&m_damageTeam);
+  auto result1092 = m_netGroup.addNetElement(m_damageTeam);
 if (!result1092) return std::unexpected(std::move(result1092.error()));
 
   m_loungePositions.sortByKey();
   for (auto& p : m_loungePositions) {
-    auto result1093 = m_netGroup.addNetElement(&p.second.enabled);
+    auto result1093 = m_netGroup.addNetElement(p.second.enabled);
 if (!result1093) return std::unexpected(std::move(result1093.error()));
-    auto result1094 = m_netGroup.addNetElement(&p.second.orientation);
+    auto result1094 = m_netGroup.addNetElement(p.second.orientation);
 if (!result1094) return std::unexpected(std::move(result1094.error()));
-    auto result1095 = m_netGroup.addNetElement(&p.second.emote);
+    auto result1095 = m_netGroup.addNetElement(p.second.emote);
 if (!result1095) return std::unexpected(std::move(result1095.error()));
-    auto result1096 = m_netGroup.addNetElement(&p.second.dance);
+    auto result1096 = m_netGroup.addNetElement(p.second.dance);
 if (!result1096) return std::unexpected(std::move(result1096.error()));
-    auto result1097 = m_netGroup.addNetElement(&p.second.directives);
+    auto result1097 = m_netGroup.addNetElement(p.second.directives);
 if (!result1097) return std::unexpected(std::move(result1097.error()));
-    auto result1098 = m_netGroup.addNetElement(&p.second.statusEffects);
+    auto result1098 = m_netGroup.addNetElement(p.second.statusEffects);
 if (!result1098) return std::unexpected(std::move(result1098.error()));
   }
 
   m_movingCollisions.sortByKey();
   for (auto& p : m_movingCollisions)
     {
-auto result1099 = m_netGroup.addNetElement(&p.second.enabled);
+auto result1099 = m_netGroup.addNetElement(p.second.enabled);
 if (!result1099) return std::unexpected(std::move(result1099.error()));
 }
 
   m_forceRegions.sortByKey();
   for (auto& p : m_forceRegions)
     {
-auto result1100 = m_netGroup.addNetElement(&p.second.enabled);
+auto result1100 = m_netGroup.addNetElement(p.second.enabled);
 if (!result1100) return std::unexpected(std::move(result1100.error()));
 }
 
   m_damageSources.sortByKey();
   for (auto& p : m_damageSources)
     {
-auto result1101 = m_netGroup.addNetElement(&p.second.enabled);
+auto result1101 = m_netGroup.addNetElement(p.second.enabled);
 if (!result1101) return std::unexpected(std::move(result1101.error()));
 }
 
   // don't interpolate scripted animation parameters
-  auto result1102 = m_netGroup.addNetElement(&m_scriptedAnimationParameters, false);
+  auto result1102 = m_netGroup.addNetElement(m_scriptedAnimationParameters, false);
 if (!result1102) return std::unexpected(std::move(result1102.error()));
   return {};
 }
@@ -495,7 +495,7 @@ ClientEntityMode Vehicle::clientEntityMode() const {
 std::expected<std::optional<HitType>, StarException> Vehicle::queryHit(DamageSource const& source) const {
   auto result1264 = world();
 if (!result1264) return std::unexpected(std::move(result1264.error()));
-auto result1265 = source.intersectsWithPoly(std::move(*result1264)->geometry(), m_movementController->collisionBody());
+auto result1265 = source.intersectsWithPoly(result1264->get().geometry(), m_movementController->collisionBody());
 if (!result1265) return std::unexpected(std::move(result1265.error()));
 if (std::move(*result1265))
     return HitType::Hit;
@@ -522,7 +522,7 @@ if (!result1260) return std::unexpected(std::move(result1260.error()));
   return std::move(*result1260).value_or(List<DamageNotification>{});
 }
 
-std::expected<void, StarException> Vehicle::init(World* world, EntityId entityId, EntityMode mode) {
+std::expected<void, StarException> Vehicle::init(World& world, EntityId entityId, EntityMode mode) {
   auto result1241 = Entity::init(world, entityId, mode);
 if (!result1241) return std::unexpected(std::move(result1241.error()));
   m_movementController->init(world);
@@ -532,20 +532,20 @@ if (!result1241) return std::unexpected(std::move(result1241.error()));
 if (!result1242) return std::unexpected(std::move(result1242.error()));
 auto result1243 = m_scriptComponent.addCallbacks("vehicle", std::move(*result1242));
 if (!result1243) return std::unexpected(std::move(result1243.error()));
-    auto result1244 = LuaBindings::makeConfigCallbacks(std::bind(&Vehicle::configValue, this, std::placeholders::_1, std::placeholders::_2));
+    auto result1244 = LuaBindings::makeConfigCallbacks(std::bind(&Vehicle::configValue, std::ref(*this), std::placeholders::_1, std::placeholders::_2));
 if (!result1244) return std::unexpected(std::move(result1244.error()));
 auto result1245 = m_scriptComponent.addCallbacks(
         "config", std::move(*result1244));
 if (!result1245) return std::unexpected(std::move(result1245.error()));
-    auto result1246 = LuaBindings::makeEntityCallbacks(this);
+    auto result1246 = LuaBindings::makeEntityCallbacks(*this);
 if (!result1246) return std::unexpected(std::move(result1246.error()));
 auto result1247 = m_scriptComponent.addCallbacks("entity", std::move(*result1246));
 if (!result1247) return std::unexpected(std::move(result1247.error()));
-    auto result1248 = LuaBindings::makeMovementControllerCallbacks(m_movementController.get());
+    auto result1248 = LuaBindings::makeMovementControllerCallbacks(*m_movementController);
 if (!result1248) return std::unexpected(std::move(result1248.error()));
 auto result1249 = m_scriptComponent.addCallbacks("mcontroller", std::move(*result1248));
 if (!result1249) return std::unexpected(std::move(result1249.error()));
-    auto result1250 = LuaBindings::makeNetworkedAnimatorCallbacks(m_networkedAnimator.get());
+    auto result1250 = LuaBindings::makeNetworkedAnimatorCallbacks(*m_networkedAnimator);
 if (!result1250) return std::unexpected(std::move(result1250.error()));
 auto result1251 = m_scriptComponent.addCallbacks("animator", std::move(*result1250));
 if (!result1251) return std::unexpected(std::move(result1251.error()));
@@ -555,9 +555,9 @@ if (!result1252) return std::unexpected(std::move(result1252.error()));
     m_slaveHeartbeatTimer.reset();
   }
 
-  if (world->isClient()) {
-    auto result1253 = LuaBindings::makeScriptedAnimatorCallbacks(m_networkedAnimator.get(),
-      [this](String const& name, Json const& defaultValue) -> Json {
+  if (world.isClient()) {
+    auto result1253 = LuaBindings::makeScriptedAnimatorCallbacks(*m_networkedAnimator,
+      [this](String const& name, Json const& defaultValue) -> std::expected<Json, StarException> {
         return m_scriptedAnimationParameters.value(name, defaultValue);
       });
 if (!result1253) return std::unexpected(std::move(result1253.error()));
@@ -569,7 +569,7 @@ if (!result1254) return std::unexpected(std::move(result1254.error()));
 if (!result1255) return std::unexpected(std::move(result1255.error()));
 auto result1256 = m_scriptedAnimator.addCallbacks("config", std::move(*result1255));
 if (!result1256) return std::unexpected(std::move(result1256.error()));
-    auto result1257 = LuaBindings::makeEntityCallbacks(this);
+    auto result1257 = LuaBindings::makeEntityCallbacks(*this);
 if (!result1257) return std::unexpected(std::move(result1257.error()));
 auto result1258 = m_scriptedAnimator.addCallbacks("entity", std::move(*result1257));
 if (!result1258) return std::unexpected(std::move(result1258.error()));
@@ -597,7 +597,7 @@ if (!result1235) return std::unexpected(std::move(result1235.error()));
 
   auto result1236 = world();
 if (!result1236) return std::unexpected(std::move(result1236.error()));
-if (std::move(*result1236)->isClient()) {
+if (result1236->get().isClient()) {
     auto result1237 = m_scriptedAnimator.removeCallbacks("animationConfig");
 if (!result1237) return std::unexpected(std::move(result1237.error()));
     auto result1238 = m_scriptedAnimator.removeCallbacks("config");
@@ -656,12 +656,12 @@ std::expected<void, StarException> Vehicle::update(float dt, std::uint64_t) {
 
   auto result1200 = world();
 if (!result1200) return std::unexpected(std::move(result1200.error()));
-if (std::move(*result1200)->isClient()) {
-    auto result1201 = m_networkedAnimator->update(dt, &m_networkedAnimatorDynamicTarget);
+if (result1200->get().isClient()) {
+    auto result1201 = m_networkedAnimator->update(dt, std::ref(m_networkedAnimatorDynamicTarget));
 if (!result1201) return std::unexpected(std::move(result1201.error()));
     m_networkedAnimatorDynamicTarget.updatePosition(position());
   } else {
-    auto result1203 = m_networkedAnimator->update(dt, nullptr);
+    auto result1203 = m_networkedAnimator->update(dt, std::nullopt);
 if (!result1203) return std::unexpected(std::move(result1203.error()));
   }
 
@@ -701,13 +701,13 @@ if (!result1207) return std::unexpected(std::move(result1207.error()));
           if (!LoungeControlNames) return std::unexpected(LoungeControlNames.error());
 auto result1208 = LoungeControlNames->getRight(control);
 if (!result1208) return std::unexpected(std::move(result1208.error()));
-allControlsHeld.append((**result1208));
+allControlsHeld.append(result1208->get());
         }
         auto result1209 = world();
 if (!result1209) return std::unexpected(std::move(result1209.error()));
 auto result1210 = loungeIndex(p.first);
 if (!result1210) return std::unexpected(std::move(result1210.error()));
-auto result1211 = std::move(*result1209)->sendEntityMessage(entityId(), "control_all", {std::move(*result1210), std::move(allControlsHeld)});
+auto result1211 = result1209->get().sendEntityMessage(entityId(), "control_all", {std::move(*result1210), std::move(allControlsHeld)});
 if (!result1211) return std::unexpected(std::move(result1211.error()));
       } else {
         for (auto control : p.second.slaveNewControls.difference(p.second.slaveOldControls)) {
@@ -720,7 +720,7 @@ if (!result1213) return std::unexpected(std::move(result1213.error()));
 if (!LoungeControlNames) return std::unexpected(LoungeControlNames.error());
 auto result1214 = LoungeControlNames->getRight(control);
 if (!result1214) return std::unexpected(std::move(result1214.error()));
-auto result1215 = std::move(*result1212)->sendEntityMessage(entityId(), "control_on", {std::move(*result1213), (**result1214)});
+auto result1215 = result1212->get().sendEntityMessage(entityId(), "control_on", {std::move(*result1213), result1214->get()});
 if (!result1215) return std::unexpected(std::move(result1215.error()));
         }
         for (auto control : p.second.slaveOldControls.difference(p.second.slaveNewControls)) {
@@ -733,7 +733,7 @@ if (!result1217) return std::unexpected(std::move(result1217.error()));
 if (!LoungeControlNames) return std::unexpected(LoungeControlNames.error());
 auto result1218 = LoungeControlNames->getRight(control);
 if (!result1218) return std::unexpected(std::move(result1218.error()));
-auto result1219 = std::move(*result1216)->sendEntityMessage(entityId(), "control_off", {std::move(*result1217), (**result1218)});
+auto result1219 = result1216->get().sendEntityMessage(entityId(), "control_off", {std::move(*result1217), result1218->get()});
 if (!result1219) return std::unexpected(std::move(result1219.error()));
         }
       }
@@ -744,7 +744,7 @@ auto result1220 = world();
 if (!result1220) return std::unexpected(std::move(result1220.error()));
 auto result1221 = loungeIndex(p.first);
 if (!result1221) return std::unexpected(std::move(result1221.error()));
-auto result1222 = std::move(*result1220)->sendEntityMessage(entityId(), "aim", {std::move(*result1221), p.second.slaveNewAimPosition[0], p.second.slaveNewAimPosition[1]});
+auto result1222 = result1220->get().sendEntityMessage(entityId(), "aim", {std::move(*result1221), p.second.slaveNewAimPosition[0], p.second.slaveNewAimPosition[1]});
 if (!result1222) return std::unexpected(std::move(result1222.error()));
 }
 
@@ -755,7 +755,7 @@ if (!result1222) return std::unexpected(std::move(result1222.error()));
 
   auto result1223 = world();
 if (!result1223) return std::unexpected(std::move(result1223.error()));
-if (std::move(*result1223)->isClient())
+if (result1223->get().isClient())
     {
 auto result1224 = m_scriptedAnimator.update();
 if (!result1224) return std::unexpected(std::move(result1224.error()));
@@ -763,56 +763,56 @@ if (!result1224) return std::unexpected(std::move(result1224.error()));
 
   auto result1225 = world();
 if (!result1225) return std::unexpected(std::move(result1225.error()));
-if (std::move(*result1225)->isClient())
+if (result1225->get().isClient())
     this->root().spatialLogger().logPoly("world", m_movementController->collisionBody(), {255, 255, 0, 255});
   return {};
 }
 
-std::expected<void, StarException> Vehicle::render(RenderCallback* renderer) {
+std::expected<void, StarException> Vehicle::render(RenderCallback& renderer) {
   auto result1187 = m_networkedAnimator->drawablesWithZLevel(position());
 if (!result1187) return std::unexpected(std::move(result1187.error()));
 for (auto& drawable : std::move(*result1187)) {
     if (drawable.second < 0.0f)
       {
-auto result1188 = renderer->addDrawable(std::move(drawable.first), renderLayer(VehicleLayer::Back));
+auto result1188 = renderer.addDrawable(std::move(drawable.first), renderLayer(VehicleLayer::Back));
 if (!result1188) return std::unexpected(std::move(result1188.error()));
 }
     else
       {
-auto result1189 = renderer->addDrawable(std::move(drawable.first), renderLayer(VehicleLayer::Front));
+auto result1189 = renderer.addDrawable(std::move(drawable.first), renderLayer(VehicleLayer::Front));
 if (!result1189) return std::unexpected(std::move(result1189.error()));
 }
   }
 
   auto&& result1190 = m_networkedAnimatorDynamicTarget.pullNewAudios();
-auto result1191 = renderer->addAudios(result1190);
+auto result1191 = renderer.addAudios(result1190);
 if (!result1191) return std::unexpected(std::move(result1191.error()));
   auto&& result1192 = m_networkedAnimatorDynamicTarget.pullNewParticles();
-auto result1193 = renderer->addParticles(result1192);
+auto result1193 = renderer.addParticles(result1192);
 if (!result1193) return std::unexpected(std::move(result1193.error()));
 
   auto&& result1194 = m_scriptedAnimator.drawables();
 for (auto drawablePair : result1194)
     {
-auto result1195 = renderer->addDrawable(drawablePair.first, drawablePair.second.value_or(renderLayer(VehicleLayer::Front)));
+auto result1195 = renderer.addDrawable(drawablePair.first, drawablePair.second.value_or(renderLayer(VehicleLayer::Front)));
 if (!result1195) return std::unexpected(std::move(result1195.error()));
 }
   auto&& result1196 = m_scriptedAnimator.pullNewAudios();
-auto result1197 = renderer->addAudios(result1196);
+auto result1197 = renderer.addAudios(result1196);
 if (!result1197) return std::unexpected(std::move(result1197.error()));
   auto&& result1198 = m_scriptedAnimator.pullNewParticles();
-auto result1199 = renderer->addParticles(result1198);
+auto result1199 = renderer.addParticles(result1198);
 if (!result1199) return std::unexpected(std::move(result1199.error()));
   return {};
 }
 
-std::expected<void, StarException> Vehicle::renderLightSources(RenderCallback* renderer) {
+std::expected<void, StarException> Vehicle::renderLightSources(RenderCallback& renderer) {
   auto result1183 = m_networkedAnimator->lightSources(position());
 if (!result1183) return std::unexpected(std::move(result1183.error()));
-auto result1184 = renderer->addLightSources(std::move(*result1183));
+auto result1184 = renderer.addLightSources(std::move(*result1183));
 if (!result1184) return std::unexpected(std::move(result1184.error()));
   auto&& result1185 = m_scriptedAnimator.lightSources();
-auto result1186 = renderer->addLightSources(result1185);
+auto result1186 = renderer.addLightSources(result1185);
 if (!result1186) return std::unexpected(std::move(result1186.error()));
   return {};
 }
@@ -828,16 +828,16 @@ std::expected<bool, StarException> Vehicle::shouldDestroy() const {
   return m_shouldDestroy;
 }
 
-std::expected<void, StarException> Vehicle::destroy(RenderCallback* renderCallback) {
+std::expected<void, StarException> Vehicle::destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) {
   if (renderCallback) {
-    auto result1177 = m_networkedAnimator->update(0.0, &m_networkedAnimatorDynamicTarget);
+    auto result1177 = m_networkedAnimator->update(0.0, std::ref(m_networkedAnimatorDynamicTarget));
 if (!result1177) return std::unexpected(std::move(result1177.error()));
 
     auto&& result1178 = m_networkedAnimatorDynamicTarget.pullNewAudios();
-auto result1179 = renderCallback->addAudios(result1178);
+auto result1179 = renderCallback->get().addAudios(result1178);
 if (!result1179) return std::unexpected(std::move(result1179.error()));
     auto&& result1180 = m_networkedAnimatorDynamicTarget.pullNewParticles();
-auto result1181 = renderCallback->addParticles(result1180);
+auto result1181 = renderCallback->get().addParticles(result1180);
 if (!result1181) return std::unexpected(std::move(result1181.error()));
   }
   return {};
@@ -850,19 +850,19 @@ if (!result1145) return std::unexpected(std::move(result1145.error()));
 if (std::move(*result1145)) {
     auto result1146 = args.at(0);
 if (!result1146) return std::unexpected(std::move(result1146.error()));
-auto result1147 = (**result1146).toUInt();
+auto result1147 = result1146->get().toUInt();
 if (!result1147) return std::unexpected(std::move(result1147.error()));
 auto result1148 = m_loungePositions.valueAt(std::move(*result1147));
 if (!result1148) return std::unexpected(std::move(result1148.error()));
-auto& loungePosition = (**result1148);
+auto& loungePosition = result1148->get();
     auto result1149 = args.at(1);
 if (!result1149) return std::unexpected(std::move(result1149.error()));
-auto result1150 = (**result1149).toString();
+auto result1150 = result1149->get().toString();
 if (!result1150) return std::unexpected(std::move(result1150.error()));
 if (!LoungeControlNames) return std::unexpected(LoungeControlNames.error());
 auto result1151 = LoungeControlNames->getLeft(std::move(*result1150));
 if (!result1151) return std::unexpected(std::move(result1151.error()));
-loungePosition.masterControlState[(**result1151)].slavesHeld.add(connectionId);
+loungePosition.masterControlState[result1151->get()].slavesHeld.add(connectionId);
     return ChainableJsonMessageResponse(Json());
   } else {
 auto result1152 = message.equalsIgnoreCase("control_off");
@@ -870,19 +870,19 @@ if (!result1152) return std::unexpected(std::move(result1152.error()));
 if (std::move(*result1152)) {
     auto result1153 = args.at(0);
 if (!result1153) return std::unexpected(std::move(result1153.error()));
-auto result1154 = (**result1153).toUInt();
+auto result1154 = result1153->get().toUInt();
 if (!result1154) return std::unexpected(std::move(result1154.error()));
 auto result1155 = m_loungePositions.valueAt(std::move(*result1154));
 if (!result1155) return std::unexpected(std::move(result1155.error()));
-auto& loungePosition = (**result1155);
+auto& loungePosition = result1155->get();
     auto result1156 = args.at(1);
 if (!result1156) return std::unexpected(std::move(result1156.error()));
-auto result1157 = (**result1156).toString();
+auto result1157 = result1156->get().toString();
 if (!result1157) return std::unexpected(std::move(result1157.error()));
 if (!LoungeControlNames) return std::unexpected(LoungeControlNames.error());
 auto result1158 = LoungeControlNames->getLeft(std::move(*result1157));
 if (!result1158) return std::unexpected(std::move(result1158.error()));
-loungePosition.masterControlState[(**result1158)].slavesHeld.remove(connectionId);
+loungePosition.masterControlState[result1158->get()].slavesHeld.remove(connectionId);
     return ChainableJsonMessageResponse(Json());
   } else {
 auto result1159 = message.equalsIgnoreCase("control_all");
@@ -890,15 +890,15 @@ if (!result1159) return std::unexpected(std::move(result1159.error()));
 if (std::move(*result1159)) {
     auto result1160 = args.at(0);
 if (!result1160) return std::unexpected(std::move(result1160.error()));
-auto result1161 = (**result1160).toUInt();
+auto result1161 = result1160->get().toUInt();
 if (!result1161) return std::unexpected(std::move(result1161.error()));
 auto result1162 = m_loungePositions.valueAt(std::move(*result1161));
 if (!result1162) return std::unexpected(std::move(result1162.error()));
-auto& loungePosition = (**result1162);
+auto& loungePosition = result1162->get();
     Set<LoungeControl> allControlsHeld;
     auto result1163 = args.at(1);
 if (!result1163) return std::unexpected(std::move(result1163.error()));
-auto result1164 = (**result1163).iterateArray();
+auto result1164 = result1163->get().iterateArray();
 if (!result1164) return std::unexpected(std::move(result1164.error()));
 for (auto const& s : std::move(*result1164))
       {
@@ -907,7 +907,7 @@ if (!result1165) return std::unexpected(std::move(result1165.error()));
 if (!LoungeControlNames) return std::unexpected(LoungeControlNames.error());
 auto result1166 = LoungeControlNames->getLeft(std::move(*result1165));
 if (!result1166) return std::unexpected(std::move(result1166.error()));
-allControlsHeld.add((**result1166));
+allControlsHeld.add(result1166->get());
 }
     for (auto& p : loungePosition.masterControlState) {
       if (allControlsHeld.contains(p.first))
@@ -922,25 +922,25 @@ if (!result1167) return std::unexpected(std::move(result1167.error()));
 if (std::move(*result1167)) {
     auto result1168 = args.at(0);
 if (!result1168) return std::unexpected(std::move(result1168.error()));
-auto result1169 = (**result1168).toUInt();
+auto result1169 = result1168->get().toUInt();
 if (!result1169) return std::unexpected(std::move(result1169.error()));
 auto result1170 = m_loungePositions.valueAt(std::move(*result1169));
 if (!result1170) return std::unexpected(std::move(result1170.error()));
-auto& loungePosition = (**result1170);
+auto& loungePosition = result1170->get();
     auto result1171 = args.at(1);
 if (!result1171) return std::unexpected(std::move(result1171.error()));
-auto result1172 = (**result1171).toFloat();
+auto result1172 = result1171->get().toFloat();
 if (!result1172) return std::unexpected(std::move(result1172.error()));
 auto result1173 = args.at(2);
 if (!result1173) return std::unexpected(std::move(result1173.error()));
-auto result1174 = (**result1173).toFloat();
+auto result1174 = result1173->get().toFloat();
 if (!result1174) return std::unexpected(std::move(result1174.error()));
 loungePosition.masterAimPosition = {std::move(*result1172), std::move(*result1174)};
     return ChainableJsonMessageResponse(Json());
   } else {
     auto result1175 = world();
 if (!result1175) return std::unexpected(std::move(result1175.error()));
-auto result1176 = m_scriptComponent.handleMessage(message, connectionId == std::move(*result1175)->connection(), args);
+auto result1176 = m_scriptComponent.handleMessage(message, connectionId == result1175->get().connection(), args);
 if (!result1176) return std::unexpected(std::move(result1176.error()));
 return std::move(*result1176);
   }
@@ -992,7 +992,7 @@ return std::move(*result1140);
     } else {
       auto result1141 = m_loungePositions.valueAt(i);
 if (!result1141) return std::unexpected(std::move(result1141.error()));
-auto const& thisLounge = (**result1141);
+auto const& thisLounge = result1141->get();
       if (!thisLounge.enabled.get())
         continue;
 
@@ -1004,7 +1004,7 @@ auto thisAnchor = std::move(*result1142);
 
       auto result1143 = m_loungePositions.valueAt(*index);
 if (!result1143) return std::unexpected(std::move(result1143.error()));
-auto const& selectedLounge = (**result1143);
+auto const& selectedLounge = result1143->get();
       auto result1144 = m_networkedAnimator->partPoint(selectedLounge.part,selectedLounge.partAnchor);
 if (!result1144) return std::unexpected(std::move(result1144.error()));
 auto selectedAnchor = std::move(*result1144);
@@ -1029,7 +1029,7 @@ std::size_t Vehicle::anchorCount() const {
 std::expected<std::shared_ptr<LoungeAnchor const>, StarException> Vehicle::loungeAnchor(std::size_t positionIndex) const {
   auto result1130 = m_loungePositions.valueAt(positionIndex);
 if (!result1130) return std::unexpected(std::move(result1130.error()));
-auto const& positionConfig = (**result1130);
+auto const& positionConfig = result1130->get();
   if (!positionConfig.enabled.get())
     return {};
 
@@ -1067,7 +1067,7 @@ Vec2F partAnchor = std::move(*result1133);
 std::expected<void, StarException> Vehicle::loungeControl(std::size_t index, LoungeControl loungeControl) {
   auto result1129 = m_loungePositions.valueAt(index);
 if (!result1129) return std::unexpected(std::move(result1129.error()));
-auto& loungePosition = (**result1129);
+auto& loungePosition = result1129->get();
   if (isSlave())
     loungePosition.slaveNewControls.add(loungeControl);
   else
@@ -1078,7 +1078,7 @@ auto& loungePosition = (**result1129);
 std::expected<void, StarException> Vehicle::loungeAim(std::size_t index, Vec2F const& aimPosition) {
   auto result1128 = m_loungePositions.valueAt(index);
 if (!result1128) return std::unexpected(std::move(result1128.error()));
-auto& loungePosition = (**result1128);
+auto& loungePosition = result1128->get();
   if (isSlave())
     loungePosition.slaveNewAimPosition = aimPosition;
   else
@@ -1140,7 +1140,7 @@ std::size_t Vehicle::movingCollisionCount() const {
 std::expected<std::optional<PhysicsMovingCollision>, StarException> Vehicle::movingCollision(std::size_t positionIndex) const {
   auto result1124 = m_movingCollisions.valueAt(positionIndex);
 if (!result1124) return std::unexpected(std::move(result1124.error()));
-auto const& collisionConfig = (**result1124);
+auto const& collisionConfig = result1124->get();
   if (!collisionConfig.enabled.get())
     return {};
 
@@ -1175,8 +1175,8 @@ if (!result1122) return std::unexpected(std::move(result1122.error()));
 return std::move(*result1122);
 }
 
-MovementController* Vehicle::movementController() {
-  return m_movementController.get();
+MovementController& Vehicle::movementController() {
+  return *m_movementController;
 }
 
 void Vehicle::setPosition(Vec2F const& position) {
@@ -1197,7 +1197,7 @@ if (!result1004) return std::unexpected(std::move(result1004.error()));
 if (!LoungeControlNames) return std::unexpected(LoungeControlNames.error());
 auto result1005 = LoungeControlNames->getLeft(controlName);
 if (!result1005) return std::unexpected(std::move(result1005.error()));
-auto const& mc = (**result1004).masterControlState[(**result1005)];
+auto const& mc = result1004->get().masterControlState[result1005->get()];
       return mc.masterHeld || !mc.slavesHeld.empty();
     });
 if (!result1104) return std::unexpected(std::move(result1104.error()));
@@ -1205,7 +1205,7 @@ if (!result1104) return std::unexpected(std::move(result1104.error()));
   auto result1105 = callbacks.registerCallback("shiftingHeld", [this](String const& loungeName)  -> std::expected<bool, StarException> {
       auto result1000 = m_loungePositions.get(loungeName);
 if (!result1000) return std::unexpected(std::move(result1000.error()));
-auto const& mc = (**result1000).masterControlState[LoungeControl::Walk];
+auto const& mc = result1000->get().masterControlState[LoungeControl::Walk];
       if (mc.masterHeld || !mc.slavesHeld.empty())
         return true;
       else {
@@ -1216,7 +1216,7 @@ if (!result1002) return std::unexpected(std::move(result1002.error()));
 for (EntityId entity : std::move(*result1002)) {
           auto result1003 = world();
 if (!result1003) return std::unexpected(std::move(result1003.error()));
-if (auto player = std::move(*result1003)->get<Player>(entity))
+if (auto player = result1003->get().get<Player>(entity))
             return player->shifting();
         }
       }
@@ -1227,7 +1227,7 @@ if (!result1105) return std::unexpected(std::move(result1105.error()));
   auto result1106 = callbacks.registerCallback( "aimPosition", [this](String const& loungeName)  -> std::expected<Vec2F, StarException> {
       auto result999 = m_loungePositions.get(loungeName);
 if (!result999) return std::unexpected(std::move(result999.error()));
-return (**result999).masterAimPosition;
+return result999->get().masterAimPosition;
     });
 if (!result1106) return std::unexpected(std::move(result1106.error()));
 
@@ -1248,7 +1248,7 @@ if (!result1107) return std::unexpected(std::move(result1107.error()));
   auto result1108 = callbacks.registerCallback("setLoungeEnabled", [this](String const& name, bool enabled)  -> std::expected<void, StarException> {
       auto result995 = m_loungePositions.get(name);
 if (!result995) return std::unexpected(std::move(result995.error()));
-(**result995).enabled.set(enabled);
+result995->get().enabled.set(enabled);
       return {};
 });
 if (!result1108) return std::unexpected(std::move(result1108.error()));
@@ -1259,7 +1259,7 @@ if (!result993) return std::unexpected(std::move(result993.error()));
 if (!LoungeOrientationNames) return std::unexpected(LoungeOrientationNames.error());
 auto result994 = LoungeOrientationNames->getLeft(orientation);
 if (!result994) return std::unexpected(std::move(result994.error()));
-(**result993).orientation.set((**result994));
+result993->get().orientation.set(result994->get());
       return {};
 });
 if (!result1109) return std::unexpected(std::move(result1109.error()));
@@ -1267,7 +1267,7 @@ if (!result1109) return std::unexpected(std::move(result1109.error()));
   auto result1110 = callbacks.registerCallback("setLoungeEmote", [this](String const& name, std::optional<String> emote)  -> std::expected<void, StarException> {
       auto result992 = m_loungePositions.get(name);
 if (!result992) return std::unexpected(std::move(result992.error()));
-(**result992).emote.set(std::move(emote));
+result992->get().emote.set(std::move(emote));
       return {};
 });
 if (!result1110) return std::unexpected(std::move(result1110.error()));
@@ -1275,7 +1275,7 @@ if (!result1110) return std::unexpected(std::move(result1110.error()));
   auto result1111 = callbacks.registerCallback("setLoungeDance", [this](String const& name, std::optional<String> dance)  -> std::expected<void, StarException> {
       auto result991 = m_loungePositions.get(name);
 if (!result991) return std::unexpected(std::move(result991.error()));
-(**result991).dance.set(std::move(dance));
+result991->get().dance.set(std::move(dance));
       return {};
 });
 if (!result1111) return std::unexpected(std::move(result1111.error()));
@@ -1283,7 +1283,7 @@ if (!result1111) return std::unexpected(std::move(result1111.error()));
   auto result1112 = callbacks.registerCallback("setLoungeDirectives", [this](String const& name, std::optional<String> directives)  -> std::expected<void, StarException> {
       auto result990 = m_loungePositions.get(name);
 if (!result990) return std::unexpected(std::move(result990.error()));
-(**result990).directives.set(std::move(directives));
+result990->get().directives.set(std::move(directives));
       return {};
 });
 if (!result1112) return std::unexpected(std::move(result1112.error()));
@@ -1293,7 +1293,7 @@ if (!result1112) return std::unexpected(std::move(result1112.error()));
 if (!result988) return std::unexpected(std::move(result988.error()));
 auto result989 = jsonToList<PersistentStatusEffect>(Json(statusEffects),jsonToPersistentStatusEffect);
 if (!result989) return std::unexpected(std::move(result989.error()));
-(**result988).statusEffects.set(std::move(*result989));
+result988->get().statusEffects.set(std::move(*result989));
       return {};
 });
 if (!result1113) return std::unexpected(std::move(result1113.error()));
@@ -1319,7 +1319,7 @@ if (!result1116) return std::unexpected(std::move(result1116.error()));
   auto result1117 = callbacks.registerCallback("setDamageSourceEnabled", [this](String const& name, bool enabled)  -> std::expected<void, StarException> {
       auto result986 = m_damageSources.get(name);
 if (!result986) return std::unexpected(std::move(result986.error()));
-(**result986).enabled.set(enabled);
+result986->get().enabled.set(enabled);
       return {};
 });
 if (!result1117) return std::unexpected(std::move(result1117.error()));
@@ -1327,7 +1327,7 @@ if (!result1117) return std::unexpected(std::move(result1117.error()));
   auto result1118 = callbacks.registerCallback("setMovingCollisionEnabled", [this](String const& name, bool enabled)  -> std::expected<void, StarException> {
       auto result985 = m_movingCollisions.get(name);
 if (!result985) return std::unexpected(std::move(result985.error()));
-(**result985).enabled.set(enabled);
+result985->get().enabled.set(enabled);
       return {};
 });
 if (!result1118) return std::unexpected(std::move(result1118.error()));
@@ -1335,7 +1335,7 @@ if (!result1118) return std::unexpected(std::move(result1118.error()));
   auto result1119 = callbacks.registerCallback("setForceRegionEnabled", [this](String const& name, bool enabled)  -> std::expected<void, StarException> {
       auto result984 = m_forceRegions.get(name);
 if (!result984) return std::unexpected(std::move(result984.error()));
-(**result984).enabled.set(enabled);
+result984->get().enabled.set(enabled);
       return {};
 });
 if (!result1119) return std::unexpected(std::move(result1119.error()));

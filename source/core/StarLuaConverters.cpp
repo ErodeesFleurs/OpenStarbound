@@ -3,6 +3,7 @@ import star.format;
 import star.lua_converters;
 import star.lua;
 import star.color;
+import star.string_view;
 
 namespace Star {
 
@@ -16,10 +17,11 @@ std::expected<LuaValue, StarException> LuaConverter<Color>::from(LuaEngine& engi
 }
 
 std::expected<std::optional<Color>, StarException> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto t = std::get_if<LuaTable>(&v)) {
+  if (std::holds_alternative<LuaTable>(v)) {
+    auto const& table = std::get<LuaTable>(v);
     std::array<int, 3> channels;
     for (std::size_t i = 0; i < channels.size(); ++i) {
-      auto value = t->get<LuaValue>(i + 1);
+      auto value = table.get<LuaValue>(i + 1);
       if (!value)
         return std::unexpected(std::move(value.error()));
       auto channel = engine.luaMaybeTo<int>(*value);
@@ -30,7 +32,7 @@ std::expected<std::optional<Color>, StarException> LuaConverter<Color>::to(LuaEn
       channels[i] = **channel;
     }
     Color c = Color::rgba(channels[0], channels[1], channels[2], 255);
-    auto value = t->get<LuaValue>(4);
+    auto value = table.get<LuaValue>(4);
     if (!value)
       return std::unexpected(std::move(value.error()));
     auto alpha = engine.luaMaybeTo<int>(*value);
@@ -39,8 +41,9 @@ std::expected<std::optional<Color>, StarException> LuaConverter<Color>::to(LuaEn
     if (*alpha)
       c.setAlpha(**alpha);
     return c;
-  } else if (auto s = std::get_if<LuaString>(&v)) {
-    auto color = Color::create(s->ptr());
+  } else if (std::holds_alternative<LuaString>(v)) {
+    auto text = std::get<LuaString>(v).view().utf8();
+    auto color = Color::create(StringView(text.substr(0, text.find('\0'))));
     if (!color) {
       if (color.error().is<ColorException>())
         return std::nullopt;

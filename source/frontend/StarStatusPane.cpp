@@ -195,11 +195,11 @@ import star.image_metadata_database;
 
 namespace Star {
 
-StatusPane::StatusPane(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client)
-  : Pane(guiContext), m_paneManager(paneManager), m_client(std::move(client)), m_player(m_client->mainPlayer()) {}
+StatusPane::StatusPane(GuiContext& guiContext, std::shared_ptr<UniverseClient> client)
+  : Pane(guiContext), m_client(std::move(client)), m_player(m_client->mainPlayer()) {}
 
-std::expected<std::shared_ptr<StatusPane>, StarException> StatusPane::create(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client) {
-  auto pane = std::shared_ptr<StatusPane>(new StatusPane(guiContext, paneManager, std::move(client)));
+std::expected<std::shared_ptr<StatusPane>, StarException> StatusPane::create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client) {
+  auto pane = std::shared_ptr<StatusPane>(new StatusPane(guiContext, std::move(client)));
   auto base = pane->initializePane();
   if (!base) return std::unexpected(std::move(base.error()));
   auto assets = guiContext.root().assets();
@@ -207,18 +207,18 @@ std::expected<std::shared_ptr<StatusPane>, StarException> StatusPane::create(Gui
   auto layout = (*assets)->json("/interface/windowconfig/statuspane.config:paneLayout");
   if (!layout) return std::unexpected(std::move(layout.error()));
   GuiReader reader(guiContext);
-  auto constructed = reader.construct(*layout, pane.get());
+  auto constructed = reader.construct(*layout, *pane);
   if (!constructed) return std::unexpected(std::move(constructed.error()));
   pane->disableScissoring();
   return pane;
 }
 
 std::expected<std::shared_ptr<Pane>, StarException> StatusPane::createTooltip(Vec2I const& screenPosition) {
-  auto interfaceScale = context()->interfaceScale();
+  auto interfaceScale = context().interfaceScale();
   for (auto const& indicator : m_statusIndicators) {
     if (indicator.screenRect.contains(Vec2F(screenPosition * interfaceScale))) {
       if (!indicator.label.empty())
-        return SimpleTooltipBuilder::buildTooltip(*context(), indicator.label);
+        return SimpleTooltipBuilder::buildTooltip(context(), indicator.label);
     }
   }
   return std::shared_ptr<Pane>{};
@@ -227,10 +227,10 @@ std::expected<std::shared_ptr<Pane>, StarException> StatusPane::createTooltip(Ve
 std::expected<void, StarException> StatusPane::renderImpl() {
   auto rendered = Pane::renderImpl();
   if (!rendered) return std::unexpected(std::move(rendered.error()));
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
-  auto interfaceScale = context()->interfaceScale();
-  auto imageMetadataDatabase = context()->root().imageMetadataDatabase();
+  auto interfaceScale = context().interfaceScale();
+  auto imageMetadataDatabase = context().root().imageMetadataDatabase();
   if (!imageMetadataDatabase) return std::unexpected(std::move(imageMetadataDatabase.error()));
   auto darkenConfig = (*assets)->json("/interface.config:statusIconDarkenImage");
   if (!darkenConfig) return std::unexpected(std::move(darkenConfig.error()));
@@ -246,7 +246,7 @@ std::expected<void, StarException> StatusPane::renderImpl() {
       image += "?" + imageOperationToString(BlendImageOperation{
                          BlendImageOperation::Multiply, {*statusIconDarkenImage}, Vec2I(0, yOffset)});
     }
-    auto drawn = context()->drawQuad(image, entry.screenRect.min(), interfaceScale);
+    auto drawn = context().drawQuad(image, entry.screenRect.min(), interfaceScale);
     if (!drawn) return std::unexpected(std::move(drawn.error()));
   }
   return {};
@@ -255,15 +255,15 @@ std::expected<void, StarException> StatusPane::renderImpl() {
 std::expected<void, StarException> StatusPane::update(float dt) {
   auto updated = Pane::update(dt);
   if (!updated) return std::unexpected(std::move(updated.error()));
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
-  auto interfaceScale = context()->interfaceScale();
+  auto interfaceScale = context().interfaceScale();
   auto height = windowHeight();
   if (!height) return std::unexpected(std::move(height.error()));
   int roundWindowHeight = std::ceil(*height / interfaceScale) * interfaceScale;
-  auto imageMetadataDatabase = context()->root().imageMetadataDatabase();
+  auto imageMetadataDatabase = context().root().imageMetadataDatabase();
   if (!imageMetadataDatabase) return std::unexpected(std::move(imageMetadataDatabase.error()));
-  auto statusEffectDatabase = context()->root().statusEffectDatabase();
+  auto statusEffectDatabase = context().root().statusEffectDatabase();
   if (!statusEffectDatabase) return std::unexpected(std::move(statusEffectDatabase.error()));
   auto offsetConfig = (*assets)->json("/interface.config:statusIconPos");
   if (!offsetConfig) return std::unexpected(std::move(offsetConfig.error()));

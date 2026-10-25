@@ -280,7 +280,7 @@ private:
   };
 
   static bool logGlErrorSummary(String prefix);
-  [[nodiscard]] static std::expected<void, StarException> checkGlError(char const* operation);
+  [[nodiscard]] static std::expected<void, StarException> checkGlError(std::string_view operation);
   [[nodiscard]] static std::expected<void, StarException> uploadTextureImage(PixelFormat pixelFormat, Vec2U size, std::uint8_t const* data);
 
   
@@ -315,7 +315,7 @@ private:
   Json m_config;
 
   StringMap<Effect> m_effects;
-  Effect* m_currentEffect = nullptr;
+  std::optional<std::reference_wrapper<Effect>> m_currentEffect;
 
   StringMap<RefPtr<GlFrameBuffer>> m_frameBuffers;
   RefPtr<GlFrameBuffer> m_currentFrameBuffer;

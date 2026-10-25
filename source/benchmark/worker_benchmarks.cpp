@@ -23,9 +23,9 @@ bool runBatch(benchmark::State& state, Star::WorkerPool& pool,
         return std::accumulate(payload.begin(), payload.end(), std::uint64_t{0});
       }));
     } else {
-      completions.push_back(pool.addWork([payload, output = &outputs[i]]() -> std::expected<void, Star::StarException> {
+      completions.push_back(pool.addWork([payload, &output = outputs[i]]() -> std::expected<void, Star::StarException> {
         benchmark::DoNotOptimize(payload);
-        *output = std::accumulate(payload.begin(), payload.end(), std::uint64_t{0});
+        output = std::accumulate(payload.begin(), payload.end(), std::uint64_t{0});
         return {};
       }));
     }
@@ -51,7 +51,7 @@ bool runBatch(benchmark::State& state, Star::WorkerPool& pool,
         state.SkipWithError(result.error().what());
         return false;
       }
-      outputs[i] = **result;
+      outputs[i] = result->get();
     } else {
       auto result = completions[i].finish();
       if (!result) {

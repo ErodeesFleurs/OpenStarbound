@@ -35,7 +35,7 @@ namespace Star {
 
 
 struct ItemExceptionTag {
-  static constexpr char const* name() { return "ItemException"; }
+  static constexpr std::string_view name() { return "ItemException"; }
 };
 using ItemException = StarError<ItemExceptionTag, StarException>;
 
@@ -66,23 +66,23 @@ public:
 
   // Is this item type stackable with the given item type at all?  Base class
   // implementation compares name(), and m_parameters fields and returns true
-  // if they are both the same, similarly to matches.
-  virtual bool stackableWith(std::shared_ptr<Item const> const& item) const;
+  // if they are both the same, similarly to matches. Null is not stackable.
+  virtual bool stackableWith(std::optional<std::reference_wrapper<Item const>> item) const;
   std::uint64_t maxStack() const;
 
   // Return how many of the given item could be shifted into this item, taking
   // into acount whether the item is stackable at all, as well as maxStack and
-  // the count available.
-  std::uint64_t couldStack(std::shared_ptr<Item const> const& item) const;
+  // the count available. Null contributes no items.
+  std::uint64_t couldStack(std::optional<std::reference_wrapper<Item const>> item) const;
 
   // If the given item is stackable with this one, takes as many from the given
   // item as possible and shifts it into this item's count.  Returns true if
-  // any items at all were shifted.
-  bool stackWith(std::shared_ptr<Item> const& item);
+  // any items at all were shifted. Null is left unchanged and returns false.
+  bool stackWith(std::optional<std::reference_wrapper<Item>> item);
 
   // Does this item match the given item or itemDescriptor
   bool matches(ItemDescriptor const& descriptor, bool exactMatch = false) const;
-  bool matches(std::shared_ptr<Item const> const& other, bool exactMatch = false) const;
+  bool matches(Item const& other, bool exactMatch = false) const;
 
   // List of itemdescriptors for which the current item could be used in the
   // place of
@@ -117,7 +117,7 @@ public:
   virtual bool hasSecondaryDrawables() const;
 
   [[nodiscard]]
-  virtual std::expected<List<Drawable>, StarException> dropDrawables(TileDrawer* tileDrawer) const;
+  virtual std::expected<List<Drawable>, StarException> dropDrawables(std::optional<std::reference_wrapper<TileDrawer>> tileDrawer) const;
   String largeImage() const;
 
   String tooltipKind() const;
@@ -156,7 +156,7 @@ public:
   // Returns just the dynamic parameters
   Json parameters() const;
 
-  static bool itemsEqual(std::shared_ptr<Item const> const& a, std::shared_ptr<Item const> const& b);
+  static bool itemsEqual(std::optional<std::reference_wrapper<Item const>> a, std::optional<std::reference_wrapper<Item const>> b);
 
 protected:
   explicit Item(Root& root);
@@ -184,7 +184,7 @@ protected:
   String const& directory() const;
 
 private:
-  Root* m_root;
+  std::reference_wrapper<Root> m_root;
   Json m_config;
   String m_directory;
 

@@ -138,12 +138,12 @@ auto assets = std::move(*result1);
 
   auto result2 = assets->scanExtension("npctype");
 if (!result2) return std::unexpected(std::move(result2.error()));
-auto& files = (**result2);
+auto& files = result2->get();
   auto result3 = assets->queueJsons(files);
 if (!result3) return std::unexpected(std::move(result3.error()));
   for (auto const& assetFile : files) {
     auto const& file = assetFile.string();
-    auto loaded = [&]() -> std::expected<void, StarException> {
+    auto loaded = [&, &types = m_npcTypes]() -> std::expected<void, StarException> {
       auto result4 = assets->json(file);
 if (!result4) return std::unexpected(std::move(result4.error()));
 auto config = std::move(*result4);
@@ -151,10 +151,10 @@ auto config = std::move(*result4);
 if (!result5) return std::unexpected(std::move(result5.error()));
 String typeName = std::move(*result5);
 
-      if (m_npcTypes.contains(typeName))
+      if (types.contains(typeName))
         return std::unexpected(NpcException(strf("Repeat npc type name '{}'", typeName)));
 
-      m_npcTypes[typeName] = config;
+      types[typeName] = config;
 
       return {};
     }();
@@ -164,12 +164,12 @@ String typeName = std::move(*result5);
   return {};
 }
 
-std::expected<NpcVariant, StarException> NpcDatabase::generateNpcVariant(String const& species, String const& typeName, float level, ItemDatabase const* itemCatalog) const {
+std::expected<NpcVariant, StarException> NpcDatabase::generateNpcVariant(String const& species, String const& typeName, float level, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
   return generateNpcVariant(species, typeName, level, m_root.random().randu64(), {}, itemCatalog);
 }
 
 std::expected<NpcVariant, StarException> NpcDatabase::generateNpcVariant(
-    String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides, ItemDatabase const* itemCatalog) const {
+    String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
   NpcVariant variant;
   variant.species = species;
   variant.typeName = typeName;
@@ -286,9 +286,9 @@ auto usedHumanoidConfig = std::move(*result35);
     // this only needs to be done if the npc has a unique humanoid config, otherwise the output from generateHumanoid should be fine
     auto result36 = usedHumanoidConfig.getArray("personalities");
 if (!result36) return std::unexpected(std::move(result36.error()));
-auto result37 = randSource.randFrom(std::move(*result36));
+auto result37 = randSource.randFrom(*result36);
 if (!result37) return std::unexpected(std::move(result37.error()));
-auto result38 = parsePersonalityArray((**result37));
+auto result38 = parsePersonalityArray(result37->get());
 if (!result38) return std::unexpected(std::move(result38.error()));
 identity.personality = std::move(*result38);
   } else {
@@ -407,16 +407,16 @@ bool matchColorIndices = std::move(*result65);
         {
   auto result66 = highestLevelItemsConfig.toArray();
   if (!result66) return std::unexpected(std::move(result66.error()));
-  auto result67 = randSource.randFrom(std::move(*result66));
+  auto result67 = randSource.randFrom(*result66);
   if (!result67) return std::unexpected(std::move(result67.error()));
-  auto result68 = (**result67).toObject();
+  auto result68 = result67->get().toObject();
   if (!result68) return std::unexpected(std::move(result68.error()));
   for (auto itemSlotConfig : std::move(*result68)) {
             auto result69 = itemSlotConfig.second.toArray();
   if (!result69) return std::unexpected(std::move(result69.error()));
-  auto result70 = randSource.randFrom(std::move(*result69));
+  auto result70 = randSource.randFrom(*result69);
   if (!result70) return std::unexpected(std::move(result70.error()));
-  auto result71 = ItemDescriptor::create((**result70));
+  auto result71 = ItemDescriptor::create(result70->get());
   if (!result71) return std::unexpected(std::move(result71.error()));
   ItemDescriptor item = std::move(*result71);
 
@@ -433,9 +433,9 @@ bool matchColorIndices = std::move(*result65);
                     {
       auto result74 = colorIndex.toArray();
       if (!result74) return std::unexpected(std::move(result74.error()));
-      auto result75 = randSource.randFrom(std::move(*result74));
+      auto result75 = randSource.randFrom(*result74);
       if (!result75) return std::unexpected(std::move(result75.error()));
-      auto result76 = (**result75).toInt();
+      auto result76 = result75->get().toInt();
       if (!result76) return std::unexpected(std::move(result76.error()));
       randomColorIndex = std::move(*result76);
     }
@@ -479,7 +479,7 @@ if (!result84) return std::unexpected(std::move(result84.error()));
 if (!TeamTypeNames) return std::unexpected(TeamTypeNames.error());
 auto result85 = TeamTypeNames->getLeft(std::move(*result84));
 if (!result85) return std::unexpected(std::move(result85.error()));
-variant.damageTeamType = (**result85);
+variant.damageTeamType = result85->get();
 
   auto result86 = config.get("nametagColor", JsonArray{255, 255, 255});
 if (!result86) return std::unexpected(std::move(result86.error()));
@@ -748,7 +748,7 @@ JsonObject store {
     {"persistent", variant.persistent},
     {"keepAlive", variant.keepAlive},
     {"damageTeam", variant.damageTeam},
-    {"damageTeamType", (**result155)},
+    {"damageTeamType", result155->get()},
     {"humanoidParameters", variant.humanoidParameters}
   };
   if (variant.description.has_value())
@@ -912,7 +912,7 @@ if (!result200) return std::unexpected(std::move(result200.error()));
 if (!TeamTypeNames) return std::unexpected(TeamTypeNames.error());
 auto result201 = TeamTypeNames->getLeft(std::move(*result200));
 if (!result201) return std::unexpected(std::move(result201.error()));
-variant.damageTeamType = (**result201);
+variant.damageTeamType = result201->get();
 
   auto result202 = config.get("nametagColor", JsonArray{255, 255, 255});
 if (!result202) return std::unexpected(std::move(result202.error()));
@@ -934,12 +934,12 @@ std::expected<std::shared_ptr<Npc>, StarException> NpcDatabase::createNpc(NpcVar
 }
 
 std::expected<std::shared_ptr<Npc>, StarException> NpcDatabase::diskLoadNpc(Json const& diskStore) const {
-  auto attempt = [&](Json const& store) -> std::expected<std::shared_ptr<Npc>, StarException> {
+  auto attempt = [&, &database = *this](Json const& store) -> std::expected<std::shared_ptr<Npc>, StarException> {
     auto encoded = store.get("npcVariant");
     if (!encoded) return std::unexpected(std::move(encoded.error()));
-    auto variant = readNpcVariantFromJson(*encoded);
+    auto variant = database.readNpcVariantFromJson(*encoded);
     if (!variant) return std::unexpected(std::move(variant.error()));
-    return Npc::create(m_root, *variant, store);
+    return Npc::create(database.m_root, *variant, store);
   };
   auto npc = attempt(diskStore);
   if (npc)
@@ -967,7 +967,7 @@ if (!result206) return std::unexpected(std::move(result206.error()));
 return Npc::create(m_root, std::move(*result206));
 }
 
-std::expected<List<Drawable>, StarException> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode, ItemDatabase const* itemCatalog) const {
+std::expected<List<Drawable>, StarException> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
   auto result207 = Humanoid::create(m_root, npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json(), itemCatalog);
 if (!result207) return std::unexpected(std::move(result207.error()));
 auto humanoid = std::move(*result207);
@@ -977,11 +977,11 @@ auto humanoid = std::move(*result207);
     auto result208 = m_root.itemDatabase();
 if (!result208) return std::unexpected(std::move(result208.error()));
 itemDatabase = std::move(*result208);
-    itemCatalog = itemDatabase.get();
+    itemCatalog = std::cref(*itemDatabase);
   }
 
   auto makeItem = [&npcVariant, itemCatalog](ItemDescriptor itemDescriptor) -> std::expected<std::shared_ptr<Item>, StarException> {
-    return itemCatalog->item(itemDescriptor, npcVariant.level, npcVariant.seed);
+    return itemCatalog->get().item(itemDescriptor, npcVariant.level, npcVariant.seed);
   };
 
   auto result209 = ArmorWearer::create(m_root);
@@ -1010,7 +1010,7 @@ if (!result212) return std::unexpected(std::move(result212.error()));
 std::expected<Json, StarException> NpcDatabase::buildConfig(String const& typeName, Json const& overrides) const {
   auto result213 = m_npcTypes.get(typeName);
 if (!result213) return std::unexpected(std::move(result213.error()));
-auto const& baseConfig = (**result213);
+auto const& baseConfig = result213->get();
   auto result214 = mergeConfigValues(baseConfig, overrides);
 if (!result214) return std::unexpected(std::move(result214.error()));
 auto config = std::move(*result214);

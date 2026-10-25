@@ -100,18 +100,18 @@ std::expected<EntitySplashConfig, StarException> EntitySplashConfig::create(Root
   return splash;
 }
 
-std::expected<List<Particle>, StarException> EntitySplashConfig::doSplash(Vec2F position, Vec2F velocity, World* world) const {
+std::expected<List<Particle>, StarException> EntitySplashConfig::doSplash(Vec2F position, Vec2F velocity, World& world) const {
   List<Particle> particles;
   if (std::fabs(velocity[1]) >= splashSpeedMin) {
-    auto liquidDb = world->root().liquidsDatabase();
+    auto liquidDb = world.root().liquidsDatabase();
     if (!liquidDb)
       return std::unexpected(std::move(liquidDb.error()));
     Vec2I bottom = Vec2I::floor(position + splashBottomSensor);
     Vec2I top = Vec2I::floor(position + splashTopSensor);
-    if (world->liquidLevel(bottom).level - world->liquidLevel(top).level >= splashMinWaterLevel) {
+    if (world.liquidLevel(bottom).level - world.liquidLevel(top).level >= splashMinWaterLevel) {
       LiquidId liquidType;
-      auto bottomLiquid = world->liquidLevel(bottom);
-      auto topLiquid = world->liquidLevel(top);
+      auto bottomLiquid = world.liquidLevel(bottom);
+      auto topLiquid = world.liquidLevel(top);
       if (bottomLiquid.level > 0 && (int)bottomLiquid.liquid)
         liquidType = bottomLiquid.liquid;
       else
@@ -122,7 +122,7 @@ std::expected<List<Particle>, StarException> EntitySplashConfig::doSplash(Vec2F 
         newSplashParticle.position = position;
         newSplashParticle.velocity[1] = std::fabs(velocity[1]) * splashYVelocityFactor;
         newSplashParticle.color = particleColor;
-        newSplashParticle.applyVariance(world->root(), splashParticleVariance);
+        newSplashParticle.applyVariance(world.root(), splashParticleVariance);
         particles.append(newSplashParticle);
       }
     }

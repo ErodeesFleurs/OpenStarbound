@@ -57,14 +57,14 @@ extern std::expected<EnumMap<QuestState>, StarException> const QuestStateNames;
 
 class Quest {
 public:
-  [[nodiscard]] static std::expected<std::shared_ptr<Quest>, StarException> create(Root& root, QuestArcDescriptor const& questArc, std::size_t arcPos, Player* player);
+  [[nodiscard]] static std::expected<std::shared_ptr<Quest>, StarException> create(Root& root, QuestArcDescriptor const& questArc, std::size_t arcPos, Player& player);
 
   [[nodiscard]] static std::expected<std::shared_ptr<Quest>, StarException> create(Root& root, Json const& diskStore);
   [[nodiscard]] std::expected<Json, StarException> diskStore() const;
 
   [[nodiscard]] std::expected<std::shared_ptr<QuestTemplate>, StarException> getTemplate() const;
 
-  [[nodiscard]] std::expected<void, StarException> init(Player* player, World* world, UniverseClient* client);
+  [[nodiscard]] std::expected<void, StarException> init(Player& player, World& world, std::optional<std::reference_wrapper<UniverseClient>> client);
   [[nodiscard]] std::expected<void, StarException> uninit();
 
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
@@ -152,6 +152,8 @@ public:
   bool hideCrossServer() const;
 
 private:
+  friend class QuestManager;
+  void detachPlayer();
   explicit Quest(Root& root);
   Root& m_root;
   struct DisplayParameters {
@@ -167,17 +169,18 @@ private:
   void setState(QuestState state);
 
   [[nodiscard]] std::expected<void, StarException> initScript();
+  [[nodiscard]] std::expected<void, StarException> initScriptBindings();
   [[nodiscard]] std::expected<void, StarException> uninitScript();
-  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeQuestCallbacks(Player* player);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeQuestCallbacks(Player& player);
 
-  [[nodiscard]] std::expected<void, StarException> setEntityParameter(String const& paramName, Entity const* entity);
+  [[nodiscard]] std::expected<void, StarException> setEntityParameter(String const& paramName, Entity const& entity);
   [[nodiscard]] std::expected<void, StarException> addReward(ItemDescriptor const& reward);
 
   String const& defaultCustomIndicator() const;
 
-  Player* m_player;
-  World* m_world;
-  UniverseClient* m_client;
+  std::optional<std::reference_wrapper<Player>> m_player;
+  std::optional<std::reference_wrapper<World>> m_world;
+  std::optional<std::reference_wrapper<UniverseClient>> m_client;
 
   QuestState m_state;
   bool m_inited;
@@ -219,7 +222,7 @@ private:
 // in with examples. Doesn't necessarily make a valid quest that can be completed, since
 // its purpose is for previewing dialogs only.
 [[nodiscard]] std::expected<std::shared_ptr<Quest>, StarException> createPreviewQuest(
-    Root& root, String const& templateId, String const& position, String const& questGiverSpecies, Player* player);
+    Root& root, String const& templateId, String const& position, String const& questGiverSpecies, Player& player);
 }
 
 export module star.quests;

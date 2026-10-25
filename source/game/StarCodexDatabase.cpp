@@ -36,10 +36,10 @@ std::expected<std::shared_ptr<CodexDatabase>, StarException> CodexDatabase::crea
   auto codexConfig = assets->json("/codex.config");
   if (!codexConfig)
     return std::unexpected(std::move(codexConfig.error()));
-  auto queued = assets->queueJsons(**files);
+  auto queued = assets->queueJsons(files->get());
   if (!queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& assetFile : **files) {
+  for (auto const& assetFile : files->get()) {
     auto const& file = assetFile.string();
     auto loaded = [&]() -> std::expected<std::shared_ptr<Codex>, StarException> {
       auto codexJson = assets->json(file);
@@ -73,8 +73,8 @@ StringMap<std::shared_ptr<Codex const>> CodexDatabase::codexes() const {
 }
 
 std::shared_ptr<Codex const> CodexDatabase::codex(String const& codexId) const {
-  if (auto codex = m_codexes.ptr(codexId))
-    return *codex;
+  if (auto codex = m_codexes.maybeRef(codexId))
+    return codex->get();
   return {};
 }
 

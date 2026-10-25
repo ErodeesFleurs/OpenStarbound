@@ -217,27 +217,27 @@ namespace Star {
 static int const PlantAdjustmentLimit = 2;
 
 
-std::expected<std::shared_ptr<LiquidWorld>, StarException> LiquidWorld::create(WorldServer* world) {
+std::expected<std::shared_ptr<LiquidWorld>, StarException> LiquidWorld::create(WorldServer& world) {
   auto result = std::shared_ptr<LiquidWorld>(new LiquidWorld(world));
-  auto liquids = world->root().liquidsDatabase();
+  auto liquids = world.root().liquidsDatabase();
   if (!liquids) return std::unexpected(std::move(liquids.error()));
   result->m_liquidsDatabase = std::move(*liquids);
-  auto materials = world->root().materialDatabase();
+  auto materials = world.root().materialDatabase();
   if (!materials) return std::unexpected(std::move(materials.error()));
   result->m_materialDatabase = std::move(*materials);
   return result;
 }
 
 Vec2I LiquidWorld::uniqueLocation(Vec2I const& location) const {
-  return m_worldServer->geometry().xwrap(location);
+  return m_worldServer.geometry().xwrap(location);
 }
 
 std::expected<float, StarException> LiquidWorld::drainLevel(Vec2I const& location) const {
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   if (location[1] > worldTemplate->undergroundLevel()) {
-    auto autoconsttileResult1 = m_worldServer->getServerTile(location);
+    auto autoconsttileResult1 = m_worldServer.getServerTile(location);
     if (!autoconsttileResult1) return std::unexpected(std::move(autoconsttileResult1.error()));
-    auto const& tile = std::move((**autoconsttileResult1));
+    auto const& tile = std::move(autoconsttileResult1->get());
     if (auto condition75 = [&]() -> std::expected<bool, StarException> {
             auto conditionResult1 = m_materialDatabase->blocksLiquidFlow(tile.background);
       if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
@@ -246,9 +246,9 @@ std::expected<float, StarException> LiquidWorld::drainLevel(Vec2I const& locatio
     }(); !condition75)
       return std::unexpected(std::move(condition75.error()));
     else if (*condition75) {
-      auto autoconstbelowTileResult1 = m_worldServer->getServerTile(location + Vec2I(0, -1));
+      auto autoconstbelowTileResult1 = m_worldServer.getServerTile(location + Vec2I(0, -1));
       if (!autoconstbelowTileResult1) return std::unexpected(std::move(autoconstbelowTileResult1.error()));
-      auto const& belowTile = std::move((**autoconstbelowTileResult1));
+      auto const& belowTile = std::move(autoconstbelowTileResult1->get());
       if (auto condition74 = [&]() -> std::expected<bool, StarException> {
         return [&]() -> std::expected<bool, StarException> {
           auto left = [&]() -> std::expected<bool, StarException> {             auto conditionResult1 = m_materialDatabase->blocksLiquidFlow(belowTile.background);
@@ -278,9 +278,9 @@ std::expected<float, StarException> LiquidWorld::drainLevel(Vec2I const& locatio
 }
 
 std::expected<CellularLiquidCell<LiquidId>, StarException> LiquidWorld::cell(Vec2I const& location) const {
-  auto autoconsttileResult1 = m_worldServer->getServerTile(location);
+  auto autoconsttileResult1 = m_worldServer.getServerTile(location);
   if (!autoconsttileResult1) return std::unexpected(std::move(autoconsttileResult1.error()));
-  auto const& tile = std::move((**autoconsttileResult1));
+  auto const& tile = std::move(autoconsttileResult1->get());
   if (auto condition76 = [&]() -> std::expected<bool, StarException> {
         auto conditionResult1 = m_materialDatabase->blocksLiquidFlow(tile.foreground);
     if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
@@ -303,21 +303,21 @@ std::expected<CellularLiquidCell<LiquidId>, StarException> LiquidWorld::cell(Vec
 std::expected<void, StarException> LiquidWorld::setFlow(Vec2I const& location, CellularLiquidFlowCell<LiquidId> const& flow) {
   if (flow.liquid) {
     {
-      auto operationResult1 = m_worldServer->setLiquid(location, *flow.liquid, flow.level, flow.pressure);
+      auto operationResult1 = m_worldServer.setLiquid(location, *flow.liquid, flow.level, flow.pressure);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
-    auto autoconsttileResult1 = m_worldServer->getServerTile(location);
+    auto autoconsttileResult1 = m_worldServer.getServerTile(location);
     if (!autoconsttileResult1) return std::unexpected(std::move(autoconsttileResult1.error()));
-    auto const& tile = std::move((**autoconsttileResult1));
+    auto const& tile = std::move(autoconsttileResult1->get());
     if (auto materialInteraction = m_materialDatabase->liquidMaterialInteraction(*flow.liquid, tile.background)) {
       if (!materialInteraction->topOnly && tile.liquid.level >= materialInteraction->consumeLiquid) {
-        auto modifyTileCheckedResult1 = m_worldServer->modifyServerTile(location);
+        auto modifyTileCheckedResult1 = m_worldServer.modifyServerTile(location);
         if (!modifyTileCheckedResult1) return std::unexpected(std::move(modifyTileCheckedResult1.error()));
         if (auto modifyTile = std::move((*modifyTileCheckedResult1))) {
-          modifyTile->liquid.take(materialInteraction->consumeLiquid);
-          modifyTile->background = materialInteraction->transformTo;
+          modifyTile->get().liquid.take(materialInteraction->consumeLiquid);
+          modifyTile->get().background = materialInteraction->transformTo;
           {
-            auto operationResult1 = m_worldServer->activateLiquidLocation(location);
+            auto operationResult1 = m_worldServer.activateLiquidLocation(location);
             if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
           }
         }
@@ -325,13 +325,13 @@ std::expected<void, StarException> LiquidWorld::setFlow(Vec2I const& location, C
     }
     if (auto modInteraction = m_materialDatabase->liquidModInteraction(*flow.liquid, tile.backgroundMod)) {
       if (!modInteraction->topOnly && tile.liquid.level >= modInteraction->consumeLiquid) {
-        auto modifyTileCheckedResult1 = m_worldServer->modifyServerTile(location);
+        auto modifyTileCheckedResult1 = m_worldServer.modifyServerTile(location);
         if (!modifyTileCheckedResult1) return std::unexpected(std::move(modifyTileCheckedResult1.error()));
         if (auto modifyTile = std::move((*modifyTileCheckedResult1))) {
-          modifyTile->liquid.take(modInteraction->consumeLiquid);
-          modifyTile->backgroundMod = modInteraction->transformTo;
+          modifyTile->get().liquid.take(modInteraction->consumeLiquid);
+          modifyTile->get().backgroundMod = modInteraction->transformTo;
           {
-            auto operationResult1 = m_worldServer->activateLiquidLocation(location);
+            auto operationResult1 = m_worldServer.activateLiquidLocation(location);
             if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
           }
         }
@@ -339,7 +339,7 @@ std::expected<void, StarException> LiquidWorld::setFlow(Vec2I const& location, C
     }
   } else {
     {
-      auto operationResult1 = m_worldServer->setLiquid(location, EmptyLiquidId, 0.0f, 0.0f);
+      auto operationResult1 = m_worldServer.setLiquid(location, EmptyLiquidId, 0.0f, 0.0f);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
   }
@@ -348,21 +348,21 @@ std::expected<void, StarException> LiquidWorld::setFlow(Vec2I const& location, C
 }
 
 std::expected<void, StarException> LiquidWorld::liquidInteraction(Vec2I const& a, LiquidId aLiquid, Vec2I const& b, LiquidId bLiquid) {
-  auto handleInteraction = [this](Vec2I const& target, std::optional<LiquidInteractionResult> interaction) -> std::expected<void, StarException> {
+  auto handleInteraction = [&worldServer = m_worldServer](Vec2I const& target, std::optional<LiquidInteractionResult> interaction) -> std::expected<void, StarException> {
     if (interaction) {
       if (interaction->isLeft()) {
         {
           auto operationResult1 = interaction->left();
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
-          auto operationResult2 = m_worldServer->modifyTile(target, PlaceMaterial{TileLayer::Foreground, (**operationResult1), 0}, false);
+          auto operationResult2 = worldServer.modifyTile(target, PlaceMaterial{TileLayer::Foreground, operationResult1->get(), 0}, false);
           if (!operationResult2) return std::unexpected(std::move(operationResult2.error()));
         }
       } else {
-        auto liquidLevel = m_worldServer->liquidLevel(target);
+        auto liquidLevel = worldServer.liquidLevel(target);
         {
           auto operationResult1 = interaction->right();
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
-          auto operationResult2 = m_worldServer->setLiquid(target, (**operationResult1), liquidLevel.level, liquidLevel.level);
+          auto operationResult2 = worldServer.setLiquid(target, operationResult1->get(), liquidLevel.level, liquidLevel.level);
           if (!operationResult2) return std::unexpected(std::move(operationResult2.error()));
         }
       }
@@ -382,21 +382,21 @@ std::expected<void, StarException> LiquidWorld::liquidInteraction(Vec2I const& a
 }
 
 std::expected<void, StarException> LiquidWorld::liquidCollision(Vec2I const& liquidPos, LiquidId liquidId, Vec2I const& blockPos) {
-  auto autoconstblockTileResult1 = m_worldServer->getServerTile(blockPos);
+  auto autoconstblockTileResult1 = m_worldServer.getServerTile(blockPos);
   if (!autoconstblockTileResult1) return std::unexpected(std::move(autoconstblockTileResult1.error()));
-  auto const& blockTile = std::move((**autoconstblockTileResult1));
+  auto const& blockTile = std::move(autoconstblockTileResult1->get());
 
   if (auto materialInteraction = m_materialDatabase->liquidMaterialInteraction(liquidId, blockTile.foreground)) {
-    if ((!materialInteraction->topOnly || liquidPos[1] > blockPos[1]) && m_worldServer->liquidLevel(liquidPos).level >= materialInteraction->consumeLiquid) {
-      auto automodifyLiquidTileResult1 = m_worldServer->modifyServerTile(liquidPos);
+    if ((!materialInteraction->topOnly || liquidPos[1] > blockPos[1]) && m_worldServer.liquidLevel(liquidPos).level >= materialInteraction->consumeLiquid) {
+      auto automodifyLiquidTileResult1 = m_worldServer.modifyServerTile(liquidPos);
       if (!automodifyLiquidTileResult1) return std::unexpected(std::move(automodifyLiquidTileResult1.error()));
       auto modifyLiquidTile = std::move((*automodifyLiquidTileResult1));
-      auto automodifyBlockTileResult1 = m_worldServer->modifyServerTile(blockPos);
+      auto automodifyBlockTileResult1 = m_worldServer.modifyServerTile(blockPos);
       if (!automodifyBlockTileResult1) return std::unexpected(std::move(automodifyBlockTileResult1.error()));
       auto modifyBlockTile = std::move((*automodifyBlockTileResult1));
       if (modifyLiquidTile && modifyBlockTile) {
-        modifyLiquidTile->liquid.take(materialInteraction->consumeLiquid);
-        modifyBlockTile->foreground = materialInteraction->transformTo;
+        modifyLiquidTile->get().liquid.take(materialInteraction->consumeLiquid);
+        modifyBlockTile->get().foreground = materialInteraction->transformTo;
         if (auto condition77 = [&]() -> std::expected<bool, StarException> {
                     auto conditionResult1 = m_materialDatabase->isMultiColor(materialInteraction->transformTo);
           if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
@@ -405,27 +405,27 @@ std::expected<void, StarException> LiquidWorld::liquidCollision(Vec2I const& liq
         }(); !condition77)
           return std::unexpected(std::move(condition77.error()));
         else if (*condition77)
-          modifyBlockTile->foregroundColorVariant = DefaultMaterialColorVariant;
+          modifyBlockTile->get().foregroundColorVariant = DefaultMaterialColorVariant;
         {
-          auto operationResult1 = m_worldServer->activateLiquidLocation(liquidPos);
+          auto operationResult1 = m_worldServer.activateLiquidLocation(liquidPos);
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
         }
       }
     }
   }
   if (auto modInteraction = m_materialDatabase->liquidModInteraction(liquidId, blockTile.foregroundMod)) {
-    if ((!modInteraction->topOnly || liquidPos[1] > blockPos[1]) && m_worldServer->liquidLevel(liquidPos).level >= modInteraction->consumeLiquid) {
-      auto automodifyLiquidTileResult1 = m_worldServer->modifyServerTile(liquidPos);
+    if ((!modInteraction->topOnly || liquidPos[1] > blockPos[1]) && m_worldServer.liquidLevel(liquidPos).level >= modInteraction->consumeLiquid) {
+      auto automodifyLiquidTileResult1 = m_worldServer.modifyServerTile(liquidPos);
       if (!automodifyLiquidTileResult1) return std::unexpected(std::move(automodifyLiquidTileResult1.error()));
       auto modifyLiquidTile = std::move((*automodifyLiquidTileResult1));
-      auto automodifyBlockTileResult1 = m_worldServer->modifyServerTile(blockPos);
+      auto automodifyBlockTileResult1 = m_worldServer.modifyServerTile(blockPos);
       if (!automodifyBlockTileResult1) return std::unexpected(std::move(automodifyBlockTileResult1.error()));
       auto modifyBlockTile = std::move((*automodifyBlockTileResult1));
       if (modifyLiquidTile && modifyBlockTile) {
-        modifyLiquidTile->liquid.take(modInteraction->consumeLiquid);
-        modifyBlockTile->foregroundMod = modInteraction->transformTo;
+        modifyLiquidTile->get().liquid.take(modInteraction->consumeLiquid);
+        modifyBlockTile->get().foregroundMod = modInteraction->transformTo;
         {
-          auto operationResult1 = m_worldServer->activateLiquidLocation(liquidPos);
+          auto operationResult1 = m_worldServer.activateLiquidLocation(liquidPos);
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
         }
       }
@@ -435,23 +435,23 @@ std::expected<void, StarException> LiquidWorld::liquidCollision(Vec2I const& liq
   return {};
 }
 
-std::expected<std::shared_ptr<FallingBlocksWorld>, StarException> FallingBlocksWorld::create(WorldServer* world) {
+std::expected<std::shared_ptr<FallingBlocksWorld>, StarException> FallingBlocksWorld::create(WorldServer& world) {
   auto result = std::shared_ptr<FallingBlocksWorld>(new FallingBlocksWorld(world));
-  auto materials = world->root().materialDatabase();
+  auto materials = world.root().materialDatabase();
   if (!materials) return std::unexpected(std::move(materials.error()));
   result->m_materialDatabase = std::move(*materials);
   return result;
 }
 
 std::expected<FallingBlockType, StarException> FallingBlocksWorld::blockType(Vec2I const& pos) {
-  auto autoconsttileResult1 = m_worldServer->getServerTile(pos, true);
+  auto autoconsttileResult1 = m_worldServer.getServerTile(pos, true);
   if (!autoconsttileResult1) return std::unexpected(std::move(autoconsttileResult1.error()));
-  auto const& tile = std::move((**autoconsttileResult1));
+  auto const& tile = std::move(autoconsttileResult1->get());
   if (tile.rootSource) {
     return FallingBlockType::Immovable;
   } if (tile.foreground == EmptyMaterialId) {
     if (auto condition80 = [&]() -> std::expected<bool, StarException> {
-            auto conditionResult1 = m_worldServer->tileIsOccupied(pos, TileLayer::Foreground);
+            auto conditionResult1 = m_worldServer.tileIsOccupied(pos, TileLayer::Foreground);
       if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
       auto condition = std::move((*conditionResult1));
       return static_cast<bool>(condition);
@@ -485,56 +485,56 @@ std::expected<FallingBlockType, StarException> FallingBlocksWorld::blockType(Vec
 }
 
 std::expected<void, StarException> FallingBlocksWorld::moveBlock(Vec2I const& from, Vec2I const& to) {
-  auto& generationRoot = m_worldServer->root();
-  auto autofromTileResult1 = m_worldServer->modifyServerTile(from, true);
+  auto& generationRoot = m_worldServer.root();
+  auto autofromTileResult1 = m_worldServer.modifyServerTile(from, true);
   if (!autofromTileResult1) return std::unexpected(std::move(autofromTileResult1.error()));
   auto fromTile = std::move((*autofromTileResult1));
-  auto autotoTileResult1 = m_worldServer->modifyServerTile(to, true);
+  auto autotoTileResult1 = m_worldServer.modifyServerTile(to, true);
   if (!autotoTileResult1) return std::unexpected(std::move(autotoTileResult1.error()));
   auto toTile = std::move((*autotoTileResult1));
   if (!fromTile || !toTile)
     return {};
 
-  if (m_worldServer->isTileProtected(to)) {
-    auto rangeValuesResult1 = m_worldServer->destroyBlock(TileLayer::Foreground, from, true, true);
+  if (m_worldServer.isTileProtected(to)) {
+    auto rangeValuesResult1 = m_worldServer.destroyBlock(TileLayer::Foreground, from, true, true);
     if (!rangeValuesResult1) return std::unexpected(std::move(rangeValuesResult1.error()));
     auto rangeValues = std::move((*rangeValuesResult1));
     for (auto drop : rangeValues)
       {
         auto operationResult1 = ItemDrop::createRandomizedDrop(generationRoot, drop, Vec2F(to));
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
-        auto operationResult2 = m_worldServer->addEntity((*operationResult1));
+        auto operationResult2 = m_worldServer.addEntity((*operationResult1));
         if (!operationResult2) return std::unexpected(std::move(operationResult2.error()));
       }
   } else {
-    toTile->foreground = fromTile->foreground;
-    toTile->foregroundMod = NoModId;
-    toTile->foregroundHueShift = fromTile->foregroundHueShift;
-    toTile->foregroundColorVariant = fromTile->foregroundColorVariant;
+    toTile->get().foreground = fromTile->get().foreground;
+    toTile->get().foregroundMod = NoModId;
+    toTile->get().foregroundHueShift = fromTile->get().foregroundHueShift;
+    toTile->get().foregroundColorVariant = fromTile->get().foregroundColorVariant;
     {
-      auto operationResult1 = m_materialDatabase->materialCollisionKind(toTile->foreground);
+      auto operationResult1 = m_materialDatabase->materialCollisionKind(toTile->get().foreground);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
-      toTile->updateCollision((*operationResult1));
+      toTile->get().updateCollision((*operationResult1));
     }
 
-    fromTile->foreground = EmptyMaterialId;
-    fromTile->foregroundMod = NoModId;
-    fromTile->updateCollision(CollisionKind::None);
-    m_worldServer->requestGlobalBreakCheck();
+    fromTile->get().foreground = EmptyMaterialId;
+    fromTile->get().foregroundMod = NoModId;
+    fromTile->get().updateCollision(CollisionKind::None);
+    m_worldServer.requestGlobalBreakCheck();
   }
 
   return {};
 }
 
-DungeonGeneratorWorld::DungeonGeneratorWorld(WorldServer* worldServer, bool markForActivation)
+DungeonGeneratorWorld::DungeonGeneratorWorld(WorldServer& worldServer, bool markForActivation)
   : m_worldServer(worldServer), m_markForActivation(markForActivation) {}
 
 WorldGeometry DungeonGeneratorWorld::getWorldGeometry() const {
-  return m_worldServer->geometry();
+  return m_worldServer.geometry();
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::markRegion(RectI const& region) {
-  auto& generationRoot = m_worldServer->root();
+  auto& generationRoot = m_worldServer.root();
   if (!m_markForActivation)
     return {};
   {
@@ -542,11 +542,11 @@ std::expected<void, StarException> DungeonGeneratorWorld::markRegion(RectI const
     if (!logged) return std::unexpected(std::move(logged.error()));
   }
   {
-    auto operationResult1 = m_worldServer->signalRegion(region);
+    auto operationResult1 = m_worldServer.signalRegion(region);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
   {
-    auto operationResult1 = m_worldServer->activateLiquidRegion(region);
+    auto operationResult1 = m_worldServer.activateLiquidRegion(region);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
 
@@ -554,8 +554,8 @@ std::expected<void, StarException> DungeonGeneratorWorld::markRegion(RectI const
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::markTerrain(PolyF const& region) {
-  auto& generationRoot = m_worldServer->root();
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+  auto& generationRoot = m_worldServer.root();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   if (!m_markForActivation)
     return {};
   {
@@ -568,8 +568,8 @@ std::expected<void, StarException> DungeonGeneratorWorld::markTerrain(PolyF cons
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::markSpace(PolyF const& region) {
-  auto& generationRoot = m_worldServer->root();
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+  auto& generationRoot = m_worldServer.root();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   if (!m_markForActivation)
     return {};
   {
@@ -582,52 +582,52 @@ std::expected<void, StarException> DungeonGeneratorWorld::markSpace(PolyF const&
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::setForegroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant) {
-  auto& generationRoot = m_worldServer->root();
-  auto tileCheckedResult1 = m_worldServer->modifyServerTile(position);
+  auto& generationRoot = m_worldServer.root();
+  auto tileCheckedResult1 = m_worldServer.modifyServerTile(position);
   if (!tileCheckedResult1) return std::unexpected(std::move(tileCheckedResult1.error()));
-  if (ServerTile* tile = std::move((*tileCheckedResult1))) {
+  if (auto tile = std::move((*tileCheckedResult1))) {
     {
-      auto operationResult1 = m_worldServer->modifyLiquid(position, EmptyLiquidId, 0);
+      auto operationResult1 = m_worldServer.modifyLiquid(position, EmptyLiquidId, 0);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
-    tile->foreground = material;
-    tile->foregroundHueShift = hueshift;
-    tile->foregroundColorVariant = colorVariant;
-    tile->foregroundMod = NoModId;
-    tile->foregroundModHueShift = MaterialHue();
+    tile->get().foreground = material;
+    tile->get().foregroundHueShift = hueshift;
+    tile->get().foregroundColorVariant = colorVariant;
+    tile->get().foregroundMod = NoModId;
+    tile->get().foregroundModHueShift = MaterialHue();
     auto tilecollisionResult1 = generationRoot.materialDatabase();
     if (!tilecollisionResult1) return std::unexpected(std::move(tilecollisionResult1.error()));
-    auto tilecollisionResult2 = (*tilecollisionResult1)->materialCollisionKind(tile->foreground);
+    auto tilecollisionResult2 = (*tilecollisionResult1)->materialCollisionKind(tile->get().foreground);
     if (!tilecollisionResult2) return std::unexpected(std::move(tilecollisionResult2.error()));
-    tile->collision = std::move((*tilecollisionResult2));
-    tile->collisionCacheDirty = true;
+    tile->get().collision = std::move((*tilecollisionResult2));
+    tile->get().collisionCacheDirty = true;
   }
 
   return {};
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::setBackgroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant) {
-  auto tileCheckedResult1 = m_worldServer->modifyServerTile(position);
+  auto tileCheckedResult1 = m_worldServer.modifyServerTile(position);
   if (!tileCheckedResult1) return std::unexpected(std::move(tileCheckedResult1.error()));
-  if (ServerTile* tile = std::move((*tileCheckedResult1))) {
+  if (auto tile = std::move((*tileCheckedResult1))) {
     {
-      auto operationResult1 = m_worldServer->modifyLiquid(position, EmptyLiquidId, 0);
+      auto operationResult1 = m_worldServer.modifyLiquid(position, EmptyLiquidId, 0);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
-    tile->background = material;
-    tile->backgroundHueShift = hueshift;
-    tile->backgroundColorVariant = colorVariant;
-    tile->backgroundMod = NoModId;
-    tile->backgroundModHueShift = MaterialHue();
+    tile->get().background = material;
+    tile->get().backgroundHueShift = hueshift;
+    tile->get().backgroundColorVariant = colorVariant;
+    tile->get().backgroundMod = NoModId;
+    tile->get().backgroundModHueShift = MaterialHue();
   }
 
   return {};
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::placeObject(Vec2I const& pos, String const& objectName, Star::Direction direction, Json const& parameters) {
-  auto& generationRoot = m_worldServer->root();
+  auto& generationRoot = m_worldServer.root();
   {
-    auto operationResult1 = m_worldServer->signalRegion(RectI::withSize(pos, {1, 1}));
+    auto operationResult1 = m_worldServer.signalRegion(RectI::withSize(pos, {1, 1}));
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
   auto autoobjectDatabaseResult1 = generationRoot.objectDatabase();
@@ -637,7 +637,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::placeObject(Vec2I cons
   if (!objectCheckedResult1) return std::unexpected(std::move(objectCheckedResult1.error()));
   if (auto object = std::move((*objectCheckedResult1)))
     {
-      auto operationResult1 = m_worldServer->addEntity(object);
+      auto operationResult1 = m_worldServer.addEntity(object);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
   else
@@ -650,9 +650,9 @@ std::expected<void, StarException> DungeonGeneratorWorld::placeObject(Vec2I cons
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters) {
-  auto& generationRoot = m_worldServer->root();
+  auto& generationRoot = m_worldServer.root();
   {
-    auto operationResult1 = m_worldServer->signalRegion(RectI::withSize(Vec2I(pos), {1, 1}));
+    auto operationResult1 = m_worldServer.signalRegion(RectI::withSize(Vec2I(pos), {1, 1}));
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
   auto autovehicleDatabaseResult1 = generationRoot.vehicleDatabase();
@@ -665,7 +665,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::placeVehicle(Vec2F con
   auto vehicle = std::move(*created);
   vehicle->setPosition(pos);
   {
-    auto operationResult1 = m_worldServer->addEntity(vehicle);
+    auto operationResult1 = m_worldServer.addEntity(vehicle);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
 
@@ -673,7 +673,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::placeVehicle(Vec2F con
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::placeSurfaceBiomeItems(Vec2I const& pos) {
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   auto ListBiomeItemPlacementsurfaceItemsResult1 = worldTemplate->potentialBiomeItemsAt(pos[0], pos[1]);
   if (!ListBiomeItemPlacementsurfaceItemsResult1) return std::unexpected(std::move(ListBiomeItemPlacementsurfaceItemsResult1.error()));
   List<BiomeItemPlacement> surfaceItems = std::move((*ListBiomeItemPlacementsurfaceItemsResult1).surfaceBiomeItems);
@@ -686,13 +686,13 @@ std::expected<void, StarException> DungeonGeneratorWorld::placeSurfaceBiomeItems
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::placeBiomeTree(Vec2I const& pos) {
-  auto& generationRoot = m_worldServer->root();
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+  auto& generationRoot = m_worldServer.root();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   auto biomeCheckedResult1 = worldTemplate->blockBiome(pos[0], pos[1]);
   if (!biomeCheckedResult1) return std::unexpected(std::move(biomeCheckedResult1.error()));
   if (auto biome = std::move((*biomeCheckedResult1))) {
     {
-      auto operationResult1 = m_worldServer->signalRegion(RectI::withSize(pos, {1, 1}));
+      auto operationResult1 = m_worldServer.signalRegion(RectI::withSize(pos, {1, 1}));
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
     auto seed = worldTemplate->seedFor(pos[0], pos[1]);
@@ -712,16 +712,16 @@ std::expected<void, StarException> DungeonGeneratorWorld::placeBiomeTree(Vec2I c
 
 // yay, copy paste coding, kyren WILL kill me
 std::expected<void, StarException> DungeonGeneratorWorld::placePlant(std::shared_ptr<Plant> const& plant, Vec2I const& position) {
-  auto& generationRoot = m_worldServer->root();
+  auto& generationRoot = m_worldServer.root();
   if (!plant)
     return {};
 
   auto spaces = plant->spaces();
   auto roots = plant->roots();
   auto const& primaryRoot = plant->primaryRoot();
-  auto autobackgroundResult1 = m_worldServer->getServerTile(position);
+  auto autobackgroundResult1 = m_worldServer.getServerTile(position);
   if (!autobackgroundResult1) return std::unexpected(std::move(autobackgroundResult1.error()));
-  auto background = std::move((**autobackgroundResult1).background);
+  auto background = std::move(autobackgroundResult1->get().background);
   bool adjustBackground = background == EmptyMaterialId || background == NullMaterialId;
 
   auto withinAdjustment = [=](Vec2I const& pos) {
@@ -730,12 +730,12 @@ std::expected<void, StarException> DungeonGeneratorWorld::placePlant(std::shared
 
   // Bail out if we don't have at least one free space, and root in the primary
   // root position, or if we're in a dungeon region.
-  auto autoprimaryTileResult1 = m_worldServer->getServerTile(position);
+  auto autoprimaryTileResult1 = m_worldServer.getServerTile(position);
   if (!autoprimaryTileResult1) return std::unexpected(std::move(autoprimaryTileResult1.error()));
-  auto primaryTile = std::move((**autoprimaryTileResult1));
-  auto autorootTileResult1 = m_worldServer->getServerTile(position + primaryRoot);
+  auto primaryTile = std::move(autoprimaryTileResult1->get());
+  auto autorootTileResult1 = m_worldServer.getServerTile(position + primaryRoot);
   if (!autorootTileResult1) return std::unexpected(std::move(autorootTileResult1.error()));
-  auto rootTile = std::move((**autorootTileResult1));
+  auto rootTile = std::move(autorootTileResult1->get());
   if (isConnectableMaterial(primaryTile.foreground) || !isConnectableMaterial(rootTile.foreground))
     return {};
 
@@ -749,7 +749,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::placePlant(std::shared
           return static_cast<bool>(condition); }();
         if (!left) return std::unexpected(std::move(left.error()));
         if (!*left) return false;
-                auto conditionResult1 = m_worldServer->atTile<Plant>(pspace);
+                auto conditionResult1 = m_worldServer.atTile<Plant>(pspace);
         if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
         auto condition = std::move(!(*conditionResult1).empty());
         return static_cast<bool>(condition);
@@ -761,9 +761,9 @@ std::expected<void, StarException> DungeonGeneratorWorld::placePlant(std::shared
 
     // Bail out if we hit a different plant's root tile, or if we're not in the
     // adjustment space and we hit a non-empty tile.
-    auto autotileResult1 = m_worldServer->getServerTile(pspace);
+    auto autotileResult1 = m_worldServer.getServerTile(pspace);
     if (!autotileResult1) return std::unexpected(std::move(autotileResult1.error()));
-    auto tile = std::move((**autotileResult1));
+    auto tile = std::move(autotileResult1->get());
     if (tile.rootSource || (!withinAdjustment(space) && !(tile.foreground == EmptyMaterialId || tile.foreground == NullMaterialId)))
       return {};
   }
@@ -777,9 +777,9 @@ std::expected<void, StarException> DungeonGeneratorWorld::placePlant(std::shared
           return static_cast<bool>(condition); }();
         if (!left) return std::unexpected(std::move(left.error()));
         if (!*left) return false;
-                auto conditionResult1 = m_worldServer->getServerTile(root);
+                auto conditionResult1 = m_worldServer.getServerTile(root);
         if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
-        auto condition = std::move(!isConnectableMaterial((**conditionResult1).foreground));
+        auto condition = std::move(!isConnectableMaterial(conditionResult1->get().foreground));
         return static_cast<bool>(condition);
       }();
     }(); !condition82)
@@ -794,20 +794,20 @@ std::expected<void, StarException> DungeonGeneratorWorld::placePlant(std::shared
       continue;
 
     space += position;
-    auto tileCheckedResult1 = m_worldServer->modifyServerTile(space);
+    auto tileCheckedResult1 = m_worldServer.modifyServerTile(space);
     if (!tileCheckedResult1) return std::unexpected(std::move(tileCheckedResult1.error()));
     if (auto tile = std::move((*tileCheckedResult1))) {
-      if (isConnectableMaterial(tile->foreground))
-        *tile = primaryTile;
+      if (isConnectableMaterial(tile->get().foreground))
+        tile->get() = primaryTile;
       if (adjustBackground)
-        tile->background = EmptyMaterialId;
-      tile->collision = CollisionKind::None;
+        tile->get().background = EmptyMaterialId;
+      tile->get().collision = CollisionKind::None;
       auto tilecollisionResult1 = generationRoot.materialDatabase();
       if (!tilecollisionResult1) return std::unexpected(std::move(tilecollisionResult1.error()));
-      auto tilecollisionResult2 = (*tilecollisionResult1)->materialCollisionKind(tile->foreground);
+      auto tilecollisionResult2 = (*tilecollisionResult1)->materialCollisionKind(tile->get().foreground);
       if (!tilecollisionResult2) return std::unexpected(std::move(tilecollisionResult2.error()));
-      tile->collision = std::move((*tilecollisionResult2));
-      tile->collisionCacheDirty = true;
+      tile->get().collision = std::move((*tilecollisionResult2));
+      tile->get().collisionCacheDirty = true;
     } else {
       return {};
     }
@@ -816,17 +816,17 @@ std::expected<void, StarException> DungeonGeneratorWorld::placePlant(std::shared
   // Make all the root blocks a real material based on the primary root.
   for (auto root : roots) {
     root += position;
-    auto tileCheckedResult1 = m_worldServer->modifyServerTile(root);
+    auto tileCheckedResult1 = m_worldServer.modifyServerTile(root);
     if (!tileCheckedResult1) return std::unexpected(std::move(tileCheckedResult1.error()));
     if (auto tile = std::move((*tileCheckedResult1))) {
-      if (!isRealMaterial(tile->foreground)) {
-        *tile = rootTile;
+      if (!isRealMaterial(tile->get().foreground)) {
+        tile->get() = rootTile;
         auto tilecollisionResult1 = generationRoot.materialDatabase();
         if (!tilecollisionResult1) return std::unexpected(std::move(tilecollisionResult1.error()));
-        auto tilecollisionResult2 = (*tilecollisionResult1)->materialCollisionKind(tile->foreground);
+        auto tilecollisionResult2 = (*tilecollisionResult1)->materialCollisionKind(tile->get().foreground);
         if (!tilecollisionResult2) return std::unexpected(std::move(tilecollisionResult2.error()));
-        tile->collision = std::move((*tilecollisionResult2));
-        tile->collisionCacheDirty = true;
+        tile->get().collision = std::move((*tilecollisionResult2));
+        tile->get().collisionCacheDirty = true;
       }
     } else {
       return {};
@@ -837,17 +837,17 @@ std::expected<void, StarException> DungeonGeneratorWorld::placePlant(std::shared
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
   {
-    auto operationResult1 = m_worldServer->addEntity(plant);
+    auto operationResult1 = m_worldServer.addEntity(plant);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
   return {};
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlacement>& potentialItems) {
-  auto& generationRoot = m_worldServer->root();
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+  auto& generationRoot = m_worldServer.root();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   {
-    auto operationResult1 = m_worldServer->signalRegion(RectI::withSize(pos, {1, 1}));
+    auto operationResult1 = m_worldServer.signalRegion(RectI::withSize(pos, {1, 1}));
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
   std::sort(potentialItems.begin(), potentialItems.end(), std::less<BiomeItemPlacement>());
@@ -899,7 +899,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::placeBiomeItems(Vec2I 
       if (!objectCheckedResult2) return std::unexpected(std::move(objectCheckedResult2.error()));
       if (auto object = std::move((*objectCheckedResult2)))
         {
-          auto operationResult1 = m_worldServer->addEntity(object);
+          auto operationResult1 = m_worldServer.addEntity(object);
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
         }
     } else if (std::holds_alternative<TreasureBoxSet>(placement.item)) {
@@ -911,7 +911,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::placeBiomeItems(Vec2I 
       if (!treasureContainerCheckedResult2) return std::unexpected(std::move(treasureContainerCheckedResult2.error()));
       if (auto treasureContainer = std::move((*treasureContainerCheckedResult2)))
         {
-          auto operationResult1 = m_worldServer->addEntity(treasureContainer);
+          auto operationResult1 = m_worldServer.addEntity(treasureContainer);
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
         }
     }
@@ -921,11 +921,11 @@ std::expected<void, StarException> DungeonGeneratorWorld::placeBiomeItems(Vec2I 
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::addDrop(Vec2F const& position, ItemDescriptor const& item) {
-  auto& generationRoot = m_worldServer->root();
+  auto& generationRoot = m_worldServer.root();
   {
     auto operationResult1 = ItemDrop::createRandomizedDrop(generationRoot, item, position);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
-    auto operationResult2 = m_worldServer->addEntity((*operationResult1));
+    auto operationResult2 = m_worldServer.addEntity((*operationResult1));
     if (!operationResult2) return std::unexpected(std::move(operationResult2.error()));
   }
 
@@ -933,7 +933,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::addDrop(Vec2F const& p
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& parameters) {
-  auto& generationRoot = m_worldServer->root();
+  auto& generationRoot = m_worldServer.root();
   auto autokindResult1 = parameters.getString("kind");
   if (!autokindResult1) return std::unexpected(std::move(autokindResult1.error()));
   auto kind = std::move((*autokindResult1));
@@ -962,7 +962,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::spawnNpc(Vec2F const& 
     JsonObject uniqueParameters = std::move((*JsonObjectuniqueParametersResult1));
     if (!uniqueParameters.contains("persistent"))
       uniqueParameters["persistent"] = true;
-    auto autonpcResult1 = m_worldServer->threatLevel();
+    auto autonpcResult1 = m_worldServer.threatLevel();
     if (!autonpcResult1) return std::unexpected(std::move(autonpcResult1.error()));
     auto autonpcResult2 = npcDatabase->generateNpcVariant(species, typeName, (*autonpcResult1), seed, uniqueParameters);
     if (!autonpcResult2) return std::unexpected(std::move(autonpcResult2.error()));
@@ -975,7 +975,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::spawnNpc(Vec2F const& 
       npc->setPosition(position - (*operationResult1));
     }
     {
-      auto operationResult1 = m_worldServer->addEntity(npc);
+      auto operationResult1 = m_worldServer.addEntity(npc);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
   } else if (auto condition84 = [&]() -> std::expected<bool, StarException> {
@@ -1007,7 +1007,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::spawnNpc(Vec2F const& 
     auto monster = std::move((*automonsterResult2));
     monster->setPosition(position);
     {
-      auto operationResult1 = m_worldServer->addEntity(monster);
+      auto operationResult1 = m_worldServer.addEntity(monster);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
   } else
@@ -1017,7 +1017,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::spawnNpc(Vec2F const& 
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::spawnStagehand(Vec2F const& position, Json const& definition) {
-  auto& generationRoot = m_worldServer->root();
+  auto& generationRoot = m_worldServer.root();
   auto autostagehandResult1 = generationRoot.stagehandDatabase();
   if (!autostagehandResult1) return std::unexpected(std::move(autostagehandResult1.error()));
   auto autostagehandResult2 = definition.getString("type");
@@ -1029,7 +1029,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::spawnStagehand(Vec2F c
   auto stagehand = std::move((*autostagehandResult4));
   stagehand->setPosition(position);
   {
-    auto operationResult1 = m_worldServer->addEntity(stagehand);
+    auto operationResult1 = m_worldServer.addEntity(stagehand);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
 
@@ -1037,25 +1037,25 @@ std::expected<void, StarException> DungeonGeneratorWorld::spawnStagehand(Vec2F c
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::setLiquid(Vec2I const& pos, LiquidStore const& liquid) {
-  auto ServerTiletileResult1 = m_worldServer->modifyServerTile(pos);
+  auto ServerTiletileResult1 = m_worldServer.modifyServerTile(pos);
   if (!ServerTiletileResult1) return std::unexpected(std::move(ServerTiletileResult1.error()));
-  ServerTile* tile = std::move((*ServerTiletileResult1));
+  auto tile = std::move((*ServerTiletileResult1));
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((tile));
   }
   if (tile)
-    tile->liquid = liquid;
+    tile->get().liquid = liquid;
 
   return {};
 }
 
-std::expected<void, StarException> DungeonGeneratorWorld::setPlayerStart(Vec2F const& startPosition) {  m_worldServer->setPlayerStart(startPosition);
+std::expected<void, StarException> DungeonGeneratorWorld::setPlayerStart(Vec2F const& startPosition) {  m_worldServer.setPlayerStart(startPosition);
 
   return {};
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::connectWireGroup(List<Vec2I> const& wireGroup) {
-  auto& generationRoot = m_worldServer->root();
+  auto& generationRoot = m_worldServer.root();
   List<WireConnection> outbounds;
   List<WireConnection> inbounds;
 
@@ -1063,7 +1063,7 @@ std::expected<void, StarException> DungeonGeneratorWorld::connectWireGroup(List<
     bool found = false;
     Vec2F posf = centerOfTile(entry);
     RectF bounds = {posf - Vec2F(16, 16), posf + Vec2F(16, 16)};
-    auto rangeValuesResult1 = m_worldServer->query<WireEntity>(bounds);
+    auto rangeValuesResult1 = m_worldServer.query<WireEntity>(bounds);
     if (!rangeValuesResult1) return std::unexpected(std::move(rangeValuesResult1.error()));
     auto rangeValues = std::move((*rangeValuesResult1));
     for (auto entity : rangeValues) {
@@ -1110,17 +1110,17 @@ std::expected<void, StarException> DungeonGeneratorWorld::connectWireGroup(List<
   }
 
   for (auto outbound : outbounds) {
-    auto autooutResult1 = m_worldServer->atTile<WireEntity>(outbound.entityLocation);
+    auto autooutResult1 = m_worldServer.atTile<WireEntity>(outbound.entityLocation);
     if (!autooutResult1) return std::unexpected(std::move(autooutResult1.error()));
     auto autooutResult2 = (*autooutResult1).first();
     if (!autooutResult2) return std::unexpected(std::move(autooutResult2.error()));
-    auto out = std::move((**autooutResult2));
+    auto out = std::move(autooutResult2->get());
     for (auto inbound : inbounds) {
-      auto autoinResult1 = m_worldServer->atTile<WireEntity>(inbound.entityLocation);
+      auto autoinResult1 = m_worldServer.atTile<WireEntity>(inbound.entityLocation);
       if (!autoinResult1) return std::unexpected(std::move(autoinResult1.error()));
       auto autoinResult2 = (*autoinResult1).first();
       if (!autoinResult2) return std::unexpected(std::move(autoinResult2.error()));
-      auto in = std::move((**autoinResult2));
+      auto in = std::move(autoinResult2->get());
       {
         auto operationResult1 = in->addNodeConnection({WireDirection::Input, inbound.nodeIndex}, outbound);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
@@ -1136,31 +1136,31 @@ std::expected<void, StarException> DungeonGeneratorWorld::connectWireGroup(List<
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::setForegroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift) {
-  auto ServerTiletileResult1 = m_worldServer->modifyServerTile(position);
+  auto ServerTiletileResult1 = m_worldServer.modifyServerTile(position);
   if (!ServerTiletileResult1) return std::unexpected(std::move(ServerTiletileResult1.error()));
-  ServerTile* tile = std::move((*ServerTiletileResult1));
+  auto tile = std::move((*ServerTiletileResult1));
   if (tile) {
-    tile->foregroundMod = mod;
-    tile->foregroundModHueShift = hueshift;
+    tile->get().foregroundMod = mod;
+    tile->get().foregroundModHueShift = hueshift;
   }
 
   return {};
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::setBackgroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift) {
-  auto ServerTiletileResult1 = m_worldServer->modifyServerTile(position);
+  auto ServerTiletileResult1 = m_worldServer.modifyServerTile(position);
   if (!ServerTiletileResult1) return std::unexpected(std::move(ServerTiletileResult1.error()));
-  ServerTile* tile = std::move((*ServerTiletileResult1));
+  auto tile = std::move((*ServerTiletileResult1));
   if (tile) {
-    tile->backgroundMod = mod;
-    tile->foregroundModHueShift = hueshift;
+    tile->get().backgroundMod = mod;
+    tile->get().foregroundModHueShift = hueshift;
   }
 
   return {};
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::setTileProtection(DungeonId dungeonId, bool isProtected) {  {
-    auto operationResult1 = m_worldServer->setTileProtection(dungeonId, isProtected);
+    auto operationResult1 = m_worldServer.setTileProtection(dungeonId, isProtected);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
 
@@ -1168,21 +1168,21 @@ std::expected<void, StarException> DungeonGeneratorWorld::setTileProtection(Dung
 }
 
 std::expected<bool, StarException> DungeonGeneratorWorld::checkSolid(Vec2I const& position, TileLayer layer) {
-  auto autoconsttileResult1 = m_worldServer->getServerTile(position);
+  auto autoconsttileResult1 = m_worldServer.getServerTile(position);
   if (!autoconsttileResult1) return std::unexpected(std::move(autoconsttileResult1.error()));
-  auto const& tile = std::move((**autoconsttileResult1));
+  auto const& tile = std::move(autoconsttileResult1->get());
   return tile.material(layer) != EmptyMaterialId && tile.material(layer) != NullMaterialId;
 }
 
 std::expected<bool, StarException> DungeonGeneratorWorld::checkOpen(Vec2I const& position, TileLayer layer) {
-  auto autoconsttileResult1 = m_worldServer->getServerTile(position);
+  auto autoconsttileResult1 = m_worldServer.getServerTile(position);
   if (!autoconsttileResult1) return std::unexpected(std::move(autoconsttileResult1.error()));
-  auto const& tile = std::move((**autoconsttileResult1));
+  auto const& tile = std::move(autoconsttileResult1->get());
   return tile.material(layer) == EmptyMaterialId || tile.material(layer) == NullMaterialId;
 }
 
 std::expected<bool, StarException> DungeonGeneratorWorld::checkOceanLiquid(Vec2I const& position) {
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   auto autoconstblockResult1 = worldTemplate->blockInfo(position[0], position[1]);
   if (!autoconstblockResult1) return std::unexpected(std::move(autoconstblockResult1.error()));
   auto const& block = std::move((*autoconstblockResult1));
@@ -1190,27 +1190,27 @@ std::expected<bool, StarException> DungeonGeneratorWorld::checkOceanLiquid(Vec2I
 }
 
 std::expected<DungeonId, StarException> DungeonGeneratorWorld::getDungeonIdAt(Vec2I const& position) {
-  auto returnedResult1 = m_worldServer->getServerTile(position);
+  auto returnedResult1 = m_worldServer.getServerTile(position);
   if (!returnedResult1) return std::unexpected(std::move(returnedResult1.error()));
-  auto returnedValue = std::move((**returnedResult1).dungeonId);
+  auto returnedValue = std::move(returnedResult1->get().dungeonId);
 
   return returnedValue;
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::setDungeonIdAt(Vec2I const& position, DungeonId dungeonId) {
-  auto tileCheckedResult1 = m_worldServer->modifyServerTile(position);
+  auto tileCheckedResult1 = m_worldServer.modifyServerTile(position);
   if (!tileCheckedResult1) return std::unexpected(std::move(tileCheckedResult1.error()));
   if (auto tile = std::move((*tileCheckedResult1)))
-    tile->dungeonId = dungeonId;
+    tile->get().dungeonId = dungeonId;
 
   return {};
 }
 
 std::expected<void, StarException> DungeonGeneratorWorld::clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) {
-  auto autoentitiesResult1 = m_worldServer->entityQuery(RectF(bounds).padded(1), entityTypeFilter<TileEntity>());
+  auto autoentitiesResult1 = m_worldServer.entityQuery(RectF(bounds).padded(1), entityTypeFilter<TileEntity>());
   if (!autoentitiesResult1) return std::unexpected(std::move(autoentitiesResult1.error()));
   auto entities = std::move((*autoentitiesResult1));
-  auto geometry = m_worldServer->geometry();
+  auto geometry = m_worldServer.geometry();
   entities.filter([positions, geometry, clearAnchoredObjects](std::shared_ptr<Entity> entity) {
       auto tileEntity = as<TileEntity>(entity);
       for (auto pos : tileEntity->spaces()) {
@@ -1235,30 +1235,30 @@ std::expected<void, StarException> DungeonGeneratorWorld::clearTileEntities(Rect
 
   for (auto entity : entities)
     {
-      auto operationResult1 = m_worldServer->removeEntity(entity->entityId(), false);
+      auto operationResult1 = m_worldServer.removeEntity(entity->entityId(), false);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
 
   return {};
 }
 
-SpawnerWorld::SpawnerWorld(WorldServer* server)
+SpawnerWorld::SpawnerWorld(WorldServer& server)
   : m_worldServer(server) {}
 
 WorldGeometry SpawnerWorld::geometry() const {
-  return m_worldServer->geometry();
+  return m_worldServer.geometry();
 }
 
 List<RectF> SpawnerWorld::clientWindows() const {
   List<RectF> windows;
-  for (auto clientId : m_worldServer->clientIds())
-    windows.append(m_worldServer->clientWindow(clientId));
+  for (auto clientId : m_worldServer.clientIds())
+    windows.append(m_worldServer.clientWindow(clientId));
   return windows;
 }
 
 std::expected<bool, StarException> SpawnerWorld::signalRegion(RectF const& region) const {
   {
-  auto conditionResult1 = m_worldServer->signalRegion(RectI::integral(region));
+  auto conditionResult1 = m_worldServer.signalRegion(RectI::integral(region));
   if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
   auto condition = std::move((*conditionResult1));
   return static_cast<bool>(condition);
@@ -1267,16 +1267,16 @@ std::expected<bool, StarException> SpawnerWorld::signalRegion(RectF const& regio
 }
 
 std::expected<CollisionKind, StarException> SpawnerWorld::collision(Vec2I const& position) const {
-  auto returnedResult1 = m_worldServer->getServerTile(position + Vec2I(0, 1));
+  auto returnedResult1 = m_worldServer.getServerTile(position + Vec2I(0, 1));
   if (!returnedResult1) return std::unexpected(std::move(returnedResult1.error()));
-  auto returnedValue = std::move((**returnedResult1).collision);
+  auto returnedValue = std::move(returnedResult1->get().collision);
 
   return returnedValue;
 }
 
 std::expected<bool, StarException> SpawnerWorld::isFreeSpace(RectF const& area) const {
   {
-  auto conditionResult1 = m_worldServer->polyCollision(PolyF(area));
+  auto conditionResult1 = m_worldServer.polyCollision(PolyF(area));
   if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
   auto condition = std::move(!(*conditionResult1));
   return static_cast<bool>(condition);
@@ -1286,16 +1286,16 @@ std::expected<bool, StarException> SpawnerWorld::isFreeSpace(RectF const& area) 
 
 std::expected<bool, StarException> SpawnerWorld::isBackgroundEmpty(Vec2I const& pos) const {
   {
-  auto conditionResult1 = m_worldServer->getServerTile(pos);
+  auto conditionResult1 = m_worldServer.getServerTile(pos);
   if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
-  auto condition = std::move((**conditionResult1).background == EmptyMaterialId);
+  auto condition = std::move(conditionResult1->get().background == EmptyMaterialId);
   return static_cast<bool>(condition);
 
   }
 }
 
 LiquidLevel SpawnerWorld::liquidLevel(Vec2I const& position) const {
-  return m_worldServer->liquidLevel(position);
+  return m_worldServer.liquidLevel(position);
 }
 
 std::expected<bool, StarException> SpawnerWorld::spawningProhibited(RectF const& area) const {
@@ -1304,9 +1304,9 @@ std::expected<bool, StarException> SpawnerWorld::spawningProhibited(RectF const&
   // Don't spawn the entity if its region overlaps with a dungeon
   for (int x = region.xMin(); x < region.xMax(); ++x) {
     for (int y = region.yMin(); y < region.yMax(); ++y) {
-      auto autoconsttileResult1 = m_worldServer->getServerTile({x, y});
+      auto autoconsttileResult1 = m_worldServer.getServerTile({x, y});
       if (!autoconsttileResult1) return std::unexpected(std::move(autoconsttileResult1.error()));
-      auto const& tile = std::move((**autoconsttileResult1));
+      auto const& tile = std::move(autoconsttileResult1->get());
       if (tile.getCollision() == CollisionKind::Null || tile.dungeonId != NoDungeonId)
         return true;
     }
@@ -1316,11 +1316,11 @@ std::expected<bool, StarException> SpawnerWorld::spawningProhibited(RectF const&
 }
 
 std::uint64_t SpawnerWorld::spawnSeed() const {
-  return m_worldServer->worldTemplate()->worldSeed();
+  return m_worldServer.worldTemplate()->worldSeed();
 }
 
 std::expected<SpawnProfile, StarException> SpawnerWorld::spawnProfile(Vec2F const& position) const {
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   Vec2I ipos = Vec2I::floor(position);
   // Block biome, *not* environment biome, includes things like detached
   // biomes.
@@ -1329,9 +1329,9 @@ std::expected<SpawnProfile, StarException> SpawnerWorld::spawnProfile(Vec2F cons
   if (auto biome = std::move((*biomeCheckedResult1))) {
     // Dungeons, including ConstructionDungeonId (player constructed areas)
     // should be immune from spawning.
-    auto autotileResult1 = m_worldServer->getServerTile(ipos);
+    auto autotileResult1 = m_worldServer.getServerTile(ipos);
     if (!autotileResult1) return std::unexpected(std::move(autotileResult1.error()));
-    auto tile = std::move((**autotileResult1));
+    auto tile = std::move(autotileResult1->get());
     if (tile.dungeonId == NoDungeonId)
       return biome->spawnProfile;
   }
@@ -1339,11 +1339,11 @@ std::expected<SpawnProfile, StarException> SpawnerWorld::spawnProfile(Vec2F cons
 }
 
 float SpawnerWorld::dayLevel() const {
-  return m_worldServer->sky()->dayLevel();
+  return m_worldServer.sky()->dayLevel();
 }
 
 std::expected<float, StarException> SpawnerWorld::threatLevel() const {
-  auto returnedResult1 = m_worldServer->threatLevel();
+  auto returnedResult1 = m_worldServer.threatLevel();
   if (!returnedResult1) return std::unexpected(std::move(returnedResult1.error()));
   auto returnedValue = std::move((*returnedResult1));
 
@@ -1352,7 +1352,7 @@ std::expected<float, StarException> SpawnerWorld::threatLevel() const {
 
 std::expected<EntityId, StarException> SpawnerWorld::spawnEntity(std::shared_ptr<Entity> entity) const {
   {
-    auto operationResult1 = m_worldServer->addEntity(entity);
+    auto operationResult1 = m_worldServer.addEntity(entity);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
   return entity->entityId();
@@ -1360,7 +1360,7 @@ std::expected<EntityId, StarException> SpawnerWorld::spawnEntity(std::shared_ptr
 
 std::expected<void, StarException> SpawnerWorld::despawnEntity(EntityId entityId) {
   {
-    auto operationResult1 = m_worldServer->removeEntity(entityId, false);
+    auto operationResult1 = m_worldServer.removeEntity(entityId, false);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
 
@@ -1368,33 +1368,33 @@ std::expected<void, StarException> SpawnerWorld::despawnEntity(EntityId entityId
 }
 
 std::shared_ptr<Entity> SpawnerWorld::getEntity(EntityId entityId) const {
-  return m_worldServer->entity(entityId);
+  return m_worldServer.entity(entityId);
 }
 
-WorldGenerator::WorldGenerator(WorldServer* server) : m_worldServer(server) {
-  m_microDungeonFactory = std::make_shared<MicroDungeonFactory>(m_worldServer->root());
+WorldGenerator::WorldGenerator(WorldServer& server) : m_worldServer(server) {
+  m_microDungeonFactory = std::make_shared<MicroDungeonFactory>(m_worldServer.root());
 }
 
-std::expected<void, StarException> WorldGenerator::generateSectorLevel(WorldStorage* worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) {
+std::expected<void, StarException> WorldGenerator::generateSectorLevel(WorldStorage& worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) {
   if (generationLevel == SectorGenerationLevel::BaseTiles) {
     {
       auto operationResult1 = prepareTiles(worldStorage, sector);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
   } else if (generationLevel == SectorGenerationLevel::MicroDungeons) {
-    if (!worldStorage->floatingDungeonWorld())
+    if (!worldStorage.floatingDungeonWorld())
       {
         auto operationResult1 = generateMicroDungeons(worldStorage, sector);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
   } else if (generationLevel == SectorGenerationLevel::CaveLiquid) {
-    if (!worldStorage->floatingDungeonWorld())
+    if (!worldStorage.floatingDungeonWorld())
       {
         auto operationResult1 = generateCaveLiquid(worldStorage, sector);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
   } else if (generationLevel == SectorGenerationLevel::Finalize) {
-    if (!worldStorage->floatingDungeonWorld())
+    if (!worldStorage.floatingDungeonWorld())
       {
         auto operationResult1 = prepareSector(worldStorage, sector);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
@@ -1405,7 +1405,7 @@ std::expected<void, StarException> WorldGenerator::generateSectorLevel(WorldStor
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
     {
-      auto operationResult1 = m_worldServer->activateLiquidRegion(worldStorage->tileArray()->sectorRegion(sector));
+      auto operationResult1 = m_worldServer.activateLiquidRegion(worldStorage.tileArray()->sectorRegion(sector));
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
   }
@@ -1413,11 +1413,11 @@ std::expected<void, StarException> WorldGenerator::generateSectorLevel(WorldStor
   return {};
 }
 
-std::expected<void, StarException> WorldGenerator::sectorLoadLevelChanged(WorldStorage* worldStorage, Sector const& sector, SectorLoadLevel loadLevel) {
+std::expected<void, StarException> WorldGenerator::sectorLoadLevelChanged(WorldStorage& worldStorage, Sector const& sector, SectorLoadLevel loadLevel) {
   if (loadLevel == SectorLoadLevel::Loaded) {
-    if (worldStorage->sectorGenerationLevel(sector) == SectorGenerationLevel::Complete)
+    if (worldStorage.sectorGenerationLevel(sector) == SectorGenerationLevel::Complete)
       {
-        auto operationResult1 = m_worldServer->activateLiquidRegion(worldStorage->tileArray()->sectorRegion(sector));
+        auto operationResult1 = m_worldServer.activateLiquidRegion(worldStorage.tileArray()->sectorRegion(sector));
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
   }
@@ -1425,7 +1425,7 @@ std::expected<void, StarException> WorldGenerator::sectorLoadLevelChanged(WorldS
   return {};
 }
 
-std::expected<void, StarException> WorldGenerator::terraformSector(WorldStorage* worldStorage, Sector const& sector) {
+std::expected<void, StarException> WorldGenerator::terraformSector(WorldStorage& worldStorage, Sector const& sector) {
   {
     auto operationResult1 = reapplyBiome(worldStorage, sector);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
@@ -1434,24 +1434,24 @@ std::expected<void, StarException> WorldGenerator::terraformSector(WorldStorage*
   return {};
 }
 
-std::expected<void, StarException> WorldGenerator::initEntity(WorldStorage*, EntityId entityId, std::shared_ptr<Entity> const& entity) {
+std::expected<void, StarException> WorldGenerator::initEntity(WorldStorage&, EntityId entityId, std::shared_ptr<Entity> const& entity) {
   auto initialized = entity->init(m_worldServer, entityId, EntityMode::Master);
   if (!initialized) return std::unexpected(std::move(initialized.error()));
   if (auto tileEntity = as<TileEntity>(entity))
     {
-      auto operationResult1 = m_worldServer->updateTileEntityTiles(tileEntity, false, false);
+      auto operationResult1 = m_worldServer.updateTileEntityTiles(tileEntity, false, false);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
 
   return {};
 }
 
-std::expected<void, StarException> WorldGenerator::destructEntity(WorldStorage*, std::shared_ptr<Entity> const& entity) {
+std::expected<void, StarException> WorldGenerator::destructEntity(WorldStorage&, std::shared_ptr<Entity> const& entity) {
   if (entity->isSlave())
     return std::unexpected(StarException("Cannot destruct slave entity in WorldStorage, something has gone wrong!"));
   if (auto tileEntity = as<TileEntity>(entity))
     {
-      auto operationResult1 = m_worldServer->updateTileEntityTiles(tileEntity, true, false);
+      auto operationResult1 = m_worldServer.updateTileEntityTiles(tileEntity, true, false);
       if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
     }
   auto uninitialized = entity->uninit();
@@ -1460,11 +1460,11 @@ std::expected<void, StarException> WorldGenerator::destructEntity(WorldStorage*,
   return {};
 }
 
-std::expected<bool, StarException> WorldGenerator::entityKeepAlive(WorldStorage*, std::shared_ptr<Entity> const& entity) const {
+std::expected<bool, StarException> WorldGenerator::entityKeepAlive(WorldStorage&, std::shared_ptr<Entity> const& entity) const {
   return entity->isSlave() || (entity->isMaster() && entity->keepAlive());
 }
 
-std::expected<bool, StarException> WorldGenerator::entityPersistent(WorldStorage*, std::shared_ptr<Entity> const& entity) const {
+std::expected<bool, StarException> WorldGenerator::entityPersistent(WorldStorage&, std::shared_ptr<Entity> const& entity) const {
   return entity->isMaster() && entity->persistent();
 }
 
@@ -1479,89 +1479,89 @@ std::expected<RpcPromise<Vec2I>, StarException> WorldGenerator::enqueuePlacement
   return promise.first;
 }
 
-std::expected<void, StarException> WorldGenerator::replaceBiomeBlocks(ServerTile* tile) {
-  auto& generationRoot = m_worldServer->root();
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+std::expected<void, StarException> WorldGenerator::replaceBiomeBlocks(ServerTile& tile) {
+  auto& generationRoot = m_worldServer.root();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   auto automaterialDatabaseResult1 = generationRoot.materialDatabase();
   if (!automaterialDatabaseResult1) return std::unexpected(std::move(automaterialDatabaseResult1.error()));
   auto materialDatabase = std::move((*automaterialDatabaseResult1));
-  MaterialId oldForeground = tile->foreground;
+  MaterialId oldForeground = tile.foreground;
 
-  auto blockBiomeCheckedResult1 = worldTemplate->biome(tile->blockBiomeIndex);
+  auto blockBiomeCheckedResult1 = worldTemplate->biome(tile.blockBiomeIndex);
   if (!blockBiomeCheckedResult1) return std::unexpected(std::move(blockBiomeCheckedResult1.error()));
   if (auto blockBiome = std::move((*blockBiomeCheckedResult1))) {
-    if (tile->foreground == BiomeMaterialId) {
-      tile->foreground = blockBiome->mainBlock;
-      auto tileforegroundHueShiftResult1 = worldTemplate->biomeMaterialHueShift(tile->blockBiomeIndex, tile->foreground);
+    if (tile.foreground == BiomeMaterialId) {
+      tile.foreground = blockBiome->mainBlock;
+      auto tileforegroundHueShiftResult1 = worldTemplate->biomeMaterialHueShift(tile.blockBiomeIndex, tile.foreground);
       if (!tileforegroundHueShiftResult1) return std::unexpected(std::move(tileforegroundHueShiftResult1.error()));
-      tile->foregroundHueShift = std::move((*tileforegroundHueShiftResult1));
-    } else if ((tile->foreground >= Biome1MaterialId) && (tile->foreground <= Biome5MaterialId)) {
+      tile.foregroundHueShift = std::move((*tileforegroundHueShiftResult1));
+    } else if ((tile.foreground >= Biome1MaterialId) && (tile.foreground <= Biome5MaterialId)) {
       auto& subblocks = blockBiome->subBlocks;
       if (subblocks.size())
-        tile->foreground = subblocks[(tile->foreground - Biome1MaterialId) % subblocks.size()];
+        tile.foreground = subblocks[(tile.foreground - Biome1MaterialId) % subblocks.size()];
       else
-        tile->foreground = blockBiome->mainBlock;
-      auto tileforegroundHueShiftResult1 = worldTemplate->biomeMaterialHueShift(tile->blockBiomeIndex, tile->foreground);
+        tile.foreground = blockBiome->mainBlock;
+      auto tileforegroundHueShiftResult1 = worldTemplate->biomeMaterialHueShift(tile.blockBiomeIndex, tile.foreground);
       if (!tileforegroundHueShiftResult1) return std::unexpected(std::move(tileforegroundHueShiftResult1.error()));
-      tile->foregroundHueShift = std::move((*tileforegroundHueShiftResult1));
+      tile.foregroundHueShift = std::move((*tileforegroundHueShiftResult1));
     }
 
-    if (tile->background == BiomeMaterialId) {
-      tile->background = blockBiome->mainBlock;
-      auto tilebackgroundHueShiftResult1 = worldTemplate->biomeMaterialHueShift(tile->blockBiomeIndex, tile->background);
+    if (tile.background == BiomeMaterialId) {
+      tile.background = blockBiome->mainBlock;
+      auto tilebackgroundHueShiftResult1 = worldTemplate->biomeMaterialHueShift(tile.blockBiomeIndex, tile.background);
       if (!tilebackgroundHueShiftResult1) return std::unexpected(std::move(tilebackgroundHueShiftResult1.error()));
-      tile->backgroundHueShift = std::move((*tilebackgroundHueShiftResult1));
-    } else if ((tile->background >= Biome1MaterialId) && (tile->background <= Biome5MaterialId)) {
+      tile.backgroundHueShift = std::move((*tilebackgroundHueShiftResult1));
+    } else if ((tile.background >= Biome1MaterialId) && (tile.background <= Biome5MaterialId)) {
       auto& subblocks = blockBiome->subBlocks;
       if (subblocks.size())
-        tile->background = subblocks[(tile->background - Biome1MaterialId) % subblocks.size()];
+        tile.background = subblocks[(tile.background - Biome1MaterialId) % subblocks.size()];
       else
-        tile->background = blockBiome->mainBlock;
-      auto tilebackgroundHueShiftResult1 = worldTemplate->biomeMaterialHueShift(tile->blockBiomeIndex, tile->background);
+        tile.background = blockBiome->mainBlock;
+      auto tilebackgroundHueShiftResult1 = worldTemplate->biomeMaterialHueShift(tile.blockBiomeIndex, tile.background);
       if (!tilebackgroundHueShiftResult1) return std::unexpected(std::move(tilebackgroundHueShiftResult1.error()));
-      tile->backgroundHueShift = std::move((*tilebackgroundHueShiftResult1));
+      tile.backgroundHueShift = std::move((*tilebackgroundHueShiftResult1));
     }
   } else {
-    if (isBiomeMaterial(tile->foreground)) {
-      tile->foreground = EmptyMaterialId;
-      tile->foregroundHueShift = 0;
+    if (isBiomeMaterial(tile.foreground)) {
+      tile.foreground = EmptyMaterialId;
+      tile.foregroundHueShift = 0;
     }
-    if (isBiomeMod(tile->foregroundMod)) {
-      tile->foregroundMod = NoModId;
-      tile->foregroundModHueShift = 0;
+    if (isBiomeMod(tile.foregroundMod)) {
+      tile.foregroundMod = NoModId;
+      tile.foregroundModHueShift = 0;
     }
-    if (isBiomeMaterial(tile->background)) {
-      tile->background = EmptyMaterialId;
-      tile->backgroundHueShift = 0;
+    if (isBiomeMaterial(tile.background)) {
+      tile.background = EmptyMaterialId;
+      tile.backgroundHueShift = 0;
     }
-    if (isBiomeMod(tile->backgroundMod)) {
-      tile->backgroundMod = NoModId;
-      tile->backgroundModHueShift = 0;
+    if (isBiomeMod(tile.backgroundMod)) {
+      tile.backgroundMod = NoModId;
+      tile.backgroundModHueShift = 0;
     }
   }
   {
-    auto operationResult1 = biomeForegroundCollision(materialDatabase, oldForeground, tile->foreground, tile->collision);
+    auto operationResult1 = biomeForegroundCollision(materialDatabase, oldForeground, tile.foreground, tile.collision);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
-    tile->updateCollision((*operationResult1));
+    tile.updateCollision((*operationResult1));
   }
 
   return {};
 }
 
-std::expected<void, StarException> WorldGenerator::prepareTiles(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto& generationRoot = m_worldServer->root();
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+std::expected<void, StarException> WorldGenerator::prepareTiles(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
+  auto& generationRoot = m_worldServer.root();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   auto automaterialDatabaseResult1 = generationRoot.materialDatabase();
   if (!automaterialDatabaseResult1) return std::unexpected(std::move(automaterialDatabaseResult1.error()));
   auto materialDatabase = std::move((*automaterialDatabaseResult1));
   auto planet = worldTemplate;
   // Generate sector.
-  auto tileArray = worldStorage->tileArray();
+  auto tileArray = worldStorage.tileArray();
   RectI sectorRegion = tileArray->sectorRegion(sector);
   for (int x = sectorRegion.xMin(); x < sectorRegion.xMax(); ++x) {
     for (int y = sectorRegion.yMin(); y < sectorRegion.yMax(); ++y) {
       Vec2I pos(x, y);
-      ServerTile* tile = tileArray->modifyTile(pos);
+      auto tile = tileArray->modifyTile(pos);
       if constexpr (Star::DebugEnabled) {
         Star::starAssertFailed((tile));
       }
@@ -1571,62 +1571,62 @@ std::expected<void, StarException> WorldGenerator::prepareTiles(WorldStorage* wo
       if (!autoblockInfoResult1) return std::unexpected(std::move(autoblockInfoResult1.error()));
       auto blockInfo = std::move((*autoblockInfoResult1));
 
-      tile->blockBiomeIndex = blockInfo.blockBiomeIndex;
-      tile->environmentBiomeIndex = blockInfo.environmentBiomeIndex;
-      tile->biomeTransition = blockInfo.biomeTransition;
+      tile->get().blockBiomeIndex = blockInfo.blockBiomeIndex;
+      tile->get().environmentBiomeIndex = blockInfo.environmentBiomeIndex;
+      tile->get().biomeTransition = blockInfo.biomeTransition;
 
-      if (tile->foreground == NullMaterialId) {
-        tile->foreground = blockInfo.foreground;
-        tile->foregroundColorVariant = DefaultMaterialColorVariant;
-        auto tileforegroundHueShiftResult1 = planet->biomeMaterialHueShift(tile->blockBiomeIndex, tile->foreground);
+      if (tile->get().foreground == NullMaterialId) {
+        tile->get().foreground = blockInfo.foreground;
+        tile->get().foregroundColorVariant = DefaultMaterialColorVariant;
+        auto tileforegroundHueShiftResult1 = planet->biomeMaterialHueShift(tile->get().blockBiomeIndex, tile->get().foreground);
         if (!tileforegroundHueShiftResult1) return std::unexpected(std::move(tileforegroundHueShiftResult1.error()));
-        tile->foregroundHueShift = std::move((*tileforegroundHueShiftResult1));
+        tile->get().foregroundHueShift = std::move((*tileforegroundHueShiftResult1));
 
         if (auto condition89 = [&]() -> std::expected<bool, StarException> {
-                    auto conditionResult1 = materialDatabase->supportsMod(tile->foreground, blockInfo.foregroundMod);
+                    auto conditionResult1 = materialDatabase->supportsMod(tile->get().foreground, blockInfo.foregroundMod);
           if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
           auto condition = std::move((*conditionResult1));
           return static_cast<bool>(condition);
         }(); !condition89)
           return std::unexpected(std::move(condition89.error()));
         else if (*condition89) {
-          tile->foregroundMod = blockInfo.foregroundMod;
-          auto tileforegroundModHueShiftResult1 = planet->biomeModHueShift(tile->blockBiomeIndex, tile->foregroundMod);
+          tile->get().foregroundMod = blockInfo.foregroundMod;
+          auto tileforegroundModHueShiftResult1 = planet->biomeModHueShift(tile->get().blockBiomeIndex, tile->get().foregroundMod);
           if (!tileforegroundModHueShiftResult1) return std::unexpected(std::move(tileforegroundModHueShiftResult1.error()));
-          tile->foregroundModHueShift = std::move((*tileforegroundModHueShiftResult1));
+          tile->get().foregroundModHueShift = std::move((*tileforegroundModHueShiftResult1));
         }
       }
 
-      if (tile->background == NullMaterialId) {
-        tile->background = blockInfo.background;
-        tile->backgroundColorVariant = DefaultMaterialColorVariant;
-        auto tilebackgroundHueShiftResult1 = planet->biomeMaterialHueShift(tile->blockBiomeIndex, tile->background);
+      if (tile->get().background == NullMaterialId) {
+        tile->get().background = blockInfo.background;
+        tile->get().backgroundColorVariant = DefaultMaterialColorVariant;
+        auto tilebackgroundHueShiftResult1 = planet->biomeMaterialHueShift(tile->get().blockBiomeIndex, tile->get().background);
         if (!tilebackgroundHueShiftResult1) return std::unexpected(std::move(tilebackgroundHueShiftResult1.error()));
-        tile->backgroundHueShift = std::move((*tilebackgroundHueShiftResult1));
+        tile->get().backgroundHueShift = std::move((*tilebackgroundHueShiftResult1));
 
         if (auto condition88 = [&]() -> std::expected<bool, StarException> {
-                    auto conditionResult1 = materialDatabase->supportsMod(tile->background, blockInfo.backgroundMod);
+                    auto conditionResult1 = materialDatabase->supportsMod(tile->get().background, blockInfo.backgroundMod);
           if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
           auto condition = std::move((*conditionResult1));
           return static_cast<bool>(condition);
         }(); !condition88)
           return std::unexpected(std::move(condition88.error()));
         else if (*condition88) {
-          tile->backgroundMod = blockInfo.backgroundMod;
-          auto tilebackgroundModHueShiftResult1 = planet->biomeModHueShift(tile->blockBiomeIndex, tile->backgroundMod);
+          tile->get().backgroundMod = blockInfo.backgroundMod;
+          auto tilebackgroundModHueShiftResult1 = planet->biomeModHueShift(tile->get().blockBiomeIndex, tile->get().backgroundMod);
           if (!tilebackgroundModHueShiftResult1) return std::unexpected(std::move(tilebackgroundModHueShiftResult1.error()));
-          tile->backgroundModHueShift = std::move((*tilebackgroundModHueShiftResult1));
+          tile->get().backgroundModHueShift = std::move((*tilebackgroundModHueShiftResult1));
         }
       }
 
-      if (tile->foreground != EmptyMaterialId) {
-        tile->liquid = LiquidStore();
+      if (tile->get().foreground != EmptyMaterialId) {
+        tile->get().liquid = LiquidStore();
       } else if (blockInfo.oceanLiquid != EmptyLiquidId && pos[1] < blockInfo.oceanLiquidLevel) {
         float pressure = blockInfo.oceanLiquidLevel - pos[1];
-        if (tile->background == EmptyMaterialId)
-          tile->liquid = LiquidStore::endless(blockInfo.oceanLiquid, pressure);
+        if (tile->get().background == EmptyMaterialId)
+          tile->get().liquid = LiquidStore::endless(blockInfo.oceanLiquid, pressure);
         else if (blockInfo.encloseLiquids)
-          tile->liquid = LiquidStore::filled(blockInfo.oceanLiquid, 1.0f, pressure);
+          tile->get().liquid = LiquidStore::filled(blockInfo.oceanLiquid, 1.0f, pressure);
       }
     }
   }
@@ -1634,14 +1634,19 @@ std::expected<void, StarException> WorldGenerator::prepareTiles(WorldStorage* wo
   return {};
 }
 
-std::expected<void, StarException> WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+std::expected<void, StarException> WorldGenerator::generateMicroDungeons(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   auto facade = std::make_shared<DungeonGeneratorWorld>(m_worldServer, false);
 
-  RectI sectorTiles = worldStorage->tileArray()->sectorRegion(sector);
+  RectI sectorTiles = worldStorage.tileArray()->sectorRegion(sector);
   RectI bounds = sectorTiles.padded(WorldSectorSize - 1);
 
-  List<std::pair<BiomeItemPlacement, QueuedPlacement*>> placementQueue;
+  struct PlacementEntry {
+    BiomeItemPlacement placement;
+    std::optional<std::reference_wrapper<QueuedPlacement>> queued;
+    std::size_t queueOrder;
+  };
+  List<PlacementEntry> placementQueue;
   for (int x = sectorTiles.xMin(); x < sectorTiles.xMax(); ++x) {
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       auto autopotentialResult1 = worldTemplate->potentialBiomeItemsAt(x, y);
@@ -1651,9 +1656,10 @@ std::expected<void, StarException> WorldGenerator::generateMicroDungeons(WorldSt
       if (!rangeValuesResult1) return std::unexpected(std::move(rangeValuesResult1.error()));
       auto rangeValues = std::move((*rangeValuesResult1));
       for (auto const& placement : rangeValues)
-        placementQueue.append({placement, {}});
+        placementQueue.append({placement, {}, 0});
 
-      for (auto& p : m_queuedPlacements) {
+      for (std::size_t queueIndex = 0; queueIndex < m_queuedPlacements.size(); ++queueIndex) {
+        auto& p = m_queuedPlacements[queueIndex];
         WorldTemplate::PotentialBiomeItems queuedItems;
         {
           auto operationResult1 = worldTemplate->addPotentialBiomeItems(x, y, queuedItems, p.distributions, BiomePlacementArea::Surface);
@@ -1667,56 +1673,61 @@ std::expected<void, StarException> WorldGenerator::generateMicroDungeons(WorldSt
         if (!rangeValuesResult1) return std::unexpected(std::move(rangeValuesResult1.error()));
         auto rangeValues = std::move((*rangeValuesResult1));
         for (auto placement : rangeValues)
-          placementQueue.append({std::move(placement), &p});
+          placementQueue.append({std::move(placement), std::ref(p), queueIndex + 1});
       }
     }
   }
 
-  std::sort(placementQueue.begin(), placementQueue.end(), std::less<std::pair<BiomeItemPlacement, QueuedPlacement*>>());
+  std::sort(placementQueue.begin(), placementQueue.end(), [](auto const& a, auto const& b) {
+    if (a.placement < b.placement) return true;
+    if (b.placement < a.placement) return false;
+    // Preserve null-before-queued and contiguous queue order without address borrows.
+    return a.queueOrder < b.queueOrder;
+  });
   for (auto const& p : placementQueue) {
-    auto& placement = p.first;
-    auto queued = p.second;
-    if (queued && queued->fulfilled)
+    auto const& placement = p.placement;
+    auto queued = p.queued;
+    if (queued && queued->get().fulfilled)
       continue;
 
     if (std::holds_alternative<MicroDungeonNames>(placement.item)) {
       auto seed = worldTemplate->seedFor(placement.position[0], placement.position[1]);
       auto autoconstdungeonNameResult1 = staticRandomFrom(std::get<MicroDungeonNames>(placement.item), seed);
       if (!autoconstdungeonNameResult1) return std::unexpected(std::move(autoconstdungeonNameResult1.error()));
-      auto const& dungeonName = std::move((**autoconstdungeonNameResult1));
+      auto const& dungeonName = std::move(autoconstdungeonNameResult1->get());
       std::optional<DungeonId> dungeonId;
       if constexpr (Star::DebugEnabled) {
         Star::starAssertFailed((!dungeonName.empty()));
       }
-      auto generateResultCheckedResult1 = m_worldServer->threatLevel();
+      auto generateResultCheckedResult1 = m_worldServer.threatLevel();
       if (!generateResultCheckedResult1) return std::unexpected(std::move(generateResultCheckedResult1.error()));
       auto generateResultCheckedResult2 = m_microDungeonFactory->generate(bounds, dungeonName, placement.position, seed, (*generateResultCheckedResult1), facade);
       if (!generateResultCheckedResult2) return std::unexpected(std::move(generateResultCheckedResult2.error()));
       if (auto generateResult = std::move((*generateResultCheckedResult2))) {
         if (queued) {
-          dungeonId = queued->dungeonId;
+          dungeonId = queued->get().dungeonId;
           {
-            auto operationResult1 = queued->promise.fulfill(placement.position);
+            auto operationResult1 = queued->get().promise.fulfill(placement.position);
             if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
           }
-          queued->fulfilled = true;
+          queued->get().fulfilled = true;
         }
         for (auto position : generateResult->second) {
-          auto tileCheckedResult1 = m_worldServer->modifyServerTile(position);
+          auto tileCheckedResult1 = m_worldServer.modifyServerTile(position);
           if (!tileCheckedResult1) return std::unexpected(std::move(tileCheckedResult1.error()));
-          if (ServerTile* tile = std::move((*tileCheckedResult1))) {
+          if (auto tile = std::move((*tileCheckedResult1))) {
             {
-              auto operationResult1 = replaceBiomeBlocks(tile);
+              auto operationResult1 = replaceBiomeBlocks(tile->get());
               if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
             }
-            tile->dungeonId = dungeonId.value_or(tile->dungeonId);
+            tile->get().dungeonId = dungeonId.value_or(tile->get().dungeonId);
           }
         }
       }
     }
   }
   
-  // placementQueue's pointers are no longer used once compaction begins.
+  // placementQueue's borrows are no longer used once compaction begins.
   auto fulfilledPlacements = std::ranges::remove_if(m_queuedPlacements, [](QueuedPlacement const& p) {
     return p.fulfilled;
   });
@@ -1725,9 +1736,9 @@ std::expected<void, StarException> WorldGenerator::generateMicroDungeons(WorldSt
   return {};
 }
 
-std::expected<void, StarException> WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto& generationRoot = m_worldServer->root();
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+std::expected<void, StarException> WorldGenerator::generateCaveLiquid(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
+  auto& generationRoot = m_worldServer.root();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   auto SetVec2IopenNodesResult1 = caveLiquidSeeds(worldStorage, sector);
   if (!SetVec2IopenNodesResult1) return std::unexpected(std::move(SetVec2IopenNodesResult1.error()));
   Set<Vec2I> openNodes = std::move((*SetVec2IopenNodesResult1));
@@ -1735,7 +1746,7 @@ std::expected<void, StarException> WorldGenerator::generateCaveLiquid(WorldStora
   if (!openNodes.size())
     return {};
 
-  auto tileArray = worldStorage->tileArray();
+  auto tileArray = worldStorage.tileArray();
 
   Vec2I dimensions(tileArray->size());
 
@@ -1878,68 +1889,68 @@ std::expected<void, StarException> WorldGenerator::generateCaveLiquid(WorldStora
     if (!tile)
       continue;
     if (iter->second)
-      tile->liquid = LiquidStore::filled(fillLiquid, 1.0f, iter->second);
-    if (encloseLiquids && tile->background == EmptyMaterialId)
-      tile->background = biomeBlock;
+      tile->get().liquid = LiquidStore::filled(fillLiquid, 1.0f, iter->second);
+    if (encloseLiquids && tile->get().background == EmptyMaterialId)
+      tile->get().background = biomeBlock;
   }
 
   return {};
 }
 
-std::expected<void, StarException> WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto& generationRoot = m_worldServer->root();
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+std::expected<void, StarException> WorldGenerator::prepareSector(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
+  auto& generationRoot = m_worldServer.root();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   auto automaterialDatabaseResult1 = generationRoot.materialDatabase();
   if (!automaterialDatabaseResult1) return std::unexpected(std::move(automaterialDatabaseResult1.error()));
   auto materialDatabase = std::move((*automaterialDatabaseResult1));
   auto planet = worldTemplate;
-  auto tileArray = worldStorage->tileArray();
+  auto tileArray = worldStorage.tileArray();
   RectI sectorTiles = tileArray->sectorRegion(sector);
 
   for (int x = sectorTiles.xMin(); x < sectorTiles.xMax(); ++x) {
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       Vec2I position(x, y);
-      ServerTile* tile = tileArray->modifyTile(position);
+      auto tile = tileArray->modifyTile(position);
       if constexpr (Star::DebugEnabled) {
         Star::starAssertFailed((tile));
       }
       if (!tile)
         continue;
       if constexpr (Star::DebugEnabled) {
-        Star::starAssertFailed((tile->foreground != NullMaterialId));
+        Star::starAssertFailed((tile->get().foreground != NullMaterialId));
       }
 
-      if (tile->liquid.source) {
+      if (tile->get().liquid.source) {
         auto autoblockInfoResult1 = planet->blockInfo(position[0], position[1]);
         if (!autoblockInfoResult1) return std::unexpected(std::move(autoblockInfoResult1.error()));
         auto blockInfo = std::move((*autoblockInfoResult1));
         // make sure that ocean liquid never exists on tiles without empty
         // background (except in real dungeons)
-        if (!isRealDungeon(tile->dungeonId) && tile->background != EmptyMaterialId)
-          tile->liquid.source = false;
+        if (!isRealDungeon(tile->get().dungeonId) && tile->get().background != EmptyMaterialId)
+          tile->get().liquid.source = false;
         // pressurize liquid under the ocean
         if (blockInfo.oceanLiquid != EmptyLiquidId && position[1] < blockInfo.oceanLiquidLevel) {
           float pressure = blockInfo.oceanLiquidLevel - position[1];
-          tile->liquid.pressure = pressure;
+          tile->get().liquid.pressure = pressure;
         }
       }
 
-      if (!isRealMaterial(tile->foreground))
-        tile->foregroundColorVariant = DefaultMaterialColorVariant;
-      if (!isRealMaterial(tile->background))
-        tile->backgroundColorVariant = DefaultMaterialColorVariant;
+      if (!isRealMaterial(tile->get().foreground))
+        tile->get().foregroundColorVariant = DefaultMaterialColorVariant;
+      if (!isRealMaterial(tile->get().background))
+        tile->get().backgroundColorVariant = DefaultMaterialColorVariant;
       {
-        auto operationResult1 = replaceBiomeBlocks(tile);
+        auto operationResult1 = replaceBiomeBlocks(tile->get());
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
       {
-        auto operationResult1 = placeBiomeGrass(worldStorage, tile, position);
+        auto operationResult1 = placeBiomeGrass(worldStorage, tile->get(), position);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
       {
-        auto operationResult1 = biomeForegroundCollision(materialDatabase, tile->foreground, tile->foreground, tile->collision);
+        auto operationResult1 = biomeForegroundCollision(materialDatabase, tile->get().foreground, tile->get().foreground, tile->get().collision);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
-        tile->updateCollision((*operationResult1));
+        tile->get().updateCollision((*operationResult1));
       }
     }
   }
@@ -2010,7 +2021,7 @@ std::expected<void, StarException> WorldGenerator::prepareSector(WorldStorage* w
       if (!objectCheckedResult2) return std::unexpected(std::move(objectCheckedResult2.error()));
       if (auto object = std::move((*objectCheckedResult2)))
         {
-          auto operationResult1 = m_worldServer->addEntity(object);
+          auto operationResult1 = m_worldServer.addEntity(object);
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
         }
     } else if (std::holds_alternative<TreasureBoxSet>(placement.item)) {
@@ -2023,7 +2034,7 @@ std::expected<void, StarException> WorldGenerator::prepareSector(WorldStorage* w
       if (!treasureContainerCheckedResult2) return std::unexpected(std::move(treasureContainerCheckedResult2.error()));
       if (auto treasureContainer = std::move((*treasureContainerCheckedResult2)))
         {
-          auto operationResult1 = m_worldServer->addEntity(treasureContainer);
+          auto operationResult1 = m_worldServer.addEntity(treasureContainer);
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
         }
     }
@@ -2031,17 +2042,17 @@ std::expected<void, StarException> WorldGenerator::prepareSector(WorldStorage* w
 
   for (int x = sectorTiles.xMin(); x < sectorTiles.xMax(); ++x) {
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
-      if (auto* tile = worldStorage->tileArray()->modifyTile({x, y}))
-        tile->collisionCacheDirty = true;
+      if (auto tile = worldStorage.tileArray()->modifyTile({x, y}))
+        tile->get().collisionCacheDirty = true;
     }
   }
 
   return {};
 }
 
-std::expected<void, StarException> WorldGenerator::prepareSectorBiomeBlocks(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto& generationRoot = m_worldServer->root();
-  auto tileArray = worldStorage->tileArray();
+std::expected<void, StarException> WorldGenerator::prepareSectorBiomeBlocks(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
+  auto& generationRoot = m_worldServer.root();
+  auto tileArray = worldStorage.tileArray();
   auto automaterialDatabaseResult1 = generationRoot.materialDatabase();
   if (!automaterialDatabaseResult1) return std::unexpected(std::move(automaterialDatabaseResult1.error()));
   auto materialDatabase = std::move((*automaterialDatabaseResult1));
@@ -2050,19 +2061,19 @@ std::expected<void, StarException> WorldGenerator::prepareSectorBiomeBlocks(Worl
   for (int x = sectorTiles.xMin(); x < sectorTiles.xMax(); ++x) {
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       Vec2I position(x, y);
-      ServerTile* tile = tileArray->modifyTile(position);
+      auto tile = tileArray->modifyTile(position);
       {
-        auto operationResult1 = replaceBiomeBlocks(tile);
+        auto operationResult1 = replaceBiomeBlocks(tile->get());
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
       {
-        auto operationResult1 = placeBiomeGrass(worldStorage, tile, position);
+        auto operationResult1 = placeBiomeGrass(worldStorage, tile->get(), position);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
       }
       {
-        auto operationResult1 = biomeForegroundCollision(materialDatabase, tile->foreground, tile->foreground, tile->collision);
+        auto operationResult1 = biomeForegroundCollision(materialDatabase, tile->get().foreground, tile->get().foreground, tile->get().collision);
         if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
-        tile->updateCollision((*operationResult1));
+        tile->get().updateCollision((*operationResult1));
       }
     }
   }
@@ -2070,78 +2081,76 @@ std::expected<void, StarException> WorldGenerator::prepareSectorBiomeBlocks(Worl
   return {};
 }
 
-std::expected<void, StarException> WorldGenerator::placeBiomeGrass(WorldStorage* worldStorage, ServerTile* tile, Vec2I const& position) {
-  auto const& worldTemplate = m_worldServer->worldTemplate();
-  auto blockBiomeCheckedResult1 = worldTemplate->biome(tile->blockBiomeIndex);
+std::expected<void, StarException> WorldGenerator::placeBiomeGrass(WorldStorage& worldStorage, ServerTile& tile, Vec2I const& position) {
+  auto const& worldTemplate = m_worldServer.worldTemplate();
+  auto blockBiomeCheckedResult1 = worldTemplate->biome(tile.blockBiomeIndex);
   if (!blockBiomeCheckedResult1) return std::unexpected(std::move(blockBiomeCheckedResult1.error()));
   if (auto blockBiome = std::move((*blockBiomeCheckedResult1))) {
     // determine layer for grass mod calculation
-    TileLayer modLayer = tile->foreground != EmptyMaterialId ? TileLayer::Foreground : TileLayer::Background;
+    TileLayer modLayer = tile.foreground != EmptyMaterialId ? TileLayer::Foreground : TileLayer::Background;
 
     // don't place mods in dungeons unless explicitly specified, also don't
     // touch non-grass mods
-    if (tile->mod(modLayer) == BiomeModId || tile->mod(modLayer) == UndergroundBiomeModId
-        || (tile->dungeonId == NoDungeonId && tile->mod(modLayer) == NoModId)) {
+    if (tile.mod(modLayer) == BiomeModId || tile.mod(modLayer) == UndergroundBiomeModId
+        || (tile.dungeonId == NoDungeonId && tile.mod(modLayer) == NoModId)) {
       // check whether we're floor or ceiling
-      auto tileAbove = worldStorage->tileArray()->tile(position + Vec2I(0, 1));
-      auto tileBelow = worldStorage->tileArray()->tile(position + Vec2I(0, -1));
-      bool isFloor = (tile->foreground != EmptyMaterialId && tileAbove.foreground == EmptyMaterialId) || (tile->background != EmptyMaterialId && tileAbove.background == EmptyMaterialId);
-      bool isCeiling = !isFloor && ((tile->foreground != EmptyMaterialId && tileBelow.foreground == EmptyMaterialId) || (tile->background != EmptyMaterialId && tileBelow.background == EmptyMaterialId));
+      auto tileAbove = worldStorage.tileArray()->tile(position + Vec2I(0, 1));
+      auto tileBelow = worldStorage.tileArray()->tile(position + Vec2I(0, -1));
+      bool isFloor = (tile.foreground != EmptyMaterialId && tileAbove.foreground == EmptyMaterialId) || (tile.background != EmptyMaterialId && tileAbove.background == EmptyMaterialId);
+      bool isCeiling = !isFloor && ((tile.foreground != EmptyMaterialId && tileBelow.foreground == EmptyMaterialId) || (tile.background != EmptyMaterialId && tileBelow.background == EmptyMaterialId));
 
       // get the appropriate placeables for above/below ground
-      BiomePlaceables const* placeables;
-      if ((isFloor && tileAbove.background != EmptyMaterialId) || (isCeiling && tileBelow.background != EmptyMaterialId))
-        placeables = &blockBiome->undergroundPlaceables;
-      else
-        placeables = &blockBiome->surfacePlaceables;
+      BiomePlaceables const& placeables =
+          ((isFloor && tileAbove.background != EmptyMaterialId) || (isCeiling && tileBelow.background != EmptyMaterialId))
+          ? blockBiome->undergroundPlaceables : blockBiome->surfacePlaceables;
 
       // determine the proper grass mod or lack thereof
       ModId grassModId = NoModId;
       if (isFloor) {
         auto grassChance = staticRandomFloat(worldTemplate->worldSeed(), position[0], position[1]);
-        if (isRealMod(placeables->grassMod) && grassChance <= placeables->grassModDensity)
-          grassModId = placeables->grassMod;
+        if (isRealMod(placeables.grassMod) && grassChance <= placeables.grassModDensity)
+          grassModId = placeables.grassMod;
       } else if (isCeiling) {
         auto grassChance = staticRandomFloat(worldTemplate->worldSeed(), position[0], position[1]);
-        if (isRealMod(placeables->ceilingGrassMod) && grassChance <= placeables->ceilingGrassModDensity)
-          grassModId = placeables->ceilingGrassMod;
+        if (isRealMod(placeables.ceilingGrassMod) && grassChance <= placeables.ceilingGrassModDensity)
+          grassModId = placeables.ceilingGrassMod;
       }
 
       // set the selected grass mod
       if (modLayer == TileLayer::Foreground) {
-        tile->foregroundMod = grassModId;
-        tile->backgroundMod = NoModId;
+        tile.foregroundMod = grassModId;
+        tile.backgroundMod = NoModId;
       } else {
-        tile->foregroundMod = NoModId;
-        tile->backgroundMod = grassModId;
+        tile.foregroundMod = NoModId;
+        tile.backgroundMod = grassModId;
       }
     }
 
     // update hue shifts appropriately
-    auto tileforegroundModHueShiftResult1 = worldTemplate->biomeModHueShift(tile->blockBiomeIndex, tile->foregroundMod);
+    auto tileforegroundModHueShiftResult1 = worldTemplate->biomeModHueShift(tile.blockBiomeIndex, tile.foregroundMod);
     if (!tileforegroundModHueShiftResult1) return std::unexpected(std::move(tileforegroundModHueShiftResult1.error()));
-    tile->foregroundModHueShift = std::move((*tileforegroundModHueShiftResult1));
-    auto tilebackgroundModHueShiftResult1 = worldTemplate->biomeModHueShift(tile->blockBiomeIndex, tile->backgroundMod);
+    tile.foregroundModHueShift = std::move((*tileforegroundModHueShiftResult1));
+    auto tilebackgroundModHueShiftResult1 = worldTemplate->biomeModHueShift(tile.blockBiomeIndex, tile.backgroundMod);
     if (!tilebackgroundModHueShiftResult1) return std::unexpected(std::move(tilebackgroundModHueShiftResult1.error()));
-    tile->backgroundModHueShift = std::move((*tilebackgroundModHueShiftResult1));
+    tile.backgroundModHueShift = std::move((*tilebackgroundModHueShiftResult1));
   }
 
   return {};
 }
 
-std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto& generationRoot = m_worldServer->root();
-  auto const& worldTemplate = m_worldServer->worldTemplate();
+std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
+  auto& generationRoot = m_worldServer.root();
+  auto const& worldTemplate = m_worldServer.worldTemplate();
   auto const& worldLayout = worldTemplate->worldLayout();
   auto automaterialDatabaseResult1 = generationRoot.materialDatabase();
   if (!automaterialDatabaseResult1) return std::unexpected(std::move(automaterialDatabaseResult1.error()));
   auto materialDatabase = std::move((*automaterialDatabaseResult1));
   auto planet = worldTemplate;
-  auto tileArray = worldStorage->tileArray();
+  auto tileArray = worldStorage.tileArray();
   RectI sectorTiles = tileArray->sectorRegion(sector);
 
   // generationRoot.logger().info("Reapplying biome in sector {}...", sectorTiles);
-  auto autoentitiesResult1 = m_worldServer->entityQuery(RectF(sectorTiles.padded(1)));
+  auto autoentitiesResult1 = m_worldServer.entityQuery(RectF(sectorTiles.padded(1)));
   if (!autoentitiesResult1) return std::unexpected(std::move(autoentitiesResult1.error()));
   auto entities = std::move((*autoentitiesResult1));
   List<std::shared_ptr<TileEntity>> biomeTileEntities;
@@ -2159,9 +2168,9 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
   for (int x = sectorTiles.xMin(); x < sectorTiles.xMax(); ++x) {
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       Vec2I position(x, y);
-      auto ServerTiletileResult1 = m_worldServer->modifyServerTile(position);
+      auto ServerTiletileResult1 = m_worldServer.modifyServerTile(position);
       if (!ServerTiletileResult1) return std::unexpected(std::move(ServerTiletileResult1.error()));
-      ServerTile* tile = std::move((*ServerTiletileResult1));
+      auto tile = std::move((*ServerTiletileResult1));
       if constexpr (Star::DebugEnabled) {
         Star::starAssertFailed((tile));
       }
@@ -2170,18 +2179,18 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
       auto autoblockInfoResult1 = planet->blockBiomeInfo(position[0], position[1]);
       if (!autoblockInfoResult1) return std::unexpected(std::move(autoblockInfoResult1.error()));
       auto blockInfo = std::move((*autoblockInfoResult1));
-      if (blockInfo.blockBiomeIndex != tile->blockBiomeIndex) {
+      if (blockInfo.blockBiomeIndex != tile->get().blockBiomeIndex) {
         auto autonewBiomeResult1 = planet->biome(blockInfo.blockBiomeIndex);
         if (!autonewBiomeResult1) return std::unexpected(std::move(autonewBiomeResult1.error()));
         auto newBiome = std::move((*autonewBiomeResult1));
-        auto autooldBiomeResult1 = planet->biome(tile->blockBiomeIndex);
+        auto autooldBiomeResult1 = planet->biome(tile->get().blockBiomeIndex);
         if (!autooldBiomeResult1) return std::unexpected(std::move(autooldBiomeResult1.error()));
         auto oldBiome = std::move((*autooldBiomeResult1));
-        MaterialId oldForeground = tile->foreground;
+        MaterialId oldForeground = tile->get().foreground;
 
         for (auto iter = biomeTileEntities.begin(); iter != biomeTileEntities.end();) {
           if ((*iter)->tilePosition() == position) {
-            auto autoremovedResult1 = m_worldServer->removeEntity((*iter)->entityId(), false);
+            auto autoremovedResult1 = m_worldServer.removeEntity((*iter)->entityId(), false);
             if (!autoremovedResult1) return std::unexpected(std::move(autoremovedResult1.error()));
             iter = biomeTileEntities.erase(iter);
           } else {
@@ -2190,76 +2199,74 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
         }
 
         // update biome index
-        tile->blockBiomeIndex = blockInfo.blockBiomeIndex;
-        tile->environmentBiomeIndex = blockInfo.environmentBiomeIndex;
-        tile->biomeTransition = true;
+        tile->get().blockBiomeIndex = blockInfo.blockBiomeIndex;
+        tile->get().environmentBiomeIndex = blockInfo.environmentBiomeIndex;
+        tile->get().biomeTransition = true;
 
         // replace biome blocks
-        if (tile->foreground == oldBiome->mainBlock || oldBiome->subBlocks.contains(tile->foreground)) {
-          tile->foreground = blockInfo.foreground;
-          tile->foregroundColorVariant = DefaultMaterialColorVariant;
-          if (tile->foreground == newBiome->mainBlock)
-            tile->foregroundHueShift = newBiome->materialHueShift;
+        if (tile->get().foreground == oldBiome->mainBlock || oldBiome->subBlocks.contains(tile->get().foreground)) {
+          tile->get().foreground = blockInfo.foreground;
+          tile->get().foregroundColorVariant = DefaultMaterialColorVariant;
+          if (tile->get().foreground == newBiome->mainBlock)
+            tile->get().foregroundHueShift = newBiome->materialHueShift;
         }
 
-        if (tile->background == oldBiome->mainBlock || oldBiome->subBlocks.contains(tile->background)) {
-          tile->background = blockInfo.background;
-          tile->backgroundColorVariant = DefaultMaterialColorVariant;
-          if (tile->background == newBiome->mainBlock)
-            tile->backgroundHueShift = newBiome->materialHueShift;
+        if (tile->get().background == oldBiome->mainBlock || oldBiome->subBlocks.contains(tile->get().background)) {
+          tile->get().background = blockInfo.background;
+          tile->get().backgroundColorVariant = DefaultMaterialColorVariant;
+          if (tile->get().background == newBiome->mainBlock)
+            tile->get().backgroundHueShift = newBiome->materialHueShift;
         }
 
-        if (tile->foreground != EmptyMaterialId || tile->background != EmptyMaterialId) {
+        if (tile->get().foreground != EmptyMaterialId || tile->get().background != EmptyMaterialId) {
           // remove old biome mods
-          if (tile->foregroundMod == oldBiome->surfacePlaceables.grassMod || tile->foregroundMod == oldBiome->surfacePlaceables.ceilingGrassMod ||
-              tile->foregroundMod == oldBiome->undergroundPlaceables.grassMod || tile->foregroundMod == oldBiome->undergroundPlaceables.ceilingGrassMod) {
+          if (tile->get().foregroundMod == oldBiome->surfacePlaceables.grassMod || tile->get().foregroundMod == oldBiome->surfacePlaceables.ceilingGrassMod ||
+              tile->get().foregroundMod == oldBiome->undergroundPlaceables.grassMod || tile->get().foregroundMod == oldBiome->undergroundPlaceables.ceilingGrassMod) {
 
-            tile->foregroundMod = NoModId;
-            tile->foregroundModHueShift = 0;
+            tile->get().foregroundMod = NoModId;
+            tile->get().foregroundModHueShift = 0;
           }
 
-          if (tile->backgroundMod == oldBiome->surfacePlaceables.grassMod || tile->backgroundMod == oldBiome->surfacePlaceables.ceilingGrassMod ||
-              tile->backgroundMod == oldBiome->undergroundPlaceables.grassMod || tile->backgroundMod == oldBiome->undergroundPlaceables.ceilingGrassMod) {
+          if (tile->get().backgroundMod == oldBiome->surfacePlaceables.grassMod || tile->get().backgroundMod == oldBiome->surfacePlaceables.ceilingGrassMod ||
+              tile->get().backgroundMod == oldBiome->undergroundPlaceables.grassMod || tile->get().backgroundMod == oldBiome->undergroundPlaceables.ceilingGrassMod) {
 
-            tile->backgroundMod = NoModId;
-            tile->backgroundModHueShift = 0;
+            tile->get().backgroundMod = NoModId;
+            tile->get().backgroundModHueShift = 0;
           }
 
           // apply new biome mods
-          TileLayer modLayer = tile->foreground != EmptyMaterialId ? TileLayer::Foreground : TileLayer::Background;
+          TileLayer modLayer = tile->get().foreground != EmptyMaterialId ? TileLayer::Foreground : TileLayer::Background;
 
-          if (tile->mod(modLayer) == NoModId) {
+          if (tile->get().mod(modLayer) == NoModId) {
             // check whether we're floor or ceiling
-            auto tileAbove = worldStorage->tileArray()->tile(position + Vec2I(0, 1));
-            auto tileBelow = worldStorage->tileArray()->tile(position + Vec2I(0, -1));
-            bool isFloor = tile->foreground != EmptyMaterialId && tileAbove.foreground == EmptyMaterialId;
-            bool isCeiling = !isFloor && tile->foreground != EmptyMaterialId && tileBelow.foreground == EmptyMaterialId;
+            auto tileAbove = worldStorage.tileArray()->tile(position + Vec2I(0, 1));
+            auto tileBelow = worldStorage.tileArray()->tile(position + Vec2I(0, -1));
+            bool isFloor = tile->get().foreground != EmptyMaterialId && tileAbove.foreground == EmptyMaterialId;
+            bool isCeiling = !isFloor && tile->get().foreground != EmptyMaterialId && tileBelow.foreground == EmptyMaterialId;
             bool isModFloor, isModCeiling;
             if (modLayer == TileLayer::Foreground) {
               isModFloor = isFloor;
               isModCeiling = isCeiling;
             } else {
-              isModFloor = tile->background != EmptyMaterialId && tileAbove.background == EmptyMaterialId;
-              isModCeiling = !isModFloor && tile->background != EmptyMaterialId && tileBelow.background == EmptyMaterialId;
+              isModFloor = tile->get().background != EmptyMaterialId && tileAbove.background == EmptyMaterialId;
+              isModCeiling = !isModFloor && tile->get().background != EmptyMaterialId && tileBelow.background == EmptyMaterialId;
             }
 
             // get the appropriate placeables for above/below ground
-            BiomePlaceables const* placeables;
-            if ((isFloor && tileAbove.background != EmptyMaterialId) || (isCeiling && tileBelow.background != EmptyMaterialId))
-              placeables = &newBiome->undergroundPlaceables;
-            else
-              placeables = &newBiome->surfacePlaceables;
+            BiomePlaceables const& placeables =
+                ((isFloor && tileAbove.background != EmptyMaterialId) || (isCeiling && tileBelow.background != EmptyMaterialId))
+                ? newBiome->undergroundPlaceables : newBiome->surfacePlaceables;
 
             // determine the proper grass mod or lack thereof
             ModId grassModId = NoModId;
             if (isModFloor) {
               auto grassChance = staticRandomFloat(worldTemplate->worldSeed(), position[0], position[1]);
-              if (isRealMod(placeables->grassMod) && grassChance <= placeables->grassModDensity)
-                grassModId = placeables->grassMod;
+              if (isRealMod(placeables.grassMod) && grassChance <= placeables.grassModDensity)
+                grassModId = placeables.grassMod;
             } else if (isModCeiling) {
               auto grassChance = staticRandomFloat(worldTemplate->worldSeed(), position[0], position[1]);
-              if (isRealMod(placeables->ceilingGrassMod) && grassChance <= placeables->ceilingGrassModDensity)
-                grassModId = placeables->ceilingGrassMod;
+              if (isRealMod(placeables.ceilingGrassMod) && grassChance <= placeables.ceilingGrassModDensity)
+                grassModId = placeables.ceilingGrassMod;
             }
 
             // set the selected grass mod
@@ -2269,7 +2276,7 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
                   return static_cast<bool>(condition); }();
                 if (!left) return std::unexpected(std::move(left.error()));
                 if (!*left) return false;
-                                auto conditionResult1 = materialDatabase->supportsMod(tile->foreground, grassModId);
+                                auto conditionResult1 = materialDatabase->supportsMod(tile->get().foreground, grassModId);
                 if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
                 auto condition = std::move((*conditionResult1));
                 return static_cast<bool>(condition);
@@ -2277,15 +2284,15 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
             }(); !condition94)
               return std::unexpected(std::move(condition94.error()));
             else if (*condition94) {
-              tile->foregroundMod = grassModId;
-              tile->backgroundMod = NoModId;
+              tile->get().foregroundMod = grassModId;
+              tile->get().backgroundMod = NoModId;
             } else if (auto condition93 = [&]() -> std::expected<bool, StarException> {
               return [&]() -> std::expected<bool, StarException> {
                 auto left = [&]() -> std::expected<bool, StarException> {                   auto condition = std::move(modLayer == TileLayer::Background);
                   return static_cast<bool>(condition); }();
                 if (!left) return std::unexpected(std::move(left.error()));
                 if (!*left) return false;
-                                auto conditionResult1 = materialDatabase->supportsMod(tile->background, grassModId);
+                                auto conditionResult1 = materialDatabase->supportsMod(tile->get().background, grassModId);
                 if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
                 auto condition = std::move((*conditionResult1));
                 return static_cast<bool>(condition);
@@ -2293,24 +2300,24 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
             }(); !condition93)
               return std::unexpected(std::move(condition93.error()));
             else if (*condition93) {
-              tile->foregroundMod = NoModId;
-              tile->backgroundMod = grassModId;
+              tile->get().foregroundMod = NoModId;
+              tile->get().backgroundMod = grassModId;
             }
           }
         } else {
-          tile->foregroundMod = NoModId;
-          tile->backgroundMod = NoModId;
+          tile->get().foregroundMod = NoModId;
+          tile->get().backgroundMod = NoModId;
         }
         {
-          auto operationResult1 = biomeForegroundCollision(materialDatabase, oldForeground, tile->foreground, tile->collision);
+          auto operationResult1 = biomeForegroundCollision(materialDatabase, oldForeground, tile->get().foreground, tile->get().collision);
           if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
-          tile->updateCollision((*operationResult1));
+          tile->get().updateCollision((*operationResult1));
         }
       }
 
-      if (tile->biomeTransition && !blockInfo.biomeTransition) {
-        tile->biomeTransition = false;
-        if (!isSolidColliding(tile->collision))
+      if (tile->get().biomeTransition && !blockInfo.biomeTransition) {
+        tile->get().biomeTransition = false;
+        if (!isSolidColliding(tile->get().collision))
           biomeItemTiles.append(position);
       }
     }
@@ -2323,18 +2330,18 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
       auto spaces = plant->spaces();
       auto roots = plant->roots();
       auto const& primaryRoot = plant->primaryRoot();
-      auto autoblockBiomeResult1 = worldLayout->getBiome(worldStorage->tileArray()->tile(position).blockBiomeIndex);
+      auto autoblockBiomeResult1 = worldLayout->getBiome(worldStorage.tileArray()->tile(position).blockBiomeIndex);
       if (!autoblockBiomeResult1) return std::unexpected(std::move(autoblockBiomeResult1.error()));
-      auto blockBiome = std::move((**autoblockBiomeResult1));
+      auto blockBiome = std::move(autoblockBiomeResult1->get());
 
       auto positionValid = [&](Vec2I const& pos) -> std::expected<bool, StarException> {
-          auto primaryTile = worldStorage->tileArray()->tile(pos);
-          auto primaryRootTile = worldStorage->tileArray()->tile(pos + primaryRoot);
+          auto primaryTile = worldStorage.tileArray()->tile(pos);
+          auto primaryRootTile = worldStorage.tileArray()->tile(pos + primaryRoot);
           if (isConnectableMaterial(primaryTile.foreground) || !isConnectableMaterial(primaryRootTile.foreground))
             return false;
 
           for (auto root : roots) {
-            auto rootTile = worldStorage->tileArray()->tile(root + pos);
+            auto rootTile = worldStorage.tileArray()->tile(root + pos);
             if (!isConnectableMaterial(rootTile.foreground) || rootTile.blockBiomeIndex != primaryTile.blockBiomeIndex ||
                 (rootTile.foreground != blockBiome->mainBlock && !blockBiome->subBlocks.contains(rootTile.foreground)))
               return false;
@@ -2344,7 +2351,7 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
             Vec2I pspace = space + pos;
 
             if (auto condition92 = [&]() -> std::expected<bool, StarException> {
-                            auto conditionResult1 = m_worldServer->atTile<TileEntity>(pspace);
+                            auto conditionResult1 = m_worldServer.atTile<TileEntity>(pspace);
               if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
               auto condition = std::move(!(*conditionResult1).empty());
               return static_cast<bool>(condition);
@@ -2353,7 +2360,7 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
             else if (*condition92)
               return false;
 
-            auto tile = worldStorage->tileArray()->tile(pspace);
+            auto tile = worldStorage.tileArray()->tile(pspace);
             if (tile.foreground != EmptyMaterialId)
               return false;
           }
@@ -2387,7 +2394,7 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
             if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
           }
           {
-            auto operationResult1 = m_worldServer->addEntity(plant);
+            auto operationResult1 = m_worldServer.addEntity(plant);
             if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
           }
           return true;
@@ -2445,7 +2452,7 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
         if (auto object = std::move((*objectCheckedResult2))) {
           if (object->biomePlaced())
             {
-              auto operationResult1 = m_worldServer->addEntity(object);
+              auto operationResult1 = m_worldServer.addEntity(object);
               if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
             }
         }
@@ -2454,20 +2461,20 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
     };
 
   for (auto position : biomeItemTiles) {
-    auto ServerTiletileResult1 = m_worldServer->modifyServerTile(position);
+    auto ServerTiletileResult1 = m_worldServer.modifyServerTile(position);
     if (!ServerTiletileResult1) return std::unexpected(std::move(ServerTiletileResult1.error()));
-    ServerTile* tile = std::move((*ServerTiletileResult1));
-    auto autoblockBiomeResult1 = worldLayout->getBiome(tile->blockBiomeIndex);
+    auto tile = std::move((*ServerTiletileResult1));
+    auto autoblockBiomeResult1 = worldLayout->getBiome(tile->get().blockBiomeIndex);
     if (!autoblockBiomeResult1) return std::unexpected(std::move(autoblockBiomeResult1.error()));
-    auto blockBiome = std::move((**autoblockBiomeResult1));
-    auto autotileAboveResult1 = m_worldServer->getServerTile(position + Vec2I{0, 1});
+    auto blockBiome = std::move(autoblockBiomeResult1->get());
+    auto autotileAboveResult1 = m_worldServer.getServerTile(position + Vec2I{0, 1});
     if (!autotileAboveResult1) return std::unexpected(std::move(autotileAboveResult1.error()));
-    auto tileAbove = std::move((**autotileAboveResult1));
-    auto autotileBelowResult1 = m_worldServer->getServerTile(position + Vec2I{0, -1});
+    auto tileAbove = std::move(autotileAboveResult1->get());
+    auto autotileBelowResult1 = m_worldServer.getServerTile(position + Vec2I{0, -1});
     if (!autotileBelowResult1) return std::unexpected(std::move(autotileBelowResult1.error()));
-    auto tileBelow = std::move((**autotileBelowResult1));
+    auto tileBelow = std::move(autotileBelowResult1->get());
 
-    if (tile->background != EmptyMaterialId) {
+    if (tile->get().background != EmptyMaterialId) {
       for (auto const& itemDistribution : blockBiome->undergroundPlaceables.itemDistributions) {
         if (itemDistribution.mode() == BiomePlacementMode::Background) {
           auto itemToPlace = itemDistribution.itemToPlace(position[0], position[1]);
@@ -2527,9 +2534,9 @@ std::expected<void, StarException> WorldGenerator::reapplyBiome(WorldStorage* wo
   return {};
 }
 
-std::expected<Set<Vec2I>, StarException> WorldGenerator::caveLiquidSeeds(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto const& worldTemplate = m_worldServer->worldTemplate();
-  RectI sectorTiles = worldStorage->tileArray()->sectorRegion(sector);
+std::expected<Set<Vec2I>, StarException> WorldGenerator::caveLiquidSeeds(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
+  auto const& worldTemplate = m_worldServer.worldTemplate();
+  RectI sectorTiles = worldStorage.tileArray()->sectorRegion(sector);
   auto samplePoint = sectorTiles.center();
   auto autoblockInfoResult1 = worldTemplate->blockInfo(samplePoint[0], samplePoint[1]);
   if (!autoblockInfoResult1) return std::unexpected(std::move(autoblockInfoResult1.error()));
@@ -2552,7 +2559,7 @@ Map<Vec2I, float> WorldGenerator::determineLiquidLevel(Set<Vec2I> const& spots, 
   Set<Vec2I> openSet(spots);
   Map<Vec2I, float> results;
 
-  auto geometry = m_worldServer->geometry();
+  auto geometry = m_worldServer.geometry();
 
   while (openSet.size() > 0) {
     Set<Vec2I> cluster;
@@ -2601,17 +2608,17 @@ void WorldGenerator::levelCluster(Set<Vec2I>& cluster, Set<Vec2I> const& filled,
   }
 }
 
-std::expected<bool, StarException> WorldGenerator::placePlant(WorldStorage* worldStorage, std::shared_ptr<Plant> const& plant, Vec2I const& position) {
-  auto& generationRoot = m_worldServer->root();
+std::expected<bool, StarException> WorldGenerator::placePlant(WorldStorage& worldStorage, std::shared_ptr<Plant> const& plant, Vec2I const& position) {
+  auto& generationRoot = m_worldServer.root();
   if (!plant)
     return false;
 
   auto spaces = plant->spaces();
   auto roots = plant->roots();
   auto const& primaryRoot = plant->primaryRoot();
-  auto autobackgroundResult1 = m_worldServer->getServerTile(position);
+  auto autobackgroundResult1 = m_worldServer.getServerTile(position);
   if (!autobackgroundResult1) return std::unexpected(std::move(autobackgroundResult1.error()));
-  auto background = std::move((**autobackgroundResult1).background);
+  auto background = std::move(autobackgroundResult1->get().background);
   bool adjustBackground = background == EmptyMaterialId || background == NullMaterialId;
 
   auto withinAdjustment = [=](Vec2I const& pos) {
@@ -2620,8 +2627,8 @@ std::expected<bool, StarException> WorldGenerator::placePlant(WorldStorage* worl
 
   // Bail out if we don't have at least one free space, and root in the primary
   // root position, or if we're in a dungeon region.
-  auto primaryTile = worldStorage->tileArray()->tile(position);
-  auto rootTile = worldStorage->tileArray()->tile(position + primaryRoot);
+  auto primaryTile = worldStorage.tileArray()->tile(position);
+  auto rootTile = worldStorage.tileArray()->tile(position + primaryRoot);
   if (primaryTile.dungeonId != NoDungeonId || rootTile.dungeonId != NoDungeonId)
     return false;
   if (isConnectableMaterial(primaryTile.foreground) || !isConnectableMaterial(rootTile.foreground))
@@ -2637,7 +2644,7 @@ std::expected<bool, StarException> WorldGenerator::placePlant(WorldStorage* worl
           return static_cast<bool>(condition); }();
         if (!left) return std::unexpected(std::move(left.error()));
         if (!*left) return false;
-                auto conditionResult1 = m_worldServer->atTile<Plant>(pspace);
+                auto conditionResult1 = m_worldServer.atTile<Plant>(pspace);
         if (!conditionResult1) return std::unexpected(std::move(conditionResult1.error()));
         auto condition = std::move(!(*conditionResult1).empty());
         return static_cast<bool>(condition);
@@ -2649,7 +2656,7 @@ std::expected<bool, StarException> WorldGenerator::placePlant(WorldStorage* worl
 
     // Bail out if we hit a different plant's root tile, or if we're not in the
     // adjustment space and we hit a non-empty tile.
-    auto tile = worldStorage->tileArray()->tile(pspace);
+    auto tile = worldStorage.tileArray()->tile(pspace);
     if (tile.rootSource || (!withinAdjustment(space) && tile.foreground != EmptyMaterialId))
       return false;
   }
@@ -2657,7 +2664,7 @@ std::expected<bool, StarException> WorldGenerator::placePlant(WorldStorage* worl
   // Check all the roots outside of the adjustment limit
   for (auto root : roots) {
     root += position;
-    if (!withinAdjustment(root) && !isConnectableMaterial(worldStorage->tileArray()->tile(root).foreground))
+    if (!withinAdjustment(root) && !isConnectableMaterial(worldStorage.tileArray()->tile(root).foreground))
       return false;
   }
 
@@ -2667,13 +2674,13 @@ std::expected<bool, StarException> WorldGenerator::placePlant(WorldStorage* worl
       continue;
 
     space += position;
-    if (auto tile = worldStorage->tileArray()->modifyTile(space)) {
-      if (isConnectableMaterial(tile->foreground))
-        *tile = primaryTile;
+    if (auto tile = worldStorage.tileArray()->modifyTile(space)) {
+      if (isConnectableMaterial(tile->get().foreground))
+        tile->get() = primaryTile;
       if (adjustBackground)
-        tile->background = EmptyMaterialId;
-      tile->collision = CollisionKind::None;
-      tile->collisionCacheDirty = true;
+        tile->get().background = EmptyMaterialId;
+      tile->get().collision = CollisionKind::None;
+      tile->get().collisionCacheDirty = true;
     } else {
       return false;
     }
@@ -2682,15 +2689,15 @@ std::expected<bool, StarException> WorldGenerator::placePlant(WorldStorage* worl
   // Make all the root blocks a real material based on the primary root.
   for (auto root : roots) {
     root += position;
-    if (auto tile = worldStorage->tileArray()->modifyTile(root)) {
-      if (!isRealMaterial(tile->foreground)) {
-        *tile = rootTile;
+    if (auto tile = worldStorage.tileArray()->modifyTile(root)) {
+      if (!isRealMaterial(tile->get().foreground)) {
+        tile->get() = rootTile;
         auto tilecollisionResult1 = generationRoot.materialDatabase();
         if (!tilecollisionResult1) return std::unexpected(std::move(tilecollisionResult1.error()));
-        auto tilecollisionResult2 = (*tilecollisionResult1)->materialCollisionKind(tile->foreground);
+        auto tilecollisionResult2 = (*tilecollisionResult1)->materialCollisionKind(tile->get().foreground);
         if (!tilecollisionResult2) return std::unexpected(std::move(tilecollisionResult2.error()));
-        tile->collision = std::move((*tilecollisionResult2));
-        tile->collisionCacheDirty = true;
+        tile->get().collision = std::move((*tilecollisionResult2));
+        tile->get().collisionCacheDirty = true;
       }
     } else {
       return false;
@@ -2701,7 +2708,7 @@ std::expected<bool, StarException> WorldGenerator::placePlant(WorldStorage* worl
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
   {
-    auto operationResult1 = m_worldServer->addEntity(plant);
+    auto operationResult1 = m_worldServer.addEntity(plant);
     if (!operationResult1) return std::unexpected(std::move(operationResult1.error()));
   }
   return true;

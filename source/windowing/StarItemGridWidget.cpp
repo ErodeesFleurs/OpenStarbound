@@ -141,7 +141,7 @@ std::expected<std::shared_ptr<ItemSlotWidget>, StarException> ItemGridWidget::it
   if (pos == NPos) return std::shared_ptr<ItemSlotWidget>{};
   auto slot = m_slots.at(pos);
   if (!slot) return std::unexpected(std::move(slot.error()));
-  return **slot;
+  return slot->get();
 }
 
 std::shared_ptr<ItemSlotWidget> ItemGridWidget::itemWidgetAt(std::size_t index) const {
@@ -185,26 +185,27 @@ std::size_t ItemGridWidget::bagLocationAt(Vec2I const& position) const {
 std::expected<Vec2I, StarException> ItemGridWidget::positionOfSlot(std::size_t slotNumber) {
   auto slot = m_slots.at(slotNumber);
   if (!slot) return std::unexpected(std::move(slot.error()));
-  return (**slot)->position() + position();
+  return (slot->get())->position() + position();
 }
 
 std::expected<bool, StarException> ItemGridWidget::sendEvent(InputEvent const& event) {
   if (m_visible) {
-    if (auto mouseButton = std::get_if<MouseButtonDownEvent>(&event)) {
-      if (mouseButton->mouseButton == MouseButton::Left
-        || (m_rightClickCallback && mouseButton->mouseButton == MouseButton::Right)
-        || (m_middleClickCallback && mouseButton->mouseButton == MouseButton::Middle)) {
-        Vec2I mousePos = *context()->mousePosition(event);
+    if (std::holds_alternative<MouseButtonDownEvent>(event)) {
+      auto const& mouseButton = std::get<MouseButtonDownEvent>(event);
+      if (mouseButton.mouseButton == MouseButton::Left
+        || (m_rightClickCallback && mouseButton.mouseButton == MouseButton::Right)
+        || (m_middleClickCallback && mouseButton.mouseButton == MouseButton::Middle)) {
+        Vec2I mousePos = *context().mousePosition(event);
         for (std::size_t i = 0; i < (m_bag->size() - m_bagOffset) && i < unsigned(m_dimensions[0] * m_dimensions[1]); ++i) {
           Vec2I loc = locOfItemSlot(i);
           RectI bagItemArea = RectI(m_itemDraggableArea).translated(screenPosition() + loc);
 
           if (bagItemArea.contains(mousePos)) {
             m_selectedIndex = i;
-            auto const& callback = mouseButton->mouseButton == MouseButton::Right ? m_rightClickCallback
-              : mouseButton->mouseButton == MouseButton::Middle ? m_middleClickCallback : m_callback;
+            auto const& callback = mouseButton.mouseButton == MouseButton::Right ? m_rightClickCallback
+              : mouseButton.mouseButton == MouseButton::Middle ? m_middleClickCallback : m_callback;
             if (!callback) return std::unexpected(GuiException("Item grid has no click callback"));
-            auto result = callback(this);
+            auto result = callback(*this);
             if (!result) return std::unexpected(std::move(result.error()));
             return true;
           }
@@ -245,7 +246,7 @@ std::expected<void, StarException> ItemGridWidget::setItemBag(std::shared_ptr<It
   for (std::size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
     auto item = m_bag->at(i);
     if (!item) return std::unexpected(std::move(item.error()));
-    auto slot = ItemSlotWidget::create(*context(), *item, m_backingImage);
+    auto slot = ItemSlotWidget::create(context(), *item, m_backingImage);
     if (!slot) return std::unexpected(std::move(slot.error()));
     auto child = addChild(toString(i), *slot);
     if (!child) return std::unexpected(std::move(child.error()));
@@ -265,7 +266,7 @@ std::expected<void, StarException> ItemGridWidget::setProgress(float progress) {
   for (std::size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
     auto slot = m_slots.at(i);
     if (!slot) return std::unexpected(std::move(slot.error()));
-    (**slot)->setProgress(m_progress);
+    (slot->get())->setProgress(m_progress);
   }
   return {};
 }
@@ -281,8 +282,8 @@ std::expected<void, StarException> ItemGridWidget::updateAllItemSlots() {
     if (!item) return std::unexpected(std::move(item.error()));
     auto slot = m_slots.at(i);
     if (!slot) return std::unexpected(std::move(slot.error()));
-    (**slot)->setItem(*item);
-    (**slot)->setHighlightEnabled(!*item && m_highlightEmpty);
+    (slot->get())->setItem(*item);
+    (slot->get())->setHighlightEnabled(!*item && m_highlightEmpty);
   }
   return {};
 }
@@ -347,7 +348,7 @@ std::expected<void, StarException> ItemGridWidget::setBackingImageAffinity(bool 
   for (std::size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
     auto slot = m_slots.at(i);
     if (!slot) return std::unexpected(std::move(slot.error()));
-    (**slot)->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
+    (slot->get())->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
   }
   return {};
 }
@@ -358,7 +359,7 @@ std::expected<void, StarException> ItemGridWidget::showDurability(bool show) {
   for (std::size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
     auto slot = m_slots.at(i);
     if (!slot) return std::unexpected(std::move(slot.error()));
-    (**slot)->showDurability(m_showDurability);
+    (slot->get())->showDurability(m_showDurability);
   }
   return {};
 }

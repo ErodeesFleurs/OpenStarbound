@@ -90,14 +90,14 @@ std::expected<std::shared_ptr<RadioMessagePopup>, StarException> RadioMessagePop
 }
 
 std::expected<void, StarException> RadioMessagePopup::initialize() {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto config = (*assets)->json("/interface/radiomessage/radiomessage.config");
   if (!config) return std::unexpected(std::move(config.error()));
   auto layout = config->get("paneLayout");
   if (!layout) return std::unexpected(std::move(layout.error()));
-  GuiReader reader(*context());
-  auto constructed = reader.construct(*layout, this);
+  GuiReader reader(context());
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed) return std::unexpected(std::move(constructed.error()));
   auto messageLabel = fetchChild<LabelWidget>("lblMessage");
   if (!messageLabel) return std::unexpected(std::move(messageLabel.error()));
@@ -192,7 +192,7 @@ std::expected<void, StarException> RadioMessagePopup::setMessage(RadioMessage me
   if (!message.chatterSound.empty() && message.textSpeed > 0) {
     if (m_chatterSound)
       m_chatterSound->stop();
-    auto assets = context()->root().assets();
+    auto assets = context().root().assets();
     if (!assets) return std::unexpected(std::move(assets.error()));
     auto audio = (*assets)->audio(message.chatterSound);
     if (!audio) return std::unexpected(std::move(audio.error()));
@@ -267,7 +267,7 @@ std::expected<void, StarException> RadioMessagePopup::enterStage(PopupStage newS
       auto background = setBG(m_backgroundImage);
       if (!background) return std::unexpected(std::move(background.error()));
       if (m_chatterSound) {
-        auto audio = context()->playAudio(m_chatterSound);
+        auto audio = context().playAudio(m_chatterSound);
         if (!audio) return std::unexpected(std::move(audio.error()));
       }
     }

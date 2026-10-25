@@ -88,7 +88,7 @@ import star.byte_array;
 namespace Star {
 
 struct StarPacketExceptionTag {
-  static constexpr char const* name() { return "StarPacketException"; }
+  static constexpr std::string_view name() { return "StarPacketException"; }
 };
 using StarPacketException = StarError<StarPacketExceptionTag, IOException>;
 

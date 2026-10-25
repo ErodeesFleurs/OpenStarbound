@@ -42,7 +42,7 @@ namespace Star {
     virtual ~RenderableItem() {}
 
     [[nodiscard]]
-    virtual std::expected<void, StarException> render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) = 0;
+    virtual std::expected<void, StarException> render(RenderCallback& renderCallback, EntityRenderLayer renderLayer) = 0;
   };
 
 }

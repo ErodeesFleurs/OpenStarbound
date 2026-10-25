@@ -23,7 +23,7 @@ namespace Star {
 class ImageMetadataDatabase;
 
 struct MaterialRenderProfileExceptionTag {
-  static constexpr char const* name() { return "MaterialRenderProfileException"; }
+  static constexpr std::string_view name() { return "MaterialRenderProfileException"; }
 };
 using MaterialRenderProfileException = StarError<MaterialRenderProfileExceptionTag, StarException>;
 
@@ -129,7 +129,7 @@ struct MaterialRenderProfile {
   // Get an overlay image for rendering damaged tiles, as well as the offset
   // for it in world coordinates.
   [[nodiscard]]
-  std::expected<std::pair<String, Vec2F> const*, StarException> damageImage(float damageLevel, TileDamageType damageType) const;
+  std::expected<std::reference_wrapper<std::pair<String, Vec2F> const>, StarException> damageImage(float damageLevel, TileDamageType damageType) const;
 };
 
 [[nodiscard]]

@@ -100,7 +100,7 @@ std::expected<void, StarException> BaseScriptPane::init(Json config, bool constr
   if (!initialized)
     return std::unexpected(std::move(initialized.error()));
   m_rawConfig = config;
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   bool hasBase = false;
@@ -128,8 +128,8 @@ std::expected<void, StarException> BaseScriptPane::init(Json config, bool constr
   if (!interactive)
     return std::unexpected(std::move(interactive.error()));
   m_interactive = *interactive;
-  m_reader = std::make_shared<GuiReader>(*context());
-  m_reader->registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { dismiss(); return {}; });
+  m_reader = std::make_shared<GuiReader>(context());
+  m_reader->registerCallback("close", [this](Widget&) -> std::expected<void, StarException> { dismiss(); return {}; });
   auto callbacksJson = m_config.get("scriptWidgetCallbacks", JsonArray{});
   if (!callbacksJson)
     return std::unexpected(std::move(callbacksJson.error()));
@@ -137,8 +137,8 @@ std::expected<void, StarException> BaseScriptPane::init(Json config, bool constr
   if (!callbacks)
     return std::unexpected(std::move(callbacks.error()));
   for (auto const& callbackName : *callbacks) {
-    m_reader->registerCallback(callbackName, [this, callbackName](Widget* widget) -> std::expected<void, StarException> {
-      auto result = m_script.invoke(callbackName, widget->name(), widget->data());
+    m_reader->registerCallback(callbackName, [this, callbackName](Widget& widget) -> std::expected<void, StarException> {
+      auto result = m_script.invoke(callbackName, widget.name(), widget.data());
       if (!result)
         return std::unexpected(std::move(result.error()));
       return {};
@@ -171,7 +171,7 @@ std::expected<void, StarException> BaseScriptPane::displayed() {
     auto paneAdded = m_script.addCallbacks("pane", std::move(*paneCallbacks));
     if (!paneAdded)
       return std::unexpected(std::move(paneAdded.error()));
-    auto widgetCallbacks = LuaBindings::makeWidgetCallbacks(*context(), this, m_reader);
+    auto widgetCallbacks = LuaBindings::makeWidgetCallbacks(context(), *this, m_reader);
     if (!widgetCallbacks)
       return std::unexpected(std::move(widgetCallbacks.error()));
     auto widgetAdded = m_script.addCallbacks("widget", std::move(*widgetCallbacks));
@@ -224,7 +224,7 @@ std::expected<void, StarException> BaseScriptPane::tick(float dt) {
       if (!keyName)
         return std::unexpected(std::move(keyName.error()));
       // KeyNames borrows whole static string literals; Lua copies their bytes.
-      auto result = m_script.invoke(p.second, (int)keyEvent.key, keyEvent.keyDown, keyName->data());
+      auto result = m_script.invoke(p.second, (int)keyEvent.key, keyEvent.keyDown, *keyName);
       if (!result)
         return std::unexpected(std::move(result.error()));
     }
@@ -237,7 +237,7 @@ std::expected<void, StarException> BaseScriptPane::tick(float dt) {
 
 std::expected<bool, StarException> BaseScriptPane::sendEvent(InputEvent const& event) {
   // GuiClose must dismiss even when the canvas does not implement it.
-  if (context()->actions(event).contains(InterfaceAction::GuiClose)) {
+  if (context().actions(event).contains(InterfaceAction::GuiClose)) {
     auto dismissable = m_config.getBool("dismissable", true);
     if (!dismissable)
       return std::unexpected(std::move(dismissable.error()));
@@ -264,12 +264,12 @@ std::expected<std::shared_ptr<Pane>, StarException> BaseScriptPane::createToolti
       auto text = value.toString();
       if (!text)
         return std::unexpected(std::move(text.error()));
-      return SimpleTooltipBuilder::buildTooltip(*context(), *text);
+      return SimpleTooltipBuilder::buildTooltip(context(), *text);
     }
-    auto tooltip = Pane::create(*context());
+    auto tooltip = Pane::create(context());
     if (!tooltip)
       return std::unexpected(std::move(tooltip.error()));
-    auto constructed = m_reader->construct(value, tooltip->get());
+    auto constructed = m_reader->construct(value, **tooltip);
     if (!constructed)
       return std::unexpected(std::move(constructed.error()));
     return std::move(*tooltip);
@@ -286,7 +286,7 @@ std::expected<std::shared_ptr<Pane>, StarException> BaseScriptPane::createToolti
     }
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(*context(), item);
+    return ItemTooltipBuilder::buildItemTooltip(context(), item);
   return std::shared_ptr<Pane>{};
 }
 
@@ -305,7 +305,7 @@ std::expected<std::optional<std::shared_ptr<Item>>, StarException> BaseScriptPan
     return std::unexpected(std::move(result.error()));
   if (!*result || (**result).isNull())
     return std::optional<std::shared_ptr<Item>>{};
-  auto database = context()->root().itemDatabase();
+  auto database = context().root().itemDatabase();
   if (!database)
     return std::unexpected(std::move(database.error()));
   ItemDescriptor descriptor;
@@ -332,7 +332,7 @@ std::shared_ptr<GuiReader> BaseScriptPane::reader() {
 }
 
 std::expected<void, StarException> BaseScriptPane::construct(Json config) {
-  auto constructed = m_reader->construct(config, this);
+  auto constructed = m_reader->construct(config, *this);
   if (!constructed)
     return std::unexpected(std::move(constructed.error()));
   auto clicks = m_config.getObject("canvasClickCallbacks", {});

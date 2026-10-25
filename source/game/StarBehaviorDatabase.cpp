@@ -35,8 +35,8 @@ std::expected<Json, StarException> jsonFromNodeParameter(NodeParameter const& pa
   if (!NodeParameterTypeNames) return std::unexpected(NodeParameterTypeNames.error());
   auto type = NodeParameterTypeNames->getRight(parameter.first);
   if (!type) return std::unexpected(std::move(type.error()));
-  JsonObject result{{"type", **type}};
-  if (auto key = std::get_if<String>(&parameter.second)) result["key"] = *key;
+  JsonObject result{{"type", type->get()}};
+  if (std::holds_alternative<String>(parameter.second)) result["key"] = std::get<String>(parameter.second);
   else result["value"] = std::get<Json>(parameter.second);
   return Json(std::move(result));
 }
@@ -48,16 +48,16 @@ std::expected<NodeParameter, StarException> jsonToNodeParameter(Json const& json
   if (!type) return std::unexpected(std::move(type.error()));
   auto key = json.optString("key");
   if (!key) return std::unexpected(std::move(key.error()));
-  if (*key) return NodeParameter{**type, **key};
+  if (*key) return NodeParameter{type->get(), **key};
   auto value = json.opt("value");
   if (!value) return std::unexpected(std::move(value.error()));
-  return NodeParameter{**type, value->value_or(Json())};
+  return NodeParameter{type->get(), value->value_or(Json())};
 }
 std::expected<Json, StarException> jsonFromNodeOutput(NodeOutput const& output) {
   if (!NodeParameterTypeNames) return std::unexpected(NodeParameterTypeNames.error());
   auto type = NodeParameterTypeNames->getRight(output.first);
   if (!type) return std::unexpected(std::move(type.error()));
-  return JsonObject{{"type", **type}, {"key", output.second.first ? Json(*output.second.first) : Json()}, {"ephemeral", output.second.second}};
+  return JsonObject{{"type", type->get()}, {"key", output.second.first ? Json(*output.second.first) : Json()}, {"ephemeral", output.second.second}};
 }
 std::expected<NodeOutput, StarException> jsonToNodeOutput(Json const& json) {
   if (!NodeParameterTypeNames) return std::unexpected(NodeParameterTypeNames.error());
@@ -71,7 +71,7 @@ std::expected<NodeOutput, StarException> jsonToNodeOutput(Json const& json) {
   if (!key) return std::unexpected(std::move(key.error()));
   auto ephemeral = json.optBool("ephemeral");
   if (!ephemeral) return std::unexpected(std::move(ephemeral.error()));
-  return NodeOutput{**type, {*key, ephemeral->value_or(false)}};
+  return NodeOutput{type->get(), {*key, ephemeral->value_or(false)}};
 }
 std::expected<void, StarException> applyTreeParameters(StringMap<NodeParameter>& parameters, StringMap<NodeParameterValue> const& treeParameters) {
   for (auto& p : parameters) {
@@ -83,7 +83,7 @@ std::expected<void, StarException> applyTreeParameters(StringMap<NodeParameter>&
 }
 std::expected<NodeParameterValue, StarException> replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters) {
   std::optional<String> text;
-  if (auto key = std::get_if<String>(&parameter)) text = *key;
+  if (std::holds_alternative<String>(parameter)) text = std::get<String>(parameter);
   else if (std::get<Json>(parameter).isType(Json::Type::String)) {
     auto string = std::get<Json>(parameter).toString();
     if (!string) return std::unexpected(std::move(string.error()));
@@ -111,7 +111,7 @@ std::expected<std::optional<String>, StarException> replaceOutputBehaviorTag(std
   if (!output) return output;
   auto replacement = replaceBehaviorTag(NodeParameterValue(*output), parameters);
   if (!replacement) return std::unexpected(std::move(replacement.error()));
-  if (auto key = std::get_if<String>(&*replacement)) return std::optional<String>(*key);
+  if (std::holds_alternative<String>(*replacement)) return std::optional<String>(std::get<String>(*replacement));
   auto const& value = std::get<Json>(*replacement);
   if (value.isType(Json::Type::String)) {
     auto string = value.toString();
@@ -137,9 +137,9 @@ std::expected<std::shared_ptr<BehaviorDatabase>, StarException> BehaviorDatabase
   auto database = std::shared_ptr<BehaviorDatabase>(new BehaviorDatabase());
   auto files = assets->scanExtension("nodes");
   if (!files) return std::unexpected(std::move(files.error()));
-  auto queuedNodes = assets->queueJsons(**files);
+  auto queuedNodes = assets->queueJsons(files->get());
   if (!queuedNodes) return std::unexpected(std::move(queuedNodes.error()));
-  for (auto const& fileKey : **files) {
+  for (auto const& fileKey : files->get()) {
     auto const& file = fileKey.string();
     auto load = [&]() -> std::expected<void, StarException> {
       auto nodes = assets->json(file);
@@ -172,9 +172,9 @@ std::expected<std::shared_ptr<BehaviorDatabase>, StarException> BehaviorDatabase
   }
   auto behaviors = assets->scanExtension("behavior");
   if (!behaviors) return std::unexpected(std::move(behaviors.error()));
-  auto queuedBehaviors = assets->queueJsons(**behaviors);
+  auto queuedBehaviors = assets->queueJsons(behaviors->get());
   if (!queuedBehaviors) return std::unexpected(std::move(queuedBehaviors.error()));
-  for (auto const& fileKey : **behaviors) {
+  for (auto const& fileKey : behaviors->get()) {
     auto const& file = fileKey.string();
     auto load = [&]() -> std::expected<void, StarException> {
       auto config = assets->json(file);
@@ -245,7 +245,7 @@ std::expected<CompositeNode, StarException> BehaviorDatabase::compositeNode(Json
   if (!name) return std::unexpected(std::move(name.error()));
   auto type = CompositeTypeNames->getLeft(*name);
   if (!type) return std::unexpected(std::move(type.error()));
-  switch (**type) {
+  switch (type->get()) {
     case CompositeType::Sequence: return CompositeNode(SequenceNode(std::move(children)));
     case CompositeType::Selector: return CompositeNode(SelectorNode(std::move(children)));
     case CompositeType::Dynamic: return CompositeNode(DynamicNode(std::move(children)));
@@ -255,12 +255,13 @@ std::expected<CompositeNode, StarException> BehaviorDatabase::compositeNode(Json
       if (!success) return std::unexpected(std::move(success.error()));
       auto failure = parameters.get("fail");
       if (!failure) return std::unexpected(std::move(failure.error()));
-      auto successJson = std::get_if<Json>(&(*success)->second);
-      auto failureJson = std::get_if<Json>(&(*failure)->second);
-      if (!successJson || !failureJson) return std::unexpected(StarException("Parallel thresholds must be JSON values"));
-      auto s = successJson->optInt();
+      auto const& successValue = success->get().second;
+      auto const& failureValue = failure->get().second;
+      if (!std::holds_alternative<Json>(successValue) || !std::holds_alternative<Json>(failureValue))
+        return std::unexpected(StarException("Parallel thresholds must be JSON values"));
+      auto s = std::get<Json>(successValue).optInt();
       if (!s) return std::unexpected(std::move(s.error()));
-      auto f = failureJson->optInt();
+      auto f = std::get<Json>(failureValue).optInt();
       if (!f) return std::unexpected(std::move(f.error()));
       int succeed = s->value_or(-1), fail = f->value_or(-1);
       if (succeed == -1) succeed = children.size();
@@ -280,7 +281,7 @@ std::expected<std::shared_ptr<BehaviorNode const>, StarException> BehaviorDataba
   if (!name) return std::unexpected(std::move(name.error()));
   auto config = json.getObject("parameters", {});
   if (!config) return std::unexpected(std::move(config.error()));
-  if (**type == BehaviorNodeType::Module) {
+  if (type->get() == BehaviorNodeType::Module) {
     auto parameters = treeParameters;
     for (auto const& p : *config) {
       auto value = nodeParameterValueFromJson(p.second);
@@ -299,7 +300,7 @@ std::expected<std::shared_ptr<BehaviorNode const>, StarException> BehaviorDataba
   }
   auto defaults = m_nodeParameters.get(*name);
   if (!defaults) return std::unexpected(std::move(defaults.error()));
-  auto parameters = **defaults;
+  auto parameters = defaults->get();
   for (auto& p : parameters) {
     if (auto configured = config->maybe(p.first)) {
       auto value = nodeParameterValueFromJson(*configured);
@@ -309,13 +310,13 @@ std::expected<std::shared_ptr<BehaviorNode const>, StarException> BehaviorDataba
   }
   auto applied = applyTreeParameters(parameters, treeParameters);
   if (!applied) return std::unexpected(std::move(applied.error()));
-  if (**type == BehaviorNodeType::Action) {
+  if (type->get() == BehaviorNodeType::Action) {
     tree.functions.add(*name);
     auto outputs = json.getObject("output", {});
     if (!outputs) return std::unexpected(std::move(outputs.error()));
     auto defaults = m_nodeOutput.get(*name);
     if (!defaults) return std::unexpected(std::move(defaults.error()));
-    auto output = **defaults;
+    auto output = defaults->get();
     Json outputConfig(*outputs);
     for (auto& p : output) {
       auto configured = outputConfig.optString(p.first);
@@ -326,7 +327,7 @@ std::expected<std::shared_ptr<BehaviorNode const>, StarException> BehaviorDataba
     }
     return std::make_shared<BehaviorNode>(ActionNode(*name, std::move(parameters), std::move(output)));
   }
-  if (**type == BehaviorNodeType::Decorator) {
+  if (type->get() == BehaviorNodeType::Decorator) {
     tree.functions.add(*name);
     auto childJson = json.get("child");
     if (!childJson) return std::unexpected(std::move(childJson.error()));
@@ -334,7 +335,7 @@ std::expected<std::shared_ptr<BehaviorNode const>, StarException> BehaviorDataba
     if (!child) return std::unexpected(std::move(child.error()));
     return std::make_shared<BehaviorNode>(DecoratorNode(*name, std::move(parameters), *child));
   }
-  if (**type == BehaviorNodeType::Composite) {
+  if (type->get() == BehaviorNodeType::Composite) {
     auto composite = compositeNode(json, std::move(parameters), treeParameters, tree);
     if (!composite) return std::unexpected(std::move(composite.error()));
     return std::make_shared<BehaviorNode>(std::move(*composite));

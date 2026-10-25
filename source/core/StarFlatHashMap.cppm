@@ -173,8 +173,8 @@ public:
   iterator erase(const_iterator first, const_iterator last);
   std::size_t erase(key_type const& key);
 
-  [[nodiscard]] std::expected<mapped_type*, StarException> at(key_type const& key);
-  [[nodiscard]] std::expected<mapped_type const*, StarException> at(key_type const& key) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type>, StarException> at(key_type const& key);
+  [[nodiscard]] std::expected<std::reference_wrapper<mapped_type const>, StarException> at(key_type const& key) const;
 
   mapped_type& operator[](key_type const& key);
   mapped_type& operator[](key_type&& key);
@@ -505,19 +505,19 @@ std::size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::erase(key_type co
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::at(key_type const& key) -> std::expected<mapped_type*, StarException> {
+auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::at(key_type const& key) -> std::expected<std::reference_wrapper<mapped_type>, StarException> {
   auto i = m_table.find(key);
   if (i == m_table.end())
     return std::unexpected(StarException("no such key in FlatHashMap"));
-  return &i->second;
+  return std::reference_wrapper<Mapped>(i->second);
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::at(key_type const& key) const -> std::expected<mapped_type const*, StarException> {
+auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::at(key_type const& key) const -> std::expected<std::reference_wrapper<mapped_type const>, StarException> {
   auto i = m_table.find(key);
   if (i == m_table.end())
     return std::unexpected(StarException("no such key in FlatHashMap"));
-  return &i->second;
+  return std::reference_wrapper<Mapped const>(i->second);
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>

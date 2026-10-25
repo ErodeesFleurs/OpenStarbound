@@ -30,8 +30,8 @@ import star.rect;
 namespace Star {
 
 struct PhysicsMovingCollision {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, PhysicsMovingCollision& pmc);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, PhysicsMovingCollision const& pmc);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PhysicsMovingCollision& pmc);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PhysicsMovingCollision const& pmc);
   [[nodiscard]] static std::expected<PhysicsMovingCollision, StarException> fromJson(Json const& json);
 
   RectF boundBox() const;
@@ -46,12 +46,12 @@ struct PhysicsMovingCollision {
   PhysicsCategoryFilter categoryFilter;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, PhysicsMovingCollision& pmc);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, PhysicsMovingCollision const& pmc);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PhysicsMovingCollision& pmc);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PhysicsMovingCollision const& pmc);
 
 struct MovingCollisionId {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, MovingCollisionId& mci);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, MovingCollisionId const& mci);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, MovingCollisionId& mci);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, MovingCollisionId const& mci);
   MovingCollisionId();
   MovingCollisionId(EntityId physicsEntityId, std::size_t collisionIndex);
 
@@ -66,8 +66,8 @@ struct MovingCollisionId {
   std::size_t collisionIndex;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, MovingCollisionId& mci);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, MovingCollisionId const& mci);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, MovingCollisionId& mci);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, MovingCollisionId const& mci);
 
 class PhysicsEntity : public virtual Entity {
 public:

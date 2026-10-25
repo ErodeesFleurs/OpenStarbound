@@ -27,7 +27,7 @@ class Root;
 inline String const VoiceBroadcastPrefix = std::string("Voice\0", sizeof("Voice\0") - 1);
 
 struct VoiceExceptionTag {
-  static constexpr char const* name() { return "VoiceException"; }
+  static constexpr std::string_view name() { return "VoiceException"; }
 };
 using VoiceException = StarError<VoiceExceptionTag, StarException>;
 
@@ -50,8 +50,8 @@ struct VoiceAudioChunk {
 
   inline std::size_t takeSamples(std::vector<std::int16_t>& out, std::size_t count) {
     std::size_t toRead = std::min<std::size_t>(count, remaining);
-    std::int16_t* start = data.get() + offset;
-    out.insert(out.end(), start, start + toRead);
+    auto samples = std::span<std::int16_t>(data.get(), offset + remaining).subspan(offset, toRead);
+    out.insert(out.end(), samples.begin(), samples.end());
     offset += toRead;
     remaining -= toRead;
     return toRead;
@@ -60,7 +60,7 @@ struct VoiceAudioChunk {
   //this one's unsafe
   inline std::int16_t takeSample() {
     --remaining;
-    return *(data.get() + offset++);
+    return data[offset++];
   }
 
   inline bool exhausted() { return remaining == 0; }
@@ -127,10 +127,10 @@ public:
   void clearSpeakers();
 
   // Called when receiving input audio data from SDL, on its own thread.
-  void readAudioData(std::uint8_t* stream, int len);
+  void readAudioData(std::span<std::uint8_t> stream);
 
   // Called to mix voice audio with the game.
-  void mix(std::int16_t* buffer, std::size_t frames, unsigned channels);
+  void mix(std::span<std::int16_t> buffer, std::size_t frames, unsigned channels);
 
   typedef std::function<std::expected<float, StarException>(unsigned, Vec2F, float)> PositionalAttenuationFunction;
   [[nodiscard]] std::expected<void, StarException> update(float dt, PositionalAttenuationFunction positionalAttenuationFunction = {});

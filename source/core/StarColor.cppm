@@ -11,7 +11,7 @@ import star.math_common;
 namespace Star {
 
 struct ColorExceptionTag {
-  static constexpr char const* name() { return "ColorException"; }
+  static constexpr std::string_view name() { return "ColorException"; }
 };
 using ColorException = StarError<ColorExceptionTag, StarException>;
 

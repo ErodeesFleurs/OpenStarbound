@@ -201,7 +201,7 @@ std::expected<std::shared_ptr<LargeCharPlateWidget>, StarException> LargeCharPla
     if (!vName) return std::unexpected(std::move(vName.error()));
     auto v = VerticalAnchorNames->getLeft(*vName);
     if (!v) return std::unexpected(std::move(v.error()));
-    auto label = LabelWidget::create(context, std::move(text), Color::White, **h, **v);
+    auto label = LabelWidget::create(context, std::move(text), Color::White, h->get(), v->get());
     if (!label) return std::unexpected(std::move(label.error()));
     (*label)->setPosition(offset);
     auto child = widget->addChild(childName, *label);
@@ -276,7 +276,7 @@ std::expected<void, StarException> LargeCharPlateWidget::setPlayer(std::shared_p
   }
   auto text = m_playerName->setText(std::move(name));
   if (!text) return std::unexpected(std::move(text.error()));
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto modesJson = (*assets)->json("/interface.config:modeTypeTextAndColor");
   if (!modesJson) return std::unexpected(std::move(modesJson.error()));
@@ -284,15 +284,15 @@ std::expected<void, StarException> LargeCharPlateWidget::setPlayer(std::shared_p
   if (!modes) return std::unexpected(std::move(modes.error()));
   auto modeJson = modes->at(m_player ? 1 + (int)m_player->modeType() : 0);
   if (!modeJson) return std::unexpected(std::move(modeJson.error()));
-  auto mode = (*modeJson)->toArray();
+  auto mode = modeJson->get().toArray();
   if (!mode) return std::unexpected(std::move(mode.error()));
   auto modeTextJson = mode->at(0);
   if (!modeTextJson) return std::unexpected(std::move(modeTextJson.error()));
-  auto modeText = (*modeTextJson)->toString();
+  auto modeText = modeTextJson->get().toString();
   if (!modeText) return std::unexpected(std::move(modeText.error()));
   auto modeColorJson = mode->at(1);
   if (!modeColorJson) return std::unexpected(std::move(modeColorJson.error()));
-  auto modeColor = jsonToVec3B(**modeColorJson);
+  auto modeColor = jsonToVec3B(modeColorJson->get());
   if (!modeColor) return std::unexpected(std::move(modeColor.error()));
   auto result = m_mode->setText(*modeText);
   if (!result) return std::unexpected(std::move(result.error()));
@@ -316,7 +316,7 @@ std::expected<void, StarException> LargeCharPlateWidget::enableDelete(WidgetCall
   if (!offsetJson) return std::unexpected(std::move(offsetJson.error()));
   auto offset = jsonToVec2I(*offsetJson);
   if (!offset) return std::unexpected(std::move(offset.error()));
-  auto button = ButtonWidget::create(*context(), callback, *base, *hover, *pressed, *disabled);
+  auto button = ButtonWidget::create(context(), callback, *base, *hover, *pressed, *disabled);
   if (!button) return std::unexpected(std::move(button.error()));
   auto child = addChild("trashButton", *button);
   if (!child) return std::unexpected(std::move(child.error()));
@@ -328,7 +328,7 @@ std::expected<void, StarException> LargeCharPlateWidget::enableDelete(WidgetCall
 
 void LargeCharPlateWidget::disableDelete() {
   if (m_delete) {
-    removeChild(m_delete.get());
+    removeChild(*m_delete);
   }
 
   m_delete = {};
@@ -336,7 +336,7 @@ void LargeCharPlateWidget::disableDelete() {
 
 std::expected<bool, StarException> LargeCharPlateWidget::sendEvent(InputEvent const& event) {
   if (std::holds_alternative<MouseMoveEvent>(event) && m_delete) {
-    auto result = m_delete->inMember(*m_context->mousePosition(event)) ? m_delete->mouseOver() : m_delete->mouseOut();
+    auto result = m_delete->inMember(*m_context.mousePosition(event)) ? m_delete->mouseOver() : m_delete->mouseOut();
     if (!result) return std::unexpected(std::move(result.error()));
   }
   auto handled = Widget::sendEvent(event);

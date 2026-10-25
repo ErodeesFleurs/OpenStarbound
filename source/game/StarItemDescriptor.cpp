@@ -175,8 +175,8 @@ bool ItemDescriptor::matches(ItemDescriptor const& other, bool exactMatch) const
   return other.name() == m_name && (!exactMatch || other.parameters() == m_parameters);
 }
 
-bool ItemDescriptor::matches(std::shared_ptr<Item const> const& other, bool exactMatch) const {
-  return other->name() == m_name && (!exactMatch || other->parameters() == m_parameters);
+bool ItemDescriptor::matches(Item const& other, bool exactMatch) const {
+  return other.name() == m_name && (!exactMatch || other.parameters() == m_parameters);
 }
 
 std::expected<Json, StarException> ItemDescriptor::diskStore(VersioningDatabase const& versioningDatabase) const {
@@ -208,7 +208,7 @@ std::size_t ItemDescriptor::parametersHash() const {
   return *m_parametersHash;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, ItemDescriptor& itemDescriptor) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ItemDescriptor& itemDescriptor) {
   auto name = ds.read(itemDescriptor.m_name);
   if (!name)
     return std::unexpected(std::move(name.error()));
@@ -219,10 +219,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, ItemDescrip
   if (!parameters)
     return std::unexpected(std::move(parameters.error()));
   itemDescriptor.m_parametersHash.reset();
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor) {
   auto name = ds.write(itemDescriptor.m_name);
   if (!name)
     return std::unexpected(std::move(name.error()));
@@ -232,15 +232,15 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, ItemDescrip
   auto parameters = ds.write(itemDescriptor.m_parameters);
   if (!parameters)
     return std::unexpected(std::move(parameters.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemDescriptor const& descriptor) {
+std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, ItemDescriptor const& descriptor) {
   auto parameters = descriptor.m_parameters.repr();
   if (!parameters)
     return std::unexpected(std::move(parameters.error()));
   format(os, "[{}, {}, {}]", descriptor.m_name, descriptor.m_count, *parameters);
-  return &os;
+  return std::ref(os);
 }
 
 std::size_t hash<ItemDescriptor>::operator()(ItemDescriptor const& v) const {

@@ -86,11 +86,10 @@ Songbook::Songbook(Root& root, String const& species)
 
 std::expected<std::shared_ptr<Songbook>, StarException> Songbook::create(Root& root, String const& species) {
   auto songbook = std::shared_ptr<Songbook>(new Songbook(root, species));
-  for (auto element : {static_cast<NetElement*>(&songbook->m_songNetState),
-      static_cast<NetElement*>(&songbook->m_timeSourceEpochNetState),
-      static_cast<NetElement*>(&songbook->m_timeSourceNetState),
-      static_cast<NetElement*>(&songbook->m_activeNetState),
-      static_cast<NetElement*>(&songbook->m_instrumentNetState)}) {
+  for (auto element : std::initializer_list<std::reference_wrapper<NetElement>>{
+      songbook->m_songNetState, songbook->m_timeSourceEpochNetState,
+      songbook->m_timeSourceNetState, songbook->m_activeNetState,
+      songbook->m_instrumentNetState}) {
     auto added = songbook->addNetElement(element);
     if (!added)
       return std::unexpected(std::move(added.error()));
@@ -102,7 +101,7 @@ Songbook::~Songbook() {
   stop();
 }
 
-std::expected<Songbook::NoteMapping*, StarException> Songbook::noteMapping(String const& instrument, String const& species, int note) {
+std::expected<std::reference_wrapper<Songbook::NoteMapping>, StarException> Songbook::noteMapping(String const& instrument, String const& species, int note) {
   if (!m_noteMapping.contains(instrument)) {
     Map<int, NoteMapping> notemap;
     auto assets = m_root.assets();
@@ -181,16 +180,16 @@ std::expected<Songbook::NoteMapping*, StarException> Songbook::noteMapping(Strin
     }
     m_noteMapping[instrument] = std::move(notemap);
   }
-  return &m_noteMapping[instrument][note];
+  return std::ref(m_noteMapping[instrument][note]);
 }
 
-std::expected<void, StarException> Songbook::update(EntityMode mode, World* world) {
-  m_serverMode = world->isServer();
+std::expected<void, StarException> Songbook::update(EntityMode mode, World& world) {
+  m_serverMode = world.isServer();
 
   if (m_serverMode)
     return {};
 
-  m_globalNowDelta = world->epochTime() * 1000 - Time::millisecondsSinceEpoch();
+  m_globalNowDelta = world.epochTime() * 1000 - Time::millisecondsSinceEpoch();
   if (m_epochUpdated) {
     m_epochUpdated = false;
     m_timeSourceEpoch -= m_globalNowDelta;
@@ -295,9 +294,9 @@ std::expected<void, StarException> Songbook::playback() {
   return {};
 }
 
-std::expected<void, StarException> Songbook::render(RenderCallback* renderCallback) {
+std::expected<void, StarException> Songbook::render(RenderCallback& renderCallback) {
   for (auto& audio : m_pendingAudio) {
-    auto added = renderCallback->addAudio(audio);
+    auto added = renderCallback.addAudio(audio);
     if (!added)
       return std::unexpected(std::move(added.error()));
   }
@@ -370,7 +369,7 @@ std::expected<List<Songbook::Note>, StarException> Songbook::parseABC(String con
     auto last = parts->last();
     if (!last)
       return std::unexpected(std::move(last.error()));
-    auto tempo = lexicalCast<double>(**last);
+    auto tempo = lexicalCast<double>(last->get());
     if (!tempo)
       return std::unexpected(std::move(tempo.error()));
     if (*tempo == 0 || !std::isfinite(*tempo))
@@ -391,9 +390,9 @@ std::expected<List<Songbook::Note>, StarException> Songbook::parseABC(String con
       auto result = key.toLower();
       if (!result)
         return std::unexpected(std::move(result.error()));
-      for (auto const& replacement : {
-          std::pair{" ", ""}, std::pair{"minor", "m"},
-          std::pair{"min", "m"}, std::pair{"major", "maj"}}) {
+      for (auto const& replacement : std::initializer_list<std::pair<String, String>>{
+          {" ", ""}, {"minor", "m"},
+          {"min", "m"}, {"major", "maj"}}) {
         result = result->replace(replacement.first, replacement.second);
         if (!result)
           return std::unexpected(std::move(result.error()));
@@ -476,7 +475,7 @@ std::expected<List<Songbook::Note>, StarException> Songbook::parseABC(String con
   if (!lines)
     return std::unexpected(std::move(lines.error()));
   auto setField = [&](std::basic_string_view<String::Char> text) -> std::expected<void, StarException> {
-    auto encoded = String::create(text.data(), text.size());
+    auto encoded = String::create(text);
     if (!encoded)
       return std::unexpected(std::move(encoded.error()));
     auto parts = encoded->split(":", 1);
@@ -569,7 +568,7 @@ std::expected<List<Songbook::Note>, StarException> Songbook::parseABC(String con
           std::string digits;
           while (String::isAsciiNumber(peek()))
             digits += static_cast<char>(readChar());
-          auto multiplier = lexicalCast<int>(digits.data(), digits.data() + digits.size());
+          auto multiplier = lexicalCast<int>(std::string_view(digits));
           if (!multiplier)
             return std::unexpected(std::move(multiplier.error()));
           duration *= *multiplier;
@@ -581,7 +580,7 @@ std::expected<List<Songbook::Note>, StarException> Songbook::parseABC(String con
             std::string digits;
             while (String::isAsciiNumber(peek()))
               digits += static_cast<char>(readChar());
-            auto parsed = lexicalCast<int>(digits.data(), digits.data() + digits.size());
+            auto parsed = lexicalCast<int>(std::string_view(digits));
             if (!parsed)
               return std::unexpected(std::move(parsed.error()));
             divisor = *parsed;
@@ -852,19 +851,19 @@ std::expected<List<Songbook::Note>, StarException> Songbook::parseABC(String con
               return std::unexpected(StarException("ABC transposition is out of range"));
             note = static_cast<int>(transposed);
             bool tied = peek() == '-';
-            if (auto pending = pendingTies.ptr(note)) {
-              result[*pending].duration += noteDuration;
+            if (auto pending = pendingTies.maybeRef(note)) {
+              result[pending->get()].duration += noteDuration;
               if (!tied)
                 pendingTies.remove(note);
             } else {
               auto mapping = noteMapping(m_instrument, m_species, note);
               if (!mapping)
                 return std::unexpected(std::move(mapping.error()));
-              auto file = m_root.random().randFrom((*mapping)->files);
+              auto file = m_root.random().randFrom(mapping->get().files);
               if (!file)
                 return std::unexpected(std::move(file.error()));
-              result.append(Note{m_instrument, **file, now, noteDuration,
-                  (*mapping)->fadeout, (*mapping)->velocity});
+              result.append(Note{m_instrument, file->get(), now, noteDuration,
+                  mapping->get().fadeout, mapping->get().velocity});
               if (tied)
                 pendingTies[note] = result.size() - 1;
             }

@@ -64,7 +64,8 @@ public:
     return Star::typeName<GraphicsMenu>();
   }
 
-  [[nodiscard]] static std::expected<std::shared_ptr<GraphicsMenu>, StarException> create(GuiContext& guiContext, PaneManager* manager, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] static std::expected<std::shared_ptr<GraphicsMenu>, StarException> create(GuiContext& guiContext, PaneManager& manager, std::shared_ptr<UniverseClient> client);
+  void detachInterface() noexcept;
 
   [[nodiscard]] std::expected<void, StarException> show() override;
   [[nodiscard]] std::expected<void, StarException> dismissed() override;
@@ -72,7 +73,7 @@ public:
   [[nodiscard]] std::expected<void, StarException> toggleFullscreen();
 
 private:
-  GraphicsMenu(GuiContext& guiContext, PaneManager* manager);
+  GraphicsMenu(GuiContext& guiContext, PaneManager& manager);
   [[nodiscard]] std::expected<void, StarException> init(std::shared_ptr<UniverseClient> client);
   static StringList const ConfigKeys;
 
@@ -92,7 +93,7 @@ private:
   JsonObject m_localChanges;
   
   std::shared_ptr<ShadersMenu> m_shadersMenu;
-  PaneManager* m_paneManager;
+  std::optional<std::reference_wrapper<PaneManager>> m_paneManager;
 };
 
 }

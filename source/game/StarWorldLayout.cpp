@@ -443,7 +443,7 @@ std::expected<WorldLayout, StarException> WorldLayout::buildAsteroidsLayout(Root
   auto asteroidTerrains = std::move((*autoasteroidTerrainsResult2));
   auto selectedTerrain = randSource.randFrom(asteroidTerrains);
   if (!selectedTerrain) return std::unexpected(std::move(selectedTerrain.error()));
-  auto const& asteroidTerrainConfig = **selectedTerrain;
+  auto const& asteroidTerrainConfig = selectedTerrain->get();
   auto autoemptyTerrainConfigResult1 = asteroidsConfig.get("emptyTerrain");
   if (!autoemptyTerrainConfigResult1) return std::unexpected(std::move(autoemptyTerrainConfigResult1.error()));
   auto emptyTerrainConfig = std::move((*autoemptyTerrainConfigResult1));
@@ -749,13 +749,13 @@ std::expected<List<WorldLayout::RegionWeighting>, StarException> WorldLayout::ge
     rightCellWeight *= weightFactor / totalWeight;
 
     if (innerCellWeight > 0.0f)
-      weighting.append(RegionWeighting{innerCellWeight, innerCellXValue, layer.cells[innerCellIndex].get()});
+      weighting.append(RegionWeighting{innerCellWeight, innerCellXValue, std::cref(*layer.cells[innerCellIndex])});
 
     if (leftCellWeight > 0.0f)
-      weighting.append(RegionWeighting{leftCellWeight, leftCellXValue, layer.cells[leftCellIndex].get()});
+      weighting.append(RegionWeighting{leftCellWeight, leftCellXValue, std::cref(*layer.cells[leftCellIndex])});
 
     if (rightCellWeight > 0.0f)
-      weighting.append(RegionWeighting{rightCellWeight, rightCellXValue, layer.cells[rightCellIndex].get()});
+      weighting.append(RegionWeighting{rightCellWeight, rightCellXValue, std::cref(*layer.cells[rightCellIndex])});
   };
 
   auto yi = std::lower_bound(m_layers.begin(), m_layers.end(), y, [](WorldLayer const& layer, int y) {
@@ -848,7 +848,7 @@ std::expected<String, StarException> WorldLayout::setLayerEnvironmentBiome(Vec2I
 
   auto biome = getBiome(targetBiomeIndex);
   if (!biome) return std::unexpected(std::move(biome.error()));
-  return (**biome)->baseName;
+  return biome->get()->baseName;
 }
 
 std::expected<void, StarException> WorldLayout::addBiomeRegion(
@@ -898,7 +898,7 @@ std::expected<void, StarException> WorldLayout::addBiomeRegion(
 
   auto oldBiomeResult = getBiome(targetRegion->blockBiomeIndex);
   if (!oldBiomeResult) return std::unexpected(std::move(oldBiomeResult.error()));
-  auto const& oldBiome = **oldBiomeResult;
+  auto const& oldBiome = oldBiomeResult->get();
 
   newBiome->ores = oldBiome->ores;
 
@@ -1320,7 +1320,7 @@ std::expected<void, StarException> WorldLayout::addLayer(std::uint64_t seed, int
   for (;;) {
     auto last = layer.boundaries.last();
     if (!last) return std::unexpected(std::move(last.error()));
-    if (**last <= (int)m_worldSize[0]) break;
+    if (last->get() <= (int)m_worldSize[0]) break;
     auto cell = layer.cells.takeLast();
     if (!cell) return std::unexpected(std::move(cell.error()));
     layer.cells.prepend(std::move(*cell));
@@ -1330,7 +1330,7 @@ std::expected<void, StarException> WorldLayout::addLayer(std::uint64_t seed, int
   }
   auto lastCell = layer.cells.last();
   if (!lastCell) return std::unexpected(std::move(lastCell.error()));
-  layer.cells.prepend(**lastCell);
+  layer.cells.prepend(lastCell->get());
   auto intyRangeResult1 = this->root().assets();
   if (!intyRangeResult1) return std::unexpected(std::move(intyRangeResult1.error()));
   auto intyRangeResult2 = (*intyRangeResult1)->json("/world_template.config:playerStartSearchYRange");

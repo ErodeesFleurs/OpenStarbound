@@ -223,10 +223,10 @@ namespace {
 }
 }
 
-TeleportDialog::TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, PaneManager* paneManager, EntityId sourceEntityId, TeleportBookmark currentLocation)
+TeleportDialog::TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, PaneManager& paneManager, EntityId sourceEntityId, TeleportBookmark currentLocation)
   : Pane(guiContext), m_sourceEntityId(sourceEntityId), m_client(std::move(client)), m_paneManager(paneManager), m_currentLocation(std::move(currentLocation)) {}
 
-std::expected<std::shared_ptr<TeleportDialog>, StarException> TeleportDialog::create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, PaneManager* paneManager, Json config, EntityId sourceEntityId, TeleportBookmark currentLocation) {
+std::expected<std::shared_ptr<TeleportDialog>, StarException> TeleportDialog::create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, PaneManager& paneManager, Json config, EntityId sourceEntityId, TeleportBookmark currentLocation) {
   auto pane = std::shared_ptr<TeleportDialog>(new TeleportDialog(guiContext, std::move(client), paneManager, sourceEntityId, std::move(currentLocation)));
   auto base = pane->initializePane();
   if (!base) return std::unexpected(std::move(base.error()));
@@ -236,22 +236,22 @@ std::expected<std::shared_ptr<TeleportDialog>, StarException> TeleportDialog::cr
 }
 
 std::expected<void, StarException> TeleportDialog::initialize(Json config) {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
-  GuiReader reader(*context());
-  reader.registerCallback("dismiss", [this](Widget*) -> std::expected<void, StarException> { dismiss(); return {}; });
-  reader.registerCallback("teleport", [this](Widget*) { return teleport(); });
-  reader.registerCallback("selectDestination", [this](Widget*) { return selectDestination(); });
+  GuiReader reader(context());
+  reader.registerCallback("dismiss", [this](Widget&) -> std::expected<void, StarException> { dismiss(); return {}; });
+  reader.registerCallback("teleport", [this](Widget&) { return teleport(); });
+  reader.registerCallback("selectDestination", [this](Widget&) { return selectDestination(); });
   auto layout = (*assets)->json("/interface/windowconfig/teleportdialog.config:paneLayout");
   if (!layout) return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, this);
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed) return std::unexpected(std::move(constructed.error()));
   auto fetched = (*assets)->fetchJson(config);
   if (!fetched) return std::unexpected(std::move(fetched.error()));
   config = std::move(*fetched);
   auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
   if (!destList) return std::unexpected(std::move(destList.error()));
-  (*destList)->registerMemberCallback("editBookmark", [this](Widget*) { return editBookmark(); });
+  (*destList)->registerMemberCallback("editBookmark", [this](Widget&) { return editBookmark(); });
   auto destinations = config.getArray("destinations", JsonArray());
   if (!destinations) return std::unexpected(std::move(destinations.error()));
   for (auto const& dest : *destinations) {
@@ -285,9 +285,12 @@ std::expected<void, StarException> TeleportDialog::initialize(Json config) {
     if (!mission) return std::unexpected(std::move(mission.error()));
     if (*mission) {
       // if the warpaction is for an instance world, set the uuid to the team uuid
-      if (auto warpToWorld = std::get_if<WarpToWorld>(&*warpAction)) {
-        if (auto worldId = std::get_if<InstanceWorldId>(&warpToWorld->world))
-          *warpAction = WarpToWorld(InstanceWorldId(worldId->instance, m_client->teamUuid(), worldId->level), warpToWorld->target);
+      if (std::holds_alternative<WarpToWorld>(*warpAction)) {
+        auto const& warpToWorld = std::get<WarpToWorld>(*warpAction);
+        if (std::holds_alternative<InstanceWorldId>(warpToWorld.world)) {
+          auto const& worldId = std::get<InstanceWorldId>(warpToWorld.world);
+          *warpAction = WarpToWorld(InstanceWorldId(worldId.instance, m_client->teamUuid(), worldId.level), warpToWorld.target);
+        }
       }
     }
     m_destinations.append({std::move(*warpAction), *deploy});
@@ -368,7 +371,7 @@ std::expected<void, StarException> TeleportDialog::teleport() {
   if ((*destList)->selectedItem() != NPos) {
     auto destination = m_destinations.at((*destList)->selectedItem());
     if (!destination) return std::unexpected(std::move(destination.error()));
-    auto& selected = **destination;
+    auto& selected = destination->get();
     auto text = printWarpAction(selected.first);
     if (!text) return std::unexpected(std::move(text.error()));
     auto message = m_client->worldClient()->sendEntityMessage(m_sourceEntityId, "onTeleport", {*text});
@@ -376,7 +379,7 @@ std::expected<void, StarException> TeleportDialog::teleport() {
     bool deploy = selected.second;
     bool beam = std::holds_alternative<WarpAlias>(selected.first) && std::get<WarpAlias>(selected.first) == WarpAlias::OrbitedWorld;
     auto action = take(selected).first;
-    auto warped = deploy ? m_client->warpPlayer(action, true, "deploy", true) : m_client->warpPlayer(action, true, beam ? "beam" : "default");
+    auto warped = deploy ? m_client->warpPlayer(action, true, "deploy", true) : m_client->warpPlayer(action, true, beam ? String("beam") : String("default"));
     if (!warped) return std::unexpected(std::move(warped.error()));
     dismiss();
   }
@@ -394,11 +397,12 @@ std::expected<void, StarException> TeleportDialog::editBookmark() {
     if (!sorted) return std::unexpected(std::move(sorted.error()));
     selectedItem = selectedItem - (m_destinations.size() - bookmarks->size());
     if (bookmarks->size() > selectedItem) {
-      auto dialog = EditBookmarkDialog::create(*context(), m_client->mainPlayer()->universeMap());
+      auto dialog = EditBookmarkDialog::create(context(), m_client->mainPlayer()->universeMap());
       if (!dialog) return std::unexpected(std::move(dialog.error()));
       auto set = (*dialog)->setBookmark((*bookmarks)[selectedItem]);
       if (!set) return std::unexpected(std::move(set.error()));
-      auto displayed = m_paneManager->displayPane(PaneLayer::ModalWindow, *dialog);
+      if (!m_paneManager) return std::unexpected(StarException("Teleport dialog is detached from its interface"));
+      auto displayed = m_paneManager->get().displayPane(PaneLayer::ModalWindow, *dialog);
       if (!displayed) return std::unexpected(std::move(displayed.error()));
     }
     dismiss();

@@ -46,9 +46,9 @@ public:
   void reserve(std::size_t capacity);
 
   [[nodiscard]]
-  std::expected<Element*, StarException> at(std::size_t i);
+  std::expected<std::reference_wrapper<Element>, StarException> at(std::size_t i);
   [[nodiscard]]
-  std::expected<Element const*, StarException> at(std::size_t i) const;
+  std::expected<std::reference_wrapper<Element const>, StarException> at(std::size_t i) const;
 
   reference operator[](std::size_t i);
   const_reference operator[](std::size_t i) const;
@@ -285,17 +285,17 @@ void SmallVector<Element, MaxStackSize>::reserve(std::size_t newCapacity) {
 }
 
 template <typename Element, std::size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::at(std::size_t i) -> std::expected<Element*, StarException> {
+auto SmallVector<Element, MaxStackSize>::at(std::size_t i) -> std::expected<std::reference_wrapper<Element>, StarException> {
   if (i >= size())
     return std::unexpected(OutOfRangeException::format("out of range in SmallVector::at({})", i));
-  return m_begin + i;
+  return std::reference_wrapper<Element>(m_begin[i]);
 }
 
 template <typename Element, std::size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::at(std::size_t i) const -> std::expected<Element const*, StarException> {
+auto SmallVector<Element, MaxStackSize>::at(std::size_t i) const -> std::expected<std::reference_wrapper<Element const>, StarException> {
   if (i >= size())
     return std::unexpected(OutOfRangeException::format("out of range in SmallVector::at({})", i));
-  return m_begin + i;
+  return std::reference_wrapper<Element const>(m_begin[i]);
 }
 
 template <typename Element, std::size_t MaxStackSize>

@@ -70,14 +70,14 @@ std::expected<void, StarException> Statistics::writeStatistics() {
 }
 
 Json Statistics::stat(String const& name, Json def) const {
-  if (auto value = m_stats.ptr(name))
-    return value->value;
+  if (auto value = m_stats.maybeRef(name))
+    return value->get().value;
   return def;
 }
 
 std::optional<String> Statistics::statType(String const& name) const {
-  if (auto value = m_stats.ptr(name))
-    return value->type;
+  if (auto value = m_stats.maybeRef(name))
+    return value->get().type;
   return {};
 }
 
@@ -286,17 +286,17 @@ std::expected<void, StarException> Statistics::mergeServiceStatistics() {
 std::expected<LuaCallbacks, StarException> Statistics::makeStatisticsCallbacks() {
   LuaCallbacks callbacks;
 
-  if (auto result = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, String, String, Json>("setStat", std::bind(&Statistics::setStat, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, String, String, Json>("setStat", std::bind(&Statistics::setStat, std::ref(*this), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result) return std::unexpected(std::move(result.error()));
 
-  if (auto result = callbacks.registerCallbackWithSignature<Json, String, Json>("stat", std::bind(&Statistics::stat, this, std::placeholders::_1, std::placeholders::_2)); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<Json, String, Json>("stat", std::bind(&Statistics::stat, std::ref(*this), std::placeholders::_1, std::placeholders::_2)); !result) return std::unexpected(std::move(result.error()));
 
-  if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, String>("statType", std::bind(&Statistics::statType, this, std::placeholders::_1)); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, String>("statType", std::bind(&Statistics::statType, std::ref(*this), std::placeholders::_1)); !result) return std::unexpected(std::move(result.error()));
 
-  if (auto result = callbacks.registerCallbackWithSignature<bool, String>("achievementUnlocked", std::bind(&Statistics::achievementUnlocked, this, std::placeholders::_1)); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<bool, String>("achievementUnlocked", std::bind(&Statistics::achievementUnlocked, std::ref(*this), std::placeholders::_1)); !result) return std::unexpected(std::move(result.error()));
 
-  if (auto result = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, String>("checkAchievement", std::bind(&Statistics::checkAchievement, this, std::placeholders::_1)); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, String>("checkAchievement", std::bind(&Statistics::checkAchievement, std::ref(*this), std::placeholders::_1)); !result) return std::unexpected(std::move(result.error()));
 
-  if (auto result = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, String>("unlockAchievement", std::bind(&Statistics::unlockAchievement, this, std::placeholders::_1)); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<std::expected<void, StarException>, String>("unlockAchievement", std::bind(&Statistics::unlockAchievement, std::ref(*this), std::placeholders::_1)); !result) return std::unexpected(std::move(result.error()));
 
   return callbacks;
 }

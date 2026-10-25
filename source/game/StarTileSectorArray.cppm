@@ -70,16 +70,16 @@ public:
   List<Sector> loadedSectors() const;
   std::size_t loadedSectorCount() const;
 
-  // Will return null if the sector is unloaded.
-  Array const* sectorArray(Sector sector) const;
-  Array* sectorArray(Sector sector);
+  // Empty if the sector is unloaded.
+  std::optional<std::reference_wrapper<Array const>> sectorArray(Sector sector) const;
+  std::optional<std::reference_wrapper<Array>> sectorArray(Sector sector);
 
   bool tileLoaded(Vec2I const& pos) const;
 
   Tile const& tile(Vec2I const& pos) const;
 
-  // Will return nullptr if the position is invalid.
-  Tile* modifyTile(Vec2I const& pos);
+  // Empty if the position is invalid or unloaded.
+  std::optional<std::reference_wrapper<Tile>> modifyTile(Vec2I const& pos);
 
   // Function signature here is (Vec2I const&, Tile const&).  Will be called
   // The callback returns expected<void, StarException>; errors stop traversal.
@@ -268,19 +268,17 @@ std::size_t TileSectorArray<Tile, SectorSize>::loadedSectorCount() const {
 }
 
 template <typename Tile, unsigned SectorSize>
-auto TileSectorArray<Tile, SectorSize>::sectorArray(Sector sector) const -> Array const * {
+auto TileSectorArray<Tile, SectorSize>::sectorArray(Sector sector) const -> std::optional<std::reference_wrapper<Array const>> {
   if (sectorValid(sector))
     return m_tileSectors.sector(sector);
-  else
-    return nullptr;
+  return std::nullopt;
 }
 
 template <typename Tile, unsigned SectorSize>
-auto TileSectorArray<Tile, SectorSize>::sectorArray(Sector sector) -> Array * {
+auto TileSectorArray<Tile, SectorSize>::sectorArray(Sector sector) -> std::optional<std::reference_wrapper<Array>> {
   if (sectorValid(sector))
     return m_tileSectors.sector(sector);
-  else
-    return nullptr;
+  return std::nullopt;
 }
 
 template <typename Tile, unsigned SectorSize>
@@ -291,7 +289,7 @@ bool TileSectorArray<Tile, SectorSize>::tileLoaded(Vec2I const& pos) const {
   unsigned xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
   unsigned yind = (unsigned)pos[1];
 
-  return m_tileSectors.get(xind, yind) != nullptr;
+  return m_tileSectors.get(xind, yind).has_value();
 }
 
 template <typename Tile, unsigned SectorSize>
@@ -302,17 +300,16 @@ Tile const& TileSectorArray<Tile, SectorSize>::tile(Vec2I const& pos) const {
   unsigned xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
   unsigned yind = (unsigned)pos[1];
 
-  Tile const* tile = m_tileSectors.get(xind, yind);
+  auto tile = m_tileSectors.get(xind, yind);
   if (tile)
-    return *tile;
-  else
-    return m_default;
+    return tile->get();
+  return m_default;
 }
 
 template <typename Tile, unsigned SectorSize>
-Tile* TileSectorArray<Tile, SectorSize>::modifyTile(Vec2I const& pos) {
+auto TileSectorArray<Tile, SectorSize>::modifyTile(Vec2I const& pos) -> std::optional<std::reference_wrapper<Tile>> {
   if (pos[1] < 0 || pos[1] >= (int)m_worldSize[1])
-    return nullptr;
+    return std::nullopt;
 
   unsigned xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
   unsigned yind = (unsigned)pos[1];
@@ -363,11 +360,11 @@ template <typename MultiArray, typename Function>
   for (auto const& split : *splits) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
-      auto evaluated = m_tileSectors.evalColumnsParallel(workers, clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&, function](std::size_t x, std::size_t y, Tile const* column, std::size_t columnSize) -> std::expected<bool, StarException> {
+      auto evaluated = m_tileSectors.evalColumnsParallel(workers, clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&, function](std::size_t x, std::size_t y, std::optional<std::span<Tile const>> column, std::size_t columnSize) -> std::expected<bool, StarException> {
           std::size_t arrayColumnIndex = (x + split.xOffset + xArrayOffset) * results.size(1) + y + yArrayOffset;
           if (column) {
             for (std::size_t i = 0; i < columnSize; ++i)
-              if (auto r = function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), column[i]); !r) return std::unexpected(std::move(r.error()));
+              if (auto r = function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), (*column)[i]); !r) return std::unexpected(std::move(r.error()));
           } else {
             for (std::size_t i = 0; i < columnSize; ++i)
               if (auto r = function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), m_default); !r) return std::unexpected(std::move(r.error()));
@@ -402,8 +399,8 @@ template <typename Function>
     if (!clampedRect.isEmpty()) {
       // If non-const variant, do not call function if tile not loaded (pass
       // false to evalEmpty in sector array)
-      auto fwrapper = [&](unsigned x, unsigned y, Tile* tile) -> std::expected<bool, StarException> {
-        if (auto r = function(Vec2I((int)x + split.xOffset, (int)y), *tile); !r) return std::unexpected(std::move(r.error()));
+      auto fwrapper = [&](unsigned x, unsigned y, std::optional<std::reference_wrapper<Tile>> tile) -> std::expected<bool, StarException> {
+        if (auto r = function(Vec2I((int)x + split.xOffset, (int)y), tile->get()); !r) return std::unexpected(std::move(r.error()));
         return true;
       };
       if (auto r = m_tileSectors.eval(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false); !r) return std::unexpected(std::move(r.error()));
@@ -415,8 +412,8 @@ template <typename Function>
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
 [[nodiscard]] std::expected<void, StarException> TileSectorArray<Tile, SectorSize>::tileEachColumns(RectI const& region, Function&& function) const {
-  return const_cast<TileSectorArray*>(this)->tileEvalColumns(
-      region, [&](Vec2I const& pos, Tile* tiles, std::size_t size) { return function(pos, (Tile const*)tiles, size); });
+  return const_cast<TileSectorArray&>(*this).tileEvalColumns(
+      region, [&](Vec2I const& pos, std::span<Tile> tiles) { return function(pos, std::span<Tile const>(tiles)); });
 }
 
 template <typename Tile, unsigned SectorSize>
@@ -427,8 +424,8 @@ template <typename Function>
   for (auto const& split : *splits) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
-      auto fwrapper = [&](std::size_t x, std::size_t y, Tile* column, std::size_t columnSize) -> std::expected<bool, StarException> {
-        if (auto r = function(Vec2I((int)x + split.xOffset, (int)y), column, columnSize); !r) return std::unexpected(std::move(r.error()));
+      auto fwrapper = [&](std::size_t x, std::size_t y, std::optional<std::span<Tile>> column, std::size_t) -> std::expected<bool, StarException> {
+        if (auto r = function(Vec2I((int)x + split.xOffset, (int)y), *column); !r) return std::unexpected(std::move(r.error()));
         return true;
       };
       if (auto r = m_tileSectors.evalColumns(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false); !r) return std::unexpected(std::move(r.error()));
@@ -445,8 +442,8 @@ template <typename Function>
   for (auto const& split : *splits) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
-      auto fwrapper = [&](std::size_t x, std::size_t y, Tile* column, std::size_t columnSize) -> std::expected<bool, StarException> {
-        if (auto r = function(Vec2I((int)x + split.xOffset, (int)y), column, columnSize); !r) return std::unexpected(std::move(r.error()));
+      auto fwrapper = [&](std::size_t x, std::size_t y, std::optional<std::span<Tile>> column, std::size_t) -> std::expected<bool, StarException> {
+        if (auto r = function(Vec2I((int)x + split.xOffset, (int)y), *column); !r) return std::unexpected(std::move(r.error()));
         return true;
       };
       if (auto r = m_tileSectors.evalColumnsParallel(workers, clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false); !r) return std::unexpected(std::move(r.error()));
@@ -482,10 +479,8 @@ template <typename Function>
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
       // If const variant, call function with default tile if not loaded.
-      auto fwrapper = [&](unsigned x, unsigned y, Tile const* tile) {
-        if (!tile)
-          tile = &m_default;
-        return function(Vec2I((int)x + split.xOffset, y), *tile);
+      auto fwrapper = [&](unsigned x, unsigned y, std::optional<std::reference_wrapper<Tile const>> tile) {
+        return function(Vec2I((int)x + split.xOffset, y), tile ? tile->get() : m_default);
       };
       auto result = m_tileSectors.eval(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, true);
       if (!result) return std::unexpected(std::move(result.error()));

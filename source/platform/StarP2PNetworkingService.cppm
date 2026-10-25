@@ -81,7 +81,7 @@ public:
   // P2P friends can join this player at the given remote server
   [[nodiscard]] virtual std::expected<void, StarException> setJoinRemote(HostAddressWithPort location) = 0;
   // Updates rich presence activity info
-  [[nodiscard]] virtual std::expected<void, StarException> setActivityData(const char* title, const char* details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setActivityData(std::string_view title, std::string_view details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) = 0;
 
   // If this player joins another peer's game using the P2P UI, this will return
   // a pending join location

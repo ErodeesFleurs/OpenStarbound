@@ -328,7 +328,7 @@ struct SimpleBTreeStorage {
     auto leaf = leaves.get(pointer);
     if (!leaf)
       return std::unexpected(std::move(leaf.error()));
-    return **leaf;
+    return leaf->get();
   }
 
   bool leafNeedsShift(Leaf const& leaf) {
@@ -404,7 +404,7 @@ struct SimpleBTreeStorage {
     auto index = indexes.get(pointer);
     if (!index)
       return std::unexpected(std::move(index.error()));
-    return **index;
+    return index->get();
   }
 
   bool indexNeedsShift(Index const& index) {

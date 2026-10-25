@@ -20,7 +20,7 @@ class Assets;
 class Root;
 
 struct TenantExceptionTag {
-  static constexpr char const* name() { return "TenantException"; }
+  static constexpr std::string_view name() { return "TenantException"; }
 };
 using TenantException = StarError<TenantExceptionTag, StarException>;
 

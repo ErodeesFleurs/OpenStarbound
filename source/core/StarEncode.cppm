@@ -13,8 +13,8 @@ std::size_t hexEncode(std::span<char const> data, std::span<char> output);
 std::size_t base64Encode(std::span<char const> data, std::span<char> output);
 [[nodiscard]] std::expected<std::size_t, StarException> base64Decode(std::span<char const> data, std::span<char> output);
 
-String hexEncode(char const* data, std::size_t len);
-String base64Encode(char const* data, std::size_t len);
+String hexEncode(std::span<char const> data);
+String base64Encode(std::span<char const> data);
 
 String hexEncode(ByteArray const& data);
 [[nodiscard]] std::expected<ByteArray, StarException> hexDecode(String const& encodedData);

@@ -135,9 +135,9 @@ std::expected<void, StarException> WorldPainter::initialize() {
     if (!underlay) return std::unexpected(std::move(underlay.error()));
     auto overlay = p.second.getString("overlay", "");
     if (!overlay) return std::unexpected(std::move(overlay.error()));
-    m_highlightDirectives.set(**type, {Directives(*underlay), Directives(*overlay)});
+    m_highlightDirectives.set(type->get(), {Directives(*underlay), Directives(*overlay)});
   }
-  auto loadVector = [this](char const* path) -> std::expected<Vec2F, StarException> {
+  auto loadVector = [this](String const& path) -> std::expected<Vec2F, StarException> {
     auto json = m_assets->json(path);
     if (!json) return std::unexpected(std::move(json.error()));
     return jsonToVec2F(*json);
@@ -192,8 +192,10 @@ WorldCamera& WorldPainter::camera() {
   return m_camera;
 }
 
-TileDrawer* WorldPainter::tileDrawer() const {
-  return m_tilePainter.get();
+std::optional<std::reference_wrapper<TileDrawer>> WorldPainter::tileDrawer() const {
+  if (m_tilePainter)
+    return std::ref(static_cast<TileDrawer&>(*m_tilePainter));
+  return std::nullopt;
 }
 
 void WorldPainter::update(float dt) {
@@ -375,7 +377,7 @@ std::expected<void, StarException> WorldPainter::renderParticles(WorldRenderData
   if (!renderData.particles)
     return {};
 
-  for (Particle const& particle : *renderData.particles) {
+  for (Particle const& particle : renderData.particles->get()) {
     if (layer != particle.layer)
       continue;
 

@@ -20,20 +20,20 @@ WireDirection otherWireDirection(WireDirection direction);
 // Identifier for a specific WireNode in a WireEntity, node indexes for input
 // and output nodes are separate.
 struct WireNode {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, WireNode& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, WireNode const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, WireNode& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, WireNode const& value);
   WireDirection direction;
   std::size_t nodeIndex;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, WireNode& wireNode);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, WireNode const& wireNode);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, WireNode& wireNode);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, WireNode const& wireNode);
 
 // Connection from a given WireNode to another WireNode, the direction must be
 // implied based on the context.
 struct WireConnection {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, WireConnection& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, WireConnection const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, WireConnection& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, WireConnection const& value);
   Vec2I entityLocation;
   std::size_t nodeIndex;
 
@@ -45,8 +45,8 @@ struct hash<WireConnection> {
   std::size_t operator()(WireConnection const& wireConnection) const;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, WireConnection& wireConnection);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, WireConnection const& wireConnection);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, WireConnection& wireConnection);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, WireConnection const& wireConnection);
 
 class WireCoordinator {
 public:

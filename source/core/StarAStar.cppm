@@ -110,7 +110,7 @@ namespace AStar {
 
     // Convenience, equivalent to calling start, then explore({}) and returns
     // result()
-    [[nodiscard]] std::expected<std::optional<Path<Edge>> const*, StarException> findPath(Node startNode, Node goalNode);
+    [[nodiscard]] std::expected<std::reference_wrapper<std::optional<Path<Edge>> const>, StarException> findPath(Node startNode, Node goalNode);
 
   private:
     struct ScoredNode {
@@ -325,14 +325,14 @@ namespace AStar {
   }
 
   template <class Edge, class Node>
-  std::expected<std::optional<Path<Edge>> const*, StarException> Search<Edge, Node>::findPath(Node startNode, Node goalNode) {
+  std::expected<std::reference_wrapper<std::optional<Path<Edge>> const>, StarException> Search<Edge, Node>::findPath(Node startNode, Node goalNode) {
     auto started = start(std::move(startNode), std::move(goalNode));
     if (!started)
       return std::unexpected(std::move(started.error()));
     auto explored = explore();
     if (!explored)
       return std::unexpected(std::move(explored.error()));
-    return &result();
+    return std::cref(result());
   }
 
   template <class Edge, class Node>

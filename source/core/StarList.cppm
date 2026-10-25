@@ -201,7 +201,7 @@ public:
   List(Storage const& storage) : m_storage(storage) {}
   List(Storage&& storage) : m_storage(std::move(storage)) {}
   explicit List(std::size_t length, const_reference value = value_type()) : m_storage(length, value) {}
-  List(value_type const* values, std::size_t count) : m_storage(values, values + count) {}
+  explicit List(std::span<value_type const> values) : m_storage(values.begin(), values.end()) {}
   template <std::input_iterator Iterator>
   List(Iterator first, Iterator last) : m_storage(first, last) {}
   List(std::initializer_list<value_type> values) {
@@ -307,36 +307,36 @@ public:
   }
 
   template <class... Args>
-  auto emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
+  auto emplaceAppend(Args&&... args) -> std::expected<std::reference_wrapper<value_type>, StarException>
       requires (!std::is_void_v<AppendResult>) {
     auto added = m_storage.emplace_back(std::forward<Args>(args)...);
     if (!added)
       return std::unexpected(std::move(added.error()));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type>(*std::prev(m_storage.end()));
   }
 
-  auto first() -> std::expected<value_type*, StarException> {
+  auto first() -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("first() called on empty list"));
-    return std::addressof(*m_storage.begin());
+    return std::reference_wrapper<value_type>(*m_storage.begin());
   }
 
-  auto first() const -> std::expected<value_type const*, StarException> {
+  auto first() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("first() called on empty list"));
-    return std::addressof(*m_storage.begin());
+    return std::reference_wrapper<value_type const>(*m_storage.begin());
   }
 
-  auto last() -> std::expected<value_type*, StarException> {
+  auto last() -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("last() called on empty list"));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type>(*std::prev(m_storage.end()));
   }
 
-  auto last() const -> std::expected<value_type const*, StarException> {
+  auto last() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("last() called on empty list"));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type const>(*std::prev(m_storage.end()));
   }
 
   auto maybeFirst() -> std::optional<value_type> {
@@ -507,16 +507,16 @@ public:
     return index;
   }
 
-  auto at(std::size_t n) const -> std::expected<value_type const*, StarException> {
+  auto at(std::size_t n) const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (n >= m_storage.size())
       return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
-    return std::addressof(operator[](n));
+    return std::reference_wrapper<value_type const>(operator[](n));
   }
 
-  auto at(std::size_t n) -> std::expected<value_type*, StarException> {
+  auto at(std::size_t n) -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (n >= m_storage.size())
       return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
-    return std::addressof(operator[](n));
+    return std::reference_wrapper<value_type>(operator[](n));
   }
 
   auto operator[](std::size_t n) const -> const_reference {
@@ -543,21 +543,21 @@ public:
     auto element = at(i);
     if (!element)
       return std::unexpected(std::move(element.error()));
-    value_type e = std::move(**element);
+    value_type e = std::move(element->get());
     m_storage.erase(m_storage.begin() + i);
     return e;
   }
 
-  auto wrap(std::size_t n) const -> std::expected<value_type const*, StarException> {
+  auto wrap(std::size_t n) const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("wrap() called on empty list"));
-    return std::addressof(operator[](n % m_storage.size()));
+    return std::reference_wrapper<value_type const>(operator[](n % m_storage.size()));
   }
 
-  auto wrap(std::size_t n) -> std::expected<value_type*, StarException> {
+  auto wrap(std::size_t n) -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("wrap() called on empty list"));
-    return std::addressof(operator[](n % m_storage.size()));
+    return std::reference_wrapper<value_type>(operator[](n % m_storage.size()));
   }
 
   auto wrap(std::size_t n, value_type def) const -> value_type {
@@ -769,36 +769,36 @@ public:
   }
 
   template <class... Args>
-  auto emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
+  auto emplaceAppend(Args&&... args) -> std::expected<std::reference_wrapper<value_type>, StarException>
       requires (!std::is_void_v<AppendResult>) {
     auto added = m_storage.emplace_back(std::forward<Args>(args)...);
     if (!added)
       return std::unexpected(std::move(added.error()));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type>(*std::prev(m_storage.end()));
   }
 
-  auto first() -> std::expected<value_type*, StarException> {
+  auto first() -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("first() called on empty list"));
-    return std::addressof(*m_storage.begin());
+    return std::reference_wrapper<value_type>(*m_storage.begin());
   }
 
-  auto first() const -> std::expected<value_type const*, StarException> {
+  auto first() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("first() called on empty list"));
-    return std::addressof(*m_storage.begin());
+    return std::reference_wrapper<value_type const>(*m_storage.begin());
   }
 
-  auto last() -> std::expected<value_type*, StarException> {
+  auto last() -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("last() called on empty list"));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type>(*std::prev(m_storage.end()));
   }
 
-  auto last() const -> std::expected<value_type const*, StarException> {
+  auto last() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("last() called on empty list"));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type const>(*std::prev(m_storage.end()));
   }
 
   auto maybeFirst() -> std::optional<value_type> {
@@ -969,16 +969,16 @@ public:
     return index;
   }
 
-  auto at(std::size_t n) const -> std::expected<value_type const*, StarException> {
+  auto at(std::size_t n) const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (n >= m_storage.size())
       return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
-    return std::addressof(operator[](n));
+    return std::reference_wrapper<value_type const>(operator[](n));
   }
 
-  auto at(std::size_t n) -> std::expected<value_type*, StarException> {
+  auto at(std::size_t n) -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (n >= m_storage.size())
       return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
-    return std::addressof(operator[](n));
+    return std::reference_wrapper<value_type>(operator[](n));
   }
 
   auto operator[](std::size_t n) const -> const_reference {
@@ -1005,21 +1005,21 @@ public:
     auto element = at(i);
     if (!element)
       return std::unexpected(std::move(element.error()));
-    value_type e = std::move(**element);
+    value_type e = std::move(element->get());
     m_storage.erase(m_storage.begin() + i);
     return e;
   }
 
-  auto wrap(std::size_t n) const -> std::expected<value_type const*, StarException> {
+  auto wrap(std::size_t n) const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("wrap() called on empty list"));
-    return std::addressof(operator[](n % m_storage.size()));
+    return std::reference_wrapper<value_type const>(operator[](n % m_storage.size()));
   }
 
-  auto wrap(std::size_t n) -> std::expected<value_type*, StarException> {
+  auto wrap(std::size_t n) -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("wrap() called on empty list"));
-    return std::addressof(operator[](n % m_storage.size()));
+    return std::reference_wrapper<value_type>(operator[](n % m_storage.size()));
   }
 
   auto wrap(std::size_t n, value_type def) const -> value_type {
@@ -1127,7 +1127,7 @@ public:
   SmallList(Storage const& storage) : m_storage(storage) {}
   SmallList(Storage&& storage) : m_storage(std::move(storage)) {}
   explicit SmallList(std::size_t length, const_reference value = value_type()) : m_storage(length, value) {}
-  SmallList(value_type const* values, std::size_t count) : m_storage(values, values + count) {}
+  explicit SmallList(std::span<value_type const> values) : m_storage(values.begin(), values.end()) {}
   template <std::input_iterator Iterator>
   SmallList(Iterator first, Iterator last) : m_storage(first, last) {}
   SmallList(std::initializer_list<value_type> values) {
@@ -1225,36 +1225,36 @@ public:
   }
 
   template <class... Args>
-  auto emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
+  auto emplaceAppend(Args&&... args) -> std::expected<std::reference_wrapper<value_type>, StarException>
       requires (!std::is_void_v<AppendResult>) {
     auto added = m_storage.emplace_back(std::forward<Args>(args)...);
     if (!added)
       return std::unexpected(std::move(added.error()));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type>(*std::prev(m_storage.end()));
   }
 
-  auto first() -> std::expected<value_type*, StarException> {
+  auto first() -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("first() called on empty list"));
-    return std::addressof(*m_storage.begin());
+    return std::reference_wrapper<value_type>(*m_storage.begin());
   }
 
-  auto first() const -> std::expected<value_type const*, StarException> {
+  auto first() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("first() called on empty list"));
-    return std::addressof(*m_storage.begin());
+    return std::reference_wrapper<value_type const>(*m_storage.begin());
   }
 
-  auto last() -> std::expected<value_type*, StarException> {
+  auto last() -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("last() called on empty list"));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type>(*std::prev(m_storage.end()));
   }
 
-  auto last() const -> std::expected<value_type const*, StarException> {
+  auto last() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("last() called on empty list"));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type const>(*std::prev(m_storage.end()));
   }
 
   auto maybeFirst() -> std::optional<value_type> {
@@ -1425,16 +1425,16 @@ public:
     return index;
   }
 
-  auto at(std::size_t n) const -> std::expected<value_type const*, StarException> {
+  auto at(std::size_t n) const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (n >= m_storage.size())
       return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
-    return std::addressof(operator[](n));
+    return std::reference_wrapper<value_type const>(operator[](n));
   }
 
-  auto at(std::size_t n) -> std::expected<value_type*, StarException> {
+  auto at(std::size_t n) -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (n >= m_storage.size())
       return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
-    return std::addressof(operator[](n));
+    return std::reference_wrapper<value_type>(operator[](n));
   }
 
   auto operator[](std::size_t n) const -> const_reference {
@@ -1461,21 +1461,21 @@ public:
     auto element = at(i);
     if (!element)
       return std::unexpected(std::move(element.error()));
-    value_type e = std::move(**element);
+    value_type e = std::move(element->get());
     m_storage.erase(m_storage.begin() + i);
     return e;
   }
 
-  auto wrap(std::size_t n) const -> std::expected<value_type const*, StarException> {
+  auto wrap(std::size_t n) const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("wrap() called on empty list"));
-    return std::addressof(operator[](n % m_storage.size()));
+    return std::reference_wrapper<value_type const>(operator[](n % m_storage.size()));
   }
 
-  auto wrap(std::size_t n) -> std::expected<value_type*, StarException> {
+  auto wrap(std::size_t n) -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("wrap() called on empty list"));
-    return std::addressof(operator[](n % m_storage.size()));
+    return std::reference_wrapper<value_type>(operator[](n % m_storage.size()));
   }
 
   auto wrap(std::size_t n, value_type def) const -> value_type {
@@ -1583,7 +1583,7 @@ public:
   Deque(Storage const& storage) : m_storage(storage) {}
   Deque(Storage&& storage) : m_storage(std::move(storage)) {}
   explicit Deque(std::size_t length, const_reference value = value_type()) : m_storage(length, value) {}
-  Deque(value_type const* values, std::size_t count) : m_storage(values, values + count) {}
+  explicit Deque(std::span<value_type const> values) : m_storage(values.begin(), values.end()) {}
   template <std::input_iterator Iterator>
   Deque(Iterator first, Iterator last) : m_storage(first, last) {}
   Deque(std::initializer_list<value_type> values) {
@@ -1688,36 +1688,36 @@ public:
   }
 
   template <class... Args>
-  auto emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
+  auto emplaceAppend(Args&&... args) -> std::expected<std::reference_wrapper<value_type>, StarException>
       requires (!std::is_void_v<AppendResult>) {
     auto added = m_storage.emplace_back(std::forward<Args>(args)...);
     if (!added)
       return std::unexpected(std::move(added.error()));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type>(*std::prev(m_storage.end()));
   }
 
-  auto first() -> std::expected<value_type*, StarException> {
+  auto first() -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("first() called on empty list"));
-    return std::addressof(*m_storage.begin());
+    return std::reference_wrapper<value_type>(*m_storage.begin());
   }
 
-  auto first() const -> std::expected<value_type const*, StarException> {
+  auto first() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("first() called on empty list"));
-    return std::addressof(*m_storage.begin());
+    return std::reference_wrapper<value_type const>(*m_storage.begin());
   }
 
-  auto last() -> std::expected<value_type*, StarException> {
+  auto last() -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("last() called on empty list"));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type>(*std::prev(m_storage.end()));
   }
 
-  auto last() const -> std::expected<value_type const*, StarException> {
+  auto last() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("last() called on empty list"));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type const>(*std::prev(m_storage.end()));
   }
 
   auto maybeFirst() -> std::optional<value_type> {
@@ -1888,16 +1888,16 @@ public:
     return index;
   }
 
-  auto at(std::size_t n) const -> std::expected<value_type const*, StarException> {
+  auto at(std::size_t n) const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (n >= m_storage.size())
       return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
-    return std::addressof(operator[](n));
+    return std::reference_wrapper<value_type const>(operator[](n));
   }
 
-  auto at(std::size_t n) -> std::expected<value_type*, StarException> {
+  auto at(std::size_t n) -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (n >= m_storage.size())
       return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
-    return std::addressof(operator[](n));
+    return std::reference_wrapper<value_type>(operator[](n));
   }
 
   auto operator[](std::size_t n) const -> const_reference {
@@ -1924,21 +1924,21 @@ public:
     auto element = at(i);
     if (!element)
       return std::unexpected(std::move(element.error()));
-    value_type e = std::move(**element);
+    value_type e = std::move(element->get());
     m_storage.erase(m_storage.begin() + i);
     return e;
   }
 
-  auto wrap(std::size_t n) const -> std::expected<value_type const*, StarException> {
+  auto wrap(std::size_t n) const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("wrap() called on empty list"));
-    return std::addressof(operator[](n % m_storage.size()));
+    return std::reference_wrapper<value_type const>(operator[](n % m_storage.size()));
   }
 
-  auto wrap(std::size_t n) -> std::expected<value_type*, StarException> {
+  auto wrap(std::size_t n) -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("wrap() called on empty list"));
-    return std::addressof(operator[](n % m_storage.size()));
+    return std::reference_wrapper<value_type>(operator[](n % m_storage.size()));
   }
 
   auto wrap(std::size_t n, value_type def) const -> value_type {
@@ -2086,7 +2086,7 @@ public:
   LinkedList(Storage const& storage) : m_storage(storage) {}
   LinkedList(Storage&& storage) : m_storage(std::move(storage)) {}
   explicit LinkedList(std::size_t length, const_reference value = value_type()) : m_storage(length, value) {}
-  LinkedList(value_type const* values, std::size_t count) : m_storage(values, values + count) {}
+  explicit LinkedList(std::span<value_type const> values) : m_storage(values.begin(), values.end()) {}
   template <std::input_iterator Iterator>
   LinkedList(Iterator first, Iterator last) : m_storage(first, last) {}
   LinkedList(std::initializer_list<value_type> values) {
@@ -2202,36 +2202,36 @@ public:
   }
 
   template <class... Args>
-  auto emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
+  auto emplaceAppend(Args&&... args) -> std::expected<std::reference_wrapper<value_type>, StarException>
       requires (!std::is_void_v<AppendResult>) {
     auto added = m_storage.emplace_back(std::forward<Args>(args)...);
     if (!added)
       return std::unexpected(std::move(added.error()));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type>(*std::prev(m_storage.end()));
   }
 
-  auto first() -> std::expected<value_type*, StarException> {
+  auto first() -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("first() called on empty list"));
-    return std::addressof(*m_storage.begin());
+    return std::reference_wrapper<value_type>(*m_storage.begin());
   }
 
-  auto first() const -> std::expected<value_type const*, StarException> {
+  auto first() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("first() called on empty list"));
-    return std::addressof(*m_storage.begin());
+    return std::reference_wrapper<value_type const>(*m_storage.begin());
   }
 
-  auto last() -> std::expected<value_type*, StarException> {
+  auto last() -> std::expected<std::reference_wrapper<value_type>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("last() called on empty list"));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type>(*std::prev(m_storage.end()));
   }
 
-  auto last() const -> std::expected<value_type const*, StarException> {
+  auto last() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
     if (m_storage.empty())
       return std::unexpected(OutOfRangeException("last() called on empty list"));
-    return std::addressof(*std::prev(m_storage.end()));
+    return std::reference_wrapper<value_type const>(*std::prev(m_storage.end()));
   }
 
   auto maybeFirst() -> std::optional<value_type> {
@@ -2733,8 +2733,8 @@ std::ostream& operator<<(std::ostream& os, Sequence const& list)
 
 template <SequenceContainer Sequence>
 [[nodiscard]]
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Sequence const& list)
-    requires std::same_as<ListDiagnosticResult<Sequence>, std::expected<std::ostream*, StarException>>;
+std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, Sequence const& list)
+    requires std::same_as<ListDiagnosticResult<Sequence>, std::expected<std::reference_wrapper<std::ostream>, StarException>>;
 
 template <typename... Containers>
 struct ListZipTypes {
@@ -2768,8 +2768,8 @@ std::ostream& operator<<(std::ostream& os, Sequence const& list)
 
 template <SequenceContainer Sequence>
 [[nodiscard]]
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Sequence const& list)
-    requires std::same_as<ListDiagnosticResult<Sequence>, std::expected<std::ostream*, StarException>> {
+std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, Sequence const& list)
+    requires std::same_as<ListDiagnosticResult<Sequence>, std::expected<std::reference_wrapper<std::ostream>, StarException>> {
   os << "(";
   for (auto i = list.begin(); i != list.end(); ++i) {
     if (i != list.begin())
@@ -2779,7 +2779,7 @@ std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Sequenc
       return std::unexpected(std::move(written.error()));
   }
   os << ")";
-  return &os;
+  return std::ref(os);
 }
 
 template <typename List>

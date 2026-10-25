@@ -14,7 +14,7 @@ namespace Star {
 class Assets;
 
 struct SpawnTypeDatabaseExceptionTag {
-  static constexpr char const* name() { return "SpawnTypeDatabaseException"; }
+  static constexpr std::string_view name() { return "SpawnTypeDatabaseException"; }
 };
 using SpawnTypeDatabaseException = StarError<SpawnTypeDatabaseExceptionTag, StarException>;
 

@@ -169,7 +169,7 @@ TEST(TupleSerialization, OrderedWireAndEnumWidths) {
   std::array<unsigned char, 7> expected{0xfe, 0x12, 0x34, 0x89, 0xab, 0xcd, 0xef};
   ASSERT_EQ(stream.size(), expected.size());
   for (std::size_t i = 0; i < expected.size(); ++i)
-    EXPECT_EQ(static_cast<unsigned char>(stream.ptr()[i]), expected[i]);
+    EXPECT_EQ(static_cast<unsigned char>(stream.span()[i]), expected[i]);
 
   ASSERT_TRUE(stream.seek(0));
   decltype(values) restored{};

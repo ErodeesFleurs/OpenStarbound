@@ -144,50 +144,50 @@ import star.material_database;
 
 namespace Star::LuaBindings {
   namespace RootCallbacks {
-    [[nodiscard]] std::expected<String, StarException> assetData(Root* root, String const& path);
-    [[nodiscard]] std::expected<Image, StarException> assetImage(Root* root, String const& path);
-    [[nodiscard]] std::expected<Json, StarException> assetFrames(Root* root, String const& path);
-    [[nodiscard]] std::expected<Json, StarException> assetJson(Root* root, String const& path);
-    [[nodiscard]] std::expected<Json, StarException> makeCurrentVersionedJson(Root* root, String const& identifier, Json const& content);
-    [[nodiscard]] std::expected<Json, StarException> loadVersionedJson(Root* root, ItemDatabase const* itemCatalog, Json const& versionedJson, String const& expectedIdentifier);
-    [[nodiscard]] std::expected<double, StarException> evalFunction(Root* root, String const& arg1, double arg2);
-    [[nodiscard]] std::expected<double, StarException> evalFunction2(Root* root, String const& arg1, double arg2, double arg3);
-    [[nodiscard]] std::expected<Vec2U, StarException> imageSize(Root* root, String const& arg1);
-    [[nodiscard]] std::expected<List<Vec2I>, StarException> imageSpaces(Root* root, String const& arg1, Vec2F const& arg2, float arg3, bool arg4);
-    [[nodiscard]] std::expected<RectU, StarException> nonEmptyRegion(Root* root, String const& arg1);
-    [[nodiscard]] std::expected<Json, StarException> npcConfig(Root* root, String const& arg1);
-    [[nodiscard]] std::expected<float, StarException> projectileGravityMultiplier(Root* root, String const& arg1);
-    [[nodiscard]] std::expected<Json, StarException> projectileConfig(Root* root, String const& arg1);
-    [[nodiscard]] std::expected<JsonArray, StarException> recipesForItem(ItemDatabase const* database, String const& arg1);
-    [[nodiscard]] std::expected<JsonArray, StarException> allRecipes(ItemDatabase const* database, std::optional<StringSet> filter);
-    [[nodiscard]] std::expected<String, StarException> itemType(ItemDatabase const* database, String const& itemName);
-    [[nodiscard]] std::expected<Json, StarException> itemTags(ItemDatabase const* database, String const& itemName);
-    [[nodiscard]] std::expected<bool, StarException> itemHasTag(ItemDatabase const* database, String const& itemName, String const& itemTag);
-    [[nodiscard]] std::expected<Json, StarException> itemConfig(ItemDatabase const* database, Json const& descriptor, std::optional<float> const& level, std::optional<std::uint64_t> const& seed);
-    [[nodiscard]] std::expected<Json, StarException> createItem(ItemDatabase const* database, Json const& descriptor, std::optional<float> const& level, std::optional<std::uint64_t> const& seed);
-    [[nodiscard]] std::expected<Json, StarException> tenantConfig(Root* root, String const& tenantName);
-    [[nodiscard]] std::expected<JsonArray, StarException> getMatchingTenants(Root* root, StringMap<unsigned> const& colonyTags);
-    [[nodiscard]] std::expected<Json, StarException> liquidStatusEffects(Root* root, LiquidId arg1);
-    [[nodiscard]] std::expected<String, StarException> generateName(Root* root, String const& rulesAsset, std::optional<std::uint64_t> seed);
-    [[nodiscard]] std::expected<Json, StarException> questConfig(Root* root, String const& templateId);
-    [[nodiscard]] std::expected<JsonArray, StarException> npcPortrait(Root* root, ItemDatabase const* itemCatalog,
+    [[nodiscard]] std::expected<String, StarException> assetData(Root& root, String const& path);
+    [[nodiscard]] std::expected<Image, StarException> assetImage(Root& root, String const& path);
+    [[nodiscard]] std::expected<Json, StarException> assetFrames(Root& root, String const& path);
+    [[nodiscard]] std::expected<Json, StarException> assetJson(Root& root, String const& path);
+    [[nodiscard]] std::expected<Json, StarException> makeCurrentVersionedJson(Root& root, String const& identifier, Json const& content);
+    [[nodiscard]] std::expected<Json, StarException> loadVersionedJson(Root& root, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog, Json const& versionedJson, String const& expectedIdentifier);
+    [[nodiscard]] std::expected<double, StarException> evalFunction(Root& root, String const& arg1, double arg2);
+    [[nodiscard]] std::expected<double, StarException> evalFunction2(Root& root, String const& arg1, double arg2, double arg3);
+    [[nodiscard]] std::expected<Vec2U, StarException> imageSize(Root& root, String const& arg1);
+    [[nodiscard]] std::expected<List<Vec2I>, StarException> imageSpaces(Root& root, String const& arg1, Vec2F const& arg2, float arg3, bool arg4);
+    [[nodiscard]] std::expected<RectU, StarException> nonEmptyRegion(Root& root, String const& arg1);
+    [[nodiscard]] std::expected<Json, StarException> npcConfig(Root& root, String const& arg1);
+    [[nodiscard]] std::expected<float, StarException> projectileGravityMultiplier(Root& root, String const& arg1);
+    [[nodiscard]] std::expected<Json, StarException> projectileConfig(Root& root, String const& arg1);
+    [[nodiscard]] std::expected<JsonArray, StarException> recipesForItem(ItemDatabase const& database, String const& arg1);
+    [[nodiscard]] std::expected<JsonArray, StarException> allRecipes(ItemDatabase const& database, std::optional<StringSet> filter);
+    [[nodiscard]] std::expected<String, StarException> itemType(ItemDatabase const& database, String const& itemName);
+    [[nodiscard]] std::expected<Json, StarException> itemTags(ItemDatabase const& database, String const& itemName);
+    [[nodiscard]] std::expected<bool, StarException> itemHasTag(ItemDatabase const& database, String const& itemName, String const& itemTag);
+    [[nodiscard]] std::expected<Json, StarException> itemConfig(ItemDatabase const& database, Json const& descriptor, std::optional<float> const& level, std::optional<std::uint64_t> const& seed);
+    [[nodiscard]] std::expected<Json, StarException> createItem(ItemDatabase const& database, Json const& descriptor, std::optional<float> const& level, std::optional<std::uint64_t> const& seed);
+    [[nodiscard]] std::expected<Json, StarException> tenantConfig(Root& root, String const& tenantName);
+    [[nodiscard]] std::expected<JsonArray, StarException> getMatchingTenants(Root& root, StringMap<unsigned> const& colonyTags);
+    [[nodiscard]] std::expected<Json, StarException> liquidStatusEffects(Root& root, LiquidId arg1);
+    [[nodiscard]] std::expected<String, StarException> generateName(Root& root, String const& rulesAsset, std::optional<std::uint64_t> seed);
+    [[nodiscard]] std::expected<Json, StarException> questConfig(Root& root, String const& templateId);
+    [[nodiscard]] std::expected<JsonArray, StarException> npcPortrait(Root& root, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog,
         String const& portraitMode,
         String const& species,
         String const& typeName,
         float level,
         std::optional<std::uint64_t> seed,
         std::optional<JsonObject> const& parameters);
-    [[nodiscard]] std::expected<Json, StarException> npcVariant(Root* root, ItemDatabase const* itemCatalog,
+    [[nodiscard]] std::expected<Json, StarException> npcVariant(Root& root, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog,
         String const& species,
         String const& typeName,
         float level,
         std::optional<std::uint64_t> seed,
         std::optional<JsonObject> const& parameters);
-    [[nodiscard]] std::expected<JsonArray, StarException> monsterPortrait(Root* root, String const& typeName, std::optional<JsonObject> const& parameters);
-    [[nodiscard]] std::expected<bool, StarException> isTreasurePool(Root* root, String const& pool);
-    [[nodiscard]] std::expected<JsonArray, StarException> createTreasure(Root* root, ItemDatabase const* itemCatalog, String const& pool, float level, std::optional<std::uint64_t> seed);
-    [[nodiscard]] std::expected<std::optional<String>, StarException> materialMiningSound(Root* root, String const& materialName, std::optional<String> const& modName);
-    [[nodiscard]] std::expected<std::optional<String>, StarException> materialFootstepSound(Root* root, String const& materialName, std::optional<String> const& modName);
+    [[nodiscard]] std::expected<JsonArray, StarException> monsterPortrait(Root& root, String const& typeName, std::optional<JsonObject> const& parameters);
+    [[nodiscard]] std::expected<bool, StarException> isTreasurePool(Root& root, String const& pool);
+    [[nodiscard]] std::expected<JsonArray, StarException> createTreasure(Root& root, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog, String const& pool, float level, std::optional<std::uint64_t> seed);
+    [[nodiscard]] std::expected<std::optional<String>, StarException> materialMiningSound(Root& root, String const& materialName, std::optional<String> const& modName);
+    [[nodiscard]] std::expected<std::optional<String>, StarException> materialFootstepSound(Root& root, String const& materialName, std::optional<String> const& modName);
   }
 }
 
@@ -200,37 +200,36 @@ auto const VariantTerrainLayerNames = EnumMap<VariantTerrainLayer>::create({
   {VariantTerrainLayer::Foreground, "Foreground"},
 });
 
-std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& owner, ItemDatabase const* itemCatalog) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& root, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) {
   LuaCallbacks callbacks;
 
-  auto root = &owner;
-  // Builders borrow their ready catalog; regular contexts resolve the current
-  // resource per invocation so reload does not freeze an obsolete database.
-  auto itemCallback = [root, itemCatalog]<typename Result, typename... Args>(Result (*callback)(ItemDatabase const*, Args...)) {
-    return [root, itemCatalog, callback](Args... args) -> Result {
+  // Builders borrow their ready catalog. Regular calls retain the current
+  // shared generation catalog until invocation completes, without freezing it.
+  auto itemCallback = [&root, itemCatalog]<typename Result, typename... Args>(Result (*callback)(ItemDatabase const&, Args...)) {
+    return [&root, itemCatalog, callback](Args... args) -> Result {
       if (itemCatalog)
-        return callback(itemCatalog, std::forward<Args>(args)...);
-      auto databaseOwner = root->itemDatabase();
+        return callback(itemCatalog->get(), std::forward<Args>(args)...);
+      auto databaseOwner = root.itemDatabase();
       if (!databaseOwner)
         return std::unexpected(std::move(databaseOwner.error()));
-      return callback(databaseOwner->get(), std::forward<Args>(args)...);
+      return callback(**databaseOwner, std::forward<Args>(args)...);
     };
   };
 
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<String, StarException>, String>("assetData", std::bind(RootCallbacks::assetData, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Image, StarException>, String>("assetImage", std::bind(RootCallbacks::assetImage, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("assetFrames", std::bind(RootCallbacks::assetFrames, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("assetJson", std::bind(RootCallbacks::assetJson, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String, Json>("makeCurrentVersionedJson", std::bind(RootCallbacks::makeCurrentVersionedJson, root, std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, Json, String>("loadVersionedJson", std::bind(RootCallbacks::loadVersionedJson, root, itemCatalog, std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<double, StarException>, String, double>("evalFunction", std::bind(RootCallbacks::evalFunction, root, std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<double, StarException>, String, double, double>("evalFunction2", std::bind(RootCallbacks::evalFunction2, root, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Vec2U, StarException>, String>("imageSize", std::bind(RootCallbacks::imageSize, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<List<Vec2I>, StarException>, String, Vec2F, float, bool>("imageSpaces", std::bind(RootCallbacks::imageSpaces, root, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<RectU, StarException>, String>("nonEmptyRegion", std::bind(RootCallbacks::nonEmptyRegion, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("npcConfig", std::bind(RootCallbacks::npcConfig, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<float, StarException>, String>("projectileGravityMultiplier", std::bind(RootCallbacks::projectileGravityMultiplier, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("projectileConfig", std::bind(RootCallbacks::projectileConfig, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<String, StarException>, String>("assetData", std::bind(RootCallbacks::assetData, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Image, StarException>, String>("assetImage", std::bind(RootCallbacks::assetImage, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("assetFrames", std::bind(RootCallbacks::assetFrames, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("assetJson", std::bind(RootCallbacks::assetJson, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String, Json>("makeCurrentVersionedJson", std::bind(RootCallbacks::makeCurrentVersionedJson, std::ref(root), std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, Json, String>("loadVersionedJson", std::bind(RootCallbacks::loadVersionedJson, std::ref(root), itemCatalog, std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<double, StarException>, String, double>("evalFunction", std::bind(RootCallbacks::evalFunction, std::ref(root), std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<double, StarException>, String, double, double>("evalFunction2", std::bind(RootCallbacks::evalFunction2, std::ref(root), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Vec2U, StarException>, String>("imageSize", std::bind(RootCallbacks::imageSize, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<List<Vec2I>, StarException>, String, Vec2F, float, bool>("imageSpaces", std::bind(RootCallbacks::imageSpaces, std::ref(root), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<RectU, StarException>, String>("nonEmptyRegion", std::bind(RootCallbacks::nonEmptyRegion, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("npcConfig", std::bind(RootCallbacks::npcConfig, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<float, StarException>, String>("projectileGravityMultiplier", std::bind(RootCallbacks::projectileGravityMultiplier, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("projectileConfig", std::bind(RootCallbacks::projectileConfig, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallbackWithSignature<std::expected<JsonArray, StarException>, String>("recipesForItem", itemCallback(RootCallbacks::recipesForItem)); !r) return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallbackWithSignature<std::expected<JsonArray, StarException>, std::optional<StringSet>>("allRecipes", itemCallback(RootCallbacks::allRecipes)); !r) return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallbackWithSignature<std::expected<String, StarException>, String>("itemType", itemCallback(RootCallbacks::itemType)); !r) return std::unexpected(std::move(r.error()));
@@ -238,29 +237,29 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
   if (auto r = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, String, String>("itemHasTag", itemCallback(RootCallbacks::itemHasTag)); !r) return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, Json, std::optional<float>, std::optional<std::uint64_t>>("itemConfig", itemCallback(RootCallbacks::itemConfig)); !r) return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, Json, std::optional<float>, std::optional<std::uint64_t>>("createItem", itemCallback(RootCallbacks::createItem)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("tenantConfig", std::bind(RootCallbacks::tenantConfig, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<JsonArray, StarException>, StringMap<unsigned>>("getMatchingTenants", std::bind(RootCallbacks::getMatchingTenants, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, LiquidId>("liquidStatusEffects", std::bind(RootCallbacks::liquidStatusEffects, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<String, StarException>, String, std::optional<std::uint64_t>>("generateName", std::bind(RootCallbacks::generateName, root, std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("questConfig", std::bind(RootCallbacks::questConfig, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<JsonArray, StarException>, String, String, String, float, std::optional<std::uint64_t>, std::optional<JsonObject>>("npcPortrait", std::bind(RootCallbacks::npcPortrait, root, itemCatalog, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String, String, float, std::optional<std::uint64_t>, std::optional<JsonObject>>("npcVariant", std::bind(RootCallbacks::npcVariant, root, itemCatalog, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<JsonArray, StarException>, String, std::optional<JsonObject>>("monsterPortrait", std::bind(RootCallbacks::monsterPortrait, root, std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, String>("isTreasurePool", std::bind(RootCallbacks::isTreasurePool, root, std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<JsonArray, StarException>, String, float, std::optional<std::uint64_t>>("createTreasure", std::bind(RootCallbacks::createTreasure, root, itemCatalog, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("tenantConfig", std::bind(RootCallbacks::tenantConfig, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<JsonArray, StarException>, StringMap<unsigned>>("getMatchingTenants", std::bind(RootCallbacks::getMatchingTenants, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, LiquidId>("liquidStatusEffects", std::bind(RootCallbacks::liquidStatusEffects, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<String, StarException>, String, std::optional<std::uint64_t>>("generateName", std::bind(RootCallbacks::generateName, std::ref(root), std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String>("questConfig", std::bind(RootCallbacks::questConfig, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<JsonArray, StarException>, String, String, String, float, std::optional<std::uint64_t>, std::optional<JsonObject>>("npcPortrait", std::bind(RootCallbacks::npcPortrait, std::ref(root), itemCatalog, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<Json, StarException>, String, String, float, std::optional<std::uint64_t>, std::optional<JsonObject>>("npcVariant", std::bind(RootCallbacks::npcVariant, std::ref(root), itemCatalog, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<JsonArray, StarException>, String, std::optional<JsonObject>>("monsterPortrait", std::bind(RootCallbacks::monsterPortrait, std::ref(root), std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<bool, StarException>, String>("isTreasurePool", std::bind(RootCallbacks::isTreasurePool, std::ref(root), std::placeholders::_1)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<JsonArray, StarException>, String, float, std::optional<std::uint64_t>>("createTreasure", std::bind(RootCallbacks::createTreasure, std::ref(root), itemCatalog, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<std::optional<String>, StarException>, String, std::optional<String>>("materialMiningSound", std::bind(RootCallbacks::materialMiningSound, root, std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallbackWithSignature<std::expected<std::optional<String>, StarException>, String, std::optional<String>>("materialFootstepSound", std::bind(RootCallbacks::materialFootstepSound, root, std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<std::optional<String>, StarException>, String, std::optional<String>>("materialMiningSound", std::bind(RootCallbacks::materialMiningSound, std::ref(root), std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallbackWithSignature<std::expected<std::optional<String>, StarException>, String, std::optional<String>>("materialFootstepSound", std::bind(RootCallbacks::materialFootstepSound, std::ref(root), std::placeholders::_1, std::placeholders::_2)); !r) return std::unexpected(std::move(r.error()));
 
   auto getVariant = [](unsigned x, unsigned y, bool isMatMod, VariantTerrainLayer layer, unsigned variants) -> unsigned {
     XXHash32 state(2938728349);
-    state.push(reinterpret_cast<char const*>(&x), sizeof(x));
-    state.push(reinterpret_cast<char const*>(&y), sizeof(y));
-    state.push(reinterpret_cast<char const*>(&layer), sizeof(layer));
+    state.push(std::span<char const>(reinterpret_cast<char const*>(&x), sizeof(x)));
+    state.push(std::span<char const>(reinterpret_cast<char const*>(&y), sizeof(y)));
+    state.push(std::span<char const>(reinterpret_cast<char const*>(&layer), sizeof(layer)));
     if (isMatMod)
-      state.push("mod", 3);
+      state.push(std::span<char const>("mod", 3));
     else
-      state.push("main", 4);
+      state.push(std::span<char const>("main", 4));
     return state.digest() % variants;
   };
 
@@ -268,36 +267,36 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     if (!VariantTerrainLayerNames) return std::unexpected(VariantTerrainLayerNames.error());
     auto terrainLayer = VariantTerrainLayerNames->getLeft(layer);
     if (!terrainLayer) return std::unexpected(std::move(terrainLayer.error()));
-    return getVariant(tilePosition.x(), tilePosition.y(), false, **terrainLayer, variants);
+    return getVariant(tilePosition.x(), tilePosition.y(), false, terrainLayer->get(), variants);
   }); !r) return std::unexpected(std::move(r.error()));
 
   if (auto r = callbacks.registerCallback("modVariant", [getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> std::expected<unsigned, StarException> {
     if (!VariantTerrainLayerNames) return std::unexpected(VariantTerrainLayerNames.error());
     auto terrainLayer = VariantTerrainLayerNames->getLeft(layer);
     if (!terrainLayer) return std::unexpected(std::move(terrainLayer.error()));
-    return getVariant(tilePosition.x(), tilePosition.y(), true, **terrainLayer, variants);
+    return getVariant(tilePosition.x(), tilePosition.y(), true, terrainLayer->get(), variants);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("assetsByExtension", [root](String const& extension) -> std::expected<StringList, StarException> {
-    auto assets = root->assets();
+  if (auto r = callbacks.registerCallback("assetsByExtension", [&root](String const& extension) -> std::expected<StringList, StarException> {
+    auto assets = root.assets();
     if (!assets) return std::unexpected(std::move(assets.error()));
     auto paths = (*assets)->scanExtension(extension);
     if (!paths) return std::unexpected(std::move(paths.error()));
     StringList result;
-    result.reserve((*paths)->size());
-    for (auto const& path : **paths)
+    result.reserve(paths->get().size());
+    for (auto const& path : paths->get())
       result.append(path.string());
     return result;
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("assetsScan", [root](std::optional<String> const& a, std::optional<String> const& b) -> std::expected<StringList, StarException> {
-    auto assets = root->assets();
+  if (auto r = callbacks.registerCallback("assetsScan", [&root](std::optional<String> const& a, std::optional<String> const& b) -> std::expected<StringList, StarException> {
+    auto assets = root.assets();
     if (!assets) return std::unexpected(std::move(assets.error()));
     return b ? (*assets)->scan(a.value_or(String{}), *b) : (*assets)->scan(a.value_or(String{}));
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("assetOrigin", [root](String const& path) -> std::expected<std::optional<String>, StarException> {
-    auto assets = root->assets();
+  if (auto r = callbacks.registerCallback("assetOrigin", [&root](String const& path) -> std::expected<std::optional<String>, StarException> {
+    auto assets = root.assets();
     if (!assets) return std::unexpected(std::move(assets.error()));
     auto descriptor = (*assets)->assetDescriptor(path);
     if (!descriptor) return std::unexpected(std::move(descriptor.error()));
@@ -306,8 +305,8 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     return std::nullopt;
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("assetPatches", [root](LuaEngine& engine, String const& path) -> std::expected<std::optional<LuaTable>, StarException> {
-    auto assets = root->assets();
+  if (auto r = callbacks.registerCallback("assetPatches", [&root](LuaEngine& engine, String const& path) -> std::expected<std::optional<LuaTable>, StarException> {
+    auto assets = root.assets();
     if (!assets) return std::unexpected(std::move(assets.error()));
     auto descriptor = (*assets)->assetDescriptor(path);
     if (!descriptor) return std::unexpected(std::move(descriptor.error()));
@@ -333,8 +332,8 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     return std::nullopt;
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("assetSourcePaths", [root](LuaEngine& engine, std::optional<bool> withMetadata) -> std::expected<LuaTable, StarException> {
-    auto assets = root->assets();
+  if (auto r = callbacks.registerCallback("assetSourcePaths", [&root](LuaEngine& engine, std::optional<bool> withMetadata) -> std::expected<LuaTable, StarException> {
+    auto assets = root.assets();
     if (!assets) return std::unexpected(std::move(assets.error()));
     auto assetSources = (*assets)->assetSources();
     auto table = engine.createTable(assetSources.size(), 0);
@@ -356,25 +355,25 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     return table;
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("assetSourceMetadata", [root](String const& assetSourcePath) -> std::expected<JsonObject, StarException> {
-    auto assets = root->assets();
+  if (auto r = callbacks.registerCallback("assetSourceMetadata", [&root](String const& assetSourcePath) -> std::expected<JsonObject, StarException> {
+    auto assets = root.assets();
     if (!assets) return std::unexpected(std::move(assets.error()));
     return (*assets)->assetSourceMetadata(assetSourcePath);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("itemFile", [root, itemCatalog](String const& itemName) -> std::expected<std::optional<String>, StarException> {
-    if (itemCatalog) return itemCatalog->itemFile(itemName);
-    auto database = root->itemDatabase();
+  if (auto r = callbacks.registerCallback("itemFile", [&root, itemCatalog](String const& itemName) -> std::expected<std::optional<String>, StarException> {
+    if (itemCatalog) return itemCatalog->get().itemFile(itemName);
+    auto database = root.itemDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->itemFile(itemName);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("materialConfig", [root](std::variant<MaterialId, String> const& materialNameOrId) -> std::expected<Json, StarException> {
-    auto database = root->materialDatabase();
+  if (auto r = callbacks.registerCallback("materialConfig", [&root](std::variant<MaterialId, String> const& materialNameOrId) -> std::expected<Json, StarException> {
+    auto database = root.materialDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     MaterialId materialId;
-    if (auto id = std::get_if<MaterialId>(&materialNameOrId)) {
-      materialId = *id;
+    if (std::holds_alternative<MaterialId>(materialNameOrId)) {
+      materialId = std::get<MaterialId>(materialNameOrId);
     } else {
       auto resolvedId = (*database)->materialId(std::get<String>(materialNameOrId));
       if (!resolvedId) return std::unexpected(std::move(resolvedId.error()));
@@ -389,12 +388,12 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     return JsonObject{{"path", **path}, {"config", **config}};
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("modConfig", [root](std::variant<ModId, String> const& modNameOrId) -> std::expected<Json, StarException> {
-    auto database = root->materialDatabase();
+  if (auto r = callbacks.registerCallback("modConfig", [&root](std::variant<ModId, String> const& modNameOrId) -> std::expected<Json, StarException> {
+    auto database = root.materialDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     ModId modId;
-    if (auto id = std::get_if<ModId>(&modNameOrId)) {
-      modId = *id;
+    if (std::holds_alternative<ModId>(modNameOrId)) {
+      modId = std::get<ModId>(modNameOrId);
     } else {
       auto resolvedId = (*database)->modId(std::get<String>(modNameOrId));
       if (!resolvedId) return std::unexpected(std::move(resolvedId.error()));
@@ -409,8 +408,8 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     return JsonObject{{"path", **path}, {"config", **config}};
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("liquidConfig", [root](LuaEngine& engine, LuaValue nameOrId) -> std::expected<Json, StarException> {
-    auto database = root->liquidsDatabase();
+  if (auto r = callbacks.registerCallback("liquidConfig", [&root](LuaEngine& engine, LuaValue nameOrId) -> std::expected<Json, StarException> {
+    auto database = root.liquidsDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     LiquidId liquidId;
     auto id = engine.luaMaybeTo<std::uint8_t>(nameOrId);
@@ -434,42 +433,42 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     return JsonObject{{"path", **path}, {"config", **config}};
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("liquidName", [root](LiquidId liquidId) -> std::expected<String, StarException> {
-    auto database = root->liquidsDatabase();
+  if (auto r = callbacks.registerCallback("liquidName", [&root](LiquidId liquidId) -> std::expected<String, StarException> {
+    auto database = root.liquidsDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->liquidName(liquidId);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("liquidId", [root](String liquidName) -> std::expected<LiquidId, StarException> {
-    auto database = root->liquidsDatabase();
+  if (auto r = callbacks.registerCallback("liquidId", [&root](String liquidName) -> std::expected<LiquidId, StarException> {
+    auto database = root.liquidsDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->liquidId(liquidName);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("monsterSkillParameter", [root](String const& skillName, String const& configParameterName) -> std::expected<Json, StarException> {
-    auto database = root->monsterDatabase();
+  if (auto r = callbacks.registerCallback("monsterSkillParameter", [&root](String const& skillName, String const& configParameterName) -> std::expected<Json, StarException> {
+    auto database = root.monsterDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->skillConfigParameter(skillName, configParameterName);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("monsterParameters", [root](String const& monsterType, std::optional<std::uint64_t> seed) -> std::expected<Json, StarException> {
-    auto database = root->monsterDatabase();
+  if (auto r = callbacks.registerCallback("monsterParameters", [&root](String const& monsterType, std::optional<std::uint64_t> seed) -> std::expected<Json, StarException> {
+    auto database = root.monsterDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     auto variant = (*database)->monsterVariant(monsterType, seed.value_or(0));
     if (!variant) return std::unexpected(std::move(variant.error()));
     return std::move(variant->parameters);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("monsterMovementSettings", [root](String const& monsterType, std::optional<std::uint64_t> seed) -> std::expected<ActorMovementParameters, StarException> {
-    auto database = root->monsterDatabase();
+  if (auto r = callbacks.registerCallback("monsterMovementSettings", [&root](String const& monsterType, std::optional<std::uint64_t> seed) -> std::expected<ActorMovementParameters, StarException> {
+    auto database = root.monsterDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     auto variant = (*database)->monsterVariant(monsterType, seed.value_or(0));
     if (!variant) return std::unexpected(std::move(variant.error()));
     return std::move(variant->movementSettings);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("createBiome", [root](String const& biomeName, std::uint64_t seed, float verticalMidPoint, float threatLevel) -> std::expected<Json, StarException> {
-    auto database = root->biomeDatabase();
+  if (auto r = callbacks.registerCallback("createBiome", [&root](String const& biomeName, std::uint64_t seed, float verticalMidPoint, float threatLevel) -> std::expected<Json, StarException> {
+    auto database = root.biomeDatabase();
     if (!database) {
       if (database.error().is<BiomeException>()) return Json();
       return std::unexpected(std::move(database.error()));
@@ -484,8 +483,8 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     return json;
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("materialHealth", [root](String const& materialName) -> std::expected<float, StarException> {
-    auto database = root->materialDatabase();
+  if (auto r = callbacks.registerCallback("materialHealth", [&root](String const& materialName) -> std::expected<float, StarException> {
+    auto database = root.materialDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     auto id = (*database)->materialId(materialName);
     if (!id) return std::unexpected(std::move(id.error()));
@@ -494,81 +493,81 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     return parameters->totalHealth();
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("techType", [root](String const& techName) -> std::expected<String, StarException> {
-    auto database = root->techDatabase();
+  if (auto r = callbacks.registerCallback("techType", [&root](String const& techName) -> std::expected<String, StarException> {
+    auto database = root.techDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     auto tech = (*database)->tech(techName);
     if (!tech) return std::unexpected(std::move(tech.error()));
     if (!TechTypeNames) return std::unexpected(TechTypeNames.error());
     auto name = TechTypeNames->getRight(tech->type);
     if (!name) return std::unexpected(std::move(name.error()));
-    return **name;
+    return name->get();
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("hasTech", [root](String const& tech) -> std::expected<bool, StarException> {
-    auto database = root->techDatabase();
+  if (auto r = callbacks.registerCallback("hasTech", [&root](String const& tech) -> std::expected<bool, StarException> {
+    auto database = root.techDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->contains(tech);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("techConfig", [root](String const& techName) -> std::expected<Json, StarException> {
-    auto database = root->techDatabase();
+  if (auto r = callbacks.registerCallback("techConfig", [&root](String const& techName) -> std::expected<Json, StarException> {
+    auto database = root.techDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     auto tech = (*database)->tech(techName);
     if (!tech) return std::unexpected(std::move(tech.error()));
     return std::move(tech->parameters);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("treeStemDirectory", [root](String const& stemName) -> std::expected<std::optional<String>, StarException> {
-    auto database = root->plantDatabase();
+  if (auto r = callbacks.registerCallback("treeStemDirectory", [&root](String const& stemName) -> std::expected<std::optional<String>, StarException> {
+    auto database = root.plantDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->treeStemDirectory(stemName);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("treeFoliageDirectory", [root](String const& foliageName) -> std::expected<std::optional<String>, StarException> {
-    auto database = root->plantDatabase();
+  if (auto r = callbacks.registerCallback("treeFoliageDirectory", [&root](String const& foliageName) -> std::expected<std::optional<String>, StarException> {
+    auto database = root.plantDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->treeFoliageDirectory(foliageName);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("collection", [root](String const& collectionName) -> std::expected<Collection, StarException> {
-    auto database = root->collectionDatabase();
+  if (auto r = callbacks.registerCallback("collection", [&root](String const& collectionName) -> std::expected<Collection, StarException> {
+    auto database = root.collectionDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->collection(collectionName);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("collectables", [root, itemCatalog](String const& collectionName) -> std::expected<List<Collectable>, StarException> {
-    auto database = root->collectionDatabase();
+  if (auto r = callbacks.registerCallback("collectables", [&root, itemCatalog](String const& collectionName) -> std::expected<List<Collectable>, StarException> {
+    auto database = root.collectionDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->collectables(collectionName, itemCatalog);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("elementalResistance", [root](String const& damageKindName) -> std::expected<String, StarException> {
-    auto database = root->damageDatabase();
+  if (auto r = callbacks.registerCallback("elementalResistance", [&root](String const& damageKindName) -> std::expected<String, StarException> {
+    auto database = root.damageDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     auto kind = (*database)->damageKind(damageKindName);
     if (!kind) return std::unexpected(std::move(kind.error()));
-    auto type = (*database)->elementalType((*kind)->elementalType);
+    auto type = (*database)->elementalType(kind->get().elementalType);
     if (!type) return std::unexpected(std::move(type.error()));
-    return (*type)->resistanceStat;
+    return type->get().resistanceStat;
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("elementalType", [root](String const& damageKindName) -> std::expected<String, StarException> {
-    auto database = root->damageDatabase();
+  if (auto r = callbacks.registerCallback("elementalType", [&root](String const& damageKindName) -> std::expected<String, StarException> {
+    auto database = root.damageDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     auto kind = (*database)->damageKind(damageKindName);
     if (!kind) return std::unexpected(std::move(kind.error()));
-    return (*kind)->elementalType;
+    return kind->get().elementalType;
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("dungeonMetadata", [root](String const& name) -> std::expected<JsonObject, StarException> {
-    auto database = root->dungeonDefinitions();
+  if (auto r = callbacks.registerCallback("dungeonMetadata", [&root](String const& name) -> std::expected<JsonObject, StarException> {
+    auto database = root.dungeonDefinitions();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->getMetadata(name);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("systemObjectTypeConfig", [root](String const& name) -> std::expected<Json, StarException> {
-    return SystemWorld::systemObjectTypeConfig(*root, name);
+  if (auto r = callbacks.registerCallback("systemObjectTypeConfig", [&root](String const& name) -> std::expected<Json, StarException> {
+    return SystemWorld::systemObjectTypeConfig(root, name);
   }); !r) return std::unexpected(std::move(r.error()));
 
   if (auto r = callbacks.registerCallback("itemDescriptorsMatch", [](Json const& descriptor1, Json const& descriptor2, std::optional<bool> exactMatch) -> std::expected<bool, StarException> {
@@ -579,31 +578,31 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     return first->matches(*second, exactMatch.value_or(false));
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("getConfiguration", [root](String const& key) -> std::expected<Json, StarException> {
+  if (auto r = callbacks.registerCallback("getConfiguration", [&root](String const& key) -> std::expected<Json, StarException> {
     if (key == "title") return std::unexpected(StarException(strf("Cannot get {}", key)));
-    auto configuration = root->configuration();
+    auto configuration = root.configuration();
     if (!configuration) return std::unexpected(std::move(configuration.error()));
     return (*configuration)->get(key);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("setConfiguration", [root](String const& key, Json const& value) -> std::expected<void, StarException> {
+  if (auto r = callbacks.registerCallback("setConfiguration", [&root](String const& key, Json const& value) -> std::expected<void, StarException> {
     if (key == "safeScripts" || key == "safe") return std::unexpected(StarException(strf("Cannot set {}", key)));
-    auto configuration = root->configuration();
+    auto configuration = root.configuration();
     if (!configuration) return std::unexpected(std::move(configuration.error()));
     return (*configuration)->set(key, value);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("getConfigurationPath", [root](String const& path) -> std::expected<Json, StarException> {
+  if (auto r = callbacks.registerCallback("getConfigurationPath", [&root](String const& path) -> std::expected<Json, StarException> {
     if (path.empty()) return std::unexpected(ConfigurationException(strf("cannot get {}", path)));
     auto title = path.beginsWith("title");
     if (!title) return std::unexpected(std::move(title.error()));
     if (*title) return std::unexpected(ConfigurationException(strf("cannot get {}", path)));
-    auto configuration = root->configuration();
+    auto configuration = root.configuration();
     if (!configuration) return std::unexpected(std::move(configuration.error()));
     return (*configuration)->getPath(path);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("setConfigurationPath", [root](String const& path, Json const& value) -> std::expected<void, StarException> {
+  if (auto r = callbacks.registerCallback("setConfigurationPath", [&root](String const& path, Json const& value) -> std::expected<void, StarException> {
     if (path.empty()) return std::unexpected(ConfigurationException(strf("cannot set {}", path)));
     auto safeScripts = path.beginsWith("safeScripts");
     if (!safeScripts) return std::unexpected(std::move(safeScripts.error()));
@@ -612,37 +611,37 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     if (!parts) return std::unexpected(std::move(parts.error()));
     if (!parts->empty() && (*parts)[0] == "safe")
       return std::unexpected(ConfigurationException(strf("cannot set {}", path)));
-    auto configuration = root->configuration();
+    auto configuration = root.configuration();
     if (!configuration) return std::unexpected(std::move(configuration.error()));
     return (*configuration)->setPath(path, value);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("speciesConfig", [root](String const& species) -> std::expected<Json, StarException> {
-    auto database = root->speciesDatabase();
+  if (auto r = callbacks.registerCallback("speciesConfig", [&root](String const& species) -> std::expected<Json, StarException> {
+    auto database = root.speciesDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     auto definition = (*database)->species(species);
     if (!definition) return std::unexpected(std::move(definition.error()));
     return (*definition)->config();
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("generateHumanoidIdentity", [root, itemCatalog](String const& species, std::optional<std::uint64_t> seed, std::optional<String> gender) -> std::expected<LuaTupleReturn<Json, JsonObject, JsonObject>, StarException> {
-    auto database = root->speciesDatabase();
+  if (auto r = callbacks.registerCallback("generateHumanoidIdentity", [&root, itemCatalog](String const& species, std::optional<std::uint64_t> seed, std::optional<String> gender) -> std::expected<LuaTupleReturn<Json, JsonObject, JsonObject>, StarException> {
+    auto database = root.speciesDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     std::optional<Gender> parsedGender;
     if (gender) {
       if (!GenderNames) return std::unexpected(GenderNames.error());
       auto parsed = GenderNames->getLeft(*gender);
       if (!parsed) return std::unexpected(std::move(parsed.error()));
-      parsedGender = **parsed;
+      parsedGender = parsed->get();
     }
-    auto result = (*database)->generateHumanoid(species, seed.value_or(root->random().randu64()), parsedGender, itemCatalog);
+    auto result = (*database)->generateHumanoid(species, seed.value_or(root.random().randu64()), parsedGender, itemCatalog);
     if (!result) return std::unexpected(std::move(result.error()));
     auto identity = result->identity.toJson();
     if (!identity) return std::unexpected(std::move(identity.error()));
     return LuaTupleReturn<Json, JsonObject, JsonObject>{std::move(*identity), std::move(result->humanoidParameters), std::move(result->armor)};
   }); !r) return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.copyCallback("generateHumanoidIdentity", "generateHumanoid"); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallback("createHumanoid", [root, itemCatalog](
+  if (auto r = callbacks.registerCallback("createHumanoid", [&root, itemCatalog](
     String name,
     String speciesChoice,
     std::size_t genderChoice,
@@ -657,7 +656,7 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     std::size_t personality,
     LuaVariadic<LuaValue> ext
   ) -> std::expected<LuaTupleReturn<Json, JsonObject, JsonObject>, StarException> {
-    auto database = root->speciesDatabase();
+    auto database = root.speciesDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     auto result = (*database)->createHumanoid(
       name,
@@ -681,33 +680,33 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
     return LuaTupleReturn<Json, JsonObject, JsonObject>{std::move(*identity), std::move(result->humanoidParameters), std::move(result->armor)};
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("effectConfig", [root](String const& effect) -> std::expected<Json, StarException> {
-    auto database = root->statusEffectDatabase();
+  if (auto r = callbacks.registerCallback("effectConfig", [&root](String const& effect) -> std::expected<Json, StarException> {
+    auto database = root.statusEffectDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     auto config = (*database)->uniqueEffectConfig(effect);
     if (!config) return std::unexpected(std::move(config.error()));
     return config->toJson();
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("monsterConfig", [root](String const& typeName) -> std::expected<Json, StarException> {
-    auto database = root->monsterDatabase();
+  if (auto r = callbacks.registerCallback("monsterConfig", [&root](String const& typeName) -> std::expected<Json, StarException> {
+    auto database = root.monsterDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->monsterConfig(typeName);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("biomeConfig", [root](String const& typeName) -> std::expected<Json, StarException> {
-    auto database = root->biomeDatabase();
+  if (auto r = callbacks.registerCallback("biomeConfig", [&root](String const& typeName) -> std::expected<Json, StarException> {
+    auto database = root.biomeDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->biomeConfig(typeName);
   }); !r) return std::unexpected(std::move(r.error()));
 
-  if (auto r = callbacks.registerCallback("treeFoliageConfig", [root](String const& typeName) -> std::expected<Json, StarException> {
-    auto database = root->plantDatabase();
+  if (auto r = callbacks.registerCallback("treeFoliageConfig", [&root](String const& typeName) -> std::expected<Json, StarException> {
+    auto database = root.plantDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->treeFoliageConfig(typeName);
   }); !r) return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallback("treeStemConfig", [root](String const& typeName) -> std::expected<Json, StarException> {
-    auto database = root->plantDatabase();
+  if (auto r = callbacks.registerCallback("treeStemConfig", [&root](String const& typeName) -> std::expected<Json, StarException> {
+    auto database = root.plantDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
     return (*database)->treeStemConfig(typeName);
   }); !r) return std::unexpected(std::move(r.error()));
@@ -715,24 +714,24 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeRootCallbacks(Root& 
   return callbacks;
 }
 
-std::expected<String, StarException> LuaBindings::RootCallbacks::assetData(Root* root, String const& path) {
-  auto assets = root->assets();
+std::expected<String, StarException> LuaBindings::RootCallbacks::assetData(Root& root, String const& path) {
+  auto assets = root.assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto bytes = (*assets)->bytes(path);
   if (!bytes) return std::unexpected(std::move(bytes.error()));
-  return String((*bytes)->ptr(), (*bytes)->size());
+  return String(std::string_view((*bytes)->span().data(), (*bytes)->span().size()));
 }
 
-std::expected<Image, StarException> LuaBindings::RootCallbacks::assetImage(Root* root, String const& path) {
-  auto assets = root->assets();
+std::expected<Image, StarException> LuaBindings::RootCallbacks::assetImage(Root& root, String const& path) {
+  auto assets = root.assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto image = (*assets)->image(path);
   if (!image) return std::unexpected(std::move(image.error()));
   return **image;
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::assetFrames(Root* root, String const& path) {
-  auto assets = root->assets();
+std::expected<Json, StarException> LuaBindings::RootCallbacks::assetFrames(Root& root, String const& path) {
+  auto assets = root.assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   auto frames = (*assets)->imageFrames(path);
   if (!frames) return std::unexpected(std::move(frames.error()));
@@ -740,83 +739,83 @@ std::expected<Json, StarException> LuaBindings::RootCallbacks::assetFrames(Root*
   return Json();
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::assetJson(Root* root, String const& path) {
-  auto assets = root->assets();
+std::expected<Json, StarException> LuaBindings::RootCallbacks::assetJson(Root& root, String const& path) {
+  auto assets = root.assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
   return (*assets)->json(path);
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::makeCurrentVersionedJson(Root* root, String const& identifier, Json const& content) {
-  auto database = root->versioningDatabase();
+std::expected<Json, StarException> LuaBindings::RootCallbacks::makeCurrentVersionedJson(Root& root, String const& identifier, Json const& content) {
+  auto database = root.versioningDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto versioned = (*database)->makeCurrentVersionedJson(identifier, content);
   if (!versioned) return std::unexpected(std::move(versioned.error()));
   return versioned->toJson();
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::loadVersionedJson(Root* root, ItemDatabase const* itemCatalog, Json const& versionedJson, String const& identifier) {
-  auto database = root->versioningDatabase();
+std::expected<Json, StarException> LuaBindings::RootCallbacks::loadVersionedJson(Root& root, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog, Json const& versionedJson, String const& identifier) {
+  auto database = root.versioningDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto versioned = VersionedJson::fromJson(versionedJson);
   if (!versioned) return std::unexpected(std::move(versioned.error()));
   return (*database)->loadVersionedJson(*versioned, identifier, itemCatalog);
 }
 
-std::expected<double, StarException> LuaBindings::RootCallbacks::evalFunction(Root* root, String const& arg1, double arg2) {
-  auto database = root->functionDatabase();
+std::expected<double, StarException> LuaBindings::RootCallbacks::evalFunction(Root& root, String const& arg1, double arg2) {
+  auto database = root.functionDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto function = (*database)->function(arg1);
   if (!function) return std::unexpected(std::move(function.error()));
   return (*function)->evaluate(arg2);
 }
 
-std::expected<double, StarException> LuaBindings::RootCallbacks::evalFunction2(Root* root, String const& arg1, double arg2, double arg3) {
-  auto database = root->functionDatabase();
+std::expected<double, StarException> LuaBindings::RootCallbacks::evalFunction2(Root& root, String const& arg1, double arg2, double arg3) {
+  auto database = root.functionDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto function = (*database)->function2(arg1);
   if (!function) return std::unexpected(std::move(function.error()));
   return (*function)->evaluate(arg2, arg3);
 }
 
-std::expected<Vec2U, StarException> LuaBindings::RootCallbacks::imageSize(Root* root, String const& arg1) {
-  auto database = root->imageMetadataDatabase();
+std::expected<Vec2U, StarException> LuaBindings::RootCallbacks::imageSize(Root& root, String const& arg1) {
+  auto database = root.imageMetadataDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   return (*database)->imageSize(arg1);
 }
 
 std::expected<List<Vec2I>, StarException> LuaBindings::RootCallbacks::imageSpaces(
-    Root* root, String const& arg1, Vec2F const& arg2, float arg3, bool arg4) {
-  auto database = root->imageMetadataDatabase();
+    Root& root, String const& arg1, Vec2F const& arg2, float arg3, bool arg4) {
+  auto database = root.imageMetadataDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   return (*database)->imageSpaces(arg1, arg2, arg3, arg4);
 }
 
-std::expected<RectU, StarException> LuaBindings::RootCallbacks::nonEmptyRegion(Root* root, String const& arg1) {
-  auto database = root->imageMetadataDatabase();
+std::expected<RectU, StarException> LuaBindings::RootCallbacks::nonEmptyRegion(Root& root, String const& arg1) {
+  auto database = root.imageMetadataDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   return (*database)->nonEmptyRegion(arg1);
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::npcConfig(Root* root, String const& arg1) {
-  auto database = root->npcDatabase();
+std::expected<Json, StarException> LuaBindings::RootCallbacks::npcConfig(Root& root, String const& arg1) {
+  auto database = root.npcDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   return (*database)->buildConfig(arg1);
 }
 
-std::expected<float, StarException> LuaBindings::RootCallbacks::projectileGravityMultiplier(Root* root, String const& arg1) {
-  auto database = root->projectileDatabase();
+std::expected<float, StarException> LuaBindings::RootCallbacks::projectileGravityMultiplier(Root& root, String const& arg1) {
+  auto database = root.projectileDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   return (*database)->gravityMultiplier(arg1);
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::projectileConfig(Root* root, String const& arg1) {
-  auto database = root->projectileDatabase();
+std::expected<Json, StarException> LuaBindings::RootCallbacks::projectileConfig(Root& root, String const& arg1) {
+  auto database = root.projectileDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   return (*database)->projectileConfig(arg1);
 }
 
-std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::recipesForItem(ItemDatabase const* database, String const& arg1) {
-  auto recipes = database->recipesForOutputItem(arg1);
+std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::recipesForItem(ItemDatabase const& database, String const& arg1) {
+  auto recipes = database.recipesForOutputItem(arg1);
   JsonArray result;
   result.reserve(recipes.size());
   for (auto& recipe : recipes) {
@@ -827,16 +826,16 @@ std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::recipesForIt
   return result;
 }
 
-std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::allRecipes(ItemDatabase const* database, std::optional<StringSet> filter) {
+std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::allRecipes(ItemDatabase const& database, std::optional<StringSet> filter) {
   HashSet<ItemRecipe> filtered;
-  auto recipes = &database->allRecipes();
+  auto recipes = std::cref(database.allRecipes());
   if (filter) {
-    filtered = database->allRecipes(*filter);
-    recipes = &filtered;
+    filtered = database.allRecipes(*filter);
+    recipes = std::cref(filtered);
   }
   JsonArray result;
-  result.reserve(recipes->size());
-  for (auto& recipe : *recipes) {
+  result.reserve(recipes.get().size());
+  for (auto& recipe : recipes.get()) {
     auto json = recipe.toJson();
     if (!json) return std::unexpected(std::move(json.error()));
     result.append(std::move(*json));
@@ -844,75 +843,75 @@ std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::allRecipes(I
   return result;
 }
 
-std::expected<String, StarException> LuaBindings::RootCallbacks::itemType(ItemDatabase const* database, String const& itemName) {
-  auto type = database->itemType(itemName);
+std::expected<String, StarException> LuaBindings::RootCallbacks::itemType(ItemDatabase const& database, String const& itemName) {
+  auto type = database.itemType(itemName);
   if (!type) return std::unexpected(std::move(type.error()));
   if (!ItemTypeNames) return std::unexpected(ItemTypeNames.error());
   auto name = ItemTypeNames->getRight(*type);
   if (!name) return std::unexpected(std::move(name.error()));
-  return **name;
+  return name->get();
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::itemTags(ItemDatabase const* database, String const& itemName) {
-  auto tags = database->itemTags(itemName);
+std::expected<Json, StarException> LuaBindings::RootCallbacks::itemTags(ItemDatabase const& database, String const& itemName) {
+  auto tags = database.itemTags(itemName);
   if (!tags) return std::unexpected(std::move(tags.error()));
   return jsonFromStringSet(*tags);
 }
 
-std::expected<bool, StarException> LuaBindings::RootCallbacks::itemHasTag(ItemDatabase const* database, String const& itemName, String const& itemTag) {
-  auto tags = database->itemTags(itemName);
+std::expected<bool, StarException> LuaBindings::RootCallbacks::itemHasTag(ItemDatabase const& database, String const& itemName, String const& itemTag) {
+  auto tags = database.itemTags(itemName);
   if (!tags) return std::unexpected(std::move(tags.error()));
   return tags->contains(itemTag);
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::itemConfig(ItemDatabase const* database, Json const& descJson, std::optional<float> const& level, std::optional<std::uint64_t> const& seed) {
+std::expected<Json, StarException> LuaBindings::RootCallbacks::itemConfig(ItemDatabase const& database, Json const& descJson, std::optional<float> const& level, std::optional<std::uint64_t> const& seed) {
   auto descriptor = ItemDescriptor::create(descJson);
   if (!descriptor) return std::unexpected(std::move(descriptor.error()));
-  if (!database->hasItem(descriptor->name())) return Json();
-  auto config = database->itemConfig(descriptor->name(), descriptor->parameters(), level, seed);
+  if (!database.hasItem(descriptor->name())) return Json();
+  auto config = database.itemConfig(descriptor->name(), descriptor->parameters(), level, seed);
   if (!config) return std::unexpected(std::move(config.error()));
   return JsonObject{{"directory", config->directory}, {"config", config->config}, {"parameters", config->parameters}};
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::createItem(ItemDatabase const* database, Json const& descriptor, std::optional<float> const& level, std::optional<std::uint64_t> const& seed) {
+std::expected<Json, StarException> LuaBindings::RootCallbacks::createItem(ItemDatabase const& database, Json const& descriptor, std::optional<float> const& level, std::optional<std::uint64_t> const& seed) {
   auto parsed = ItemDescriptor::create(descriptor);
   if (!parsed) return std::unexpected(std::move(parsed.error()));
-  auto item = database->item(*parsed, level, seed);
+  auto item = database.item(*parsed, level, seed);
   if (!item) return std::unexpected(std::move(item.error()));
   return (*item)->descriptor().toJson();
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::tenantConfig(Root* root, String const& tenantName) {
-  auto database = root->tenantDatabase();
+std::expected<Json, StarException> LuaBindings::RootCallbacks::tenantConfig(Root& root, String const& tenantName) {
+  auto database = root.tenantDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto tenant = (*database)->getTenant(tenantName);
   if (!tenant) return std::unexpected(std::move(tenant.error()));
   return (*tenant)->config;
 }
 
-std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::getMatchingTenants(Root* root, StringMap<unsigned> const& colonyTags) {
-  auto database = root->tenantDatabase();
+std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::getMatchingTenants(Root& root, StringMap<unsigned> const& colonyTags) {
+  auto database = root.tenantDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto tenants = (*database)->getMatchingTenants(colonyTags);
   if (!tenants) return std::unexpected(std::move(tenants.error()));
   return tenants->transformed([](std::shared_ptr<Tenant> const& tenant) { return tenant->config; });
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::liquidStatusEffects(Root* root, LiquidId arg1) {
-  auto database = root->liquidsDatabase();
+std::expected<Json, StarException> LuaBindings::RootCallbacks::liquidStatusEffects(Root& root, LiquidId arg1) {
+  auto database = root.liquidsDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   if (auto settings = (*database)->liquidSettings(arg1)) return settings->statusEffects;
   return Json();
 }
 
-std::expected<String, StarException> LuaBindings::RootCallbacks::generateName(Root* root, String const& rulesAsset, std::optional<std::uint64_t> seed) {
-  auto generator = root->nameGenerator();
+std::expected<String, StarException> LuaBindings::RootCallbacks::generateName(Root& root, String const& rulesAsset, std::optional<std::uint64_t> seed) {
+  auto generator = root.nameGenerator();
   if (!generator) return std::unexpected(std::move(generator.error()));
-  return (*generator)->generateName(rulesAsset, seed.value_or(root->random().randu64()));
+  return (*generator)->generateName(rulesAsset, seed.value_or(root.random().randu64()));
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::questConfig(Root* root, String const& templateId) {
-  auto database = root->questTemplateDatabase();
+std::expected<Json, StarException> LuaBindings::RootCallbacks::questConfig(Root& root, String const& templateId) {
+  auto database = root.questTemplateDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto quest = (*database)->questTemplate(templateId);
   if (!quest) return std::unexpected(std::move(quest.error()));
@@ -920,21 +919,21 @@ std::expected<Json, StarException> LuaBindings::RootCallbacks::questConfig(Root*
   return std::unexpected(StarException(strf("No quest template found for id '{}'", templateId)));
 }
 
-std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::npcPortrait(Root* root, ItemDatabase const* itemCatalog,
+std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::npcPortrait(Root& root, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog,
     String const& portraitMode,
     String const& species,
     String const& typeName,
     float level,
     std::optional<std::uint64_t> seed,
     std::optional<JsonObject> const& parameters) {
-  auto database = root->npcDatabase();
+  auto database = root.npcDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
-  auto variant = (*database)->generateNpcVariant(species, typeName, level, seed.value_or(root->random().randu64()), parameters.value_or(JsonObject{}), itemCatalog);
+  auto variant = (*database)->generateNpcVariant(species, typeName, level, seed.value_or(root.random().randu64()), parameters.value_or(JsonObject{}), itemCatalog);
   if (!variant) return std::unexpected(std::move(variant.error()));
   if (!PortraitModeNames) return std::unexpected(PortraitModeNames.error());
   auto mode = PortraitModeNames->getLeft(portraitMode);
   if (!mode) return std::unexpected(std::move(mode.error()));
-  auto drawables = (*database)->npcPortrait(*variant, **mode, itemCatalog);
+  auto drawables = (*database)->npcPortrait(*variant, mode->get(), itemCatalog);
   if (!drawables) return std::unexpected(std::move(drawables.error()));
   JsonArray result;
   result.reserve(drawables->size());
@@ -946,16 +945,16 @@ std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::npcPortrait(
   return result;
 }
 
-std::expected<Json, StarException> LuaBindings::RootCallbacks::npcVariant(Root* root, ItemDatabase const* itemCatalog, String const& species, String const& typeName, float level, std::optional<std::uint64_t> seed, std::optional<JsonObject> const& parameters) {
-  auto database = root->npcDatabase();
+std::expected<Json, StarException> LuaBindings::RootCallbacks::npcVariant(Root& root, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog, String const& species, String const& typeName, float level, std::optional<std::uint64_t> seed, std::optional<JsonObject> const& parameters) {
+  auto database = root.npcDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
-  auto variant = (*database)->generateNpcVariant(species, typeName, level, seed.value_or(root->random().randu64()), parameters.value_or(JsonObject{}), itemCatalog);
+  auto variant = (*database)->generateNpcVariant(species, typeName, level, seed.value_or(root.random().randu64()), parameters.value_or(JsonObject{}), itemCatalog);
   if (!variant) return std::unexpected(std::move(variant.error()));
   return (*database)->writeNpcVariantToJson(*variant);
 }
 
-std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::monsterPortrait(Root* root, String const& typeName, std::optional<JsonObject> const& parameters) {
-  auto database = root->monsterDatabase();
+std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::monsterPortrait(Root& root, String const& typeName, std::optional<JsonObject> const& parameters) {
+  auto database = root.monsterDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto seed = 0; // use a static seed to utilize caching
   auto variant = (*database)->monsterVariant(typeName, seed, parameters.value_or(JsonObject{}));
@@ -972,24 +971,24 @@ std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::monsterPortr
   return result;
 }
 
-std::expected<bool, StarException> LuaBindings::RootCallbacks::isTreasurePool(Root* root, String const& pool) {
-  auto database = root->treasureDatabase();
+std::expected<bool, StarException> LuaBindings::RootCallbacks::isTreasurePool(Root& root, String const& pool) {
+  auto database = root.treasureDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   return (*database)->isTreasurePool(pool);
 }
 
 std::expected<JsonArray, StarException> LuaBindings::RootCallbacks::createTreasure(
-    Root* root, ItemDatabase const* itemCatalog, String const& pool, float level, std::optional<std::uint64_t> seed) {
-  auto database = root->treasureDatabase();
+    Root& root, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog, String const& pool, float level, std::optional<std::uint64_t> seed) {
+  auto database = root.treasureDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
-  auto treasure = (*database)->createTreasure(pool, level, seed.value_or(root->random().randu64()), itemCatalog);
+  auto treasure = (*database)->createTreasure(pool, level, seed.value_or(root.random().randu64()), itemCatalog);
   if (!treasure) return std::unexpected(std::move(treasure.error()));
   return treasure->transformed([](std::shared_ptr<Item> const& item) { return item->descriptor().toJson(); });
 }
 
 std::expected<std::optional<String>, StarException> LuaBindings::RootCallbacks::materialMiningSound(
-    Root* root, String const& materialName, std::optional<String> const& modName) {
-  auto database = root->materialDatabase();
+    Root& root, String const& materialName, std::optional<String> const& modName) {
+  auto database = root.materialDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto materialId = (*database)->materialId(materialName);
   if (!materialId) return std::unexpected(std::move(materialId.error()));
@@ -1006,8 +1005,8 @@ std::expected<std::optional<String>, StarException> LuaBindings::RootCallbacks::
 }
 
 std::expected<std::optional<String>, StarException> LuaBindings::RootCallbacks::materialFootstepSound(
-    Root* root, String const& materialName, std::optional<String> const& modName) {
-  auto database = root->materialDatabase();
+    Root& root, String const& materialName, std::optional<String> const& modName) {
+  auto database = root.materialDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
   auto materialId = (*database)->materialId(materialName);
   if (!materialId) return std::unexpected(std::move(materialId.error()));

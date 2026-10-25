@@ -73,14 +73,14 @@ std::expected<TextPositioning, StarException> TextPositioning::create(Json const
   auto hAnchor = HorizontalAnchorNames->getLeft(*horizontal);
   if (!hAnchor)
     return std::unexpected(std::move(hAnchor.error()));
-  result.hAnchor = **hAnchor;
+  result.hAnchor = hAnchor->get();
   auto vertical = v.getString("verticalAnchor", "top");
   if (!vertical)
     return std::unexpected(std::move(vertical.error()));
   auto vAnchor = VerticalAnchorNames->getLeft(*vertical);
   if (!vAnchor)
     return std::unexpected(std::move(vAnchor.error()));
-  result.vAnchor = **vAnchor;
+  result.vAnchor = vAnchor->get();
   auto wrap = v.optUInt("wrapWidth");
   if (!wrap)
     return std::unexpected(std::move(wrap.error()));
@@ -105,8 +105,8 @@ std::expected<Json, StarException> TextPositioning::toJson() const {
     return std::unexpected(std::move(vertical.error()));
   return JsonObject{
     {"position", jsonFromVec2F(pos)},
-    {"horizontalAnchor", **horizontal},
-    {"verticalAnchor", **vertical},
+    {"horizontalAnchor", horizontal->get()},
+    {"verticalAnchor", vertical->get()},
     {"wrapWidth", jsonFromOptional(wrapWidth)}
   };
 }
@@ -135,8 +135,8 @@ std::expected<std::shared_ptr<TextPainter>, StarException> TextPainter::create(R
 }
 
 std::expected<RectF, StarException> TextPainter::renderText(StringView s, TextPositioning const& position) {
-  unsigned charLimit = position.charLimit.value_or(0);
-  auto rect = doRenderText(s, position, true, position.charLimit ? &charLimit : nullptr);
+  auto charLimit = position.charLimit;
+  auto rect = doRenderText(s, position, true, optionalRef(charLimit));
   if (!rect)
     return std::unexpected(std::move(rect.error()));
   renderPrimitives();
@@ -144,8 +144,8 @@ std::expected<RectF, StarException> TextPainter::renderText(StringView s, TextPo
 }
 
 std::expected<RectF, StarException> TextPainter::renderLine(StringView s, TextPositioning const& position) {
-  unsigned charLimit = position.charLimit.value_or(0);
-  auto rect = doRenderLine(s, position, true, position.charLimit ? &charLimit : nullptr);
+  auto charLimit = position.charLimit;
+  auto rect = doRenderLine(s, position, true, optionalRef(charLimit));
   if (!rect)
     return std::unexpected(std::move(rect.error()));
   renderPrimitives();
@@ -161,11 +161,11 @@ std::expected<RectF, StarException> TextPainter::renderGlyph(String::Char c, Tex
 }
 
 std::expected<RectF, StarException> TextPainter::determineTextSize(StringView s, TextPositioning const& position) {
-  return doRenderText(s, position, false, nullptr);
+  return doRenderText(s, position, false, std::nullopt);
 }
 
 std::expected<RectF, StarException> TextPainter::determineLineSize(StringView s, TextPositioning const& position) {
-  return doRenderLine(s, position, false, nullptr);
+  return doRenderLine(s, position, false, std::nullopt);
 }
 
 std::expected<RectF, StarException> TextPainter::determineGlyphSize(String::Char c, TextPositioning const& position) {
@@ -231,7 +231,7 @@ std::expected<int, StarException> TextPainter::stringWidth(StringView s, unsigne
   return width;
 }
 
-std::expected<bool, StarException> TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapTextCallback textFunc) {
+std::expected<bool, StarException> TextPainter::processWrapText(StringView text, std::optional<std::reference_wrapper<unsigned>> wrapWidth, WrapTextCallback textFunc) {
   if (!textFunc)
     return std::unexpected(StarException("Cannot wrap text with an empty callback"));
   String font = m_renderSettings.font, setFont = font;
@@ -249,7 +249,7 @@ std::expected<bool, StarException> TextPainter::processWrapText(StringView text,
   bool finished = true;
 
   auto slice = [&](std::size_t a, std::size_t b) -> StringView {
-    return StringView(text.utf8Ptr() + a, b - a);
+    return StringView(text.utf8().substr(a, b - a));
   };
 
   while (iterator != end) {
@@ -323,7 +323,7 @@ std::expected<bool, StarException> TextPainter::processWrapText(StringView text,
       }
 
       // would the line be too long if we render this next character ?
-      if (wrapWidth && (linePixelWidth + characterWidth) > *wrapWidth) {
+      if (wrapWidth && (linePixelWidth + characterWidth) > wrapWidth->get()) {
         // did we find somewhere to split the line ?
         if (splitIterator != end) {
           auto continued = textFunc(slice(lineStartIterator, splitIterator), lines++);
@@ -369,8 +369,8 @@ std::expected<List<StringView>, StarException> TextPainter::wrapTextViews(String
   auto last = views.end();
   unsigned curLine = 0;
   TextPainter::WrapTextCallback textCallback = [&](StringView text, unsigned line) {
-    if (line == curLine && last != views.end() && last->utf8Ptr() + last->utf8Size() == text.utf8Ptr()) {
-      *last = StringView(last->utf8Ptr(), last->utf8Size() + text.utf8Size());
+    if (line == curLine && last != views.end() && last->utf8().end() == text.utf8().begin()) {
+      *last = StringView(std::string_view(last->utf8().begin(), text.utf8().end()));
     } else {
       last = views.insert(views.end(), text);
       curLine = line;
@@ -378,7 +378,7 @@ std::expected<List<StringView>, StarException> TextPainter::wrapTextViews(String
     return true;
   };
 
-  auto wrapped = processWrapText(s, optionalPtr(wrapWidth), textCallback);
+  auto wrapped = processWrapText(s, optionalRef(wrapWidth), textCallback);
   if (!wrapped)
     return std::unexpected(std::move(wrapped.error()));
 
@@ -399,7 +399,7 @@ std::expected<StringList, StarException> TextPainter::wrapText(StringView s, std
     return true;
   };
 
-  auto wrapped = processWrapText(s, optionalPtr(wrapWidth), textCallback);
+  auto wrapped = processWrapText(s, optionalRef(wrapWidth), textCallback);
   if (!wrapped)
     return std::unexpected(std::move(wrapped.error()));
 
@@ -442,7 +442,7 @@ std::expected<void, StarException> TextPainter::setFont(String const& font) {
   return {};
 }
 
-std::expected<TextStyle*, StarException> TextPainter::setTextStyle(TextStyle const& textStyle) {
+std::expected<std::reference_wrapper<TextStyle>, StarException> TextPainter::setTextStyle(TextStyle const& textStyle) {
   TextStyle& style = m_renderSettings = textStyle;
   auto front = modifyDirectives(style.directives);
   if (!front)
@@ -453,7 +453,7 @@ std::expected<TextStyle*, StarException> TextPainter::setTextStyle(TextStyle con
   auto switched = m_fontTextureGroup.switchFont(style.font);
   if (!switched)
     return std::unexpected(std::move(switched.error()));
-  return &style;
+  return std::ref(style);
 }
 
 std::expected<void, StarException> TextPainter::clearTextStyle() {
@@ -475,7 +475,7 @@ std::expected<void, StarException> TextPainter::reloadFonts() {
     auto paths = assets->scanExtension(ext);
     if (!paths)
       return std::unexpected(std::move(paths.error()));
-    for (auto const& assetKey : **paths) {
+    for (auto const& assetKey : paths->get()) {
       auto const& fontPath = assetKey.string();
       auto filename = AssetPath::filename(fontPath);
       auto const& bytes = filename.utf8();
@@ -572,15 +572,15 @@ std::expected<void, StarException> TextPainter::modifyDirectives(Directives& dir
     auto shared = directives.get();
     if (!shared)
       return std::unexpected(std::move(shared.error()));
-    for (auto& entry : (*shared)->entries) {
-      if (auto border = std::get_if<BorderImageOperation>(&entry.operation))
-        border->includeTransparent = true;
+    for (auto& entry : shared->get().entries) {
+      if (std::holds_alternative<BorderImageOperation>(entry.operation))
+        std::get<BorderImageOperation>(entry.operation).includeTransparent = true;
     }
   }
   return {};
 }
 
-std::expected<RectF, StarException> TextPainter::doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit) {
+std::expected<RectF, StarException> TextPainter::doRenderText(StringView s, TextPositioning const& position, bool reallyRender, std::optional<std::reference_wrapper<unsigned>> charLimit) {
   Vec2F pos = position.pos;
   if (s.empty())
     return RectF(pos, pos);
@@ -610,7 +610,7 @@ std::expected<RectF, StarException> TextPainter::doRenderText(StringView s, Text
     bounds.combine(*line);
     pos[1] -= m_renderSettings.fontSize * m_renderSettings.lineSpacing;
 
-    if (charLimit && *charLimit == 0)
+    if (charLimit && charLimit->get() == 0)
       break;
   }
 
@@ -622,7 +622,7 @@ std::expected<RectF, StarException> TextPainter::doRenderText(StringView s, Text
   return bounds;
 }
 
-std::expected<RectF, StarException> TextPainter::doRenderLine(StringView text, TextPositioning const& position, bool reallyRender, unsigned* charLimit) {
+std::expected<RectF, StarException> TextPainter::doRenderLine(StringView text, TextPositioning const& position, bool reallyRender, std::optional<std::reference_wrapper<unsigned>> charLimit) {
   if (m_reloadTracker->pullTriggered()) {
     auto reloaded = reloadFonts();
     if (!reloaded)
@@ -632,7 +632,7 @@ std::expected<RectF, StarException> TextPainter::doRenderLine(StringView text, T
   if (pos.hAnchor == HorizontalAnchor::RightAnchor || pos.hAnchor == HorizontalAnchor::HMidAnchor) {
     StringView trimmedString = text;
     if (charLimit) {
-      auto trimmed = text.substr(0, *charLimit);
+      auto trimmed = text.substr(0, charLimit->get());
       if (!trimmed)
         return std::unexpected(std::move(trimmed.error()));
       trimmedString = *trimmed;
@@ -654,10 +654,10 @@ std::expected<RectF, StarException> TextPainter::doRenderLine(StringView text, T
         return std::unexpected(std::move(character.error()));
       String::Char c = *character;
       if (charLimit) {
-        if (*charLimit == 0)
+        if (charLimit->get() == 0)
           return false;
         else
-          --*charLimit;
+          --charLimit->get();
       }
       auto glyphBounds = doRenderGlyph(c, pos, reallyRender);
       if (!glyphBounds)
@@ -709,7 +709,9 @@ std::expected<RectF, StarException> TextPainter::doRenderGlyph(String::Char c, T
   else if (position.vAnchor == VerticalAnchor::TopAnchor)
     vOffset = -(float)m_renderSettings.fontSize;
 
-  Directives* directives = m_renderSettings.directives ? &m_renderSettings.directives : nullptr;
+  std::optional<std::reference_wrapper<Directives const>> directives;
+  if (m_renderSettings.directives)
+    directives = std::cref(m_renderSettings.directives);
 
   Vec2F pos = position.pos + Vec2F(hOffset, vOffset);
   if (reallyRender) {
@@ -726,13 +728,13 @@ std::expected<RectF, StarException> TextPainter::doRenderGlyph(String::Char c, T
       else
         shadow[3] = alphaU;
 
-      Directives const* shadowDirectives = hasBackDirectives ? &m_renderSettings.backDirectives : directives;
+      auto shadowDirectives = hasBackDirectives ? std::optional{std::cref(m_renderSettings.backDirectives)} : directives;
       auto rendered = renderGlyph(c, pos + Vec2F(0, -2), m_shadowPrimitives, m_renderSettings.fontSize, 1, shadow, shadowDirectives);
       if (!rendered)
         return std::unexpected(std::move(rendered.error()));
     }
     if (hasBackDirectives) {
-      auto rendered = renderGlyph(c, pos, m_backPrimitives, m_renderSettings.fontSize, 1, m_renderSettings.color, &m_renderSettings.backDirectives);
+      auto rendered = renderGlyph(c, pos, m_backPrimitives, m_renderSettings.fontSize, 1, m_renderSettings.color, std::cref(m_renderSettings.backDirectives));
       if (!rendered)
         return std::unexpected(std::move(rendered.error()));
     }
@@ -757,13 +759,13 @@ void TextPainter::renderPrimitives() {
 }
 
 std::expected<void, StarException> TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize,
-    float scale, Vec4B color, Directives const* processingDirectives) {
+    float scale, Vec4B color, std::optional<std::reference_wrapper<Directives const>> processingDirectives) {
   if (!fontSize)
     return {};
   auto glyph = m_fontTextureGroup.glyphTexture(c, fontSize, processingDirectives);
   if (!glyph)
     return std::unexpected(std::move(glyph.error()));
-  auto const& glyphTexture = **glyph;
+  auto const& glyphTexture = glyph->get();
   if (glyphTexture.colored)
     color[0] = color[1] = color[2] = 255;
   out.emplace_back(std::in_place_type_t<RenderQuad>(),

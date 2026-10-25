@@ -18,7 +18,7 @@ namespace Star {
 // points using them
 
 struct ShellParsingExceptionTag {
-  static constexpr char const* name() { return "ShellParsingException"; }
+  static constexpr std::string_view name() { return "ShellParsingException"; }
 };
 using ShellParsingException = StarError<ShellParsingExceptionTag, StarException>;
 

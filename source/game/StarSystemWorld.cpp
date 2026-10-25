@@ -138,18 +138,18 @@ bool CelestialOrbit::operator==(CelestialOrbit const& rhs) const {
     && enterPosition == rhs.enterPosition;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialOrbit& orbit) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, CelestialOrbit& orbit) {
   auto result = orbit.read(ds);
   if (!result)
     return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialOrbit const& orbit) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, CelestialOrbit const& orbit) {
   auto result = orbit.write(ds);
   if (!result)
     return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 std::expected<SystemLocation, StarException> jsonToSystemLocation(Json const& json) {
@@ -200,14 +200,14 @@ std::expected<SystemLocation, StarException> jsonToSystemLocation(Json const& js
 }
 
 Json jsonFromSystemLocation(SystemLocation const& location) {
-  if (auto coordinate = std::get_if<CelestialCoordinate>(&location))
-    return JsonArray{"coordinate", coordinate->toJson()};
-  else if (auto orbit = std::get_if<CelestialOrbit>(&location))
-    return JsonArray{"orbit", orbit->toJson()};
-  else if (auto uuid = std::get_if<Uuid>(&location))
-    return JsonArray{"object", uuid->hex()};
-  else if (auto position = std::get_if<Vec2F>(&location))
-    return jsonFromVec2F(*position);
+  if (std::holds_alternative<CelestialCoordinate>(location))
+    return JsonArray{"coordinate", std::get<CelestialCoordinate>(location).toJson()};
+  else if (std::holds_alternative<CelestialOrbit>(location))
+    return JsonArray{"orbit", std::get<CelestialOrbit>(location).toJson()};
+  else if (std::holds_alternative<Uuid>(location))
+    return JsonArray{"object", std::get<Uuid>(location).hex()};
+  else if (std::holds_alternative<Vec2F>(location))
+    return jsonFromVec2F(std::get<Vec2F>(location));
   else
     return {};
 }
@@ -622,21 +622,21 @@ std::expected<Json, StarException> SystemWorld::systemObjectTypeConfig(Root& roo
 }
 
 std::expected<std::optional<Vec2F>, StarException> SystemWorld::systemLocationPosition(SystemLocation const& location) const {
-  if (auto coordinate = std::get_if<CelestialCoordinate>(&location)) {
-    auto position = planetPosition(*coordinate);
+  if (std::holds_alternative<CelestialCoordinate>(location)) {
+    auto position = planetPosition(std::get<CelestialCoordinate>(location));
     if (!position)
       return std::unexpected(std::move(position.error()));
     return std::optional<Vec2F>(*position);
-  } else if (auto orbit = std::get_if<CelestialOrbit>(&location)) {
-    auto position = orbitPosition(*orbit);
+  } else if (std::holds_alternative<CelestialOrbit>(location)) {
+    auto position = orbitPosition(std::get<CelestialOrbit>(location));
     if (!position)
       return std::unexpected(std::move(position.error()));
     return std::optional<Vec2F>(*position);
-  } else if (auto objectUuid = std::get_if<Uuid>(&location)) {
-    if (auto object = getObject(*objectUuid))
+  } else if (std::holds_alternative<Uuid>(location)) {
+    if (auto object = getObject(std::get<Uuid>(location)))
       return std::optional<Vec2F>(object->position());
-  } else if (auto position = std::get_if<Vec2F>(&location)) {
-    return std::optional<Vec2F>(*position);
+  } else if (std::holds_alternative<Vec2F>(location)) {
+    return std::optional<Vec2F>(std::get<Vec2F>(location));
   }
   return std::optional<Vec2F>{};
 }
@@ -653,9 +653,11 @@ std::expected<std::optional<WarpAction>, StarException> SystemWorld::objectWarpA
   if (!object)
     return std::optional<WarpAction>{};
   WarpAction warpAction = object->warpAction();
-  if (auto warpToWorld = std::get_if<WarpToWorld>(&warpAction)) {
-    if (auto instanceWorldId = std::get_if<InstanceWorldId>(&warpToWorld->world)) {
-      instanceWorldId->uuid = object->uuid();
+  if (std::holds_alternative<WarpToWorld>(warpAction)) {
+    auto& warpToWorld = std::get<WarpToWorld>(warpAction);
+    if (std::holds_alternative<InstanceWorldId>(warpToWorld.world)) {
+      auto& instanceWorldId = std::get<InstanceWorldId>(warpToWorld.world);
+      instanceWorldId.uuid = object->uuid();
       auto parameters = m_celestialDatabase->parameters(CelestialCoordinate(m_location));
       if (!parameters)
         return std::unexpected(std::move(parameters.error()));
@@ -668,7 +670,7 @@ std::expected<std::optional<WarpAction>, StarException> SystemWorld::objectWarpA
       if (!threat)
         return std::unexpected(std::move(threat.error()));
       auto objectThreat = object->threatLevel();
-      instanceWorldId->level = objectThreat ? objectThreat : *threat;
+      instanceWorldId.level = objectThreat ? objectThreat : *threat;
     }
   }
   return std::optional<WarpAction>(std::move(warpAction));
@@ -706,7 +708,7 @@ std::expected<std::shared_ptr<SystemObject>, StarException> SystemObject::create
   return object;
 }
 
-std::expected<std::shared_ptr<SystemObject>, StarException> SystemObject::create(Root& root, SystemWorld* system, Json const& diskStore) {
+std::expected<std::shared_ptr<SystemObject>, StarException> SystemObject::create(Root& root, SystemWorld& system, Json const& diskStore) {
   // Preserve the old disk-load constructor's random identity draw order.
   auto object = std::shared_ptr<SystemObject>(new SystemObject(root, {}, Uuid(root.random()), {}, 0, {}));
   auto uuidText = diskStore.getString("uuid");
@@ -719,7 +721,7 @@ std::expected<std::shared_ptr<SystemObject>, StarException> SystemObject::create
   auto name = diskStore.getString("name");
   if (!name)
     return std::unexpected(std::move(name.error()));
-  auto config = system->systemObjectConfig(*name, object->m_uuid);
+  auto config = system.systemObjectConfig(*name, object->m_uuid);
   if (!config)
     return std::unexpected(std::move(config.error()));
   object->m_config = std::move(*config);
@@ -756,7 +758,7 @@ std::expected<void, StarException> SystemObject::init() {
   m_shouldDestroy = false;
   m_xPosition.setInterpolator(lerp<float, float>);
   m_yPosition.setInterpolator(lerp<float, float>);
-  for (auto* element : std::initializer_list<NetElement*>{&m_xPosition, &m_yPosition, &m_orbit}) {
+  for (NetElement& element : std::initializer_list<std::reference_wrapper<NetElement>>{m_xPosition, m_yPosition, m_orbit}) {
     auto added = m_netGroup.addNetElement(element);
     if (!added)
       return std::unexpected(std::move(added.error()));
@@ -821,45 +823,45 @@ std::expected<void, StarException> SystemObject::clientUpdate(float dt) {
   return m_netGroup.tickNetInterpolation(dt);
 }
 
-std::expected<void, StarException> SystemObject::serverUpdate(SystemWorldServer* system, float dt) {
-  if (!m_config.permanent && system->time() > m_spawnTime + m_config.lifeTime)
+std::expected<void, StarException> SystemObject::serverUpdate(SystemWorldServer& system, float dt) {
+  if (!m_config.permanent && system.time() > m_spawnTime + m_config.lifeTime)
     m_shouldDestroy = true;
   if (m_orbit.get()) {
-    auto position = system->orbitPosition(*m_orbit.get());
+    auto position = system.orbitPosition(*m_orbit.get());
     if (!position)
       return std::unexpected(std::move(position.error()));
     setPosition(*position);
   } else if (m_config.permanent || !m_config.moving) {
-    enterOrbit(CelestialCoordinate(system->location()), {0.0, 0.0}, system->time());
+    enterOrbit(CelestialCoordinate(system.location()), {0.0, 0.0}, system.time());
   } else if (m_approach && !m_approach->isNull()) {
-    if (!system->shipsAtLocation(m_uuid).empty())
+    if (!system.shipsAtLocation(m_uuid).empty())
       return {};
     if (m_approach->isPlanetaryBody()) {
-      auto approach = system->planetPosition(*m_approach);
+      auto approach = system.planetPosition(*m_approach);
       if (!approach)
         return std::unexpected(std::move(approach.error()));
       auto toApproach = *approach - position();
       setPosition(position() + toApproach.normalized() * m_config.speed * dt);
-      auto size = system->planetSize(*m_approach);
+      auto size = system.planetSize(*m_approach);
       if (!size)
         return std::unexpected(std::move(size.error()));
       if ((*approach - position()).magnitude() < *size + m_config.orbitDistance)
-        enterOrbit(*m_approach, *approach, system->time());
+        enterOrbit(*m_approach, *approach, system.time());
     } else {
-      enterOrbit(*m_approach, {0.0, 0.0}, system->time());
+      enterOrbit(*m_approach, {0.0, 0.0}, system.time());
     }
   } else {
-    auto planets = system->planets();
+    auto planets = system.planets();
     if (!planets)
       return std::unexpected(std::move(planets.error()));
-    auto available = planets->filtered([system](CelestialCoordinate const& p) {
-      return std::ranges::none_of(system->objects(), [&p](std::shared_ptr<SystemObject> const& o) { return o->orbitTarget() == p; });
+    auto available = planets->filtered([&system](CelestialCoordinate const& p) {
+      return std::ranges::none_of(system.objects(), [&p](std::shared_ptr<SystemObject> const& o) { return o->orbitTarget() == p; });
     });
     if (!available.empty()) {
       auto selected = root().random().randFrom(available);
       if (!selected)
         return std::unexpected(std::move(selected.error()));
-      m_approach = **selected;
+      m_approach = selected->get();
     }
   }
   return {};
@@ -909,7 +911,7 @@ void SystemObject::setPosition(Vec2F const& position) {
 
 SystemClientShip::SystemClientShip(Uuid uuid) : m_uuid(std::move(uuid)), m_departTimer(0), m_speed(0) {}
 
-std::expected<std::shared_ptr<SystemClientShip>, StarException> SystemClientShip::create(SystemWorld* system, Uuid uuid, float speed, SystemLocation const& location) {
+std::expected<std::shared_ptr<SystemClientShip>, StarException> SystemClientShip::create(SystemWorld& system, Uuid uuid, float speed, SystemLocation const& location) {
   auto ship = std::shared_ptr<SystemClientShip>(new SystemClientShip(std::move(uuid)));
   auto initialized = ship->initialize(system, speed, location);
   if (!initialized)
@@ -917,17 +919,17 @@ std::expected<std::shared_ptr<SystemClientShip>, StarException> SystemClientShip
   return ship;
 }
 
-std::expected<std::shared_ptr<SystemClientShip>, StarException> SystemClientShip::create(SystemWorld* system, Uuid uuid, SystemLocation const& location) {
+std::expected<std::shared_ptr<SystemClientShip>, StarException> SystemClientShip::create(SystemWorld& system, Uuid uuid, SystemLocation const& location) {
   return create(system, std::move(uuid), 0.0f, location);
 }
 
-std::expected<void, StarException> SystemClientShip::initialize(SystemWorld* system, float speed, SystemLocation const& location) {
+std::expected<void, StarException> SystemClientShip::initialize(SystemWorld& system, float speed, SystemLocation const& location) {
   m_systemLocation.set(location);
-  auto position = system->systemLocationPosition(location);
+  auto position = system.systemLocationPosition(location);
   if (!position)
     return std::unexpected(std::move(position.error()));
   setPosition(position->value_or(Vec2F{}));
-  auto assets = system->root().assets();
+  auto assets = system.root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   auto config = (*assets)->json("/systemworld.config:clientShip");
@@ -945,10 +947,10 @@ std::expected<void, StarException> SystemClientShip::initialize(SystemWorld* sys
   m_config = ClientShipConfig{*orbitDistance, *departTime, *spaceDepartTime};
   m_speed = speed;
   // Do not interpolate locations: stale identities can refer to removed objects.
-  auto locationAdded = m_netGroup.addNetElement(&m_systemLocation, false);
+  auto locationAdded = m_netGroup.addNetElement(m_systemLocation, false);
   if (!locationAdded)
     return std::unexpected(std::move(locationAdded.error()));
-  for (auto* element : std::initializer_list<NetElement*>{&m_destination, &m_xPosition, &m_yPosition}) {
+  for (NetElement& element : std::initializer_list<std::reference_wrapper<NetElement>>{m_destination, m_xPosition, m_yPosition}) {
     auto added = m_netGroup.addNetElement(element);
     if (!added)
       return std::unexpected(std::move(added.error()));
@@ -1000,20 +1002,21 @@ std::expected<void, StarException> SystemClientShip::clientUpdate(float dt) {
   return m_netGroup.tickNetInterpolation(dt);
 }
 
-std::expected<void, StarException> SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
-  auto nearPlanetOrbit = [this, system](CelestialCoordinate const& planet) -> std::expected<CelestialOrbit, StarException> {
-    auto position = system->planetPosition(planet);
+std::expected<void, StarException> SystemClientShip::serverUpdate(SystemWorld& system, float dt) {
+  auto nearPlanetOrbit = [this, &system](CelestialCoordinate const& planet) -> std::expected<CelestialOrbit, StarException> {
+    auto position = system.planetPosition(planet);
     if (!position)
       return std::unexpected(std::move(position.error()));
-    auto size = system->planetSize(planet);
+    auto size = system.planetSize(planet);
     if (!size)
       return std::unexpected(std::move(size.error()));
     Vec2F toShip = *position - this->position();
-    return CelestialOrbit{planet, 1, system->time(), Vec2F::withAngle(toShip.angle(), *size / 2.0 + m_config.orbitDistance)};
+    return CelestialOrbit{planet, 1, system.time(), Vec2F::withAngle(toShip.angle(), *size / 2.0 + m_config.orbitDistance)};
   };
-  if (auto coordinate = std::get_if<CelestialCoordinate>(&m_systemLocation.get())) {
-    if (!m_orbit || m_orbit->target != *coordinate) {
-      auto orbit = nearPlanetOrbit(*coordinate);
+  if (std::holds_alternative<CelestialCoordinate>(m_systemLocation.get())) {
+    auto const& coordinate = std::get<CelestialCoordinate>(m_systemLocation.get());
+    if (!m_orbit || m_orbit->target != coordinate) {
+      auto orbit = nearPlanetOrbit(coordinate);
       if (!orbit)
         return std::unexpected(std::move(orbit.error()));
       m_orbit = std::move(*orbit);
@@ -1022,9 +1025,10 @@ std::expected<void, StarException> SystemClientShip::serverUpdate(SystemWorld* s
     m_departTimer = std::max(0.0f, m_departTimer - dt);
     if (m_departTimer > 0.0f)
       return {};
-    if (auto coordinate = std::get_if<CelestialCoordinate>(&m_destination.get())) {
-      if (!m_orbit || m_orbit->target != *coordinate) {
-        auto orbit = nearPlanetOrbit(*coordinate);
+    if (std::holds_alternative<CelestialCoordinate>(m_destination.get())) {
+      auto const& coordinate = std::get<CelestialCoordinate>(m_destination.get());
+      if (!m_orbit || m_orbit->target != coordinate) {
+        auto orbit = nearPlanetOrbit(coordinate);
         if (!orbit)
           return std::unexpected(std::move(orbit.error()));
         m_orbit = std::move(*orbit);
@@ -1035,13 +1039,13 @@ std::expected<void, StarException> SystemClientShip::serverUpdate(SystemWorld* s
     Vec2F pos = position();
     Vec2F destination;
     if (m_orbit) {
-      m_orbit->enterTime = system->time();
-      auto position = system->orbitPosition(*m_orbit);
+      m_orbit->enterTime = system.time();
+      auto position = system.orbitPosition(*m_orbit);
       if (!position)
         return std::unexpected(std::move(position.error()));
       destination = *position;
     } else {
-      auto position = system->systemLocationPosition(m_destination.get());
+      auto position = system.systemLocationPosition(m_destination.get());
       if (!position)
         return std::unexpected(std::move(position.error()));
       destination = position->value_or(pos);
@@ -1056,7 +1060,7 @@ std::expected<void, StarException> SystemClientShip::serverUpdate(SystemWorld* s
       return {};
     }
   }
-  auto position = system->systemLocationPosition(m_orbit ? SystemLocation(*m_orbit) : m_systemLocation.get());
+  auto position = system.systemLocationPosition(m_orbit ? SystemLocation(*m_orbit) : m_systemLocation.get());
   if (!position)
     return std::unexpected(std::move(position.error()));
   if (!*position)

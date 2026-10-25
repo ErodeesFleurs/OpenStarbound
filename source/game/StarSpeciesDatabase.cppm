@@ -143,10 +143,10 @@ public:
   [[nodiscard]] std::expected<std::shared_ptr<SpeciesDefinition>, StarException> species(String const& kind) const;
   StringMap<std::shared_ptr<SpeciesDefinition>> allSpecies() const;
 
-  [[nodiscard]] std::expected<Json, StarException> humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json(), ItemDatabase const* itemCatalog = nullptr) const;
-  [[nodiscard]] std::expected<CharacterCreationResult, StarException> createHumanoid(String name, String speciesChoice, std::size_t genderChoice, std::size_t bodyColor, std::size_t alty, std::size_t hairChoice, std::size_t heady, std::size_t shirtChoice, std::size_t shirtColor, std::size_t pantsChoice, std::size_t pantsColor, std::size_t personality, LuaVariadic<LuaValue> ext = {}, ItemDatabase const* itemCatalog = nullptr) const;
+  [[nodiscard]] std::expected<Json, StarException> humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json(), std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog = std::nullopt) const;
+  [[nodiscard]] std::expected<CharacterCreationResult, StarException> createHumanoid(String name, String speciesChoice, std::size_t genderChoice, std::size_t bodyColor, std::size_t alty, std::size_t hairChoice, std::size_t heady, std::size_t shirtChoice, std::size_t shirtColor, std::size_t pantsChoice, std::size_t pantsColor, std::size_t personality, LuaVariadic<LuaValue> ext = {}, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog = std::nullopt) const;
 
-  [[nodiscard]] std::expected<CharacterCreationResult, StarException> generateHumanoid(String species, std::int64_t seed, std::optional<Gender> = {}, ItemDatabase const* itemCatalog = nullptr) const;
+  [[nodiscard]] std::expected<CharacterCreationResult, StarException> generateHumanoid(String species, std::int64_t seed, std::optional<Gender> = {}, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog = std::nullopt) const;
 
 private:
   explicit SpeciesDatabase(Root& root) : m_root(root) {}

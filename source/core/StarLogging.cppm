@@ -35,7 +35,7 @@ public:
   LogSink();
   virtual ~LogSink();
 
-  [[nodiscard]] virtual std::expected<void, StarException> log(char const* msg, LogLevel level) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> log(std::string_view msg, LogLevel level) = 0;
 
   void setLevel(LogLevel level);
   LogLevel level();
@@ -46,7 +46,7 @@ private:
 
 class StdoutLogSink : public LogSink {
 public:
-  [[nodiscard]] std::expected<void, StarException> log(char const* msg, LogLevel level) override;
+  [[nodiscard]] std::expected<void, StarException> log(std::string_view msg, LogLevel level) override;
 
 private:
   std::mutex m_logMutex;
@@ -57,7 +57,7 @@ public:
   [[nodiscard]] static std::expected<std::shared_ptr<FileLogSink>, StarException> create(
       String const& filename, LogLevel level, bool truncate);
 
-  [[nodiscard]] std::expected<void, StarException> log(char const* msg, LogLevel level) override;
+  [[nodiscard]] std::expected<void, StarException> log(std::string_view msg, LogLevel level) override;
 
 private:
   FileLogSink() = default;
@@ -73,7 +73,7 @@ public:
   void removeSink(std::shared_ptr<LogSink> s);
   std::shared_ptr<LogSink> stdoutSink();
   void removeStdoutSink();
-  [[nodiscard]] std::expected<void, StarException> log(LogLevel level, char const* msg);
+  [[nodiscard]] std::expected<void, StarException> log(LogLevel level, std::string_view msg);
 
   template <typename... Args>
   [[nodiscard]] std::expected<void, StarException> logf(LogLevel level, std::format_string<Args...> msg, Args const&... args);
@@ -97,26 +97,26 @@ private:
 // This path has no registry, sink configuration, or shared mutable cache.
 class EmergencyLog {
 public:
-  static void log(LogLevel level, char const* message);
+  static void log(LogLevel level, std::string_view message);
   template <typename... Args>
   static void debug(std::format_string<Args...> format, Args const&... args) {
     auto message = strfChecked(format, args...);
-    log(LogLevel::Debug, message.c_str());
+    log(LogLevel::Debug, message);
   }
   template <typename... Args>
   static void info(std::format_string<Args...> format, Args const&... args) {
     auto message = strfChecked(format, args...);
-    log(LogLevel::Info, message.c_str());
+    log(LogLevel::Info, message);
   }
   template <typename... Args>
   static void warn(std::format_string<Args...> format, Args const&... args) {
     auto message = strfChecked(format, args...);
-    log(LogLevel::Warn, message.c_str());
+    log(LogLevel::Warn, message);
   }
   template <typename... Args>
   static void error(std::format_string<Args...> format, Args const&... args) {
     auto message = strfChecked(format, args...);
-    log(LogLevel::Error, message.c_str());
+    log(LogLevel::Error, message);
   }
 };
 
@@ -163,15 +163,15 @@ public:
     Vec4B color;
   };
 
-  void logPoly(char const* space, PolyF const& poly, Vec4B const& color);
-  void logLine(char const* space, Line2F const& line, Vec4B const& color);
-  void logLine(char const* space, Vec2F const& begin, Vec2F const& end, Vec4B const& color);
-  void logPoint(char const* space, Vec2F const& position, Vec4B const& color);
-  void logText(char const* space, String text, Vec2F const& position, Vec4B const& color);
+  void logPoly(std::string_view space, PolyF const& poly, Vec4B const& color);
+  void logLine(std::string_view space, Line2F const& line, Vec4B const& color);
+  void logLine(std::string_view space, Vec2F const& begin, Vec2F const& end, Vec4B const& color);
+  void logPoint(std::string_view space, Vec2F const& position, Vec4B const& color);
+  void logText(std::string_view space, String text, Vec2F const& position, Vec4B const& color);
 
-  Deque<Line> getLines(char const* space, bool andClear);
-  Deque<Point> getPoints(char const* space, bool andClear);
-  Deque<LogText> getText(char const* space, bool andClear);
+  Deque<Line> getLines(std::string_view space, bool andClear);
+  Deque<Point> getPoints(std::string_view space, bool andClear);
+  Deque<LogText> getText(std::string_view space, bool andClear);
   void clear();
   bool observed();
   void setObserved(bool observed);
@@ -188,7 +188,7 @@ template <typename... Args>
 [[nodiscard]] std::expected<void, StarException> Logger::logf(LogLevel level, std::format_string<Args...> msg, Args const&... args) {
   if (loggable(level)) {
     std::string output = strfChecked(msg, args...);
-    return log(level, output.c_str());
+    return log(level, output);
   }
   return {};
 }

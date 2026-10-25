@@ -49,47 +49,47 @@ ConnectionId RemoteHitRequest::destinationConnection() const {
   return connectionForEntity(causingEntityId);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, RemoteHitRequest const& hitRequest) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RemoteHitRequest const& hitRequest) {
   auto result = ds << hitRequest.causingEntityId << hitRequest.targetEntityId << hitRequest.damageRequest;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, RemoteHitRequest& hitRequest) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RemoteHitRequest& hitRequest) {
   auto result = ds >> hitRequest.causingEntityId >> hitRequest.targetEntityId >> hitRequest.damageRequest;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 ConnectionId RemoteDamageRequest::destinationConnection() const {
   return connectionForEntity(targetEntityId);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest) {
   auto result = ds << damageRequest.causingEntityId << damageRequest.targetEntityId << damageRequest.damageRequest;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, RemoteDamageRequest& damageRequest) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RemoteDamageRequest& damageRequest) {
   auto result = ds >> damageRequest.causingEntityId >> damageRequest.targetEntityId >> damageRequest.damageRequest;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, RemoteDamageNotification const& notification) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, RemoteDamageNotification const& notification) {
   auto result = ds << notification.sourceEntityId << notification.damageNotification;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, RemoteDamageNotification& notification) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, RemoteDamageNotification& notification) {
   auto result = ds >> notification.sourceEntityId >> notification.damageNotification;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-DamageManager::DamageManager(World* world, ConnectionId connectionId) : m_world(world), m_connectionId(connectionId) {}
+DamageManager::DamageManager(World& world, ConnectionId connectionId) : m_world(world), m_connectionId(connectionId) {}
 
 std::expected<void, StarException> DamageManager::update(float dt) {
   float const DefaultDamageTimeout = 1.0f;
@@ -99,8 +99,8 @@ std::expected<void, StarException> DamageManager::update(float dt) {
     for (auto eventIt = events.begin(); eventIt != events.end();) {
       auto& event = *eventIt;
       event.timeout -= dt;
-      auto entityIdTimeoutGroup = std::get_if<EntityId>(&event.timeoutGroup);
-      if (event.timeout <= 0.0f || (entityIdTimeoutGroup && !m_world->entity(*entityIdTimeoutGroup)))
+      if (event.timeout <= 0.0f || (std::holds_alternative<EntityId>(event.timeoutGroup)
+          && !m_world.get().entity(std::get<EntityId>(event.timeoutGroup))))
         eventIt = events.erase(eventIt);
       else
         ++eventIt;
@@ -111,35 +111,35 @@ std::expected<void, StarException> DamageManager::update(float dt) {
       ++damageIt;
   }
 
-  return m_world->forAllEntities([&](std::shared_ptr<Entity> const& causingEntity) -> std::expected<void, StarException> {
+  return m_world.get().forAllEntities([&self = *this, DefaultDamageTimeout](std::shared_ptr<Entity> const& causingEntity) -> std::expected<void, StarException> {
     auto sources = causingEntity->damageSources();
     if (!sources) return std::unexpected(std::move(sources.error()));
     for (auto& damageSource : *sources) {
       if (damageSource.trackSourceEntity)
         damageSource.translate(causingEntity->position());
 
-      if (auto poly = std::get_if<PolyF>(&damageSource.damageArea))
-        m_world->root().spatialLogger().logPoly("world", *poly, Color::Orange.toRgba());
-      else if (auto line = std::get_if<Line2F>(&damageSource.damageArea))
-        m_world->root().spatialLogger().logLine("world", *line, Color::Orange.toRgba());
+      if (std::holds_alternative<PolyF>(damageSource.damageArea))
+        self.m_world.get().root().spatialLogger().logPoly("world", std::get<PolyF>(damageSource.damageArea), Color::Orange.toRgba());
+      else if (std::holds_alternative<Line2F>(damageSource.damageArea))
+        self.m_world.get().root().spatialLogger().logLine("world", std::get<Line2F>(damageSource.damageArea), Color::Orange.toRgba());
 
-      auto hits = queryHit(damageSource, causingEntity->entityId());
+      auto hits = self.queryHit(damageSource, causingEntity->entityId());
       if (!hits) return std::unexpected(std::move(hits.error()));
       for (auto const& hitResultPair : *hits) {
-        auto targetEntity = m_world->entity(hitResultPair.first);
-        if (!isAuthoritative(causingEntity, targetEntity))
+        auto targetEntity = self.m_world.get().entity(hitResultPair.first);
+        if (!self.isAuthoritative(causingEntity, targetEntity))
           continue;
 
-        auto& eventList = m_recentEntityDamages[hitResultPair.first];
+        auto& eventList = self.m_recentEntityDamages[hitResultPair.first];
         // Guard against rapidly repeating damages by either the causing
         // entity id, or optionally the repeat group if specified.
         bool allowDamage = true;
         for (auto const& event : eventList) {
           if (damageSource.damageRepeatGroup) {
-            if (auto group = std::get_if<String>(&event.timeoutGroup); group && *group == *damageSource.damageRepeatGroup)
+            if (std::holds_alternative<String>(event.timeoutGroup) && std::get<String>(event.timeoutGroup) == *damageSource.damageRepeatGroup)
               allowDamage = false;
           } else {
-            if (auto entityId = std::get_if<EntityId>(&event.timeoutGroup); entityId && *entityId == causingEntity->entityId())
+            if (std::holds_alternative<EntityId>(event.timeoutGroup) && std::get<EntityId>(event.timeoutGroup) == causingEntity->entityId())
               allowDamage = false;
           }
         }
@@ -151,13 +151,13 @@ std::expected<void, StarException> DamageManager::update(float dt) {
             eventList.append({causingEntity->entityId(), timeout});
 
           auto damageRequest = DamageRequest(hitResultPair.second, damageSource.damageType, damageSource.damage,
-              damageSource.knockbackMomentum(m_world->geometry(), targetEntity->position()),
+              damageSource.knockbackMomentum(self.m_world.get().geometry(), targetEntity->position()),
               damageSource.sourceEntityId, damageSource.damageSourceKind, damageSource.statusEffects);
-          auto hit = addHitRequest({causingEntity->entityId(), targetEntity->entityId(), damageRequest});
+          auto hit = self.addHitRequest({causingEntity->entityId(), targetEntity->entityId(), damageRequest});
           if (!hit) return std::unexpected(std::move(hit.error()));
 
           if (damageSource.damageType != NoDamage) {
-            auto damage = addDamageRequest({causingEntity->entityId(), targetEntity->entityId(), std::move(damageRequest)});
+            auto damage = self.addDamageRequest({causingEntity->entityId(), targetEntity->entityId(), std::move(damageRequest)});
             if (!damage) return std::unexpected(std::move(damage.error()));
           }
         }
@@ -167,7 +167,7 @@ std::expected<void, StarException> DamageManager::update(float dt) {
     auto notifications = causingEntity->selfDamageNotifications();
     if (!notifications) return std::unexpected(std::move(notifications.error()));
     for (auto const& notification : *notifications) {
-      auto result = addDamageNotification({causingEntity->entityId(), notification});
+      auto result = self.addDamageNotification({causingEntity->entityId(), notification});
       if (!result) return std::unexpected(std::move(result.error()));
     }
     return {};
@@ -178,7 +178,7 @@ std::expected<void, StarException> DamageManager::pushRemoteHitRequest(RemoteHit
   if (remoteHitRequest.destinationConnection() != m_connectionId)
     return std::unexpected(StarException("RemoteDamageRequest routed to wrong DamageManager"));
 
-  if (auto causingEntity = m_world->entity(remoteHitRequest.causingEntityId)) {
+  if (auto causingEntity = m_world.get().entity(remoteHitRequest.causingEntityId)) {
     if constexpr (Star::DebugEnabled) {
       Star::starAssertFailed((causingEntity->isMaster()));
     }
@@ -191,7 +191,7 @@ std::expected<void, StarException> DamageManager::pushRemoteDamageRequest(Remote
   if (remoteDamageRequest.destinationConnection() != m_connectionId)
     return std::unexpected(StarException("RemoteDamageRequest routed to wrong DamageManager"));
 
-  if (auto targetEntity = m_world->entity(remoteDamageRequest.targetEntityId)) {
+  if (auto targetEntity = m_world.get().entity(remoteDamageRequest.targetEntityId)) {
     if constexpr (Star::DebugEnabled) {
       Star::starAssertFailed((targetEntity->isMaster()));
     }
@@ -206,7 +206,7 @@ std::expected<void, StarException> DamageManager::pushRemoteDamageRequest(Remote
 }
 
 std::expected<void, StarException> DamageManager::pushRemoteDamageNotification(RemoteDamageNotification remoteDamageNotification) {
-  if (auto sourceEntity = m_world->entity(remoteDamageNotification.sourceEntityId)) {
+  if (auto sourceEntity = m_world.get().entity(remoteDamageNotification.sourceEntityId)) {
     if (sourceEntity->isMaster()
         && sourceEntity->entityId() != remoteDamageNotification.damageNotification.targetEntityId) {
       auto result = sourceEntity->damagedOther(remoteDamageNotification.damageNotification);
@@ -235,29 +235,29 @@ List<DamageNotification> DamageManager::pullPendingNotifications() {
 
 std::expected<SmallList<std::pair<EntityId, HitType>, 4>, StarException> DamageManager::queryHit(DamageSource const& source, EntityId causingId) const {
   SmallList<std::pair<EntityId, HitType>, 4> resultList;
-  auto doQueryHit = [&source, &resultList, causingId, this](std::shared_ptr<Entity> const& targetEntity) -> std::expected<void, StarException> {
+  auto doQueryHit = [&source, &resultList, causingId, &world = m_world.get()](std::shared_ptr<Entity> const& targetEntity) -> std::expected<void, StarException> {
     if (targetEntity->entityId() == causingId)
       return {};
     if (!source.team.canDamage(targetEntity->getTeam(), targetEntity->entityId() == source.sourceEntityId))
       return {};
     if (source.rayCheck) {
-      if (auto poly = std::get_if<PolyF>(&source.damageArea)) {
-        if (auto sourceEntity = m_world->entity(source.sourceEntityId)) {
-          auto overlap = m_world->geometry().rectOverlap(targetEntity->metaBoundBox().translated(targetEntity->position()), poly->boundBox());
+      if (std::holds_alternative<PolyF>(source.damageArea)) {
+        if (auto sourceEntity = world.entity(source.sourceEntityId)) {
+          auto overlap = world.geometry().rectOverlap(targetEntity->metaBoundBox().translated(targetEntity->position()), std::get<PolyF>(source.damageArea).boundBox());
           if (!overlap.isEmpty()) {
-            auto collision = m_world->lineTileCollision(overlap.center(), sourceEntity->position());
+            auto collision = world.lineTileCollision(overlap.center(), sourceEntity->position());
             if (!collision) return std::unexpected(std::move(collision.error()));
             if (*collision) return {};
           }
         }
-      } else if (auto line = std::get_if<Line2F>(&source.damageArea)) {
+      } else if (std::holds_alternative<Line2F>(source.damageArea)) {
         auto hitPoly = targetEntity->hitPoly();
         if (!hitPoly) return std::unexpected(std::move(hitPoly.error()));
         if (*hitPoly) {
-          auto intersection = m_world->geometry().lineIntersectsPolyAt(*line, **hitPoly);
+          auto intersection = world.geometry().lineIntersectsPolyAt(std::get<Line2F>(source.damageArea), **hitPoly);
           if (!intersection) return std::unexpected(std::move(intersection.error()));
           if (*intersection) {
-            auto collision = m_world->lineTileCollision(line->min(), **intersection);
+            auto collision = world.lineTileCollision(std::get<Line2F>(source.damageArea).min(), **intersection);
             if (!collision) return std::unexpected(std::move(collision.error()));
             if (*collision) return {};
           }
@@ -270,11 +270,12 @@ std::expected<SmallList<std::pair<EntityId, HitType>, 4>, StarException> DamageM
       resultList.append({targetEntity->entityId(), **hitResult});
     return {};
   };
-  if (auto poly = std::get_if<PolyF>(&source.damageArea)) {
-    auto result = m_world->forEachEntity(poly->boundBox(), doQueryHit);
+  if (std::holds_alternative<PolyF>(source.damageArea)) {
+    auto result = m_world.get().forEachEntity(std::get<PolyF>(source.damageArea).boundBox(), doQueryHit);
     if (!result) return std::unexpected(std::move(result.error()));
-  } else if (auto line = std::get_if<Line2F>(&source.damageArea)) {
-    auto result = m_world->forEachEntityLine(line->min(), line->max(), doQueryHit);
+  } else if (std::holds_alternative<Line2F>(source.damageArea)) {
+    auto const& line = std::get<Line2F>(source.damageArea);
+    auto result = m_world.get().forEachEntityLine(line.min(), line.max(), doQueryHit);
     if (!result) return std::unexpected(std::move(result.error()));
   }
   return resultList;

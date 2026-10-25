@@ -107,7 +107,7 @@ std::expected<std::shared_ptr<Pane>, StarException> Pane::create(GuiContext& con
 }
 
 std::expected<void, StarException> Pane::initializePane() {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   auto text = (*assets)->json("/interface.config:paneTextStyle");
@@ -154,6 +154,20 @@ std::expected<void, StarException> Pane::initializePane() {
   m_subTitleColor = *subtitleColor;
   return {};
 }
+Pane::~Pane() {
+  if (m_icon)
+    m_icon->setParent(std::nullopt);
+}
+
+bool Pane::removeChild(Widget& member) {
+  if (m_icon && std::addressof(*m_icon) == std::addressof(member)) {
+    m_icon->setParent(std::nullopt);
+    m_icon.reset();
+    return true;
+  }
+  return Widget::removeChild(member);
+}
+
 
 
 std::expected<void, StarException> Pane::dismissed() {
@@ -205,7 +219,7 @@ std::expected<bool, StarException> Pane::sendEvent(InputEvent const& event) {
   if (m_visible) {
     if (std::holds_alternative<MouseButtonDownEvent>(event) || std::holds_alternative<MouseButtonUpEvent>(event) || std::holds_alternative<MouseMoveEvent>(event)
         || std::holds_alternative<MouseWheelEvent>(event)) {
-      Vec2I mousePos = *m_context->mousePosition(event);
+      Vec2I mousePos = *m_context.mousePosition(event);
       // First, handle preliminary mouse out / click up events
       if (m_mouseOver) {
         if (!m_mouseOver->inMember(mousePos) || !m_mouseOver->active()) {
@@ -293,7 +307,7 @@ std::expected<bool, StarException> Pane::sendEvent(InputEvent const& event) {
     }
 
     if (std::holds_alternative<MouseButtonDownEvent>(event)) {
-      Vec2I mousePos = *m_context->mousePosition(event);
+      Vec2I mousePos = *m_context.mousePosition(event);
       if (inDragArea(mousePos) && !m_lockPosition) {
         setDragActive(true, mousePos);
         return true;
@@ -313,8 +327,8 @@ std::expected<bool, StarException> Pane::sendEvent(InputEvent const& event) {
   return false;
 }
 
-std::expected<void, StarException> Pane::setFocus(Widget const* focus) {
-  if (m_focusWidget.get() == focus)
+std::expected<void, StarException> Pane::setFocus(Widget const& focus) {
+  if (m_focusWidget && std::addressof(*m_focusWidget) == std::addressof(focus))
     return {};
   auto child = childPtr(focus);
   if (!child)
@@ -328,8 +342,8 @@ std::expected<void, StarException> Pane::setFocus(Widget const* focus) {
   return {};
 }
 
-void Pane::removeFocus(Widget const* focus) {
-  if (m_focusWidget.get() == focus)
+void Pane::removeFocus(Widget const& focus) {
+  if (m_focusWidget && std::addressof(*m_focusWidget) == std::addressof(focus))
     m_focusWidget.reset();
 }
 
@@ -337,12 +351,12 @@ void Pane::removeFocus() {
   m_focusWidget.reset();
 }
 
-Pane const* Pane::window() const {
-  return this;
+std::optional<std::reference_wrapper<Pane const>> Pane::window() const {
+  return std::cref(*this);
 }
 
-Pane* Pane::window() {
-  return this;
+std::optional<std::reference_wrapper<Pane>> Pane::window() {
+  return std::ref(*this);
 }
 
 std::expected<void, StarException> Pane::update(float dt) {
@@ -415,19 +429,19 @@ std::expected<void, StarException> Pane::setBG(BGResult const& res) {
 std::expected<void, StarException> Pane::setBG(String const& header, String const& body, String const& footer) {
   Vec2I headerSize, bodySize, footerSize;
   if (!header.empty()) {
-    auto size = m_context->textureSize(header);
+    auto size = m_context.textureSize(header);
     if (!size)
       return std::unexpected(std::move(size.error()));
     headerSize = Vec2I(*size);
   }
   if (!body.empty()) {
-    auto size = m_context->textureSize(body);
+    auto size = m_context.textureSize(body);
     if (!size)
       return std::unexpected(std::move(size.error()));
     bodySize = Vec2I(*size);
   }
   if (!footer.empty()) {
-    auto size = m_context->textureSize(footer);
+    auto size = m_context.textureSize(footer);
     if (!size)
       return std::unexpected(std::move(size.error()));
     footerSize = Vec2I(*size);
@@ -474,8 +488,13 @@ std::expected<void, StarException> Pane::setTitleIcon(std::shared_ptr<Widget> ic
     auto shown = icon->show();
     if (!shown)
       return std::unexpected(std::move(shown.error()));
-    icon->setParent(this);
+    if (auto previous = icon->parent())
+      previous->get().removeChild(*icon);
   }
+  if (m_icon)
+    m_icon->setParent(std::nullopt);
+  if (icon)
+    icon->setParent(std::ref(*this));
   m_icon = std::move(icon);
   return {};
 }
@@ -526,20 +545,37 @@ std::expected<std::optional<std::shared_ptr<Item>>, StarException> Pane::shiftIt
 
 std::expected<LuaCallbacks, StarException> Pane::makePaneCallbacks() {
   LuaCallbacks callbacks;
+  // Lua can retain these callbacks after their pane has been released.
+  auto registerPaneCallback = [&]<typename Function>(String name, Function function) {
+    auto guarded = [owner = weak_from_this(), function = std::move(function)]<typename... Args>(
+                       std::type_identity<std::tuple<Pane&, Args...>>) mutable {
+      return [owner, function = std::move(function)](Args... args) mutable
+          -> std::invoke_result_t<Function&, Pane&, Args...> {
+        auto pane = as<Pane>(owner.lock());
+        if (!pane)
+          return std::unexpected(GuiException("Pane callback target no longer exists"));
+        return std::invoke(function, *pane, std::forward<Args>(args)...);
+      };
+    }(std::type_identity<typename FunctionTraits<Function>::ArgTuple>{});
+    return callbacks.registerCallback(std::move(name), std::move(guarded));
+  };
 
-  auto toWidget = callbacks.registerCallback("toWidget", [this]() {
-    return LuaBindings::makeWidgetCallbacks(*context(), this, reader());
+  auto toWidget = registerPaneCallback("toWidget", [](Pane& pane) -> std::expected<LuaCallbacks, StarException> {
+    return LuaBindings::makeWidgetCallbacks(pane.context(), pane, pane.reader());
   });
   if (!toWidget)
     return std::unexpected(std::move(toWidget.error()));
 
-  auto dismissCallback = callbacks.registerCallback("dismiss", [this]() { dismiss(); });
+  auto dismissCallback = registerPaneCallback("dismiss", [](Pane& pane) -> std::expected<void, StarException> {
+    pane.dismiss();
+    return {};
+  });
   if (!dismissCallback)
     return std::unexpected(std::move(dismissCallback.error()));
 
-  auto playSound = callbacks.registerCallback("playSound",
-    [this](String const& audio, std::optional<int> loops, std::optional<float> volume) -> std::expected<void, StarException> {
-      auto assets = context()->root().assets();
+  auto playSound = registerPaneCallback("playSound",
+    [](Pane& pane, String const& audio, std::optional<int> loops, std::optional<float> volume) -> std::expected<void, StarException> {
+      auto assets = pane.context().root().assets();
       if (!assets)
         return std::unexpected(std::move(assets.error()));
       auto sound = (*assets)->audio(audio);
@@ -550,69 +586,77 @@ std::expected<LuaCallbacks, StarException> Pane::makePaneCallbacks() {
         return std::unexpected(std::move(instance.error()));
       (*instance)->setVolume(volume.value_or(1.0));
       (*instance)->setLoops(loops.value_or(0));
-      auto played = context()->playAudio(*instance);
+      auto played = pane.context().playAudio(*instance);
       if (!played)
         return std::unexpected(std::move(played.error()));
-      m_playingSounds.append({audio, std::move(*instance)});
+      pane.m_playingSounds.append({audio, std::move(*instance)});
       return {};
     });
   if (!playSound)
     return std::unexpected(std::move(playSound.error()));
 
-  auto stopSounds = callbacks.registerCallback("stopAllSounds", [this](std::optional<String> const& audio) {
-      m_playingSounds.filter([audio](std::pair<String, std::shared_ptr<AudioInstance>> const& p) {
+  auto stopSounds = registerPaneCallback("stopAllSounds", [](Pane& pane, std::optional<String> const& audio) -> std::expected<void, StarException> {
+      pane.m_playingSounds.filter([audio](std::pair<String, std::shared_ptr<AudioInstance>> const& p) {
         if (!audio || p.first == *audio) {
           p.second->stop();
           return false;
         }
         return true;
       });
+      return {};
     });
   if (!stopSounds)
     return std::unexpected(std::move(stopSounds.error()));
 
-  auto titleCallback = callbacks.registerCallback("setTitle", [this](String const& title, String const& subTitle) {
-      setTitleString(title, subTitle);
+  auto titleCallback = registerPaneCallback("setTitle", [](Pane& pane, String const& title, String const& subTitle) -> std::expected<void, StarException> {
+      pane.setTitleString(title, subTitle);
+      return {};
     });
   if (!titleCallback)
     return std::unexpected(std::move(titleCallback.error()));
 
-  auto titleIconCallback = callbacks.registerCallback("setTitleIcon", [this](String const& image) -> std::expected<void, StarException> {
-    if (auto icon = as<ImageWidget>(titleIcon()))
+  auto titleIconCallback = registerPaneCallback("setTitleIcon", [](Pane& pane, String const& image) -> std::expected<void, StarException> {
+    if (auto icon = as<ImageWidget>(pane.titleIcon()))
       return icon->setImage(image);
     return {};
   });
   if (!titleIconCallback)
     return std::unexpected(std::move(titleIconCallback.error()));
 
-  auto getPosition = callbacks.registerCallback("getPosition", [this]() { return relativePosition(); });
+  auto getPosition = registerPaneCallback("getPosition", [](Pane& pane) -> std::expected<Vec2I, StarException> { return pane.relativePosition(); });
   if (!getPosition)
     return std::unexpected(std::move(getPosition.error()));
-  auto setPositionCallback = callbacks.registerCallback("setPosition", [this](Vec2I const& position) { setPosition(position); });
+  auto setPositionCallback = registerPaneCallback("setPosition", [](Pane& pane, Vec2I const& position) -> std::expected<void, StarException> {
+    pane.setPosition(position);
+    return {};
+  });
   if (!setPositionCallback)
     return std::unexpected(std::move(setPositionCallback.error()));
-  auto getSize = callbacks.registerCallback("getSize", [this]() { return size(); });
+  auto getSize = registerPaneCallback("getSize", [](Pane& pane) -> std::expected<Vec2I, StarException> { return pane.size(); });
   if (!getSize)
     return std::unexpected(std::move(getSize.error()));
-  auto setSizeCallback = callbacks.registerCallback("setSize", [this](Vec2I const& size) { setSize(size); });
+  auto setSizeCallback = registerPaneCallback("setSize", [](Pane& pane, Vec2I const& size) -> std::expected<void, StarException> {
+    pane.setSize(size);
+    return {};
+  });
   if (!setSizeCallback)
     return std::unexpected(std::move(setSizeCallback.error()));
 
-  auto addWidget = callbacks.registerCallback("addWidget",
-    [this](Json const& config, std::optional<String> const& widgetName) -> std::expected<std::optional<LuaCallbacks>, StarException> {
-      String name = widgetName.value_or(toString(context()->root().random().randu64()));
-      auto guiReader = reader();
+  auto addWidget = registerPaneCallback("addWidget",
+    [](Pane& pane, Json const& config, std::optional<String> const& widgetName) -> std::expected<std::optional<LuaCallbacks>, StarException> {
+      String name = widgetName.value_or(toString(pane.context().root().random().randu64()));
+      auto guiReader = pane.reader();
       auto widget = guiReader->makeSingle(name, config);
       if (!widget)
         return std::unexpected(std::move(widget.error()));
       if (!*widget)
         return std::optional<LuaCallbacks>{};
-      auto added = addChild(name, *widget);
+      auto added = pane.addChild(name, *widget);
       if (!added)
         return std::unexpected(std::move(added.error()));
-      auto bindings = LuaBindings::makeWidgetCallbacks(*context(), widget->get(), guiReader);
+      auto bindings = LuaBindings::makeWidgetCallbacks(pane.context(), **widget, guiReader);
       if (!bindings) {
-        removeChild(widget->get());
+        pane.removeChild(**widget);
         return std::unexpected(std::move(bindings.error()));
       }
       return std::optional<LuaCallbacks>(std::move(*bindings));
@@ -620,136 +664,139 @@ std::expected<LuaCallbacks, StarException> Pane::makePaneCallbacks() {
   if (!addWidget)
     return std::unexpected(std::move(addWidget.error()));
 
-  auto removeWidget = callbacks.registerCallback("removeWidget", [this](String const& name) { return removeChild(name); });
+  auto removeWidget = registerPaneCallback("removeWidget", [](Pane& pane, String const& name) -> std::expected<bool, StarException> { return pane.removeChild(name); });
   if (!removeWidget)
     return std::unexpected(std::move(removeWidget.error()));
-  auto scale = callbacks.registerCallback("scale", [this]() { return context()->interfaceScale(); });
+  auto scale = registerPaneCallback("scale", [](Pane& pane) -> std::expected<float, StarException> { return pane.context().interfaceScale(); });
   if (!scale)
     return std::unexpected(std::move(scale.error()));
-  auto displayedCallback = callbacks.registerCallback("isDisplayed", [this]() { return isDisplayed(); });
+  auto displayedCallback = registerPaneCallback("isDisplayed", [](Pane& pane) -> std::expected<bool, StarException> { return pane.isDisplayed(); });
   if (!displayedCallback)
     return std::unexpected(std::move(displayedCallback.error()));
-  auto focusCallback = callbacks.registerCallback("hasFocus", [this]() { return hasFocus(); });
+  auto focusCallback = registerPaneCallback("hasFocus", [](Pane& pane) { return pane.hasFocus(); });
   if (!focusCallback)
     return std::unexpected(std::move(focusCallback.error()));
-  auto showCallback = callbacks.registerCallback("show", [this]() { return show(); });
+  auto showCallback = registerPaneCallback("show", [](Pane& pane) { return pane.show(); });
   if (!showCallback)
     return std::unexpected(std::move(showCallback.error()));
-  auto hideCallback = callbacks.registerCallback("hide", [this]() { return hide(); });
+  auto hideCallback = registerPaneCallback("hide", [](Pane& pane) { return pane.hide(); });
   if (!hideCallback)
     return std::unexpected(std::move(hideCallback.error()));
-  auto anchorCallback = callbacks.registerCallback("anchor", [this]() -> std::expected<String, StarException> {
+  auto anchorCallback = registerPaneCallback("anchor", [](Pane& pane) -> std::expected<String, StarException> {
     if (!PaneAnchorNames)
       return std::unexpected(PaneAnchorNames.error());
-    auto name = PaneAnchorNames->getRight(anchor());
+    auto name = PaneAnchorNames->getRight(pane.anchor());
     if (!name)
       return std::unexpected(std::move(name.error()));
-    return **name;
+    return name->get();
   });
   if (!anchorCallback)
     return std::unexpected(std::move(anchorCallback.error()));
-  auto setAnchorCallback = callbacks.registerCallback("setAnchor", [this](String const& name) -> std::expected<void, StarException> {
+  auto setAnchorCallback = registerPaneCallback("setAnchor", [](Pane& pane, String const& name) -> std::expected<void, StarException> {
     if (!PaneAnchorNames)
       return std::unexpected(PaneAnchorNames.error());
     auto value = PaneAnchorNames->getLeft(name);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    setAnchor(**value);
+    pane.setAnchor(value->get());
     return {};
   });
   if (!setAnchorCallback)
     return std::unexpected(std::move(setAnchorCallback.error()));
-  auto getOffset = callbacks.registerCallback("anchorOffset", [this]() { return anchorOffset(); });
+  auto getOffset = registerPaneCallback("anchorOffset", [](Pane& pane) -> std::expected<Vec2I, StarException> { return pane.anchorOffset(); });
   if (!getOffset)
     return std::unexpected(std::move(getOffset.error()));
-  auto setOffset = callbacks.registerCallback("setAnchorOffset", [this](Vec2I offset) { setAnchorOffset(offset); });
+  auto setOffset = registerPaneCallback("setAnchorOffset", [](Pane& pane, Vec2I offset) -> std::expected<void, StarException> {
+    pane.setAnchorOffset(offset);
+    return {};
+  });
   if (!setOffset)
     return std::unexpected(std::move(setOffset.error()));
-  auto getScreenPosition = callbacks.registerCallback("getScreenPosition", [this]() -> std::expected<Vec2I, StarException> {
-    auto window = m_context->windowInterfaceSize();
+  auto getScreenPosition = registerPaneCallback("getScreenPosition", [](Pane& pane) -> std::expected<Vec2I, StarException> {
+    auto window = pane.m_context.windowInterfaceSize();
     if (!window)
       return std::unexpected(std::move(window.error()));
     Vec2I windowSize(*window);
-    Vec2I sz = size();
+    Vec2I sz = pane.size();
     Vec2I offset;
-    switch (anchor()) {
+    switch (pane.anchor()) {
     case PaneAnchor::None:
     case PaneAnchor::BottomLeft:
-      offset = anchorOffset();
+      offset = pane.anchorOffset();
       break;
     case PaneAnchor::BottomRight:
-      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], 0};
+      offset = pane.anchorOffset() + Vec2I{windowSize[0] - sz[0], 0};
       break;
     case PaneAnchor::TopLeft:
-      offset = anchorOffset() + Vec2I{0, windowSize[1] - sz[1]};
+      offset = pane.anchorOffset() + Vec2I{0, windowSize[1] - sz[1]};
       break;
     case PaneAnchor::TopRight:
-      offset = anchorOffset() + (windowSize - sz);
+      offset = pane.anchorOffset() + (windowSize - sz);
       break;
     case PaneAnchor::CenterTop:
-      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, windowSize[1] - sz[1]};
+      offset = pane.anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, windowSize[1] - sz[1]};
       break;
     case PaneAnchor::CenterBottom:
-      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, 0};
+      offset = pane.anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, 0};
       break;
     case PaneAnchor::CenterLeft:
-      offset = anchorOffset() + Vec2I{0, (windowSize[1] - sz[1]) / 2};
+      offset = pane.anchorOffset() + Vec2I{0, (windowSize[1] - sz[1]) / 2};
       break;
     case PaneAnchor::CenterRight:
-      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], (windowSize[1] - sz[1]) / 2};
+      offset = pane.anchorOffset() + Vec2I{windowSize[0] - sz[0], (windowSize[1] - sz[1]) / 2};
       break;
     case PaneAnchor::Center:
-      offset = anchorOffset() + ((windowSize - sz) / 2);
+      offset = pane.anchorOffset() + ((windowSize - sz) / 2);
       break;
     default:
-      offset = anchorOffset();
+      offset = pane.anchorOffset();
     }
-    return offset + relativePosition();
+    return offset + pane.relativePosition();
   });
   if (!getScreenPosition)
     return std::unexpected(std::move(getScreenPosition.error()));
 
-  auto setScreenPosition = callbacks.registerCallback("setScreenPosition", [this](Vec2I screenPos) -> std::expected<void, StarException> {
-    auto window = m_context->windowInterfaceSize();
+  auto setScreenPosition = registerPaneCallback("setScreenPosition", [](Pane& pane, Vec2I screenPos) -> std::expected<void, StarException> {
+    auto window = pane.m_context.windowInterfaceSize();
     if (!window)
       return std::unexpected(std::move(window.error()));
     Vec2I windowSize(*window);
-    Vec2I sz = size();
+    Vec2I sz = pane.size();
     Vec2I offset;
-    switch (anchor()) {
+    switch (pane.anchor()) {
     case PaneAnchor::None:
     case PaneAnchor::BottomLeft:
-      offset = anchorOffset();
+      offset = pane.anchorOffset();
       break;
     case PaneAnchor::BottomRight:
-      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], 0};
+      offset = pane.anchorOffset() + Vec2I{windowSize[0] - sz[0], 0};
       break;
     case PaneAnchor::TopLeft:
-      offset = anchorOffset() + Vec2I{0, windowSize[1] - sz[1]};
+      offset = pane.anchorOffset() + Vec2I{0, windowSize[1] - sz[1]};
       break;
     case PaneAnchor::TopRight:
-      offset = anchorOffset() + (windowSize - sz);
+      offset = pane.anchorOffset() + (windowSize - sz);
       break;
     case PaneAnchor::CenterTop:
-      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, windowSize[1] - sz[1]};
+      offset = pane.anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, windowSize[1] - sz[1]};
       break;
     case PaneAnchor::CenterBottom:
-      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, 0};
+      offset = pane.anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, 0};
       break;
     case PaneAnchor::CenterLeft:
-      offset = anchorOffset() + Vec2I{0, (windowSize[1] - sz[1]) / 2};
+      offset = pane.anchorOffset() + Vec2I{0, (windowSize[1] - sz[1]) / 2};
       break;
     case PaneAnchor::CenterRight:
-      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], (windowSize[1] - sz[1]) / 2};
+      offset = pane.anchorOffset() + Vec2I{windowSize[0] - sz[0], (windowSize[1] - sz[1]) / 2};
       break;
     case PaneAnchor::Center:
-      offset = anchorOffset() + ((windowSize - sz) / 2);
+      offset = pane.anchorOffset() + ((windowSize - sz) / 2);
       break;
     default:
-      offset = anchorOffset();
+      offset = pane.anchorOffset();
     }
 
-    setPosition(screenPos - offset);
+    pane.setPosition(screenPos - offset);
     return {};
   });
   if (!setScreenPosition)
@@ -759,29 +806,29 @@ std::expected<LuaCallbacks, StarException> Pane::makePaneCallbacks() {
 }
 
 std::shared_ptr<GuiReader> Pane::reader() {
-  return std::make_shared<GuiReader>(*this->context());
+  return std::make_shared<GuiReader>(this->context());
 }
 
 std::expected<void, StarException> Pane::renderImpl() {
   if (!m_bgFooter.empty()) {
-    auto drawn = m_context->drawInterfaceQuad(m_bgFooter, Vec2F(position()));
+    auto drawn = m_context.drawInterfaceQuad(m_bgFooter, Vec2F(position()));
     if (!drawn)
       return std::unexpected(std::move(drawn.error()));
   }
   if (!m_bgBody.empty()) {
-    auto drawn = m_context->drawInterfaceQuad(m_bgBody, Vec2F(position()) + Vec2F(0, m_footerSize[1]));
+    auto drawn = m_context.drawInterfaceQuad(m_bgBody, Vec2F(position()) + Vec2F(0, m_footerSize[1]));
     if (!drawn)
       return std::unexpected(std::move(drawn.error()));
   }
   if (!m_bgHeader.empty()) {
     auto headerPos = Vec2F(position()) + Vec2F(0, m_footerSize[1] + m_bodySize[1]);
-    auto header = m_context->drawInterfaceQuad(m_bgHeader, headerPos);
+    auto header = m_context.drawInterfaceQuad(m_bgHeader, headerPos);
     if (!header)
       return std::unexpected(std::move(header.error()));
     if (m_icon) {
       m_icon->setPosition(Vec2I(0, m_footerSize[1] + m_bodySize[1]) + m_iconOffset);
       auto rendered = m_icon->render(m_drawingArea);
-      auto reset = m_context->resetInterfaceScissorRect();
+      auto reset = m_context.resetInterfaceScissorRect();
       if (!rendered && !reset)
         return std::unexpected(GuiException(
             strf("Restoring pane scissor also failed: {}", outputException(ExceptionDiagnostic(reset.error()), true)),
@@ -791,29 +838,29 @@ std::expected<void, StarException> Pane::renderImpl() {
       if (!reset)
         return std::unexpected(std::move(reset.error()));
     }
-    auto style = m_context->setTextStyle(m_textStyle);
+    auto style = m_context.setTextStyle(m_textStyle);
     if (!style)
       return std::unexpected(std::move(style.error()));
     auto drawTitles = [&]() -> std::expected<void, StarException> {
-      auto color = m_context->setFontColor(m_titleColor.toRgba());
+      auto color = m_context.setFontColor(m_titleColor.toRgba());
       if (!color)
         return std::unexpected(std::move(color.error()));
-      auto mode = m_context->setFontMode(FontMode::Shadow);
+      auto mode = m_context.setFontMode(FontMode::Shadow);
       if (!mode)
         return std::unexpected(std::move(mode.error()));
-      auto title = m_context->renderInterfaceText(m_title, {headerPos + Vec2F(m_titleOffset)});
+      auto title = m_context.renderInterfaceText(m_title, {headerPos + Vec2F(m_titleOffset)});
       if (!title)
         return std::unexpected(std::move(title.error()));
-      auto subtitleColor = m_context->setFontColor(m_subTitleColor.toRgba());
+      auto subtitleColor = m_context.setFontColor(m_subTitleColor.toRgba());
       if (!subtitleColor)
         return std::unexpected(std::move(subtitleColor.error()));
-      auto subtitle = m_context->renderInterfaceText(m_subTitle, {headerPos + Vec2F(m_subTitleOffset)});
+      auto subtitle = m_context.renderInterfaceText(m_subTitle, {headerPos + Vec2F(m_subTitleOffset)});
       if (!subtitle)
         return std::unexpected(std::move(subtitle.error()));
       return {};
     };
     auto drawn = drawTitles();
-    auto cleared = m_context->clearTextStyle();
+    auto cleared = m_context.clearTextStyle();
     if (!drawn && !cleared)
       return std::unexpected(GuiException(
           strf("Clearing pane text style also failed: {}", outputException(ExceptionDiagnostic(cleared.error()), true)),

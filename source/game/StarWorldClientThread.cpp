@@ -150,7 +150,7 @@ import star.algorithm;
 namespace Star {
 
 std::expected<std::shared_ptr<WorldClientThread>, StarException> WorldClientThread::create(
-    Root& root, ClientSubWorldId subWorldId, UniverseClient* universe) {
+    Root& root, ClientSubWorldId subWorldId, UniverseClient& universe) {
   auto world = WorldClient::create(root, subWorldId, universe);
   if (!world)
     return std::unexpected(std::move(world.error()));
@@ -230,7 +230,7 @@ std::expected<void, StarException> WorldClientThread::executeAction(WorldClientA
   lockWithDiagnostics(locker);
   if (!action)
     return std::unexpected(StarException("Cannot execute an empty client world action"));
-  return action(this, m_worldClient.get());
+  return action(*this, *m_worldClient);
 }
 
 void WorldClientThread::setUpdateAction(WorldClientAction updateAction) {
@@ -361,8 +361,8 @@ std::expected<void, StarException> WorldClientThread::update() {
         completion = message.promise.fail("World message handling failed");
       } else if (!*response) {
         completion = message.promise.fail("Message not handled by world");
-      } else if (auto promise = std::get_if<RpcPromise<Json>>(&**response)) {
-        completion = message.promise.chain(*promise);
+      } else if (std::holds_alternative<RpcPromise<Json>>(**response)) {
+        completion = message.promise.chain(std::get<RpcPromise<Json>>(**response));
       } else {
         completion = message.promise.fulfill(std::get<Json>(**response));
       }
@@ -387,7 +387,7 @@ std::expected<void, StarException> WorldClientThread::update() {
 
   m_shouldExpire = m_worldClient->shouldExpire();
   if (m_updateAction)
-    return m_updateAction(this, m_worldClient.get());
+    return m_updateAction(*this, *m_worldClient);
   return {};
 }
 

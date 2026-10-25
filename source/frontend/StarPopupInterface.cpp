@@ -74,13 +74,13 @@ std::expected<std::shared_ptr<PopupInterface>, StarException> PopupInterface::cr
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   GuiReader reader(guiContext);
-  auto close = [panePtr = pane.get()](Widget*) -> std::expected<void, StarException> { panePtr->dismiss(); return {}; };
+  auto close = [paneRef = std::ref(*pane)](Widget&) -> std::expected<void, StarException> { paneRef.get().dismiss(); return {}; };
   reader.registerCallback("close", close);
   reader.registerCallback("ok", close);
   auto layout = (*assets)->json("/interface/windowconfig/popup.config:paneLayout");
   if (!layout)
     return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, pane.get());
+  auto constructed = reader.construct(*layout, *pane);
   if (!constructed)
     return std::unexpected(std::move(constructed.error()));
   return pane;
@@ -99,7 +99,7 @@ std::expected<void, StarException> PopupInterface::displayMessage(String const& 
   auto shown = show();
   if (!shown)
     return std::unexpected(std::move(shown.error()));
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
   auto soundsJson = (*assets)->json("/interface/windowconfig/popup.config:onShowSound");
@@ -108,12 +108,12 @@ std::expected<void, StarException> PopupInterface::displayMessage(String const& 
   auto sounds = soundsJson->toArray();
   if (!sounds)
     return std::unexpected(std::move(sounds.error()));
-  auto chosen = context()->root().random().randValueFrom(*sounds, "").toString();
+  auto chosen = context().root().random().randValueFrom(*sounds, "").toString();
   if (!chosen)
     return std::unexpected(std::move(chosen.error()));
   auto sound = onShowSound.value_or(std::move(*chosen));
   if (!sound.empty()) {
-    auto played = context()->playAudio(sound);
+    auto played = context().playAudio(sound);
     if (!played)
       return std::unexpected(std::move(played.error()));
   }

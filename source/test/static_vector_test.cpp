@@ -87,14 +87,14 @@ TEST(StaticVectorTest, SizeLimits) {
 
 TEST(StaticVectorTest, CapacityRejectionPreservesLivePrefix) {
   struct Value {
-    int* alive;
+    std::reference_wrapper<int> alive;
     int value;
 
-    Value(int& alive, int value) : alive(&alive), value(value) {
+    Value(int& alive, int value) : alive(alive), value(value) {
       ++alive;
     }
     ~Value() {
-      --*alive;
+      --alive.get();
     }
   };
   int alive = 0;
@@ -199,34 +199,34 @@ struct StaticVectorLifetime {
 };
 
 struct NondefaultStaticValue {
-  StaticVectorLifetime* state;
+  std::reference_wrapper<StaticVectorLifetime> state;
   int value;
 
-  NondefaultStaticValue(StaticVectorLifetime& state, int value) : state(&state), value(value) {
+  NondefaultStaticValue(StaticVectorLifetime& state, int value) : state(state), value(value) {
     ++state.alive;
   }
   NondefaultStaticValue(NondefaultStaticValue const& other) : state(other.state), value(other.value) {
-    ++state->copies;
-    ++state->alive;
+    ++state.get().copies;
+    ++state.get().alive;
   }
   NondefaultStaticValue(NondefaultStaticValue&& other) : state(other.state), value(other.value) {
-    ++state->moves;
+    ++state.get().moves;
     other.value = -1;
-    ++state->alive;
+    ++state.get().alive;
   }
   NondefaultStaticValue& operator=(NondefaultStaticValue const& other) {
-    ++state->assignments;
+    ++state.get().assignments;
     value = other.value;
     return *this;
   }
   NondefaultStaticValue& operator=(NondefaultStaticValue&& other) {
-    ++state->assignments;
+    ++state.get().assignments;
     value = std::exchange(other.value, -1);
     return *this;
   }
   ~NondefaultStaticValue() {
-    ++state->destroyed;
-    --state->alive;
+    ++state.get().destroyed;
+    --state.get().alive;
   }
 };
 }
@@ -278,16 +278,16 @@ TEST(StaticVectorTest, NondefaultAssignmentConstructsOnlyNewElements) {
 
 TEST(StaticVectorTest, MoveOnlyAssignmentAndEraseNeedNoCopyOrDefault) {
   struct Value {
-    int* alive;
+    std::reference_wrapper<int> alive;
     int value;
-    Value(int& alive, int value) : alive(&alive), value(value) { ++alive; }
+    Value(int& alive, int value) : alive(alive), value(value) { ++alive; }
     Value(Value const&) = delete;
-    Value(Value&& other) : alive(other.alive), value(std::exchange(other.value, -1)) { ++*alive; }
+    Value(Value&& other) : alive(other.alive), value(std::exchange(other.value, -1)) { ++alive.get(); }
     Value& operator=(Value&& other) {
       value = std::exchange(other.value, -1);
       return *this;
     }
-    ~Value() { --*alive; }
+    ~Value() { --alive.get(); }
   };
   int alive = 0;
   {

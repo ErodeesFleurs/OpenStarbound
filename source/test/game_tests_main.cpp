@@ -26,8 +26,9 @@ GTEST_API_ int main(int argc, char** argv) {
     std::fprintf(stderr, "%s\n", parsed.error().what());
     return 1;
   }
-  auto* environment = new GameTestEnvironment(std::move(parsed->first));
-  testing::AddGlobalTestEnvironment(environment);
-  registerGameTests(*environment);
+  auto environment = std::make_unique<GameTestEnvironment>(std::move(parsed->first));
+  auto& environmentRef = *environment;
+  testing::AddGlobalTestEnvironment(environment.release());
+  registerGameTests(environmentRef);
   return RUN_ALL_TESTS();
 }

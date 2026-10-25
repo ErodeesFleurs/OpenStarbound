@@ -83,8 +83,8 @@ public:
   friend class ExceptionDiagnostic;
 
 protected:
-  StarException(char const* type, std::string message, bool genStackTrace = true) noexcept;
-  StarException(char const* type, std::string message, ExceptionDiagnostic cause) noexcept;
+  StarException(std::string_view type, std::string message, bool genStackTrace = true) noexcept;
+  StarException(std::string_view type, std::string message, ExceptionDiagnostic cause) noexcept;
 
   template <typename Error>
   void setErrorType() noexcept {
@@ -110,11 +110,11 @@ void printException(std::ostream& os, ExceptionDiagnostic const& e, bool fullSta
 std::string printException(ExceptionDiagnostic const& e, bool fullStacktrace);
 OutputProxy outputException(ExceptionDiagnostic const& e, bool fullStacktrace);
 
-void printStack(char const* message);
+void printStack(std::string_view message);
 
 // Log error and stack-trace and possibly show a dialog box if available, then
 // abort.
-void fatalError(char const* message, bool showStackTrace);
+void fatalError(std::string_view message, bool showStackTrace);
 
 // The file and line of an assertion are a language construct now
 // (std::source_location) instead of __FILE__/__LINE__ stringification.
@@ -131,7 +131,7 @@ inline void starAssertFailed(T&& condition, std::source_location location = std:
     return;
 
   std::string const message = strf("assert failure in file {} line {}", location.file_name(), location.line());
-  Star::fatalError(message.c_str(), true);
+  Star::fatalError(message, true);
 #else
   (void)condition;
   (void)location;
@@ -142,7 +142,7 @@ inline void debugPrintStack(std::source_location location = std::source_location
 #ifndef NDEBUG
   // The message outlives the call: printStack may hand it on before returning.
   std::string const message = strf("Debug: file {} line {}", location.file_name(), location.line());
-  Star::printStack(message.c_str());
+  Star::printStack(message);
 #else
   (void)location;
 #endif
@@ -174,22 +174,22 @@ public:
   }
 
 protected:
-  StarError(char const* type, std::string message, bool genStackTrace = true)
+  StarError(std::string_view type, std::string message, bool genStackTrace = true)
     : Base(type, std::move(message), genStackTrace) { this->template setErrorType<StarError>(); }
-  StarError(char const* type, std::string message, ExceptionDiagnostic cause)
+  StarError(std::string_view type, std::string message, ExceptionDiagnostic cause)
     : Base(type, std::move(message), std::move(cause)) { this->template setErrorType<StarError>(); }
 };
 
 struct OutOfRangeExceptionTag {
-  static constexpr char const* name() { return "OutOfRangeException"; }
+  static constexpr std::string_view name() { return "OutOfRangeException"; }
 };
 using OutOfRangeException = StarError<OutOfRangeExceptionTag, StarException>;
 struct IOExceptionTag {
-  static constexpr char const* name() { return "IOException"; }
+  static constexpr std::string_view name() { return "IOException"; }
 };
 using IOException = StarError<IOExceptionTag, StarException>;
 struct MemoryExceptionTag {
-  static constexpr char const* name() { return "MemoryException"; }
+  static constexpr std::string_view name() { return "MemoryException"; }
 };
 using MemoryException = StarError<MemoryExceptionTag, StarException>;
 
@@ -203,7 +203,7 @@ StarException StarException::format(std::format_string<Args...> fmt, Args const&
 namespace Star {
 
 struct FormatExceptionTag {
-  static constexpr char const* name() { return "FormatException"; }
+  static constexpr std::string_view name() { return "FormatException"; }
 };
 using FormatException = StarError<FormatExceptionTag, StarException>;
 

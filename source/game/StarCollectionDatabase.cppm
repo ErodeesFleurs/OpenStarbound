@@ -15,7 +15,7 @@ class Root;
 class ItemDatabase;
 
 struct CollectionDatabaseExceptionTag {
-  static constexpr char const* name() { return "CollectionDatabaseException"; }
+  static constexpr std::string_view name() { return "CollectionDatabaseException"; }
 };
 using CollectionDatabaseException = StarError<CollectionDatabaseExceptionTag, StarException>;
 
@@ -53,9 +53,9 @@ public:
   List<Collection> collections() const;
   [[nodiscard]] std::expected<Collection, StarException> collection(String const& collectionName) const;
   [[nodiscard]] std::expected<List<Collectable>, StarException> collectables(String const& collectionName) const;
-  [[nodiscard]] std::expected<List<Collectable>, StarException> collectables(String const& collectionName, ItemDatabase const* itemCatalog) const;
+  [[nodiscard]] std::expected<List<Collectable>, StarException> collectables(String const& collectionName, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const;
   [[nodiscard]] std::expected<Collectable, StarException> collectable(String const& collectionName, String const& collectableName) const;
-  [[nodiscard]] std::expected<Collectable, StarException> collectable(String const& collectionName, String const& collectableName, ItemDatabase const* itemCatalog) const;
+  [[nodiscard]] std::expected<Collectable, StarException> collectable(String const& collectionName, String const& collectableName, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const;
 
   bool hasCollectable(String const& collectionName, String const& collectableName) const;
 
@@ -63,7 +63,7 @@ private:
   explicit CollectionDatabase(Root& root);
   [[nodiscard]] std::expected<Collectable, StarException> parseGenericCollectable(String const& name, Json const& config) const;
   [[nodiscard]] std::expected<Collectable, StarException> parseMonsterCollectable(String const& name, Json const& config) const;
-  [[nodiscard]] std::expected<Collectable, StarException> parseItemCollectable(String const& name, Json const& config, ItemDatabase const* itemCatalog) const;
+  [[nodiscard]] std::expected<Collectable, StarException> parseItemCollectable(String const& name, Json const& config, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const;
 
   Root& m_root;
   StringMap<Collection> m_collections;

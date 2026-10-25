@@ -138,7 +138,7 @@ std::expected<List<SkyOrbiter>, StarException> SkyRenderData::frontOrbiters(Vec2
       auto angle = staticRandomFloatRange(0, 2 * std::numbers::pi, i, "CloudStartAngle");
       auto speed = staticRandomFloatRange(cloudSpeedRange[0], cloudSpeedRange[1], i, "CloudSpeed");
       auto radius = staticRandomFloatRange(cloudRadiusRange[0], cloudRadiusRange[1], i, "CloudRadius");
-      horizonClouds.append({angle, **image, speed, radius});
+      horizonClouds.append({angle, image->get(), speed, radius});
     }
   }
 
@@ -185,7 +185,7 @@ std::expected<List<SkyOrbiter>, StarException> SkyRenderData::frontOrbiters(Vec2
   return orbiters;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyRenderData& skyRenderData) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, SkyRenderData& skyRenderData) {
   SkyRenderData value;
   auto first = ds >> value.settings >> value.skyParameters >> value.type >> value.dayLevel >> value.skyAlpha
       >> value.dayLength >> value.timeOfDay >> value.epochTime >> value.starOffset >> value.starRotation
@@ -197,10 +197,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyRenderDa
       >> value.topRectColor >> value.bottomRectColor >> value.flashColor;
   if (!last) return std::unexpected(std::move(last.error()));
   skyRenderData = std::move(value);
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyRenderData const& skyRenderData) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, SkyRenderData const& skyRenderData) {
   auto first = ds << skyRenderData.settings << skyRenderData.skyParameters << skyRenderData.type
       << skyRenderData.dayLevel << skyRenderData.skyAlpha << skyRenderData.dayLength << skyRenderData.timeOfDay
       << skyRenderData.epochTime << skyRenderData.starOffset << skyRenderData.starRotation
@@ -211,7 +211,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyRenderDa
   auto last = ds << skyRenderData.starList << skyRenderData.hyperStarList << skyRenderData.environmentLight
       << skyRenderData.mainSkyColor << skyRenderData.topRectColor << skyRenderData.bottomRectColor << skyRenderData.flashColor;
   if (!last) return std::unexpected(std::move(last.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 }

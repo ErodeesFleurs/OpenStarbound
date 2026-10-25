@@ -107,7 +107,7 @@ void NetworkedAnimator::DynamicTarget::clearFinishedAudio() {
     });
 }
 
-NetworkedAnimator::NetworkedAnimator(Root& root) : m_root(&root) {
+NetworkedAnimator::NetworkedAnimator(Root& root) : m_root(root) {
   m_zoom.set(1.0f);
   m_flipped.set(false);
   m_flippedRelativeCenterLine.set(0.0f);
@@ -123,7 +123,7 @@ std::expected<std::shared_ptr<NetworkedAnimator>, StarException> NetworkedAnimat
 }
 
 std::expected<void, StarException> NetworkedAnimator::loadConfig(Json config, String relativePath) {
-  auto& root = *m_root;
+  auto& root = m_root.get();
   if (config.isNull()) return setupNetStates();
   if (config.type() == Json::Type::String) {
     auto path = config.toString();
@@ -438,8 +438,7 @@ std::expected<std::shared_ptr<NetworkedAnimator>, StarException> NetworkedAnimat
 }
 
 std::expected<std::shared_ptr<NetworkedAnimator>, StarException> NetworkedAnimator::create(NetworkedAnimator const& animator) {
-  auto result = std::shared_ptr<NetworkedAnimator>(new NetworkedAnimator(*animator.m_root));
-  result->m_root = animator.m_root;
+  auto result = std::shared_ptr<NetworkedAnimator>(new NetworkedAnimator(animator.m_root.get()));
   result->m_relativePath = animator.m_relativePath;
   result->m_animatedParts = animator.m_animatedParts;
   result->m_stateInfo = animator.m_stateInfo;
@@ -492,47 +491,47 @@ std::expected<bool, StarException> NetworkedAnimator::setLocalState(String const
 std::expected<String, StarException> NetworkedAnimator::state(String const& stateType) const {
   auto state = m_animatedParts.activeState(stateType);
   if (!state) return std::unexpected(std::move(state.error()));
-  return (*state)->stateName;
+  return state->get().stateName;
 }
 std::expected<int, StarException> NetworkedAnimator::stateFrame(String const& stateType) const {
   auto state = m_animatedParts.activeState(stateType);
   if (!state) return std::unexpected(std::move(state.error()));
-  return (*state)->frame;
+  return state->get().frame;
 }
 std::expected<int, StarException> NetworkedAnimator::stateNextFrame(String const& stateType) const {
   auto state = m_animatedParts.activeState(stateType);
   if (!state) return std::unexpected(std::move(state.error()));
-  return (*state)->nextFrame;
+  return state->get().nextFrame;
 }
 std::expected<float, StarException> NetworkedAnimator::stateFrameProgress(String const& stateType) const {
   auto state = m_animatedParts.activeState(stateType);
   if (!state) return std::unexpected(std::move(state.error()));
-  return (*state)->frameProgress;
+  return state->get().frameProgress;
 }
 std::expected<float, StarException> NetworkedAnimator::stateTimer(String const& stateType) const {
   auto state = m_animatedParts.activeState(stateType);
   if (!state) return std::unexpected(std::move(state.error()));
-  return (*state)->timer;
+  return state->get().timer;
 }
 std::expected<bool, StarException> NetworkedAnimator::stateReverse(String const& stateType) const {
   auto state = m_animatedParts.activeState(stateType);
   if (!state) return std::unexpected(std::move(state.error()));
-  return (*state)->reverse;
+  return state->get().reverse;
 }
 
 std::expected<float, StarException> NetworkedAnimator::stateCycle(String const& stateType, std::optional<String> state) const {
   auto active = m_animatedParts.activeState(stateType);
   if (!active) return std::unexpected(std::move(active.error()));
-  auto selected = m_animatedParts.getState(stateType, state.value_or((*active)->stateName));
+  auto selected = m_animatedParts.getState(stateType, state.value_or(active->get().stateName));
   if (!selected) return std::unexpected(std::move(selected.error()));
-  return (*selected)->cycle;
+  return selected->get().cycle;
 }
 std::expected<int, StarException> NetworkedAnimator::stateFrames(String const& stateType, std::optional<String> state) const {
   auto active = m_animatedParts.activeState(stateType);
   if (!active) return std::unexpected(std::move(active.error()));
-  auto selected = m_animatedParts.getState(stateType, state.value_or((*active)->stateName));
+  auto selected = m_animatedParts.getState(stateType, state.value_or(active->get().stateName));
   if (!selected) return std::unexpected(std::move(selected.error()));
-  return (*selected)->frames;
+  return selected->get().frames;
 }
 
 std::expected<bool, StarException> NetworkedAnimator::hasState(String const& stateType, std::optional<String> const& state) const {
@@ -566,12 +565,12 @@ std::expected<Json, StarException> NetworkedAnimator::stateProperty(String const
   }
   auto active = m_animatedParts.activeState(stateType);
   if (!active) return std::unexpected(std::move(active.error()));
-  return (*active)->properties.value(propertyName);
+  return active->get().properties.value(propertyName);
 }
 std::expected<Json, StarException> NetworkedAnimator::stateNextProperty(String const& stateType, String const& propertyName) const {
   auto active = m_animatedParts.activeState(stateType);
   if (!active) return std::unexpected(std::move(active.error()));
-  return (*active)->nextProperties.value(propertyName);
+  return active->get().nextProperties.value(propertyName);
 }
 
 std::expected<Json, StarException> NetworkedAnimator::partProperty(String const& partName, String const& propertyName, std::optional<String> stateType, std::optional<String> state, std::optional<int> frame) const {
@@ -581,12 +580,12 @@ std::expected<Json, StarException> NetworkedAnimator::partProperty(String const&
   }
   auto active = m_animatedParts.activePart(partName);
   if (!active) return std::unexpected(std::move(active.error()));
-  return (*active)->properties.value(propertyName);
+  return active->get().properties.value(propertyName);
 }
 std::expected<Json, StarException> NetworkedAnimator::partNextProperty(String const& partName, String const& propertyName) const {
   auto active = m_animatedParts.activePart(partName);
   if (!active) return std::unexpected(std::move(active.error()));
-  return (*active)->nextProperties.value(propertyName);
+  return active->get().nextProperties.value(propertyName);
 }
 
 Mat3F NetworkedAnimator::globalTransformation() const {
@@ -601,7 +600,7 @@ std::expected<Mat3F, StarException> NetworkedAnimator::groupTransformation(Strin
   for (auto const& tg : transformationGroups) {
     auto group = m_transformationGroups.get(tg);
     if (!group) return std::unexpected(std::move(group.error()));
-    mat = (*group)->affineTransform() * (*group)->localAffineTransform() * (*group)->animationAffineTransform() * mat;
+    mat = group->get().affineTransform() * group->get().localAffineTransform() * group->get().animationAffineTransform() * mat;
   }
   return mat;
 }
@@ -609,7 +608,7 @@ std::expected<Mat3F, StarException> NetworkedAnimator::groupTransformation(Strin
 std::expected<Mat3F, StarException> NetworkedAnimator::partTransformation(String const& partName) const {
   auto active = m_animatedParts.activePart(partName);
   if (!active) return std::unexpected(std::move(active.error()));
-  auto const& part = **active;
+  auto const& part = active->get();
   Mat3F transformation = Mat3F::identity();
   if (auto offsetJson = part.properties.value("offset").opt()) {
     auto offset = jsonToVec2F(*offsetJson);
@@ -627,16 +626,16 @@ std::expected<Mat3F, StarException> NetworkedAnimator::partTransformation(String
   if (*rotationName) {
     auto rotation = m_rotationGroups.get(**rotationName);
     if (!rotation) return std::unexpected(std::move(rotation.error()));
-    Vec2F center = (*rotation)->rotationCenter;
+    Vec2F center = rotation->get().rotationCenter;
     if (auto centerJson = part.properties.value("rotationCenter").opt()) {
       auto configuredCenter = jsonToVec2F(*centerJson);
       if (!configuredCenter) return std::unexpected(std::move(configuredCenter.error()));
       center = *configuredCenter;
     }
-    transformation = Mat3F::rotation((*rotation)->currentAngle, center) * transformation;
+    transformation = Mat3F::rotation(rotation->get().currentAngle, center) * transformation;
   }
-  if (auto anchorJson = part.properties.ptr("anchorPart")) {
-    auto anchorName = anchorJson->toString();
+  if (auto anchorJson = part.properties.maybeRef("anchorPart")) {
+    auto anchorName = anchorJson->get().toString();
     if (!anchorName) return std::unexpected(std::move(anchorName.error()));
     auto anchor = partTransformation(*anchorName);
     if (!anchor) return std::unexpected(std::move(anchor.error()));
@@ -654,7 +653,7 @@ std::expected<Mat3F, StarException> NetworkedAnimator::finalPartTransformation(S
 std::expected<std::optional<Vec2F>, StarException> NetworkedAnimator::partPoint(String const& partName, String const& propertyName) const {
   auto active = m_animatedParts.activePart(partName);
   if (!active) return std::unexpected(std::move(active.error()));
-  auto property = (*active)->properties.value(propertyName);
+  auto property = active->get().properties.value(propertyName);
   if (!property) return std::optional<Vec2F>{};
   auto value = jsonToVec2F(property);
   if (!value) return std::unexpected(std::move(value.error()));
@@ -666,7 +665,7 @@ std::expected<std::optional<Vec2F>, StarException> NetworkedAnimator::partPoint(
 std::expected<std::optional<PolyF>, StarException> NetworkedAnimator::partPoly(String const& partName, String const& propertyName) const {
   auto active = m_animatedParts.activePart(partName);
   if (!active) return std::unexpected(std::move(active.error()));
-  auto property = (*active)->properties.value(propertyName);
+  auto property = active->get().properties.value(propertyName);
   if (!property) return std::optional<PolyF>{};
   auto value = jsonToPolyF(property);
   if (!value) return std::unexpected(std::move(value.error()));
@@ -687,8 +686,8 @@ void NetworkedAnimator::removeGlobalTag(String const& tagName) {
   m_globalTags.remove(tagName);
 }
 
-String const* NetworkedAnimator::globalTagPtr(String const& tagName) const {
-  return m_globalTags.ptr(tagName);
+std::optional<std::reference_wrapper<String const>> NetworkedAnimator::globalTag(String const& tagName) const {
+  return m_globalTags.maybeRef(tagName);
 }
 
 
@@ -719,10 +718,10 @@ std::expected<String, StarException> NetworkedAnimator::applyPartTags(String con
   String frameIndexStr;
   auto activePartResult = m_animatedParts.activePart(partName);
   if (!activePartResult) return std::unexpected(std::move(activePartResult.error()));
-  auto const& activePart = **activePartResult;
+  auto const& activePart = activePartResult->get();
   auto partTagsResult = m_partTags.get(partName);
   if (!partTagsResult) return std::unexpected(std::move(partTagsResult.error()));
-  auto const& partTags = **partTagsResult;
+  auto const& partTags = partTagsResult->get();
   if (activePart.activeState) {
     unsigned stateFrame = activePart.activeState->frame;
     frame = stateFrame;
@@ -734,7 +733,7 @@ std::expected<String, StarException> NetworkedAnimator::applyPartTags(String con
     for (auto& stateTypeName : m_animatedParts.stateTypes()) {
       auto activeStateResult = m_animatedParts.activeState(stateTypeName);
       if (!activeStateResult) return std::unexpected(std::move(activeStateResult.error()));
-      auto const& activeState = **activeStateResult;
+      auto const& activeState = activeStateResult->get();
       unsigned stateFrame = activeState.frame;
       std::optional<unsigned> frame;
       String frameStr;
@@ -749,8 +748,8 @@ std::expected<String, StarException> NetworkedAnimator::applyPartTags(String con
       }
       animationTags.set(stateTypeName + "_state", activeState.stateName);
 
-      if (auto p = activeState.properties.ptr("animationTags")) {
-        auto tags = p->iterateObject();
+      if (auto p = activeState.properties.maybeRef("animationTags")) {
+        auto tags = p->get().iterateObject();
         if (!tags) return std::unexpected(std::move(tags.error()));
         for (auto const& tag : *tags) {
           if (!animationTags.contains(tag.first)) {
@@ -771,12 +770,12 @@ std::expected<String, StarException> NetworkedAnimator::applyPartTags(String con
     } else if (tag == "frameIndex") {
       if (frame)
         return frameIndexStr;
-    } else if (auto p = animationTags.ptr(tag)) {
-      return StringView(*p);
-    } else if (auto p = partTags.ptr(tag)) {
-      return StringView(*p);
-    } else if (auto p = m_globalTags.ptr(tag)) {
-      return StringView(*p);
+    } else if (auto p = animationTags.maybeRef(tag)) {
+      return StringView(p->get());
+    } else if (auto p = partTags.maybeRef(tag)) {
+      return StringView(p->get());
+    } else if (auto p = m_globalTags.maybeRef(tag)) {
+      return StringView(p->get());
     }
 
     return StringView("default");
@@ -821,7 +820,7 @@ bool NetworkedAnimator::hasRotationGroup(String const& rotationGroup) const {
 std::expected<void, StarException> NetworkedAnimator::rotateGroup(String const& rotationGroup, float targetAngle, bool immediate) {
   auto groupResult = m_rotationGroups.get(rotationGroup);
   if (!groupResult) return std::unexpected(std::move(groupResult.error()));
-  auto& group = **groupResult;
+  auto& group = groupResult->get();
   group.targetAngle.set(targetAngle);
 
   if (immediate) {
@@ -834,7 +833,7 @@ std::expected<void, StarException> NetworkedAnimator::rotateGroup(String const& 
 std::expected<float, StarException> NetworkedAnimator::currentRotationAngle(String const& rotationGroup) const {
   auto entry = m_rotationGroups.get(rotationGroup);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  return (*entry)->currentAngle;
+  return entry->get().currentAngle;
 }
 
 bool NetworkedAnimator::hasTransformationGroup(String const& transformationGroup) const {
@@ -844,7 +843,7 @@ bool NetworkedAnimator::hasTransformationGroup(String const& transformationGroup
 std::expected<void, StarException> NetworkedAnimator::translateTransformationGroup(String const& transformationGroup, Vec2F const& translation) {
   auto groupResult = m_transformationGroups.get(transformationGroup);
   if (!groupResult) return std::unexpected(std::move(groupResult.error()));
-  auto& group = **groupResult;
+  auto& group = groupResult->get();
   group.setAffineTransform(Mat3F::translation(translation) * group.affineTransform());
   return {};
 }
@@ -853,7 +852,7 @@ std::expected<void, StarException> NetworkedAnimator::rotateTransformationGroup(
     String const& transformationGroup, float rotation, Vec2F const& rotationCenter) {
   auto groupResult = m_transformationGroups.get(transformationGroup);
   if (!groupResult) return std::unexpected(std::move(groupResult.error()));
-  auto& group = **groupResult;
+  auto& group = groupResult->get();
   group.setAffineTransform(Mat3F::rotation(rotation, rotationCenter) * group.affineTransform());
   return {};
 }
@@ -862,7 +861,7 @@ std::expected<void, StarException> NetworkedAnimator::scaleTransformationGroup(
     String const& transformationGroup, float scale, Vec2F const& scaleCenter) {
   auto groupResult = m_transformationGroups.get(transformationGroup);
   if (!groupResult) return std::unexpected(std::move(groupResult.error()));
-  auto& group = **groupResult;
+  auto& group = groupResult->get();
   group.setAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.affineTransform());
   return {};
 }
@@ -871,7 +870,7 @@ std::expected<void, StarException> NetworkedAnimator::scaleTransformationGroup(
     String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter) {
   auto groupResult = m_transformationGroups.get(transformationGroup);
   if (!groupResult) return std::unexpected(std::move(groupResult.error()));
-  auto& group = **groupResult;
+  auto& group = groupResult->get();
   group.setAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.affineTransform());
   return {};
 }
@@ -880,7 +879,7 @@ std::expected<void, StarException> NetworkedAnimator::transformTransformationGro
     String const& transformationGroup, float a, float b, float c, float d, float tx, float ty) {
   auto groupResult = m_transformationGroups.get(transformationGroup);
   if (!groupResult) return std::unexpected(std::move(groupResult.error()));
-  auto& group = **groupResult;
+  auto& group = groupResult->get();
   Mat3F transform = Mat3F(a, b, tx, c, d, ty, 0, 0, 1);
   group.setAffineTransform(transform * group.affineTransform());
   return {};
@@ -889,26 +888,26 @@ std::expected<void, StarException> NetworkedAnimator::transformTransformationGro
 std::expected<void, StarException> NetworkedAnimator::resetTransformationGroup(String const& transformationGroup) {
   auto entry = m_transformationGroups.get(transformationGroup);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->setAffineTransform(Mat3F::identity());
+  entry->get().setAffineTransform(Mat3F::identity());
   return {};
 }
 
 std::expected<void, StarException> NetworkedAnimator::setTransformationGroup(String const& transformationGroup, Mat3F transform) {
   auto entry = m_transformationGroups.get(transformationGroup);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->setAffineTransform(transform);
+  entry->get().setAffineTransform(transform);
   return {};
 }
 
 std::expected<Mat3F, StarException> NetworkedAnimator::getTransformationGroup(String const& transformationGroup) {
   auto entry = m_transformationGroups.get(transformationGroup);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  return (*entry)->affineTransform();
+  return entry->get().affineTransform();
 }
 std::expected<void, StarException> NetworkedAnimator::translateLocalTransformationGroup(String const& transformationGroup, Vec2F const& translation) {
   auto groupResult = m_transformationGroups.get(transformationGroup);
   if (!groupResult) return std::unexpected(std::move(groupResult.error()));
-  auto& group = **groupResult;
+  auto& group = groupResult->get();
   group.setLocalAffineTransform(Mat3F::translation(translation) * group.localAffineTransform());
   return {};
 }
@@ -917,7 +916,7 @@ std::expected<void, StarException> NetworkedAnimator::rotateLocalTransformationG
     String const& transformationGroup, float rotation, Vec2F const& rotationCenter) {
   auto groupResult = m_transformationGroups.get(transformationGroup);
   if (!groupResult) return std::unexpected(std::move(groupResult.error()));
-  auto& group = **groupResult;
+  auto& group = groupResult->get();
   group.setLocalAffineTransform(Mat3F::rotation(rotation, rotationCenter) * group.localAffineTransform());
   return {};
 }
@@ -926,7 +925,7 @@ std::expected<void, StarException> NetworkedAnimator::scaleLocalTransformationGr
     String const& transformationGroup, float scale, Vec2F const& scaleCenter) {
   auto groupResult = m_transformationGroups.get(transformationGroup);
   if (!groupResult) return std::unexpected(std::move(groupResult.error()));
-  auto& group = **groupResult;
+  auto& group = groupResult->get();
   group.setLocalAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.localAffineTransform());
   return {};
 }
@@ -935,7 +934,7 @@ std::expected<void, StarException> NetworkedAnimator::scaleLocalTransformationGr
     String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter) {
   auto groupResult = m_transformationGroups.get(transformationGroup);
   if (!groupResult) return std::unexpected(std::move(groupResult.error()));
-  auto& group = **groupResult;
+  auto& group = groupResult->get();
   group.setLocalAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.localAffineTransform());
   return {};
 }
@@ -944,7 +943,7 @@ std::expected<void, StarException> NetworkedAnimator::transformLocalTransformati
     String const& transformationGroup, float a, float b, float c, float d, float tx, float ty) {
   auto groupResult = m_transformationGroups.get(transformationGroup);
   if (!groupResult) return std::unexpected(std::move(groupResult.error()));
-  auto& group = **groupResult;
+  auto& group = groupResult->get();
   Mat3F transform = Mat3F(a, b, tx, c, d, ty, 0, 0, 1);
   group.setLocalAffineTransform(transform * group.localAffineTransform());
   return {};
@@ -953,21 +952,21 @@ std::expected<void, StarException> NetworkedAnimator::transformLocalTransformati
 std::expected<void, StarException> NetworkedAnimator::resetLocalTransformationGroup(String const& transformationGroup) {
   auto entry = m_transformationGroups.get(transformationGroup);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->setLocalAffineTransform(Mat3F::identity());
+  entry->get().setLocalAffineTransform(Mat3F::identity());
   return {};
 }
 
 std::expected<void, StarException> NetworkedAnimator::setLocalTransformationGroup(String const& transformationGroup, Mat3F transform) {
   auto entry = m_transformationGroups.get(transformationGroup);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->setLocalAffineTransform(transform);
+  entry->get().setLocalAffineTransform(transform);
   return {};
 }
 
 std::expected<Mat3F, StarException> NetworkedAnimator::getLocalTransformationGroup(String const& transformationGroup) {
   auto entry = m_transformationGroups.get(transformationGroup);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  return (*entry)->localAffineTransform();
+  return entry->get().localAffineTransform();
 }
 
 bool NetworkedAnimator::hasParticleEmitter(String const& emitterName) const {
@@ -977,35 +976,35 @@ bool NetworkedAnimator::hasParticleEmitter(String const& emitterName) const {
 std::expected<void, StarException> NetworkedAnimator::setParticleEmitterActive(String const& emitterName, bool active) {
   auto entry = m_particleEmitters.get(emitterName);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->active.set(active);
+  entry->get().active.set(active);
   return {};
 }
 
 std::expected<void, StarException> NetworkedAnimator::setParticleEmitterEmissionRate(String const& emitterName, float emissionRate) {
   auto entry = m_particleEmitters.get(emitterName);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->emissionRate.set(emissionRate);
+  entry->get().emissionRate.set(emissionRate);
   return {};
 }
 
 std::expected<void, StarException> NetworkedAnimator::setParticleEmitterOffsetRegion(String const& emitterName, RectF const& offsetRegion) {
   auto entry = m_particleEmitters.get(emitterName);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->offsetRegion.set(offsetRegion);
+  entry->get().offsetRegion.set(offsetRegion);
   return {};
 }
 
 std::expected<void, StarException> NetworkedAnimator::setParticleEmitterBurstCount(String const& emitterName, unsigned burstCount) {
   auto entry = m_particleEmitters.get(emitterName);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->burstCount.set(burstCount);
+  entry->get().burstCount.set(burstCount);
   return {};
 }
 
 std::expected<void, StarException> NetworkedAnimator::burstParticleEmitter(String const& emitterName) {
   auto entry = m_particleEmitters.get(emitterName);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->burstEvent.trigger();
+  entry->get().burstEvent.trigger();
   return {};
 }
 
@@ -1016,14 +1015,14 @@ bool NetworkedAnimator::hasLight(String const& lightName) const {
 std::expected<void, StarException> NetworkedAnimator::setLightActive(String const& lightName, bool active) {
   auto entry = m_lights.get(lightName);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->active.set(active);
+  entry->get().active.set(active);
   return {};
 }
 
 std::expected<void, StarException> NetworkedAnimator::setLightPosition(String const& lightName, Vec2F position) {
   auto lightResult = m_lights.get(lightName);
   if (!lightResult) return std::unexpected(std::move(lightResult.error()));
-  auto& light = **lightResult;
+  auto& light = lightResult->get();
   light.xPosition.set(position[0]);
   light.yPosition.set(position[1]);
   return {};
@@ -1032,14 +1031,14 @@ std::expected<void, StarException> NetworkedAnimator::setLightPosition(String co
 std::expected<void, StarException> NetworkedAnimator::setLightColor(String const& lightName, Color color) {
   auto entry = m_lights.get(lightName);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->color.set(color);
+  entry->get().color.set(color);
   return {};
 }
 
 std::expected<void, StarException> NetworkedAnimator::setLightPointAngle(String const& lightName, float angle) {
   auto entry = m_lights.get(lightName);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->pointAngle.set(angle * Constants::deg2rad);
+  entry->get().pointAngle.set(angle * Constants::deg2rad);
   return {};
 }
 
@@ -1050,14 +1049,14 @@ bool NetworkedAnimator::hasSound(String const& soundName) const {
 std::expected<void, StarException> NetworkedAnimator::setSoundPool(String const& soundName, StringList soundPool) {
   auto entry = m_sounds.get(soundName);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->soundPool.set(std::move(soundPool));
+  entry->get().soundPool.set(std::move(soundPool));
   return {};
 }
 
 std::expected<void, StarException> NetworkedAnimator::setSoundPosition(String const& soundName, Vec2F const& position) {
   auto soundResult = m_sounds.get(soundName);
   if (!soundResult) return std::unexpected(std::move(soundResult.error()));
-  auto& sound = **soundResult;
+  auto& sound = soundResult->get();
   sound.xPosition.set(position[0]);
   sound.yPosition.set(position[1]);
   return {};
@@ -1066,7 +1065,7 @@ std::expected<void, StarException> NetworkedAnimator::setSoundPosition(String co
 std::expected<void, StarException> NetworkedAnimator::setSoundVolume(String const& soundName, float volume, float rampTime) {
   auto soundResult = m_sounds.get(soundName);
   if (!soundResult) return std::unexpected(std::move(soundResult.error()));
-  auto& sound = **soundResult;
+  auto& sound = soundResult->get();
   sound.volumeTarget.set(volume);
   sound.volumeRampTime.set(rampTime);
   return {};
@@ -1075,7 +1074,7 @@ std::expected<void, StarException> NetworkedAnimator::setSoundVolume(String cons
 std::expected<void, StarException> NetworkedAnimator::setSoundPitchMultiplier(String const& soundName, float pitchMultiplier, float rampTime) {
   auto soundResult = m_sounds.get(soundName);
   if (!soundResult) return std::unexpected(std::move(soundResult.error()));
-  auto& sound = **soundResult;
+  auto& sound = soundResult->get();
   sound.pitchMultiplierTarget.set(pitchMultiplier);
   sound.pitchMultiplierRampTime.set(rampTime);
   return {};
@@ -1084,7 +1083,7 @@ std::expected<void, StarException> NetworkedAnimator::setSoundPitchMultiplier(St
 std::expected<void, StarException> NetworkedAnimator::playSound(String const& soundName, int loops) {
   auto soundResult = m_sounds.get(soundName);
   if (!soundResult) return std::unexpected(std::move(soundResult.error()));
-  auto& sound = **soundResult;
+  auto& sound = soundResult->get();
   sound.loops.set(loops);
   sound.signals.send(SoundSignal::Play);
   return {};
@@ -1093,7 +1092,7 @@ std::expected<void, StarException> NetworkedAnimator::playSound(String const& so
 std::expected<void, StarException> NetworkedAnimator::stopAllSounds(String const& soundName, float rampTime) {
   auto soundResult = m_sounds.get(soundName);
   if (!soundResult) return std::unexpected(std::move(soundResult.error()));
-  auto& sound = **soundResult;
+  auto& sound = soundResult->get();
   sound.volumeRampTime.set(rampTime);
   sound.signals.send(SoundSignal::StopAll);
   return {};
@@ -1102,7 +1101,7 @@ std::expected<void, StarException> NetworkedAnimator::stopAllSounds(String const
 std::expected<void, StarException> NetworkedAnimator::setEffectEnabled(String const& effect, bool enabled) {
   auto entry = m_effects.get(effect);
   if (!entry) return std::unexpected(std::move(entry.error()));
-  (*entry)->enabled.set(enabled);
+  entry->get().enabled.set(enabled);
   return {};
 }
 
@@ -1143,7 +1142,7 @@ std::expected<List<std::pair<Drawable, float>>, StarException> NetworkedAnimator
     for (auto& stateTypeName : m_animatedParts.stateTypes()) {
       auto activeStateResult = m_animatedParts.activeState(stateTypeName);
       if (!activeStateResult) return std::unexpected(std::move(activeStateResult.error()));
-      auto const& activeState = **activeStateResult;
+      auto const& activeState = activeStateResult->get();
       unsigned stateFrame = activeState.frame;
       std::optional<unsigned> frame;
       String frameStr;
@@ -1158,8 +1157,8 @@ std::expected<List<std::pair<Drawable, float>>, StarException> NetworkedAnimator
       }
       animationTags.set(stateTypeName + "_state", activeState.stateName);
 
-      if (auto p = activeState.properties.ptr("animationTags")) {
-        auto tags = p->iterateObject();
+      if (auto p = activeState.properties.maybeRef("animationTags")) {
+        auto tags = p->get().iterateObject();
         if (!tags) return std::unexpected(std::move(tags.error()));
         for (auto const& tag : *tags) {
           if (!animationTags.contains(tag.first)) {
@@ -1172,7 +1171,7 @@ std::expected<List<std::pair<Drawable, float>>, StarException> NetworkedAnimator
     }
   }
 
-  List<std::tuple<AnimatedPartSet::ActivePartInformation const*, String const*, float>> parts;
+  List<std::tuple<std::reference_wrapper<AnimatedPartSet::ActivePartInformation const>, std::reference_wrapper<String const>, float>> parts;
   parts.reserve(partCount);
   int drawableCount = 0;
   auto collected = m_animatedParts.forEachActivePart([&](String const& partName, AnimatedPartSet::ActivePartInformation const& activePart) -> std::expected<void, StarException> {
@@ -1188,9 +1187,9 @@ std::expected<List<std::pair<Drawable, float>>, StarException> NetworkedAnimator
       maybeZLevel = *z;
     }
 
-    if (auto drawables = m_partDrawables.ptr(partName))
-      drawableCount += drawables->size();
-    parts.append(std::make_tuple(&activePart, &partName, maybeZLevel.value_or(0.0f)));
+    if (auto drawables = m_partDrawables.maybeRef(partName))
+      drawableCount += drawables->get().size();
+    parts.append(std::make_tuple(std::cref(activePart), std::cref(partName), maybeZLevel.value_or(0.0f)));
     return {};
   });
   if (!collected) return std::unexpected(std::move(collected.error()));
@@ -1200,8 +1199,8 @@ std::expected<List<std::pair<Drawable, float>>, StarException> NetworkedAnimator
   List<std::pair<Drawable, float>> drawables;
   drawables.reserve(partCount + drawableCount);
   for (auto& entry : parts) {
-    auto& activePart = *std::get<0>(entry);
-    auto& partName = *std::get<1>(entry);
+    auto& activePart = std::get<0>(entry).get();
+    auto& partName = std::get<1>(entry).get();
     // Make sure we don't copy the original image
     String fallback = "";
     Json jImage = activePart.properties.value("image", {});
@@ -1231,19 +1230,19 @@ std::expected<List<std::pair<Drawable, float>>, StarException> NetworkedAnimator
 
     auto partTagsResult = m_partTags.get(partName);
     if (!partTagsResult) return std::unexpected(std::move(partTagsResult.error()));
-    auto const& partTags = **partTagsResult;
+    auto const& partTags = partTagsResult->get();
 
     auto partDirectives = activePart.properties.value("processingDirectives").optString();
     if (!partDirectives) return std::unexpected(std::move(partDirectives.error()));
     if (auto directives = *partDirectives) {
       if (version() > 0){
         directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
-          if (auto p = animationTags.ptr(tag)) {
-            return StringView(*p);
-          } else if (auto p = partTags.ptr(tag)) {
-            return StringView(*p);
-          } else if (auto p = m_globalTags.ptr(tag)) {
-            return StringView(*p);
+          if (auto p = animationTags.maybeRef(tag)) {
+            return StringView(p->get());
+          } else if (auto p = partTags.maybeRef(tag)) {
+            return StringView(p->get());
+          } else if (auto p = m_globalTags.maybeRef(tag)) {
+            return StringView(p->get());
           }
           return StringView("default");
         });
@@ -1266,12 +1265,12 @@ std::expected<List<std::pair<Drawable, float>>, StarException> NetworkedAnimator
       if (auto directives = *stateDirectives) {
         if (version() > 0){
           directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
-            if (auto p = animationTags.ptr(tag)) {
-              return StringView(*p);
-            } else if (auto p = partTags.ptr(tag)) {
-              return StringView(*p);
-            } else if (auto p = m_globalTags.ptr(tag)) {
-              return StringView(*p);
+            if (auto p = animationTags.maybeRef(tag)) {
+              return StringView(p->get());
+            } else if (auto p = partTags.maybeRef(tag)) {
+              return StringView(p->get());
+            } else if (auto p = m_globalTags.maybeRef(tag)) {
+              return StringView(p->get());
             }
             return StringView("default");
           });
@@ -1288,12 +1287,12 @@ std::expected<List<std::pair<Drawable, float>>, StarException> NetworkedAnimator
       } else if (tag == "frameIndex") {
         if (frame)
           return frameIndexStr;
-      } else if (auto p = animationTags.ptr(tag)) {
-        return StringView(*p);
-      } else if (auto p = partTags.ptr(tag)) {
-        return StringView(*p);
-      } else if (auto p = m_globalTags.ptr(tag)) {
-        return StringView(*p);
+      } else if (auto p = animationTags.maybeRef(tag)) {
+        return StringView(p->get());
+      } else if (auto p = partTags.maybeRef(tag)) {
+        return StringView(p->get());
+      } else if (auto p = m_globalTags.maybeRef(tag)) {
+        return StringView(p->get());
       }
 
       return StringView("default");
@@ -1319,7 +1318,7 @@ std::expected<List<std::pair<Drawable, float>>, StarException> NetworkedAnimator
         if (*initial != '/')
           relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
 
-        auto metadata = m_root->imageMetadataDatabase();
+        auto metadata = m_root.get().imageMetadataDatabase();
         if (!metadata) return std::unexpected(std::move(metadata.error()));
         auto created = Drawable::makeImage(**metadata, !relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
         if (!created) return std::unexpected(std::move(created.error()));
@@ -1335,7 +1334,7 @@ std::expected<List<std::pair<Drawable, float>>, StarException> NetworkedAnimator
       Drawable drawable = find->second.second;
       auto& imagePart = drawable.imagePart();
       for (Directives const& directives : baseProcessingDirectives) {
-        auto metadata = m_root->imageMetadataDatabase();
+        auto metadata = m_root.get().imageMetadataDatabase();
         if (!metadata) return std::unexpected(std::move(metadata.error()));
         auto added = imagePart.addDirectives(**metadata, directives, centered);
         if (!added) return std::unexpected(std::move(added.error()));
@@ -1346,7 +1345,7 @@ std::expected<List<std::pair<Drawable, float>>, StarException> NetworkedAnimator
     }
 
     if (m_partDrawables.contains(partName)) {
-      auto partDrawables = *m_partDrawables.ptr(partName);
+      auto partDrawables = m_partDrawables.maybeRef(partName)->get();
       Drawable::transformAll(partDrawables, transformation);
       for (auto drawable : partDrawables) {
       drawables.append({drawable, std::get<2>(entry)});
@@ -1381,7 +1380,7 @@ std::expected<List<LightSource>, StarException> NetworkedAnimator::lightSources(
     if (pair.second.rotationGroup) {
       auto rotation = m_rotationGroups.get(*pair.second.rotationGroup);
       if (!rotation) return std::unexpected(std::move(rotation.error()));
-      auto const& rg = **rotation;
+      auto const& rg = rotation->get();
       position = (position - pair.second.rotationCenter.value_or(rg.rotationCenter)).rotate(rg.currentAngle)
           + pair.second.rotationCenter.value_or(rg.rotationCenter);
       pointAngle += rg.currentAngle;
@@ -1410,7 +1409,7 @@ std::expected<List<LightSource>, StarException> NetworkedAnimator::lightSources(
   return lightSources;
 }
 
-std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
+std::expected<void, StarException> NetworkedAnimator::update(float dt, std::optional<std::reference_wrapper<DynamicTarget>> dynamicTarget) {
   dt *= m_animationRate.get();
 
   auto animated = m_animatedParts.update(dt);
@@ -1418,7 +1417,7 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
 
   auto statesUpdated = m_animatedParts.forEachActiveState([&](String const& stateTypeName, AnimatedPartSet::ActiveStateInformation const& activeState) -> std::expected<void, StarException> {
       if (dynamicTarget) {
-        dynamicTarget->clearFinishedAudio();
+        dynamicTarget->get().clearFinishedAudio();
 
         Json persistentSound = activeState.properties.value("persistentSound", "");
         String persistentSoundFile;
@@ -1430,7 +1429,7 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
         } else if (persistentSound.isType(Json::Type::Array)) {
           auto pool = persistentSound.toArray();
           if (!pool) return std::unexpected(std::move(pool.error()));
-          auto file = m_root->random().randValueFrom(*pool, "").toString();
+          auto file = m_root.get().random().randValueFrom(*pool, "").toString();
           if (!file) return std::unexpected(std::move(file.error()));
           persistentSoundFile = *file;
         }
@@ -1438,7 +1437,7 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
         if (!persistentSoundFile.empty())
           persistentSoundFile = AssetPath::relativeTo(m_relativePath, persistentSoundFile);
 
-        auto& activePersistentSound = dynamicTarget->statePersistentSounds[stateTypeName];
+        auto& activePersistentSound = dynamicTarget->get().statePersistentSounds[stateTypeName];
 
         bool changedPersistentSound = persistentSound != activePersistentSound.sound;
         if (changedPersistentSound || !activePersistentSound.audio) {
@@ -1447,7 +1446,7 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
             activePersistentSound.audio->stop(activePersistentSound.stopRampTime);
 
           if (!persistentSoundFile.empty()) {
-            auto assets = m_root->assets();
+            auto assets = m_root.get().assets();
             if (!assets) return std::unexpected(std::move(assets.error()));
             auto audio = (*assets)->audio(persistentSoundFile);
             if (!audio) return std::unexpected(std::move(audio.error()));
@@ -1462,9 +1461,9 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
             auto stopTime = activeState.properties.value("persistentSoundStopTime", 0.0f).toFloat();
             if (!stopTime) return std::unexpected(std::move(stopTime.error()));
             activePersistentSound.stopRampTime = *stopTime;
-            dynamicTarget->pendingAudios.append(activePersistentSound.audio);
+            dynamicTarget->get().pendingAudios.append(activePersistentSound.audio);
           } else {
-            dynamicTarget->statePersistentSounds.remove(stateTypeName);
+            dynamicTarget->get().statePersistentSounds.remove(stateTypeName);
           }
         }
 
@@ -1478,7 +1477,7 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
         } else if (immediateSound.isType(Json::Type::Array)) {
           auto pool = immediateSound.toArray();
           if (!pool) return std::unexpected(std::move(pool.error()));
-          auto file = m_root->random().randValueFrom(*pool, "").toString();
+          auto file = m_root.get().random().randValueFrom(*pool, "").toString();
           if (!file) return std::unexpected(std::move(file.error()));
           immediateSoundFile = *file;
         }
@@ -1486,13 +1485,13 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
         if (!immediateSoundFile.empty())
           immediateSoundFile = AssetPath::relativeTo(m_relativePath, immediateSoundFile);
 
-        auto& activeImmediateSound = dynamicTarget->stateImmediateSounds[stateTypeName];
+        auto& activeImmediateSound = dynamicTarget->get().stateImmediateSounds[stateTypeName];
 
         bool changedImmediateSound = immediateSound != activeImmediateSound.sound;
         if (changedImmediateSound) {
           activeImmediateSound.sound = std::move(immediateSound);
           if (!immediateSoundFile.empty()) {
-            auto assets = m_root->assets();
+            auto assets = m_root.get().assets();
             if (!assets) return std::unexpected(std::move(assets.error()));
             auto audio = (*assets)->audio(immediateSoundFile);
             if (!audio) return std::unexpected(std::move(audio.error()));
@@ -1503,54 +1502,54 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
             if (!range) return std::unexpected(std::move(range.error()));
             activeImmediateSound.audio->setRangeMultiplier(*range);
             activeImmediateSound.audio->setPosition(globalTransformation().transformVec2(Vec2F()));
-            dynamicTarget->pendingAudios.append(activeImmediateSound.audio);
+            dynamicTarget->get().pendingAudios.append(activeImmediateSound.audio);
           }
         }
       }
 
-      if (auto lightsOn = activeState.properties.ptr("lightsOn")) {
-        auto entries = lightsOn->iterateArray();
+      if (auto lightsOn = activeState.properties.maybeRef("lightsOn")) {
+        auto entries = lightsOn->get().iterateArray();
         if (!entries) return std::unexpected(std::move(entries.error()));
         for (auto const& nameJson : *entries) {
           auto name = nameJson.toString();
           if (!name) return std::unexpected(std::move(name.error()));
           auto entry = m_lights.get(*name);
           if (!entry) return std::unexpected(std::move(entry.error()));
-          (*entry)->active.set(true);
+          entry->get().active.set(true);
         }
       }
-      if (auto lightsOff = activeState.properties.ptr("lightsOff")) {
-        auto entries = lightsOff->iterateArray();
+      if (auto lightsOff = activeState.properties.maybeRef("lightsOff")) {
+        auto entries = lightsOff->get().iterateArray();
         if (!entries) return std::unexpected(std::move(entries.error()));
         for (auto const& nameJson : *entries) {
           auto name = nameJson.toString();
           if (!name) return std::unexpected(std::move(name.error()));
           auto entry = m_lights.get(*name);
           if (!entry) return std::unexpected(std::move(entry.error()));
-          (*entry)->active.set(false);
+          entry->get().active.set(false);
         }
       }
 
-      if (auto particleEmittersOn = activeState.properties.ptr("particleEmittersOn")) {
-        auto entries = particleEmittersOn->iterateArray();
+      if (auto particleEmittersOn = activeState.properties.maybeRef("particleEmittersOn")) {
+        auto entries = particleEmittersOn->get().iterateArray();
         if (!entries) return std::unexpected(std::move(entries.error()));
         for (auto const& nameJson : *entries) {
           auto name = nameJson.toString();
           if (!name) return std::unexpected(std::move(name.error()));
           auto entry = m_particleEmitters.get(*name);
           if (!entry) return std::unexpected(std::move(entry.error()));
-          (*entry)->active.set(true);
+          entry->get().active.set(true);
         }
       }
-      if (auto particleEmittersOff = activeState.properties.ptr("particleEmittersOff")) {
-        auto entries = particleEmittersOff->iterateArray();
+      if (auto particleEmittersOff = activeState.properties.maybeRef("particleEmittersOff")) {
+        auto entries = particleEmittersOff->get().iterateArray();
         if (!entries) return std::unexpected(std::move(entries.error()));
         for (auto const& nameJson : *entries) {
           auto name = nameJson.toString();
           if (!name) return std::unexpected(std::move(name.error()));
           auto entry = m_particleEmitters.get(*name);
           if (!entry) return std::unexpected(std::move(entry.error()));
-          (*entry)->active.set(false);
+          entry->get().active.set(false);
         }
       }
 
@@ -1616,13 +1615,13 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
       for (auto& stateTypeName : m_animatedParts.stateTypes()) {
         auto activeStateResult = m_animatedParts.activeState(stateTypeName);
       if (!activeStateResult) return std::unexpected(std::move(activeStateResult.error()));
-      auto const& activeState = **activeStateResult;
-        if (auto transforms = activeState.properties.ptr(pair.first)) {
-          auto mat = processTransforms(pair.second.animationAffineTransform(), *transforms, activeState.properties);
+      auto const& activeState = activeStateResult->get();
+        if (auto transforms = activeState.properties.maybeRef(pair.first)) {
+          auto mat = processTransforms(pair.second.animationAffineTransform(), transforms->get(), activeState.properties);
           if (!mat) return std::unexpected(std::move(mat.error()));
           if (pair.second.interpolated) {
-            if (auto nextTransforms = activeState.nextProperties.ptr(pair.first)) {
-              auto nextMat = processTransforms(pair.second.animationAffineTransform(), *nextTransforms, activeState.nextProperties);
+            if (auto nextTransforms = activeState.nextProperties.maybeRef(pair.first)) {
+              auto nextMat = processTransforms(pair.second.animationAffineTransform(), nextTransforms->get(), activeState.nextProperties);
               if (!nextMat) return std::unexpected(std::move(nextMat.error()));
               pair.second.setAnimationAffineTransform(*mat, *nextMat, activeState.frameProgress);
             } else {
@@ -1652,8 +1651,8 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
         particle.position += config.offset;
 
         if (!offsetRegion.isNull()) {
-          particle.position[0] += m_root->random().randf() * offsetRegion.width() + offsetRegion.xMin();
-          particle.position[1] += m_root->random().randf() * offsetRegion.height() + offsetRegion.yMin();
+          particle.position[0] += m_root.get().random().randf() * offsetRegion.width() + offsetRegion.xMin();
+          particle.position[1] += m_root.get().random().randf() * offsetRegion.height() + offsetRegion.yMin();
         }
 
         float speed = particle.velocity.magnitude();
@@ -1670,7 +1669,7 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
           particle.rotation += std::numbers::pi;
         }
 
-        dynamicTarget->pendingParticles.append(std::move(particle));
+        dynamicTarget->get().pendingParticles.append(std::move(particle));
       }
     };
 
@@ -1688,7 +1687,7 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
       if (pair.second.rotationGroup) {
         auto rotation = m_rotationGroups.get(*pair.second.rotationGroup);
         if (!rotation) return std::unexpected(std::move(rotation.error()));
-        auto const& rg = **rotation;
+        auto const& rg = rotation->get();
         Vec2F rotationCenter = pair.second.rotationCenter.value_or(rg.rotationCenter);
         transformation = Mat3F::rotation(rg.currentAngle, rotationCenter) * transformation;
       }
@@ -1703,7 +1702,7 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
         if (pair.second.timer <= 0.0f) {
           // timer causes us to emit one set
           ++numEmissionCycles;
-          auto variance = m_root->random().randf(-pair.second.emissionRateVariance, pair.second.emissionRateVariance);
+          auto variance = m_root.get().random().randf(-pair.second.emissionRateVariance, pair.second.emissionRateVariance);
           if (!variance) return std::unexpected(std::move(variance.error()));
           pair.second.timer = 1.0f / (pair.second.emissionRate.get() + *variance);
         } else {
@@ -1725,7 +1724,7 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
               addParticles(particleConfig, rect, transformation);
           } else {
             List<ParticleEmitter::ParticleConfig> shuffledList = pair.second.particleList;
-            m_root->random().shuffle(shuffledList);
+            m_root.get().random().shuffle(shuffledList);
 
             for (unsigned i = 0; i < numToSelect; ++i)
               addParticles(shuffledList[i], rect, transformation);
@@ -1740,12 +1739,12 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
 
       for (auto signal : soundEntry.signals.receive()) {
         if (signal == SoundSignal::StopAll) {
-          for (auto& sound : take(dynamicTarget->independentSounds[soundName]))
+          for (auto& sound : take(dynamicTarget->get().independentSounds[soundName]))
             sound->stop(soundEntry.volumeRampTime.get());
         } else if (signal == SoundSignal::Play) {
-          String soundFile = m_root->random().randValueFrom(soundEntry.soundPool.get());
+          String soundFile = m_root.get().random().randValueFrom(soundEntry.soundPool.get());
           if (!soundFile.empty()) {
-            auto assets = m_root->assets();
+            auto assets = m_root.get().assets();
             if (!assets) return std::unexpected(std::move(assets.error()));
             auto audio = (*assets)->audio(soundFile);
             if (!audio) return std::unexpected(std::move(audio.error()));
@@ -1757,16 +1756,16 @@ std::expected<void, StarException> NetworkedAnimator::update(float dt, DynamicTa
             sound->setPosition(globalTransformation().transformVec2(Vec2F(soundEntry.xPosition.get(), soundEntry.yPosition.get())));
             sound->setVolume(soundEntry.volumeTarget.get(), soundEntry.volumeRampTime.get());
             sound->setPitchMultiplier(soundEntry.pitchMultiplierTarget.get(), soundEntry.pitchMultiplierRampTime.get());
-            dynamicTarget->independentSounds[soundName].append(sound);
-            dynamicTarget->pendingAudios.append(std::move(sound));
+            dynamicTarget->get().independentSounds[soundName].append(sound);
+            dynamicTarget->get().pendingAudios.append(std::move(sound));
           }
         }
       }
 
       // Update all still active independent sounds position, volume, and speed
-      for (auto const& activeIndependentSound : dynamicTarget->independentSounds.value(soundName)) {
-        if (auto basePosition = dynamicTarget->currentAudioBasePositions.ptr(activeIndependentSound))
-          *basePosition = globalTransformation().transformVec2(Vec2F(soundEntry.xPosition.get(), soundEntry.yPosition.get()));
+      for (auto const& activeIndependentSound : dynamicTarget->get().independentSounds.value(soundName)) {
+        if (auto basePosition = dynamicTarget->get().currentAudioBasePositions.maybeRef(activeIndependentSound))
+          basePosition->get() = globalTransformation().transformVec2(Vec2F(soundEntry.xPosition.get(), soundEntry.yPosition.get()));
         activeIndependentSound->setVolume(soundEntry.volumeTarget.get(), soundEntry.volumeRampTime.get());
         activeIndependentSound->setPitchMultiplier(soundEntry.pitchMultiplierTarget.get(), soundEntry.pitchMultiplierRampTime.get());
       }
@@ -1847,33 +1846,33 @@ Mat3F NetworkedAnimator::TransformationGroup::animationAffineTransform() const {
 std::expected<void, StarException> NetworkedAnimator::setupNetStates() {
   clearNetElements();
 
-  if (auto registered = addNetElement(&m_processingDirectives); !registered) return std::unexpected(std::move(registered.error()));
-  if (auto registered = addNetElement(&m_zoom); !registered) return std::unexpected(std::move(registered.error()));
-  if (auto registered = addNetElement(&m_flipped); !registered) return std::unexpected(std::move(registered.error()));
-  if (auto registered = addNetElement(&m_flippedRelativeCenterLine); !registered) return std::unexpected(std::move(registered.error()));
+  if (auto registered = addNetElement(m_processingDirectives); !registered) return std::unexpected(std::move(registered.error()));
+  if (auto registered = addNetElement(m_zoom); !registered) return std::unexpected(std::move(registered.error()));
+  if (auto registered = addNetElement(m_flipped); !registered) return std::unexpected(std::move(registered.error()));
+  if (auto registered = addNetElement(m_flippedRelativeCenterLine); !registered) return std::unexpected(std::move(registered.error()));
 
-  if (auto registered = addNetElement(&m_animationRate); !registered) return std::unexpected(std::move(registered.error()));
+  if (auto registered = addNetElement(m_animationRate); !registered) return std::unexpected(std::move(registered.error()));
   m_animationRate.setInterpolator(lerp<float, float>);
 
-  if (auto registered = addNetElement(&m_globalTags); !registered) return std::unexpected(std::move(registered.error()));
+  if (auto registered = addNetElement(m_globalTags); !registered) return std::unexpected(std::move(registered.error()));
 
   for (auto const& part : sorted(m_animatedParts.partNames()))
-    if (auto registered = addNetElement(&m_partTags[part]); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(m_partTags[part]); !registered) return std::unexpected(std::move(registered.error()));
 
   for (auto& pair : m_stateInfo) {
     pair.second.reverse.setCompatibilityVersion(10);
-    if (auto registered = addNetElement(&pair.second.reverse); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.stateIndex); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.startedEvent); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.reverse); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.stateIndex); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.startedEvent); !registered) return std::unexpected(std::move(registered.error()));
   }
 
   for (auto& pair : m_transformationGroups) {
-    if (auto registered = addNetElement(&pair.second.xTranslation); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.yTranslation); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.xScale); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.yScale); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.xShear); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.yShear); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.xTranslation); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.yTranslation); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.xScale); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.yScale); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.xShear); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.yShear); !registered) return std::unexpected(std::move(registered.error()));
 
     if (pair.second.interpolated) {
       pair.second.xTranslation.setInterpolator(lerp<float, float>);
@@ -1886,27 +1885,27 @@ std::expected<void, StarException> NetworkedAnimator::setupNetStates() {
   }
 
   for (auto& pair : m_rotationGroups) {
-    if (auto registered = addNetElement(&pair.second.targetAngle); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.netImmediateEvent); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.targetAngle); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.netImmediateEvent); !registered) return std::unexpected(std::move(registered.error()));
   }
 
   for (auto& pair : m_particleEmitters) {
-    if (auto registered = addNetElement(&pair.second.emissionRate); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.burstCount); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.randomSelectCount); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.offsetRegion); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.active); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.burstEvent); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.emissionRate); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.burstCount); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.randomSelectCount); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.offsetRegion); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.active); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.burstEvent); !registered) return std::unexpected(std::move(registered.error()));
 
     pair.second.burstEvent.setIgnoreOccurrencesOnNetLoad(true);
   }
 
   for (auto& pair : m_lights) {
-    if (auto registered = addNetElement(&pair.second.active); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.xPosition); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.yPosition); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.color); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.pointAngle); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.active); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.xPosition); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.yPosition); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.color); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.pointAngle); !registered) return std::unexpected(std::move(registered.error()));
 
     pair.second.xPosition.setFixedPointBase(0.0125f);
     pair.second.yPosition.setFixedPointBase(0.0125f);
@@ -1918,15 +1917,15 @@ std::expected<void, StarException> NetworkedAnimator::setupNetStates() {
   }
 
   for (auto& pair : m_sounds) {
-    if (auto registered = addNetElement(&pair.second.soundPool); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.xPosition); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.yPosition); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.volumeTarget); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.volumeRampTime); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.pitchMultiplierTarget); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.pitchMultiplierRampTime); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.loops); !registered) return std::unexpected(std::move(registered.error()));
-    if (auto registered = addNetElement(&pair.second.signals); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.soundPool); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.xPosition); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.yPosition); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.volumeTarget); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.volumeRampTime); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.pitchMultiplierTarget); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.pitchMultiplierRampTime); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.loops); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.signals); !registered) return std::unexpected(std::move(registered.error()));
 
     pair.second.xPosition.setFixedPointBase(0.0125f);
     pair.second.yPosition.setFixedPointBase(0.0125f);
@@ -1936,7 +1935,7 @@ std::expected<void, StarException> NetworkedAnimator::setupNetStates() {
   }
 
   for (auto& pair : m_effects)
-    if (auto registered = addNetElement(&pair.second.enabled); !registered) return std::unexpected(std::move(registered.error()));
+    if (auto registered = addNetElement(pair.second.enabled); !registered) return std::unexpected(std::move(registered.error()));
 
   return {};
 }

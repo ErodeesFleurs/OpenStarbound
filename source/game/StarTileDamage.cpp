@@ -76,18 +76,18 @@ TileDamage::TileDamage() : type(), amount(), harvestLevel() {}
 TileDamage::TileDamage(TileDamageType type, float amount, unsigned harvestLevel)
   : type(type), amount(amount), harvestLevel(harvestLevel) {}
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamage& tileDamage) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, TileDamage& tileDamage) {
   if (auto r = ds.read(tileDamage.type); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileDamage.amount); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileDamage.harvestLevel); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, TileDamage const& tileDamage) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, TileDamage const& tileDamage) {
   if (auto r = ds.write(tileDamage.type); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileDamage.amount); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileDamage.harvestLevel); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 TileDamageParameters::TileDamageParameters()
@@ -110,7 +110,7 @@ std::expected<TileDamageParameters, StarException> TileDamageParameters::create(
     if (!type) return std::unexpected(std::move(type.error()));
     auto amount = pair.second.toFloat();
     if (!amount) return std::unexpected(std::move(amount.error()));
-    result.m_damages[**type] = *amount;
+    result.m_damages[type->get()] = *amount;
   }
   auto recovery = config.getFloat("damageRecovery");
   if (!recovery) return std::unexpected(std::move(recovery.error()));
@@ -181,7 +181,7 @@ std::expected<Json, StarException> TileDamageParameters::toJson() const {
   for (auto const& pair : m_damages) {
     auto name = TileDamageTypeNames->getRight(pair.first);
     if (!name) return std::unexpected(std::move(name.error()));
-    factors.emplace(**name, pair.second);
+    factors.emplace(name->get(), pair.second);
   }
   return JsonObject{{"damageFactors", std::move(factors)},
     {"damageRecovery", m_damageRecoveryPerSecond},
@@ -189,22 +189,22 @@ std::expected<Json, StarException> TileDamageParameters::toJson() const {
     {"maximumEffectTime", m_maximumEffectTime}, {"totalHealth", m_totalHealth}};
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamageParameters& tileDamage) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, TileDamageParameters& tileDamage) {
   if (auto r = ds.readMapContainer(tileDamage.m_damages); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileDamage.m_damageRecoveryPerSecond); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileDamage.m_requiredHarvestLevel); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileDamage.m_maximumEffectTime); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileDamage.m_totalHealth); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, TileDamageParameters const& tileDamage) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, TileDamageParameters const& tileDamage) {
   if (auto r = ds.writeMapContainer(tileDamage.m_damages); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileDamage.m_damageRecoveryPerSecond); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileDamage.m_requiredHarvestLevel); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileDamage.m_maximumEffectTime); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileDamage.m_totalHealth); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 TileDamageStatus::TileDamageStatus() {
@@ -273,7 +273,7 @@ bool TileDamageStatus::harvested() const {
   return m_harvested;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamageStatus& tileDamageStatus) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, TileDamageStatus& tileDamageStatus) {
   if (auto r = ds.read(tileDamageStatus.m_damagePercentage); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileDamageStatus.m_damageEffectTimeFactor); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(tileDamageStatus.m_harvested); !r) return std::unexpected(std::move(r.error()));
@@ -282,17 +282,17 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamageS
 
   tileDamageStatus.updateDamageEffectPercentage();
 
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, TileDamageStatus const& tileDamageStatus) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, TileDamageStatus const& tileDamageStatus) {
   if (auto r = ds.write(tileDamageStatus.m_damagePercentage); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileDamageStatus.m_damageEffectTimeFactor); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileDamageStatus.m_harvested); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileDamageStatus.m_damageSourcePosition); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(tileDamageStatus.m_damageType); !r) return std::unexpected(std::move(r.error()));
 
-  return &ds;
+  return std::ref(ds);
 }
 
 void TileDamageStatus::updateDamageEffectPercentage() {
@@ -309,10 +309,10 @@ EntityTileDamageStatus::EntityTileDamageStatus() {
 
 std::expected<std::shared_ptr<EntityTileDamageStatus>, StarException> EntityTileDamageStatus::create() {
   auto status = std::shared_ptr<EntityTileDamageStatus>(new EntityTileDamageStatus());
-  if (auto result = status->addNetElement(&status->m_damagePercentage); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = status->addNetElement(&status->m_damageEffectTimeFactor); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = status->addNetElement(&status->m_damageHarvested); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = status->addNetElement(&status->m_damageType); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = status->addNetElement(status->m_damagePercentage); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = status->addNetElement(status->m_damageEffectTimeFactor); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = status->addNetElement(status->m_damageHarvested); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = status->addNetElement(status->m_damageType); !result) return std::unexpected(std::move(result.error()));
   return status;
 }
 

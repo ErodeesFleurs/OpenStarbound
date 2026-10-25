@@ -28,56 +28,56 @@ int const ImagePreviewHeight = 600;
 
 JsonEditor::JsonEditor(std::shared_ptr<::Star::JsonPath::Path> const& path, Options const& options, List<String> const& files)
   : QMainWindow(), m_path(path), m_editFormat(options.editFormat), m_options(options), m_files(files), m_fileIndex(0) {
-  auto* w = new QWidget(this);
-  w->setObjectName("background");
-  setCentralWidget(w);
+  auto& background = *new QWidget(this);
+  background.setObjectName("background");
+  setCentralWidget(&background);
   setWindowTitle("Json Editor");
   resize(1280, 720);
 
-  auto* layout = new QGridLayout(centralWidget());
+  auto& layout = *new QGridLayout(&background);
 
   QFont font("Monospace");
   font.setStyleHint(QFont::StyleHint::Monospace);
 
-  m_jsonDocument = new QTextDocument("Hello world");
+  m_jsonDocument = std::make_unique<QTextDocument>("Hello world");
   m_jsonDocument->setDefaultFont(font);
 
-  m_statusLabel = new QLabel(centralWidget());
-  layout->addWidget(m_statusLabel, 0, 0, 1, 5);
+  m_statusLabel = std::make_unique<QLabel>(&background);
+  layout.addWidget(m_statusLabel.get(), 0, 0, 1, 5);
 
-  m_jsonPreview = new QTextEdit(this);
+  m_jsonPreview = std::make_unique<QTextEdit>(this);
   m_jsonPreview->setReadOnly(true);
-  m_jsonPreview->setDocument(m_jsonDocument);
-  layout->addWidget(m_jsonPreview, 1, 0, 1, 5);
+  m_jsonPreview->setDocument(m_jsonDocument.get());
+  layout.addWidget(m_jsonPreview.get(), 1, 0, 1, 5);
 
-  m_backButton = new QPushButton(centralWidget());
+  m_backButton = std::make_unique<QPushButton>(&background);
   m_backButton->setText("« Back");
-  layout->addWidget(m_backButton, 2, 0);
-  connect(m_backButton, SIGNAL(pressed()), this, SLOT(back()));
+  layout.addWidget(m_backButton.get(), 2, 0);
+  connect(m_backButton.get(), SIGNAL(pressed()), this, SLOT(back()));
 
-  m_pathLabel = new QLabel(centralWidget());
-  layout->addWidget(m_pathLabel, 2, 1);
+  m_pathLabel = std::make_unique<QLabel>(&background);
+  layout.addWidget(m_pathLabel.get(), 2, 1);
 
-  m_imageLabel = new QLabel(centralWidget());
+  m_imageLabel = std::make_unique<QLabel>(&background);
   m_imageLabel->setMaximumSize(ImagePreviewWidth, ImagePreviewHeight);
   m_imageLabel->setMinimumSize(ImagePreviewWidth, ImagePreviewHeight);
   m_imageLabel->setAlignment(Qt::AlignCenter);
   if (!m_options.editorImages.empty())
-    layout->addWidget(m_imageLabel, 1, 5);
+    layout.addWidget(m_imageLabel.get(), 1, 5);
 
-  m_valueEditor = new QLineEdit(centralWidget());
+  m_valueEditor = std::make_unique<QLineEdit>(&background);
   m_valueEditor->setFont(font);
-  layout->addWidget(m_valueEditor, 2, 2);
-  connect(m_valueEditor, SIGNAL(returnPressed()), this, SLOT(next()));
-  connect(m_valueEditor, SIGNAL(textChanged(QString const&)), this, SLOT(updatePreview(QString const&)));
+  layout.addWidget(m_valueEditor.get(), 2, 2);
+  connect(m_valueEditor.get(), SIGNAL(returnPressed()), this, SLOT(next()));
+  connect(m_valueEditor.get(), SIGNAL(textChanged(QString const&)), this, SLOT(updatePreview(QString const&)));
 
-  m_nextButton = new QPushButton(centralWidget());
+  m_nextButton = std::make_unique<QPushButton>(&background);
   m_nextButton->setText("Next »");
   m_nextButton->setDefault(true);
-  layout->addWidget(m_nextButton, 2, 3);
-  connect(m_nextButton, SIGNAL(pressed()), this, SLOT(next()));
+  layout.addWidget(m_nextButton.get(), 2, 3);
+  connect(m_nextButton.get(), SIGNAL(pressed()), this, SLOT(next()));
 
-  m_errorDialog = new QErrorMessage(this);
+  m_errorDialog = std::make_unique<QErrorMessage>(this);
   m_errorDialog->setModal(true);
 
   displayCurrentFile();
@@ -261,8 +261,8 @@ std::expected<int, StarException> Star::edit(Logger& logger, int argc, char* arg
   QApplication app(argc, argv);
   StringList files;
   for (Input const& input : inputs) {
-    if (auto find = std::get_if<FindInput>(&input)) {
-      auto found = findFiles(logger, *find);
+    if (std::holds_alternative<FindInput>(input)) {
+      auto found = findFiles(logger, std::get<FindInput>(input));
       if (!found)
         return std::unexpected(std::move(found.error()));
       files.appendAll(std::move(*found));

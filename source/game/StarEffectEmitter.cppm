@@ -30,7 +30,7 @@ public:
   [[nodiscard]] std::expected<void, StarException> tick(float dt, EntityMode mode);
   void reset();
 
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback);
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderCallback);
 
   [[nodiscard]] std::expected<Json, StarException> toJson() const;
   [[nodiscard]] std::expected<void, StarException> fromJson(Json const& diskStore);

@@ -30,8 +30,8 @@ enum class WarpMode : std::uint8_t {
 extern std::expected<EnumMap<WarpMode>, StarException> const WarpModeNames;
 
 struct InstanceWorldId {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, InstanceWorldId& instanceWorldId);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, InstanceWorldId const& instanceWorldId);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, InstanceWorldId& instanceWorldId);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, InstanceWorldId const& instanceWorldId);
 
   String instance;
   std::optional<Uuid> uuid;
@@ -49,12 +49,12 @@ struct hash<InstanceWorldId> {
   std::size_t operator()(InstanceWorldId const& id) const;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, InstanceWorldId& missionWorldId);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, InstanceWorldId const& missionWorldId);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, InstanceWorldId& missionWorldId);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, InstanceWorldId const& missionWorldId);
 
 struct ClientCustomWorldId {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId);
   friend std::ostream& operator<<(std::ostream& os, ClientCustomWorldId const& worldId);
 
   Uuid uuid;
@@ -71,8 +71,8 @@ struct hash<ClientCustomWorldId> {
   std::size_t operator()(ClientCustomWorldId const& id) const;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId);
 
   template <typename BaseType>
   struct CelestialWorldIdWrapper : BaseType {
@@ -276,8 +276,8 @@ Json spawnTargetToJson(SpawnTarget spawnTarget);
 String printSpawnTarget(SpawnTarget spawnTarget);
 
 struct WarpToWorld {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, WarpToWorld& warpToWorld);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, WarpToWorld& warpToWorld);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
 
   WarpToWorld();
   explicit WarpToWorld(WorldId world, SpawnTarget spawn = {});
@@ -339,8 +339,8 @@ typedef std::variant<std::monostate, WarpToWorld, WarpToPlayer, WarpAlias> WarpA
 [[nodiscard]] std::expected<String, StarException> printWarpAction(WarpAction const& warpAction);
 [[nodiscard]] std::expected<JsonObject, StarException> warpActionToJson(WarpAction const& warpAction);
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, WarpToWorld& warpToWorld);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, WarpToWorld& warpToWorld);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
 
 // Construct identity-bearing values from their wire fields, never a generated ID.
 template <>

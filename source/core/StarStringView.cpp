@@ -16,8 +16,6 @@ StringView::StringView() = default;
 StringView::StringView(StringView const& s) = default;
 StringView::StringView(StringView&& s) noexcept = default;
 StringView::StringView(String const& s) : m_view(s.utf8()) {}
-StringView::StringView(char const* s) : m_view(s) {}
-StringView::StringView(char const* s, std::size_t n) : m_view(s, n) {}
 StringView::StringView(std::string_view const& s) : m_view(s) {}
 StringView::StringView(std::string_view&& s) noexcept : m_view(s) {}
 StringView::StringView(std::string const& s) : m_view(s) {}
@@ -26,7 +24,7 @@ std::size_t hash<String>::operator()(StringView const& s) const { return (*this)
 
 std::string_view const& StringView::utf8() const { return m_view; }
 std::string_view StringView::takeUtf8() { return std::exchange(m_view, {}); }
-ByteArray StringView::utf8Bytes() const { return ByteArray(m_view.data(), m_view.size()); }
+ByteArray StringView::utf8Bytes() const { return ByteArray(std::span<char const>(m_view)); }
 char const* StringView::utf8Ptr() const { return m_view.data(); }
 std::size_t StringView::utf8Size() const { return m_view.size(); }
 std::expected<StringView::const_iterator, StarException> StringView::begin() const { return const_iterator::create(m_view.begin(), m_view.end()); }
@@ -270,7 +268,7 @@ std::expected<void, StarException> StringView::forEachSplitView(StringView patte
   }
 }
 StringView& StringView::operator=(StringView s) { m_view = s.m_view; return *this; }
-bool operator==(StringView a, char const* b) { return a.m_view.compare(std::string_view(b)) == 0; }
+bool operator==(StringView a, std::string_view b) { return a.m_view == b; }
 bool operator==(StringView a, std::string const& b) { return a.m_view.compare(std::string_view(b)) == 0; }
 bool operator==(StringView a, String const& b) { return a.m_view.compare(std::string_view(b.utf8())) == 0; }
 bool operator==(StringView a, StringView b) { return a.m_view == b.m_view; }

@@ -138,21 +138,21 @@ std::expected<std::shared_ptr<PhysicsObject>, StarException> PhysicsObject::crea
   }
   object->m_physicsForces.sortByKey();
   for (auto& pair : object->m_physicsForces) {
-    auto operation2 = object->m_netGroup.addNetElement(&pair.second.enabled);
+    auto operation2 = object->m_netGroup.addNetElement(pair.second.enabled);
     if (!operation2)
       return std::unexpected(std::move(operation2.error()));
   }
   object->m_physicsCollisions.sortByKey();
   for (auto& pair : object->m_physicsCollisions) {
-    auto operation3 = object->m_netGroup.addNetElement(&pair.second.xPosition);
+    auto operation3 = object->m_netGroup.addNetElement(pair.second.xPosition);
     if (!operation3)
       return std::unexpected(std::move(operation3.error()));
-    auto operation4 = object->m_netGroup.addNetElement(&pair.second.yPosition);
+    auto operation4 = object->m_netGroup.addNetElement(pair.second.yPosition);
     if (!operation4)
       return std::unexpected(std::move(operation4.error()));
     pair.second.xPosition.setInterpolator(lerp<float, float>);
     pair.second.yPosition.setInterpolator(lerp<float, float>);
-    auto operation5 = object->m_netGroup.addNetElement(&pair.second.enabled);
+    auto operation5 = object->m_netGroup.addNetElement(pair.second.enabled);
     if (!operation5)
       return std::unexpected(std::move(operation5.error()));
   }
@@ -167,15 +167,15 @@ std::expected<void, StarException> PhysicsObject::disableInterpolation() {
   return m_netGroup.disableNetInterpolation();
 }
 
-std::expected<void, StarException> PhysicsObject::init(World* world, EntityId entityId, EntityMode mode) {
+std::expected<void, StarException> PhysicsObject::init(World& world, EntityId entityId, EntityMode mode) {
   if (mode == EntityMode::Master) {
     LuaCallbacks callbacks;
     auto operation6 = callbacks.registerCallback("setForceEnabled", [this](String const& force, bool enabled) -> std::expected<void, StarException> {
   auto configResult = m_physicsForces.get(force);
   if (!configResult)
     return std::unexpected(std::move(configResult.error()));
-  auto config = std::move(*configResult);
-  config->enabled.set(enabled);
+  auto& config = configResult->get();
+  config.enabled.set(enabled);
   return {};
 });
     if (!operation6)
@@ -184,9 +184,9 @@ std::expected<void, StarException> PhysicsObject::init(World* world, EntityId en
   auto configResult = m_physicsCollisions.get(collision);
   if (!configResult)
     return std::unexpected(std::move(configResult.error()));
-  auto config = std::move(*configResult);
-  config->xPosition.set(pos[0]);
-  config->yPosition.set(pos[1]);
+  auto& config = configResult->get();
+  config.xPosition.set(pos[0]);
+  config.yPosition.set(pos[1]);
   return {};
 });
     if (!operation7)
@@ -195,8 +195,8 @@ std::expected<void, StarException> PhysicsObject::init(World* world, EntityId en
   auto configResult = m_physicsCollisions.get(collision);
   if (!configResult)
     return std::unexpected(std::move(configResult.error()));
-  auto config = std::move(*configResult);
-  config->enabled.set(enabled);
+  auto& config = configResult->get();
+  config.enabled.set(enabled);
   return {};
 });
     if (!operation8)
@@ -262,10 +262,10 @@ std::expected<std::optional<PhysicsMovingCollision>, StarException> PhysicsObjec
   auto config = m_physicsCollisions.valueAt(positionIndex);
   if (!config)
     return std::unexpected(std::move(config.error()));
-  if (!(*config)->enabled.get())
+  if (!config->get().enabled.get())
     return std::nullopt;
-  PhysicsMovingCollision collision = (*config)->movingCollision;
-  collision.translate(position() + Vec2F((*config)->xPosition.get(), (*config)->yPosition.get()));
+  PhysicsMovingCollision collision = config->get().movingCollision;
+  collision.translate(position() + Vec2F(config->get().xPosition.get(), config->get().yPosition.get()));
   return collision;
 }
 

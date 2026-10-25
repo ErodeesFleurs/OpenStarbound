@@ -33,9 +33,11 @@ import star.root;
 
 namespace Star {
 
-std::expected<Root*, StarException> luaExecutionRoot(LuaEngine& engine) {
-  if (auto scope = as<LuaExecutionScope>(engine.executionHost()))
-    return &scope->root();
+std::expected<std::reference_wrapper<Root>, StarException> luaExecutionRoot(LuaEngine& engine) {
+  if (auto host = engine.executionHost()) {
+    if (auto scope = asRef<LuaExecutionScope>(host->get()))
+      return std::ref(scope->get().root());
+  }
   return std::unexpected(LuaException("Game Lua conversion requires an explicit game execution scope"));
 }
 
@@ -95,8 +97,8 @@ std::expected<void, StarException> LuaRoot::restart() {
   if (!engine)
     return std::unexpected(std::move(engine.error()));
   (*engine)->setExecutionHost(std::make_unique<LuaExecutionScope>(m_root));
-  (*engine)->setImageResolver([root = &m_root](String const& path) -> std::expected<std::shared_ptr<Image const>, StarException> {
-    auto assets = root->assets();
+  (*engine)->setImageResolver([&root = m_root](String const& path) -> std::expected<std::shared_ptr<Image const>, StarException> {
+    auto assets = root.assets();
     if (!assets)
       return std::unexpected(std::move(assets.error()));
     return (*assets)->image(path);
@@ -153,15 +155,15 @@ std::expected<void, StarException> LuaRoot::shutdown() {
     value.set("self", entry.selfTime);
     value.set("total", entry.totalTime);
     // The detached engine and profile retain the entire call tree during export.
-    std::vector<LuaProfileEntry const*> calls;
+    std::vector<std::reference_wrapper<LuaProfileEntry const>> calls;
     calls.reserve(entry.calls.size());
     for (auto const& p : entry.calls)
-      calls.push_back(p.second.get());
-    std::sort(calls.begin(), calls.end(), [](auto a, auto b) { return a->totalTime > b->totalTime; });
+      calls.push_back(std::cref(*p.second));
+    std::sort(calls.begin(), calls.end(), [](auto a, auto b) { return a.get().totalTime > b.get().totalTime; });
     JsonArray storedCalls;
     storedCalls.reserve(calls.size());
     std::ranges::transform(calls, std::back_inserter(storedCalls),
-        [&](auto call) { return jsonFromProfileEntry(*call); });
+        [&](auto call) { return jsonFromProfileEntry(call.get()); });
     value.set("calls", std::move(storedCalls));
     return value;
   };
@@ -294,7 +296,7 @@ std::expected<void, StarException> LuaRoot::ScriptCache::loadScript(LuaEngine& e
   auto bytes = (*assets)->bytes(path);
   if (!bytes)
     return std::unexpected(std::move(bytes.error()));
-  auto compiled = engine.compile(**bytes, path);
+  auto compiled = engine.compile((*bytes)->span(), path);
   if (!compiled)
     return std::unexpected(std::move(compiled.error()));
   scripts[path] = std::move(*compiled);
@@ -326,7 +328,7 @@ std::expected<void, StarException> LuaRoot::ScriptCache::loadContextScript(LuaCo
     if (auto result = loadScript(context.engine(), path); !result)
       return std::unexpected(std::move(result.error()));
   }
-  return context.load(*scripts.ptr(path));
+  return context.load(scripts.maybeRef(path)->get().span());
 }
 
 std::size_t LuaRoot::ScriptCache::memoryUsage() const {

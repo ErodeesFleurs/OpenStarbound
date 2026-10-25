@@ -8,7 +8,7 @@ import star.thread;
 namespace Star {
 
 struct WorkerPoolExceptionTag {
-  static constexpr char const* name() { return "WorkerPoolException"; }
+  static constexpr std::string_view name() { return "WorkerPoolException"; }
 };
 using WorkerPoolException = StarError<WorkerPoolExceptionTag, StarException>;
 
@@ -41,8 +41,8 @@ public:
   bool done() const;
   [[nodiscard]] std::expected<bool, StarException> wait(unsigned millis) const;
   [[nodiscard]] std::expected<bool, StarException> poll() const;
-  [[nodiscard]] std::expected<ResultType*, StarException> get();
-  [[nodiscard]] std::expected<ResultType const*, StarException> get() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<ResultType>, StarException> get();
+  [[nodiscard]] std::expected<std::reference_wrapper<ResultType const>, StarException> get() const;
 
 private:
   friend WorkerPool;
@@ -92,10 +92,10 @@ public:
 private:
   class WorkerThread : public Thread {
   public:
-    WorkerThread(WorkerPool* parent);
+    WorkerThread(WorkerPool& parent);
     ~WorkerThread();
     [[nodiscard]] std::expected<void, StarException> run() override;
-    WorkerPool* parent;
+    WorkerPool& parent;
     std::atomic<bool> shouldStop{false};
     std::atomic<bool> waiting{false};
     std::thread::id id;
@@ -151,19 +151,19 @@ template <typename ResultType>
 }
 
 template <typename ResultType>
-[[nodiscard]] std::expected<ResultType*, StarException> WorkerPoolPromise<ResultType>::get() {
+[[nodiscard]] std::expected<std::reference_wrapper<ResultType>, StarException> WorkerPoolPromise<ResultType>::get() {
   m_impl->done.wait(false, std::memory_order_acquire);
   if (m_impl->error)
     return std::unexpected(*m_impl->error);
-  return &*m_impl->result;
+  return std::reference_wrapper<ResultType>(*m_impl->result);
 }
 
 template <typename ResultType>
-[[nodiscard]] std::expected<ResultType const*, StarException> WorkerPoolPromise<ResultType>::get() const {
-  auto result = const_cast<WorkerPoolPromise*>(this)->get();
-  if (!result)
-    return std::unexpected(std::move(result.error()));
-  return *result;
+[[nodiscard]] std::expected<std::reference_wrapper<ResultType const>, StarException> WorkerPoolPromise<ResultType>::get() const {
+  m_impl->done.wait(false, std::memory_order_acquire);
+  if (m_impl->error)
+    return std::unexpected(*m_impl->error);
+  return std::reference_wrapper<ResultType const>(*m_impl->result);
 }
 
 template <typename ResultType>

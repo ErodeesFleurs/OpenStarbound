@@ -21,7 +21,7 @@ class CompressedAudioImpl;
 class UncompressedAudioImpl;
 
 struct AudioExceptionTag {
-  static constexpr char const* name() { return "AudioException"; }
+  static constexpr std::string_view name() { return "AudioException"; }
 };
 using AudioException = StarError<AudioExceptionTag, StarException>;
 
@@ -37,6 +37,7 @@ public:
   Audio& operator=(Audio const&) = delete;
   Audio(Audio&& audio) noexcept;
   Audio& operator=(Audio&& audio) noexcept;
+  ~Audio();
   [[nodiscard]] std::expected<Audio, StarException> clone() const;
 
   // This function returns the number of channels that this file has.  Channels
@@ -79,11 +80,11 @@ public:
   // Reads into 16 bit signed buffer with channels interleaved.  Returns total
   // number of samples read (counting each channel individually).  0 indicates
   // end of stream.
-  [[nodiscard]] std::expected<std::size_t, StarException> readPartial(std::int16_t* buffer, std::size_t bufferSize);
+  [[nodiscard]] std::expected<std::size_t, StarException> readPartial(std::span<std::int16_t> buffer);
 
   // Same as readPartial, but repeats read attempting to fill buffer as much as
   // possible
-  [[nodiscard]] std::expected<std::size_t, StarException> read(std::int16_t* buffer, std::size_t bufferSize);
+  [[nodiscard]] std::expected<std::size_t, StarException> read(std::span<std::int16_t> buffer);
 
   // Read into a given buffer, while also converting into the given number of
   // channels at the given sample rate and playback velocity.  If the number of
@@ -93,17 +94,17 @@ public:
   // an entire buffer depending on the destinationSampleRate / velocity /
   // available samples.
   [[nodiscard]] std::expected<std::size_t, StarException> resample(unsigned destinationChannels, unsigned destinationSampleRate,
-      std::int16_t* destinationBuffer, std::size_t destinationBufferSize,
+      std::span<std::int16_t> destinationBuffer,
       double velocity = 1.0);
 
   String const& name() const;
   void setName(String name);
 
 private:
-  Audio() = default;
+  Audio();
   // If audio is uncompressed, this will be null.
-  std::shared_ptr<CompressedAudioImpl> m_compressed;
-  std::shared_ptr<UncompressedAudioImpl> m_uncompressed;
+  std::unique_ptr<CompressedAudioImpl> m_compressed;
+  std::unique_ptr<UncompressedAudioImpl> m_uncompressed;
 
   ByteArray m_workingBuffer;
   String m_name;

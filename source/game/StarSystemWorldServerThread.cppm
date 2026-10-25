@@ -41,7 +41,7 @@ namespace Star {
 
 struct Packet;
 
-typedef std::function<std::expected<void, StarException>(SystemClientShip*)> ClientShipAction;
+typedef std::function<std::expected<void, StarException>(std::optional<std::reference_wrapper<SystemClientShip>>)> ClientShipAction;
 
 class SystemWorldServerThread : public Thread {
 public:
@@ -70,7 +70,7 @@ public:
   List<InstanceWorldId> activeInstanceWorlds() const;
 
   // callback to be run after update in the server thread
-  void setUpdateAction(std::function<std::expected<void, StarException>(SystemWorldServerThread*)> updateAction);
+  void setUpdateAction(std::function<std::expected<void, StarException>(SystemWorldServerThread&)> updateAction);
   void pushIncomingPacket(ConnectionId clientId, std::shared_ptr<Packet> packet);
   List<std::shared_ptr<Packet>> pullOutgoingPackets(ConnectionId clientId);
 
@@ -86,7 +86,7 @@ private:
   String m_storageFile;
 
   std::shared_ptr<const std::atomic<bool>> m_pause;
-  std::function<std::expected<void, StarException>(SystemWorldServerThread*)> m_updateAction;
+  std::function<std::expected<void, StarException>(SystemWorldServerThread&)> m_updateAction;
 
   ReadersWriterMutex m_mutex;
   ReadersWriterMutex m_queueMutex;

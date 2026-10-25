@@ -6,7 +6,7 @@ import star.format;
 namespace Star {
 
 struct MathExceptionTag {
-  static constexpr char const* name() { return "MathException"; }
+  static constexpr std::string_view name() { return "MathException"; }
 };
 using MathException = StarError<MathExceptionTag, StarException>;
 

@@ -191,18 +191,18 @@ JsonObject attachmentSettings = std::move(*result436);
 
     auto result437 = attachmentSettings.get("bx");
 if (!result437) return std::unexpected(std::move(result437.error()));
-auto result438 = (**result437).toDouble();
+auto result438 = result437->get().toDouble();
 if (!result438) return std::unexpected(std::move(result438.error()));
 xOffset += std::move(*result438) / TilePixels;
     auto result439 = attachmentSettings.get("by");
 if (!result439) return std::unexpected(std::move(result439.error()));
-auto result440 = (**result439).toDouble();
+auto result440 = result439->get().toDouble();
 if (!result440) return std::unexpected(std::move(result440.error()));
 yOffset += std::move(*result440) / TilePixels;
 
     auto result441 = baseSettings.get("image");
 if (!result441) return std::unexpected(std::move(result441.error()));
-auto result442 = (**result441).toString();
+auto result442 = result441->get().toString();
 if (!result442) return std::unexpected(std::move(result442.error()));
 String baseFile = AssetPath::relativeTo(config.stemDirectory, std::move(*result442));
     auto result443 = assets->image(baseFile);
@@ -231,7 +231,7 @@ JsonObject baseLeaves = std::move(*result444);
     if (baseLeaves.contains(baseKey)) {
       auto result445 = baseLeaves.get(baseKey);
 if (!result445) return std::unexpected(std::move(result445.error()));
-auto result446 = (**result445).toObject();
+auto result446 = result445->get().toObject();
 if (!result446) return std::unexpected(std::move(result446.error()));
 JsonObject baseLeavesSettings = std::move(*result446);
       auto result447 = baseLeavesSettings["attachment"].toObject();
@@ -240,12 +240,12 @@ JsonObject attachmentSettings = std::move(*result447);
 
       auto result448 = attachmentSettings.get("bx");
 if (!result448) return std::unexpected(std::move(result448.error()));
-auto result449 = (**result448).toDouble();
+auto result449 = result448->get().toDouble();
 if (!result449) return std::unexpected(std::move(result449.error()));
 float xOf = xOffset + std::move(*result449) / TilePixels;
       auto result450 = attachmentSettings.get("by");
 if (!result450) return std::unexpected(std::move(result450.error()));
-auto result451 = (**result450).toDouble();
+auto result451 = result450->get().toDouble();
 if (!result451) return std::unexpected(std::move(result451.error()));
 float yOf = yOffset + std::move(*result451) / TilePixels;
 
@@ -253,14 +253,14 @@ float yOf = yOffset + std::move(*result451) / TilePixels;
 if (condition454) {
 auto result452 = baseLeavesSettings.get("image");
 if (!result452) return std::unexpected(std::move(result452.error()));
-auto result453 = (**result452).toString();
+auto result453 = result452->get().toString();
 if (!result453) return std::unexpected(std::move(result453.error()));
 condition454 = static_cast<bool>(!std::move(*result453).empty());
 }
 if (condition454) {
         auto result455 = baseLeavesSettings.get("image");
 if (!result455) return std::unexpected(std::move(result455.error()));
-auto result456 = (**result455).toString();
+auto result456 = result455->get().toString();
 if (!result456) return std::unexpected(std::move(result456.error()));
 String baseLeavesFile =
             AssetPath::relativeTo(config.foliageDirectory, std::move(*result456));
@@ -281,14 +281,14 @@ String baseLeavesFile =
 if (condition459) {
 auto result457 = baseLeavesSettings.get("backimage");
 if (!result457) return std::unexpected(std::move(result457.error()));
-auto result458 = (**result457).toString();
+auto result458 = result457->get().toString();
 if (!result458) return std::unexpected(std::move(result458.error()));
 condition459 = static_cast<bool>(!std::move(*result458).empty());
 }
 if (condition459) {
         auto result460 = baseLeavesSettings.get("backimage");
 if (!result460) return std::unexpected(std::move(result460.error()));
-auto result461 = (**result460).toString();
+auto result461 = result460->get().toString();
 if (!result461) return std::unexpected(std::move(result461.error()));
 String baseLeavesBackFile =
             AssetPath::relativeTo(config.foliageDirectory, std::move(*result461));
@@ -307,12 +307,12 @@ String baseLeavesBackFile =
 
     auto result462 = attachmentSettings.get("x");
 if (!result462) return std::unexpected(std::move(result462.error()));
-auto result463 = (**result462).toDouble();
+auto result463 = result462->get().toDouble();
 if (!result463) return std::unexpected(std::move(result463.error()));
 xOffset += std::move(*result463) / TilePixels;
     auto result464 = attachmentSettings.get("y");
 if (!result464) return std::unexpected(std::move(result464.error()));
-auto result465 = (**result464).toDouble();
+auto result465 = result464->get().toDouble();
 if (!result465) return std::unexpected(std::move(result465.error()));
 yOffset += std::move(*result465) / TilePixels; // trunk height
 
@@ -364,18 +364,18 @@ JsonObject attachmentSettings = std::move(*result477);
 
       auto result478 = attachmentSettings.get("bx");
 if (!result478) return std::unexpected(std::move(result478.error()));
-auto result479 = (**result478).toDouble();
+auto result479 = result478->get().toDouble();
 if (!result479) return std::unexpected(std::move(result479.error()));
 xOffset += std::move(*result479) / TilePixels;
       auto result480 = attachmentSettings.get("by");
 if (!result480) return std::unexpected(std::move(result480.error()));
-auto result481 = (**result480).toDouble();
+auto result481 = result480->get().toDouble();
 if (!result481) return std::unexpected(std::move(result481.error()));
 yOffset += std::move(*result481) / TilePixels;
 
       auto result482 = middleSettings.get("image");
 if (!result482) return std::unexpected(std::move(result482.error()));
-auto result483 = (**result482).toString();
+auto result483 = result482->get().toString();
 if (!result483) return std::unexpected(std::move(result483.error()));
 String middleFile = AssetPath::relativeTo(config.stemDirectory, std::move(*result483));
 
@@ -399,7 +399,7 @@ JsonObject trunkLeaves = std::move(*result484);
       if (trunkLeaves.contains(middleKey)) {
         auto result485 = trunkLeaves.get(middleKey);
 if (!result485) return std::unexpected(std::move(result485.error()));
-auto result486 = (**result485).toObject();
+auto result486 = result485->get().toObject();
 if (!result486) return std::unexpected(std::move(result486.error()));
 JsonObject trunkLeavesSettings = std::move(*result486);
         auto result487 = trunkLeavesSettings["attachment"].toObject();
@@ -408,12 +408,12 @@ JsonObject attachmentSettings = std::move(*result487);
 
         auto result488 = attachmentSettings.get("bx");
 if (!result488) return std::unexpected(std::move(result488.error()));
-auto result489 = (**result488).toDouble();
+auto result489 = result488->get().toDouble();
 if (!result489) return std::unexpected(std::move(result489.error()));
 float xOf = xOffset + std::move(*result489) / TilePixels;
         auto result490 = attachmentSettings.get("by");
 if (!result490) return std::unexpected(std::move(result490.error()));
-auto result491 = (**result490).toDouble();
+auto result491 = result490->get().toDouble();
 if (!result491) return std::unexpected(std::move(result491.error()));
 float yOf = yOffset + std::move(*result491) / TilePixels;
 
@@ -421,14 +421,14 @@ float yOf = yOffset + std::move(*result491) / TilePixels;
 if (condition494) {
 auto result492 = trunkLeavesSettings.get("image");
 if (!result492) return std::unexpected(std::move(result492.error()));
-auto result493 = (**result492).toString();
+auto result493 = result492->get().toString();
 if (!result493) return std::unexpected(std::move(result493.error()));
 condition494 = static_cast<bool>(!std::move(*result493).empty());
 }
 if (condition494) {
           auto result495 = trunkLeavesSettings.get("image");
 if (!result495) return std::unexpected(std::move(result495.error()));
-auto result496 = (**result495).toString();
+auto result496 = result495->get().toString();
 if (!result496) return std::unexpected(std::move(result496.error()));
 String trunkLeavesFile =
               AssetPath::relativeTo(config.foliageDirectory, std::move(*result496));
@@ -448,14 +448,14 @@ String trunkLeavesFile =
 if (condition499) {
 auto result497 = trunkLeavesSettings.get("backimage");
 if (!result497) return std::unexpected(std::move(result497.error()));
-auto result498 = (**result497).toString();
+auto result498 = result497->get().toString();
 if (!result498) return std::unexpected(std::move(result498.error()));
 condition499 = static_cast<bool>(!std::move(*result498).empty());
 }
 if (condition499) {
           auto result500 = trunkLeavesSettings.get("backimage");
 if (!result500) return std::unexpected(std::move(result500.error()));
-auto result501 = (**result500).toString();
+auto result501 = result500->get().toString();
 if (!result501) return std::unexpected(std::move(result501.error()));
 String trunkLeavesBackFile =
               AssetPath::relativeTo(config.foliageDirectory, std::move(*result501));
@@ -474,12 +474,12 @@ String trunkLeavesBackFile =
 
       auto result502 = attachmentSettings.get("x");
 if (!result502) return std::unexpected(std::move(result502.error()));
-auto result503 = (**result502).toDouble();
+auto result503 = result502->get().toDouble();
 if (!result503) return std::unexpected(std::move(result503.error()));
 xOffset += std::move(*result503) / TilePixels;
       auto result504 = attachmentSettings.get("y");
 if (!result504) return std::unexpected(std::move(result504.error()));
-auto result505 = (**result504).toDouble();
+auto result505 = result504->get().toDouble();
 if (!result505) return std::unexpected(std::move(result505.error()));
 yOffset += std::move(*result505) / TilePixels;
 
@@ -496,7 +496,7 @@ JsonObject attachmentSettings = std::move(*result508);
 
         auto result509 = attachmentSettings.get("h");
 if (!result509) return std::unexpected(std::move(result509.error()));
-auto result510 = (**result509).toDouble();
+auto result510 = result509->get().toDouble();
 if (!result510) return std::unexpected(std::move(result510.error()));
 float h = std::move(*result510) / TilePixels;
         if (yOffset < branchYOffset + (h / 2.0f))
@@ -504,12 +504,12 @@ float h = std::move(*result510) / TilePixels;
 
         auto result511 = attachmentSettings.get("bx");
 if (!result511) return std::unexpected(std::move(result511.error()));
-auto result512 = (**result511).toDouble();
+auto result512 = result511->get().toDouble();
 if (!result512) return std::unexpected(std::move(result512.error()));
 float xO = xOffset + std::move(*result512) / TilePixels;
         auto result513 = attachmentSettings.get("by");
 if (!result513) return std::unexpected(std::move(result513.error()));
-auto result514 = (**result513).toDouble();
+auto result514 = result513->get().toDouble();
 if (!result514) return std::unexpected(std::move(result514.error()));
 float yO = branchYOffset + std::move(*result514) / TilePixels;
 
@@ -524,7 +524,7 @@ if (condition517) {
           float boffset = this->root().random().randf() + roffset;
           auto result518 = branchSettings.get("image");
 if (!result518) return std::unexpected(std::move(result518.error()));
-auto result519 = (**result518).toString();
+auto result519 = result518->get().toString();
 if (!result519) return std::unexpected(std::move(result519.error()));
 String branchFile = AssetPath::relativeTo(config.stemDirectory, std::move(*result519));
           {
@@ -548,7 +548,7 @@ JsonObject branchLeaves = std::move(*result520);
           if (branchLeaves.contains(branchKey)) {
             auto result521 = branchLeaves.get(branchKey);
 if (!result521) return std::unexpected(std::move(result521.error()));
-auto result522 = (**result521).toObject();
+auto result522 = result521->get().toObject();
 if (!result522) return std::unexpected(std::move(result522.error()));
 JsonObject branchLeavesSettings = std::move(*result522);
             auto result523 = branchLeavesSettings["attachment"].toObject();
@@ -557,12 +557,12 @@ JsonObject attachmentSettings = std::move(*result523);
 
             auto result524 = attachmentSettings.get("bx");
 if (!result524) return std::unexpected(std::move(result524.error()));
-auto result525 = (**result524).toDouble();
+auto result525 = result524->get().toDouble();
 if (!result525) return std::unexpected(std::move(result525.error()));
 float xOf = xO + std::move(*result525) / TilePixels;
             auto result526 = attachmentSettings.get("by");
 if (!result526) return std::unexpected(std::move(result526.error()));
-auto result527 = (**result526).toDouble();
+auto result527 = result526->get().toDouble();
 if (!result527) return std::unexpected(std::move(result527.error()));
 float yOf = yO + std::move(*result527) / TilePixels;
 
@@ -570,14 +570,14 @@ float yOf = yO + std::move(*result527) / TilePixels;
 if (condition530) {
 auto result528 = branchLeavesSettings.get("image");
 if (!result528) return std::unexpected(std::move(result528.error()));
-auto result529 = (**result528).toString();
+auto result529 = result528->get().toString();
 if (!result529) return std::unexpected(std::move(result529.error()));
 condition530 = static_cast<bool>(!std::move(*result529).empty());
 }
 if (condition530) {
               auto result531 = branchLeavesSettings.get("image");
 if (!result531) return std::unexpected(std::move(result531.error()));
-auto result532 = (**result531).toString();
+auto result532 = result531->get().toString();
 if (!result532) return std::unexpected(std::move(result532.error()));
 String branchLeavesFile =
                   AssetPath::relativeTo(config.foliageDirectory, std::move(*result532));
@@ -597,14 +597,14 @@ String branchLeavesFile =
 if (condition535) {
 auto result533 = branchLeavesSettings.get("backimage");
 if (!result533) return std::unexpected(std::move(result533.error()));
-auto result534 = (**result533).toString();
+auto result534 = result533->get().toString();
 if (!result534) return std::unexpected(std::move(result534.error()));
 condition535 = static_cast<bool>(!std::move(*result534).empty());
 }
 if (condition535) {
               auto result536 = branchLeavesSettings.get("backimage");
 if (!result536) return std::unexpected(std::move(result536.error()));
-auto result537 = (**result536).toString();
+auto result537 = result536->get().toString();
 if (!result537) return std::unexpected(std::move(result537.error()));
 String branchLeavesBackFile =
                   AssetPath::relativeTo(config.foliageDirectory, std::move(*result537));
@@ -624,7 +624,7 @@ String branchLeavesBackFile =
         } else {
           auto result538 = attachmentSettings.get("h");
 if (!result538) return std::unexpected(std::move(result538.error()));
-auto result539 = (**result538).toDouble();
+auto result539 = result538->get().toDouble();
 if (!result539) return std::unexpected(std::move(result539.error()));
 auto result540 = rnd.randInt(4);
 branchYOffset += (std::move(*result539) / TilePixels) / (float)(1 + result540);
@@ -653,12 +653,12 @@ JsonObject attachmentSettings = std::move(*result544);
 
       auto result545 = attachmentSettings.get("bx");
 if (!result545) return std::unexpected(std::move(result545.error()));
-auto result546 = (**result545).toDouble();
+auto result546 = result545->get().toDouble();
 if (!result546) return std::unexpected(std::move(result546.error()));
 xOffset += std::move(*result546) / TilePixels;
       auto result547 = attachmentSettings.get("by");
 if (!result547) return std::unexpected(std::move(result547.error()));
-auto result548 = (**result547).toDouble();
+auto result548 = result547->get().toDouble();
 if (!result548) return std::unexpected(std::move(result548.error()));
 yOffset += std::move(*result548) / TilePixels;
 
@@ -666,7 +666,7 @@ yOffset += std::move(*result548) / TilePixels;
 
       auto result549 = crownSettings.get("image");
 if (!result549) return std::unexpected(std::move(result549.error()));
-auto result550 = (**result549).toString();
+auto result550 = result549->get().toString();
 if (!result550) return std::unexpected(std::move(result550.error()));
 String crownFile = AssetPath::relativeTo(config.stemDirectory, std::move(*result550));
       {
@@ -688,7 +688,7 @@ JsonObject crownLeaves = std::move(*result551);
       if (crownLeaves.contains(crownKey)) {
         auto result552 = crownLeaves.get(crownKey);
 if (!result552) return std::unexpected(std::move(result552.error()));
-auto result553 = (**result552).toObject();
+auto result553 = result552->get().toObject();
 if (!result553) return std::unexpected(std::move(result553.error()));
 JsonObject crownLeavesSettings = std::move(*result553);
 
@@ -698,12 +698,12 @@ JsonObject attachmentSettings = std::move(*result554);
 
         auto result555 = attachmentSettings.get("bx");
 if (!result555) return std::unexpected(std::move(result555.error()));
-auto result556 = (**result555).toDouble();
+auto result556 = result555->get().toDouble();
 if (!result556) return std::unexpected(std::move(result556.error()));
 float xO = xOffset + std::move(*result556) / TilePixels;
         auto result557 = attachmentSettings.get("by");
 if (!result557) return std::unexpected(std::move(result557.error()));
-auto result558 = (**result557).toDouble();
+auto result558 = result557->get().toDouble();
 if (!result558) return std::unexpected(std::move(result558.error()));
 float yO = yOffset + std::move(*result558) / TilePixels;
 
@@ -711,14 +711,14 @@ float yO = yOffset + std::move(*result558) / TilePixels;
 if (condition561) {
 auto result559 = crownLeavesSettings.get("image");
 if (!result559) return std::unexpected(std::move(result559.error()));
-auto result560 = (**result559).toString();
+auto result560 = result559->get().toString();
 if (!result560) return std::unexpected(std::move(result560.error()));
 condition561 = static_cast<bool>(!std::move(*result560).empty());
 }
 if (condition561) {
           auto result562 = crownLeavesSettings.get("image");
 if (!result562) return std::unexpected(std::move(result562.error()));
-auto result563 = (**result562).toString();
+auto result563 = result562->get().toString();
 if (!result563) return std::unexpected(std::move(result563.error()));
 String crownLeavesFile =
               AssetPath::relativeTo(config.foliageDirectory, std::move(*result563));
@@ -739,14 +739,14 @@ String crownLeavesFile =
 if (condition566) {
 auto result564 = crownLeavesSettings.get("backimage");
 if (!result564) return std::unexpected(std::move(result564.error()));
-auto result565 = (**result564).toString();
+auto result565 = result564->get().toString();
 if (!result565) return std::unexpected(std::move(result565.error()));
 condition566 = static_cast<bool>(!std::move(*result565).empty());
 }
 if (condition566) {
           auto result567 = crownLeavesSettings.get("backimage");
 if (!result567) return std::unexpected(std::move(result567.error()));
-auto result568 = (**result567).toString();
+auto result568 = result567->get().toString();
 if (!result568) return std::unexpected(std::move(result568.error()));
 String crownLeavesBackFile =
               AssetPath::relativeTo(config.foliageDirectory, std::move(*result568));
@@ -1085,12 +1085,12 @@ EntityType Plant::entityType() const {
   return EntityType::Plant;
 }
 
-std::expected<void, StarException> Plant::init(World* world, EntityId entityId, EntityMode mode) {
+std::expected<void, StarException> Plant::init(World& world, EntityId entityId, EntityMode mode) {
   auto result635 = Entity::init(world, entityId, mode);
 if (!result635) return std::unexpected(std::move(result635.error()));
   auto result636 = validatePieces();
 if (!result636) return std::unexpected(std::move(result636.error()));
-  m_tilePosition = world->geometry().xwrap(m_tilePosition);
+  m_tilePosition = world.geometry().xwrap(m_tilePosition);
   return {};
 }
 
@@ -1258,7 +1258,7 @@ std::expected<void, StarException> Plant::update(float dt, std::uint64_t) {
   m_windTime = std::fmod(m_windTime, 628.32f);
   auto result621 = world();
 if (!result621) return std::unexpected(std::move(result621.error()));
-auto result622 = std::move(*result621)->windLevel(Vec2F(m_tilePosition));
+auto result622 = result621->get().windLevel(Vec2F(m_tilePosition));
 if (!result622) return std::unexpected(std::move(result622.error()));
 m_windLevel = std::move(*result622);
 
@@ -1278,7 +1278,7 @@ if (!result623) return std::unexpected(std::move(result623.error()));
   return {};
 }
 
-std::expected<void, StarException> Plant::render(RenderCallback* renderCallback) {
+std::expected<void, StarException> Plant::render(RenderCallback& renderCallback) {
   auto result602 = this->root().random().randf(-0.1f, 0.1f);
 if (!result602) return std::unexpected(std::move(result602.error()));
 float damageXOffset = std::move(*result602) * m_tileDamageStatus->damageEffectPercentage();
@@ -1305,7 +1305,7 @@ auto drawable = std::move(*result1283);
       drawable.rotate(branchRotation(m_tilePosition[0], plantPiece.rotationOffset * 1.4f), plantPiece.offset + Vec2F(size) / 2.0f);
     }
     drawable.translate(position());
-    auto result604 = renderCallback->addDrawable(std::move(drawable), RenderLayerPlant);
+    auto result604 = renderCallback.addDrawable(std::move(drawable), RenderLayerPlant);
 if (!result604) return std::unexpected(std::move(result604.error()));
   }
 
@@ -1348,7 +1348,7 @@ auto particle = std::move(*result611);
         }
         particle.position = {m_tileDamageX + this->root().random().randf(), m_tileDamageY + this->root().random().randf()};
         particle.translate(position());
-        auto result612 = renderCallback->addParticle(std::move(particle));
+        auto result612 = renderCallback.addParticle(std::move(particle));
 if (!result612) return std::unexpected(std::move(result612.error()));
       }
       auto result613 = m_stemDropConfig.get("sounds", JsonObject());
@@ -1359,7 +1359,7 @@ JsonArray damageTreeSoundOptions = std::move(*result614);
       if (damageTreeSoundOptions.size()) {
         auto result615 = this->root().random().randFrom(damageTreeSoundOptions);
 if (!result615) return std::unexpected(std::move(result615.error()));
-auto sound = (**result615);
+auto sound = result615->get();
         Vec2F pos = position() + Vec2F(m_tileDamageX + this->root().random().randf(), m_tileDamageY + this->root().random().randf());
         auto result616 = this->root().assets();
 if (!result616) return std::unexpected(std::move(result616.error()));
@@ -1375,7 +1375,7 @@ auto audioInstance = std::move(*result1277);
         auto result619 = sound.getFloat("volume", 1.0f);
 if (!result619) return std::unexpected(std::move(result619.error()));
 audioInstance->setVolume(std::move(*result619));
-        auto result620 = renderCallback->addAudio(std::move(audioInstance));
+        auto result620 = renderCallback.addAudio(std::move(audioInstance));
 if (!result620) return std::unexpected(std::move(result620.error()));
       }
     }
@@ -1460,7 +1460,7 @@ if (!result367) return std::unexpected(std::move(result367.error()));
 if (!RotationTypeNames) return std::unexpected(RotationTypeNames.error());
 auto result368 = RotationTypeNames->getLeft(std::move(*result367));
 if (!result368) return std::unexpected(std::move(result368.error()));
-res.rotationType = (**result368);
+res.rotationType = result368->get();
       auto result369 = v.getFloat("rotationOffset");
 if (!result369) return std::unexpected(std::move(result369.error()));
 res.rotationOffset = std::move(*result369);
@@ -1498,7 +1498,7 @@ if (!result363) return std::unexpected(std::move(result363.error()));
 return JsonObject{
         {"image", piece.image},
         {"offset", jsonFromVec2F(piece.offset)},
-        {"rotationType", (**result363)},
+        {"rotationType", result363->get()},
         {"rotationOffset", piece.rotationOffset},
         {"structuralSegment", piece.structuralSegment},
         {"kind", piece.kind},
@@ -1523,19 +1523,19 @@ if (!result595) return std::unexpected(std::move(result595.error()));
 }
 
 std::expected<void, StarException> Plant::setupNetStates() {
-  auto result590 = m_netGroup.addNetElement(m_tileDamageStatus.get());
+  auto result590 = m_netGroup.addNetElement(*m_tileDamageStatus);
 if (!result590) return std::unexpected(std::move(result590.error()));
-  auto result591 = m_netGroup.addNetElement(&m_piecesNetState);
+  auto result591 = m_netGroup.addNetElement(m_piecesNetState);
 if (!result591) return std::unexpected(std::move(result591.error()));
-  auto result592 = m_netGroup.addNetElement(&m_tileDamageXNetState);
+  auto result592 = m_netGroup.addNetElement(m_tileDamageXNetState);
 if (!result592) return std::unexpected(std::move(result592.error()));
-  auto result593 = m_netGroup.addNetElement(&m_tileDamageYNetState);
+  auto result593 = m_netGroup.addNetElement(m_tileDamageYNetState);
 if (!result593) return std::unexpected(std::move(result593.error()));
-  auto result594 = m_netGroup.addNetElement(&m_tileDamageEventNetState);
+  auto result594 = m_netGroup.addNetElement(m_tileDamageEventNetState);
 if (!result594) return std::unexpected(std::move(result594.error()));
 
-  m_netGroup.setNeedsStoreCallback(std::bind(&Plant::setNetStates, this));
-  m_netGroup.setNeedsLoadCallback(std::bind(&Plant::getNetStates, this));
+  m_netGroup.setNeedsStoreCallback(std::bind(&Plant::setNetStates, std::ref(*this)));
+  m_netGroup.setNeedsLoadCallback(std::bind(&Plant::getNetStates, std::ref(*this)));
   return {};
 }
 
@@ -1578,7 +1578,7 @@ auto position = std::move(*result584);
 
   auto result585 = world();
 if (!result585) return std::unexpected(std::move(result585.error()));
-auto geometry = std::move(*result585)->geometry();
+auto geometry = result585->get().geometry();
 
   auto result586 = m_tileDamageStatus->damage(m_tileDamageParameters, tileDamage);
 if (!result586) return std::unexpected(std::move(result586.error()));
@@ -1605,7 +1605,7 @@ if (!result587) return std::unexpected(std::move(result587.error()));
 std::expected<void, StarException> Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) {
   auto result575 = world();
 if (!result575) return std::unexpected(std::move(result575.error()));
-auto geometry = std::move(*result575)->geometry();
+auto geometry = result575->get().geometry();
   Vec2I internalPos = geometry.diff(position, tilePosition());
   std::size_t idx = std::numeric_limits<std::size_t>::max();
   int segmentIdx = std::numeric_limits<int>::max();
@@ -1714,7 +1714,7 @@ auto result581 = PlantDrop::create(this->root(), segment,
         first,
         random);
 if (!result581) return std::unexpected(std::move(result581.error()));
-auto result582 = std::move(*result579)->addEntity(std::move(*result581));
+auto result582 = result579->get().addEntity(std::move(*result581));
 if (!result582) return std::unexpected(std::move(result582.error()));
     first = false;
   }
@@ -1732,7 +1732,7 @@ std::expected<Vec2I, StarException> Plant::baseDamagePosition(List<Vec2I> const&
   }
   auto result572 = positions.at(0);
 if (!result572) return std::unexpected(std::move(result572.error()));
-auto res = (**result572);
+auto res = result572->get();
 
   for (auto const& piece : m_pieces) {
     if (piece.structuralSegment) {
@@ -1740,7 +1740,7 @@ auto res = (**result572);
         for (auto position : positions) {
           auto result573 = world();
 if (!result573) return std::unexpected(std::move(result573.error()));
-          if ((*result573)->geometry().equal(m_tilePosition + space, position)) {
+          if (result573->get().geometry().equal(m_tilePosition + space, position)) {
             // if this space is a "better match" for the root of the plant
             if ((res[1] < position[1]) == m_ceiling) {
               res = position;

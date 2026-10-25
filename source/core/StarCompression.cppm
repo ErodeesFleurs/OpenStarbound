@@ -24,12 +24,12 @@ constexpr std::size_t MaxUncompressedSize = 256 * 1024 * 1024;
 
 [[nodiscard]] std::expected<void, StarException> compressData(ByteArray const& in, ByteArray& out, CompressionLevel compression = MediumCompression);
 [[nodiscard]] std::expected<ByteArray, StarException> compressData(ByteArray const& in, CompressionLevel compression = MediumCompression);
-[[nodiscard]] std::expected<void, StarException> uncompressData(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit = 0);
-[[nodiscard]] std::expected<ByteArray, StarException> uncompressData(const char* in, std::size_t inLen, std::size_t limit = 0);
+[[nodiscard]] std::expected<void, StarException> uncompressData(std::span<char const> in, ByteArray& out, std::size_t limit = 0);
+[[nodiscard]] std::expected<ByteArray, StarException> uncompressData(std::span<char const> in, std::size_t limit = 0);
 [[nodiscard]] std::expected<void, StarException> uncompressData(ByteArray const& in, ByteArray& out, std::size_t limit = 0);
 [[nodiscard]] std::expected<ByteArray, StarException> uncompressData(ByteArray const& in, std::size_t limit = 0);
-[[nodiscard]] std::expected<void, StarException> uncompressDataGzip(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit = 0);
-[[nodiscard]] std::expected<ByteArray, StarException> uncompressDataGzip(const char* in, std::size_t inLen, std::size_t limit = 0);
+[[nodiscard]] std::expected<void, StarException> uncompressDataGzip(std::span<char const> in, ByteArray& out, std::size_t limit = 0);
+[[nodiscard]] std::expected<ByteArray, StarException> uncompressDataGzip(std::span<char const> in, std::size_t limit = 0);
 [[nodiscard]] std::expected<void, StarException> uncompressDataGzip(ByteArray const& in, ByteArray& out, std::size_t limit = 0);
 [[nodiscard]] std::expected<ByteArray, StarException> uncompressDataGzip(ByteArray const& in, std::size_t limit = 0);
 
@@ -67,7 +67,8 @@ private:
 namespace Star {
 namespace {
 
-std::expected<void, StarException> inflateData(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit, int windowBits) {
+std::expected<void, StarException> inflateData(std::span<char const> in, ByteArray& out, std::size_t limit, int windowBits) {
+  auto inLen = in.size();
   out.clear();
   if (!inLen)
     return {};
@@ -87,7 +88,7 @@ std::expected<void, StarException> inflateData(const char* in, std::size_t inLen
   do {
     if (!stream.avail_in && consumed < inLen) {
       auto chunk = std::min(inLen - consumed, std::size_t(std::numeric_limits<decltype(stream.avail_in)>::max()));
-      stream.next_in = reinterpret_cast<std::uint8_t const*>(in + consumed);
+      stream.next_in = reinterpret_cast<std::uint8_t const*>(in.data() + consumed);
       stream.avail_in = chunk;
       consumed += chunk;
     }
@@ -100,7 +101,7 @@ std::expected<void, StarException> inflateData(const char* in, std::size_t inLen
     auto produced = BufferSize - stream.avail_out;
     if (limit && produced > limit - out.size())
       return std::unexpected(IOException::format("Decompression exceeds limit of {} bytes", limit));
-    out.append(reinterpret_cast<char const*>(buffer.get()), produced);
+    out.append(std::span{reinterpret_cast<char const*>(buffer.get()), produced});
     if (status != Z_STREAM_END && !produced && previousInput == stream.avail_in)
       return std::unexpected(IOException::format("Incomplete compressed data ({})", status));
   } while (status != Z_STREAM_END);
@@ -111,7 +112,7 @@ std::expected<void, StarException> inflateData(const char* in, std::size_t inLen
   return {};
 }
 
-IOException compressedFileError(char const* operation, gzFile file) {
+IOException compressedFileError(std::string_view operation, gzFile file) {
   int status = Z_OK;
   char const* detail = zng_gzerror(file, &status);
   return IOException::format("Compressed file {} error ({}): {}", operation, status, detail ? detail : "no detail");
@@ -148,7 +149,7 @@ std::expected<void, StarException> compressData(ByteArray const& in, ByteArray& 
     status = zng_deflate(&stream, consumed == in.size() ? Z_FINISH : Z_NO_FLUSH);
     if (status != Z_OK && status != Z_STREAM_END)
       return std::unexpected(IOException::format("Compression error ({}): {}", status, stream.msg ? stream.msg : "no detail"));
-    out.append(reinterpret_cast<char const*>(buffer.get()), BufferSize - stream.avail_out);
+    out.append(std::span{reinterpret_cast<char const*>(buffer.get()), BufferSize - stream.avail_out});
   } while (status != Z_STREAM_END);
   owner.release();
   status = zng_deflateEnd(&stream);
@@ -165,44 +166,44 @@ std::expected<ByteArray, StarException> compressData(ByteArray const& in, Compre
   return out;
 }
 
-std::expected<void, StarException> uncompressData(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit) {
-  return inflateData(in, inLen, out, limit, 15);
+std::expected<void, StarException> uncompressData(std::span<char const> in, ByteArray& out, std::size_t limit) {
+  return inflateData(in, out, limit, 15);
 }
 
-std::expected<ByteArray, StarException> uncompressData(const char* in, std::size_t inLen, std::size_t limit) {
+std::expected<ByteArray, StarException> uncompressData(std::span<char const> in, std::size_t limit) {
   ByteArray out;
-  auto result = uncompressData(in, inLen, out, limit);
+  auto result = uncompressData(in, out, limit);
   if (!result)
     return std::unexpected(std::move(result.error()));
   return out;
 }
 
 std::expected<void, StarException> uncompressData(ByteArray const& in, ByteArray& out, std::size_t limit) {
-  return uncompressData(in.ptr(), in.size(), out, limit);
+  return uncompressData(in.span(), out, limit);
 }
 
 std::expected<ByteArray, StarException> uncompressData(ByteArray const& in, std::size_t limit) {
-  return uncompressData(in.ptr(), in.size(), limit);
+  return uncompressData(in.span(), limit);
 }
 
-std::expected<void, StarException> uncompressDataGzip(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit) {
-  return inflateData(in, inLen, out, limit, 31);
+std::expected<void, StarException> uncompressDataGzip(std::span<char const> in, ByteArray& out, std::size_t limit) {
+  return inflateData(in, out, limit, 31);
 }
 
-std::expected<ByteArray, StarException> uncompressDataGzip(const char* in, std::size_t inLen, std::size_t limit) {
+std::expected<ByteArray, StarException> uncompressDataGzip(std::span<char const> in, std::size_t limit) {
   ByteArray out;
-  auto result = uncompressDataGzip(in, inLen, out, limit);
+  auto result = uncompressDataGzip(in, out, limit);
   if (!result)
     return std::unexpected(std::move(result.error()));
   return out;
 }
 
 std::expected<void, StarException> uncompressDataGzip(ByteArray const& in, ByteArray& out, std::size_t limit) {
-  return uncompressDataGzip(in.ptr(), in.size(), out, limit);
+  return uncompressDataGzip(in.span(), out, limit);
 }
 
 std::expected<ByteArray, StarException> uncompressDataGzip(ByteArray const& in, std::size_t limit) {
-  return uncompressDataGzip(in.ptr(), in.size(), limit);
+  return uncompressDataGzip(in.span(), limit);
 }
 
 std::expected<std::shared_ptr<CompressedFile>, StarException> CompressedFile::open(String const& filename, IOMode mode, CompressionLevel comp) {

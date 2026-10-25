@@ -94,7 +94,7 @@ namespace Star {
 StatusController::StatusController(Root& root)
   : m_root(root), m_uniqueEffectMetadata([] { return UniqueEffectMetadata::create(); }),
     m_effectAnimators([&root] { return EffectAnimator::create(root); }),
-    m_parentEntity(nullptr), m_movementController(nullptr), m_primaryScript(root),
+    m_primaryScript(root),
     m_primaryAnimatorId(EffectAnimatorGroup::NullElementId) {}
 
 std::expected<std::shared_ptr<StatusController>, StarException> StatusController::create(Root& root, Json const& config) {
@@ -111,42 +111,42 @@ std::expected<void, StarException> StatusController::configure(Json const& confi
   if (!properties) return std::unexpected(std::move(properties.error()));
   m_statusProperties.reset(std::move(*properties));
   m_statusProperties.setOverrides(
-    [&](DataStream& ds, NetCompatibilityRules rules) -> std::expected<void, StarException> {
+    [&statusProperties = m_statusProperties](DataStream& ds, NetCompatibilityRules rules) -> std::expected<void, StarException> {
       if (rules.version() <= 1) {
-        auto result = ds << m_statusProperties.baseMap();
+        auto result = ds << statusProperties.baseMap();
         if (!result) return std::unexpected(std::move(result.error()));
         return {};
       }
-      return m_statusProperties.NetElementHashMap<String, Json>::netStore(ds, rules);
+      return statusProperties.NetElementHashMap<String, Json>::netStore(ds, rules);
     },
-    [&](DataStream& ds, NetCompatibilityRules rules) -> std::expected<void, StarException> {
+    [&statusProperties = m_statusProperties](DataStream& ds, NetCompatibilityRules rules) -> std::expected<void, StarException> {
       if (rules.version() <= 1) {
         auto properties = ds.read<JsonObject>();
         if (!properties) return std::unexpected(std::move(properties.error()));
-        m_statusProperties.reset(std::move(*properties));
+        statusProperties.reset(std::move(*properties));
         return {};
       }
-      return m_statusProperties.NetElementHashMap<String, Json>::netLoad(ds, rules);
+      return statusProperties.NetElementHashMap<String, Json>::netLoad(ds, rules);
     },
-    [&](DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) -> std::expected<bool, StarException> {
+    [&statusProperties = m_statusProperties](DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) -> std::expected<bool, StarException> {
       if (rules.version() <= 1) {
-        if (m_statusProperties.shouldWriteNetDelta(fromVersion, rules)) {
-          auto result = ds << m_statusProperties.baseMap();
+        if (statusProperties.shouldWriteNetDelta(fromVersion, rules)) {
+          auto result = ds << statusProperties.baseMap();
           if (!result) return std::unexpected(std::move(result.error()));
           return true;
         }
         return false;
       }
-      return m_statusProperties.NetElementHashMap<String, Json>::writeNetDelta(ds, fromVersion, rules);
+      return statusProperties.NetElementHashMap<String, Json>::writeNetDelta(ds, fromVersion, rules);
     },
-    [&](DataStream& ds, float interp, NetCompatibilityRules rules) -> std::expected<void, StarException> {
+    [&statusProperties = m_statusProperties](DataStream& ds, float interp, NetCompatibilityRules rules) -> std::expected<void, StarException> {
       if (rules.version() <= 1) {
         auto properties = ds.read<JsonObject>();
         if (!properties) return std::unexpected(std::move(properties.error()));
-        m_statusProperties.reset(std::move(*properties));
+        statusProperties.reset(std::move(*properties));
         return {};
       }
-      return m_statusProperties.NetElementHashMap<String, Json>::readNetDelta(ds, interp, rules);
+      return statusProperties.NetElementHashMap<String, Json>::readNetDelta(ds, interp, rules);
     });
   auto minimumLiquidStatusEffectPercentage = config.getFloat("minimumLiquidStatusEffectPercentage");
   if (!minimumLiquidStatusEffectPercentage) return std::unexpected(std::move(minimumLiquidStatusEffectPercentage.error()));
@@ -176,13 +176,13 @@ std::expected<void, StarException> StatusController::configure(Json const& confi
   m_recentHitsGiven.setHistoryLimit(*keepSteps);
   m_recentDamageGiven.setHistoryLimit(*keepSteps);
   m_recentDamageTaken.setHistoryLimit(*keepSteps);
-  if (auto result = m_netGroup.addNetElement(m_statCollection.get()); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = m_netGroup.addNetElement(&m_statusProperties); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = m_netGroup.addNetElement(&m_parentDirectives); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = m_netGroup.addNetElement(&m_uniqueEffectMetadata); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = m_netGroup.addNetElement(&m_effectAnimators); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = m_netGroup.addNetElement(*m_statCollection); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = m_netGroup.addNetElement(m_statusProperties); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = m_netGroup.addNetElement(m_parentDirectives); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = m_netGroup.addNetElement(m_uniqueEffectMetadata); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = m_netGroup.addNetElement(m_effectAnimators); !result) return std::unexpected(std::move(result.error()));
   m_toolUsageSuppressed.setCompatibilityVersion(12);
-  if (auto result = m_netGroup.addNetElement(&m_toolUsageSuppressed); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = m_netGroup.addNetElement(m_toolUsageSuppressed); !result) return std::unexpected(std::move(result.error()));
   if (m_primaryAnimationConfig) {
     auto animator = EffectAnimator::create(m_root, m_primaryAnimationConfig);
     if (!animator) return std::unexpected(std::move(animator.error()));
@@ -459,8 +459,8 @@ std::expected<void, StarException> StatusController::addEphemeralEffect(Ephemera
 
 std::expected<void, StarException> StatusController::addEphemeralEffects(List<EphemeralStatusEffect> const& effectList, std::optional<EntityId> sourceEntityId) {
   for (auto const& effect : effectList) {
-    if (auto existingEffect = m_uniqueEffects.ptr(effect.uniqueEffect)) {
-      auto metadata = m_uniqueEffectMetadata.getNetElement(existingEffect->metadataId);
+    if (auto existingEffect = m_uniqueEffects.maybeRef(effect.uniqueEffect)) {
+      auto metadata = m_uniqueEffectMetadata.getNetElement(existingEffect->get().metadataId);
       if (!metadata) return std::unexpected(std::move(metadata.error()));
       if ((*metadata)->duration) {
         auto defaultDuration = defaultUniqueEffectDuration(effect.uniqueEffect);
@@ -483,8 +483,8 @@ std::expected<void, StarException> StatusController::addEphemeralEffects(List<Ep
 }
 
 std::expected<bool, StarException> StatusController::removeEphemeralEffect(UniqueStatusEffect const& effect) {
-  if (auto uniqueEffect = m_uniqueEffects.ptr(effect)) {
-    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect->metadataId);
+  if (auto uniqueEffect = m_uniqueEffects.maybeRef(effect)) {
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect->get().metadataId);
     if (!metadata) return std::unexpected(std::move(metadata.error()));
     if ((*metadata)->duration) {
       if (auto result = removeUniqueEffect(effect); !result) return std::unexpected(std::move(result.error()));
@@ -582,17 +582,17 @@ std::pair<List<DamageNotification>, std::uint64_t> StatusController::inflictedDa
   return m_recentDamageGiven.query(since);
 }
 
-std::expected<void, StarException> StatusController::init(Entity* parentEntity, ActorMovementController* movementController) {
+std::expected<void, StarException> StatusController::init(Entity& parentEntity, ActorMovementController& movementController) {
   if (auto result = uninit(); !result) return std::unexpected(std::move(result.error()));
 
-  m_parentEntity = parentEntity;
-  m_movementController = movementController;
+  m_parentEntity = std::ref(parentEntity);
+  m_movementController = std::ref(movementController);
 
-  if (m_parentEntity->isMaster()) {
+  if (m_parentEntity->get().isMaster()) {
     if (auto result = initPrimaryScript(); !result) return std::unexpected(std::move(result.error()));
     for (auto& p : m_uniqueEffects.keys())
-      if (auto effect = m_uniqueEffects.ptr(p))
-        if (auto result = initUniqueEffectScript(*effect); !result) return std::unexpected(std::move(result.error()));
+      if (auto effect = m_uniqueEffects.maybeRef(p))
+        if (auto result = initUniqueEffectScript(effect->get()); !result) return std::unexpected(std::move(result.error()));
   }
 
   m_environmentStatusEffectUpdateTimer.reset();
@@ -600,12 +600,10 @@ std::expected<void, StarException> StatusController::init(Entity* parentEntity, 
 }
 
 std::expected<void, StarException> StatusController::uninit() {
-  m_parentEntity = nullptr;
-  m_movementController = nullptr;
   std::optional<StarException> error;
   for (auto const& key : m_uniqueEffects.keys()) {
-    if (auto effect = m_uniqueEffects.ptr(key)) {
-      auto result = uninitUniqueEffectScript(*effect);
+    if (auto effect = m_uniqueEffects.maybeRef(key)) {
+      auto result = uninitUniqueEffectScript(effect->get());
       if (!result && !error) error = std::move(result.error());
     }
   }
@@ -614,11 +612,13 @@ std::expected<void, StarException> StatusController::uninit() {
   m_recentHitsGiven.reset();
   m_recentDamageGiven.reset();
   m_recentDamageTaken.reset();
+  m_parentEntity.reset();
+  m_movementController.reset();
   if (error) return std::unexpected(std::move(*error));
   return {};
 }
 
-void StatusController::initNetVersion(NetElementVersion const* version) {
+void StatusController::initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version) {
   m_netGroup.initNetVersion(version);
 }
 
@@ -664,10 +664,10 @@ std::expected<void, StarException> StatusController::tickMaster(float dt) {
   m_recentDamageGiven.tick(1);
   m_recentDamageTaken.tick(1);
   bool statusImmune = statPositive("statusImmunity");
-  if (!statusImmune && m_movementController->liquidPercentage() > m_minimumLiquidStatusEffectPercentage) {
+  if (!statusImmune && m_movementController->get().liquidPercentage() > m_minimumLiquidStatusEffectPercentage) {
     auto database = m_root.liquidsDatabase();
     if (!database) return std::unexpected(std::move(database.error()));
-    if (auto settings = (*database)->liquidSettings(m_movementController->liquidId())) {
+    if (auto settings = (*database)->liquidSettings(m_movementController->get().liquidId())) {
       for (auto const& value : settings->statusEffects) {
         auto effect = jsonToEphemeralStatusEffect(value);
         if (!effect) return std::unexpected(std::move(effect.error()));
@@ -676,17 +676,17 @@ std::expected<void, StarException> StatusController::tickMaster(float dt) {
     }
   }
   if (m_environmentStatusEffectUpdateTimer.wrapTick(m_root.timing().timestep)) {
-    PolyF collisionBody = m_movementController->collisionBody();
-    auto world = m_parentEntity->world();
+    PolyF collisionBody = m_movementController->get().collisionBody();
+    auto world = m_parentEntity->get().world();
     if (!world) return std::unexpected(std::move(world.error()));
     List<PersistentStatusEffect> entityEffects;
     if (!statusImmune) {
-      auto visited = (*world)->forEachEntity(collisionBody.boundBox(),
+      auto visited = world->get().forEachEntity(collisionBody.boundBox(),
         [world = *world, collisionBody, &entityEffects](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
           if (auto effectEntity = as<StatusEffectEntity>(entity)) {
             auto area = effectEntity->statusEffectArea();
             area.translate(effectEntity->position());
-            auto intersects = world->geometry().polyIntersectsPoly(area, collisionBody);
+            auto intersects = world.get().geometry().polyIntersectsPoly(area, collisionBody);
             if (!intersects) return std::unexpected(std::move(intersects.error()));
             if (*intersects) {
               auto effects = effectEntity->statusEffects();
@@ -700,7 +700,7 @@ std::expected<void, StarException> StatusController::tickMaster(float dt) {
     }
     if (auto result = setPersistentEffects("entities", entityEffects); !result) return std::unexpected(std::move(result.error()));
     if (!statusImmune && m_appliesEnvironmentStatusEffects) {
-      auto values = (*world)->environmentStatusEffects(m_parentEntity->position());
+      auto values = world->get().environmentStatusEffects(m_parentEntity->get().position());
       if (!values) return std::unexpected(std::move(values.error()));
       List<PersistentStatusEffect> effects;
       for (auto const& value : *values) {
@@ -711,7 +711,7 @@ std::expected<void, StarException> StatusController::tickMaster(float dt) {
       if (auto result = setPersistentEffects("environment", effects); !result) return std::unexpected(std::move(result.error()));
     }
     if (!statusImmune && m_appliesWeatherStatusEffects) {
-      auto values = (*world)->weatherStatusEffects(m_parentEntity->position());
+      auto values = world->get().weatherStatusEffects(m_parentEntity->get().position());
       if (!values) return std::unexpected(std::move(values.error()));
       List<EphemeralStatusEffect> effects;
       for (auto const& value : *values) {
@@ -735,11 +735,11 @@ std::expected<void, StarException> StatusController::tickMaster(float dt) {
   for (auto const& key : m_uniqueEffects.keys()) {
     auto effect = m_uniqueEffects.get(key);
     if (!effect) return std::unexpected(std::move(effect.error()));
-    auto metadata = m_uniqueEffectMetadata.getNetElement((*effect)->metadataId);
+    auto metadata = m_uniqueEffectMetadata.getNetElement(effect->get().metadataId);
     if (!metadata) return std::unexpected(std::move(metadata.error()));
     if (((*metadata)->duration && *(*metadata)->duration <= 0.0f)
         || (((*metadata)->duration && statPositive("statusImmunity"))
-          || ((*effect)->effectConfig.blockingStat && statPositive(*(*effect)->effectConfig.blockingStat)))) {
+          || (effect->get().effectConfig.blockingStat && statPositive(*effect->get().effectConfig.blockingStat)))) {
       if (auto result = removeUniqueEffect(key); !result) return std::unexpected(std::move(result.error()));
     }
   }
@@ -762,7 +762,7 @@ const DirectivesGroup& StatusController::parentDirectives() const {
 std::expected<List<Drawable>, StarException> StatusController::drawables() const {
   List<Drawable> output;
   for (auto const& animator : m_effectAnimators.netElements()) {
-    auto values = animator->animator->drawables(m_movementController->position());
+    auto values = animator->animator->drawables(m_movementController->get().position());
     if (!values) return std::unexpected(std::move(values.error()));
     output.appendAll(std::move(*values));
   }
@@ -772,7 +772,7 @@ std::expected<List<Drawable>, StarException> StatusController::drawables() const
 std::expected<List<LightSource>, StarException> StatusController::lightSources() const {
   List<LightSource> output;
   for (auto const& animator : m_effectAnimators.netElements()) {
-    auto values = animator->animator->lightSources(m_movementController->position());
+    auto values = animator->animator->lightSources(m_movementController->get().position());
     if (!values) return std::unexpected(std::move(values.error()));
     output.appendAll(std::move(*values));
   }
@@ -848,7 +848,7 @@ std::expected<std::shared_ptr<StatusController::EffectAnimator>, StarException> 
   return result;
 }
 
-void StatusController::EffectAnimator::initNetVersion(NetElementVersion const* version) {
+void StatusController::EffectAnimator::initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version) {
   animator->initNetVersion(version);
 }
 
@@ -904,9 +904,9 @@ StatusController::UniqueEffectMetadata::UniqueEffectMetadata() {
 
 std::expected<std::shared_ptr<StatusController::UniqueEffectMetadata>, StarException> StatusController::UniqueEffectMetadata::create(UniqueStatusEffect effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId) {
   auto result = std::make_shared<UniqueEffectMetadata>();
-  if (auto registered = result->addNetElement(&result->durationNetState); !registered) return std::unexpected(std::move(registered.error()));
-  if (auto registered = result->addNetElement(&result->maxDuration); !registered) return std::unexpected(std::move(registered.error()));
-  if (auto registered = result->addNetElement(&result->sourceEntityId); !registered) return std::unexpected(std::move(registered.error()));
+  if (auto registered = result->addNetElement(result->durationNetState); !registered) return std::unexpected(std::move(registered.error()));
+  if (auto registered = result->addNetElement(result->maxDuration); !registered) return std::unexpected(std::move(registered.error()));
+  if (auto registered = result->addNetElement(result->sourceEntityId); !registered) return std::unexpected(std::move(registered.error()));
   result->effect = std::move(effect);
   result->duration = duration;
   result->maxDuration.set(duration.value_or(0.0f));
@@ -925,14 +925,14 @@ std::expected<void, StarException> StatusController::UniqueEffectMetadata::netEl
 }
 
 std::expected<void, StarException> StatusController::updateAnimators(float dt) {
-  auto world = m_parentEntity->world();
+  auto world = m_parentEntity->get().world();
   if (!world) return std::unexpected(std::move(world.error()));
   for (auto const& animator : m_effectAnimators.netElements()) {
-    if ((*world)->isServer()) {
-      if (auto result = animator->animator->update(dt, nullptr); !result) return std::unexpected(std::move(result.error()));
+    if (world->get().isServer()) {
+      if (auto result = animator->animator->update(dt, std::nullopt); !result) return std::unexpected(std::move(result.error()));
     } else {
-      if (auto result = animator->animator->update(dt, &animator->dynamicTarget); !result) return std::unexpected(std::move(result.error()));
-      animator->dynamicTarget.updatePosition(m_movementController->position());
+      if (auto result = animator->animator->update(dt, std::ref(animator->dynamicTarget)); !result) return std::unexpected(std::move(result.error()));
+      animator->dynamicTarget.updatePosition(m_movementController->get().position());
     }
   }
   return {};
@@ -943,8 +943,8 @@ std::expected<void, StarException> StatusController::updatePersistentUniqueEffec
   for (auto& category : m_persistentEffects) {
     for (auto it = category.second.uniqueEffects.begin(); it != category.second.uniqueEffects.end();) {
       auto const& name = *it++;
-      if (auto existing = m_uniqueEffects.ptr(name)) {
-        auto metadata = m_uniqueEffectMetadata.getNetElement(existing->metadataId);
+      if (auto existing = m_uniqueEffects.maybeRef(name)) {
+        auto metadata = m_uniqueEffectMetadata.getNetElement(existing->get().metadataId);
         if (!metadata) return std::unexpected(std::move(metadata.error()));
         (*metadata)->duration.reset();
         active.add(name);
@@ -959,7 +959,7 @@ std::expected<void, StarException> StatusController::updatePersistentUniqueEffec
   for (auto const& key : m_uniqueEffects.keys()) {
     auto effect = m_uniqueEffects.get(key);
     if (!effect) return std::unexpected(std::move(effect.error()));
-    auto metadata = m_uniqueEffectMetadata.getNetElement((*effect)->metadataId);
+    auto metadata = m_uniqueEffectMetadata.getNetElement(effect->get().metadataId);
     if (!metadata) return std::unexpected(std::move(metadata.error()));
     if (!(*metadata)->duration && !active.contains(key)) {
       if (auto result = removeUniqueEffect(key); !result) return std::unexpected(std::move(result.error()));
@@ -1031,11 +1031,11 @@ std::expected<bool, StarException> StatusController::addUniqueEffect(UniqueStatu
 std::expected<void, StarException> StatusController::removeUniqueEffect(UniqueStatusEffect const& effect) {
   auto instance = m_uniqueEffects.get(effect);
   if (!instance) return std::unexpected(std::move(instance.error()));
-  auto expired = (*instance)->script.invoke("onExpire");
-  auto uninitialized = uninitUniqueEffectScript(**instance);
-  m_uniqueEffectMetadata.removeNetElement((*instance)->metadataId);
-  if ((*instance)->animatorId != EffectAnimatorGroup::NullElementId)
-    m_effectAnimators.removeNetElement((*instance)->animatorId);
+  auto expired = instance->get().script.invoke("onExpire");
+  auto uninitialized = uninitUniqueEffectScript(instance->get());
+  m_uniqueEffectMetadata.removeNetElement(instance->get().metadataId);
+  if (instance->get().animatorId != EffectAnimatorGroup::NullElementId)
+    m_effectAnimators.removeNetElement(instance->get().animatorId);
   m_uniqueEffects.remove(effect);
   if (!expired && !expired.error().is<LuaException>()) return std::unexpected(std::move(expired.error()));
   if (!uninitialized) return std::unexpected(std::move(uninitialized.error()));
@@ -1043,23 +1043,23 @@ std::expected<void, StarException> StatusController::removeUniqueEffect(UniqueSt
 }
 
 std::expected<void, StarException> StatusController::initPrimaryScript() {
-  auto statusCallbacks = LuaBindings::makeStatusControllerCallbacks(this);
+  auto statusCallbacks = LuaBindings::makeStatusControllerCallbacks(*this);
   if (!statusCallbacks) return std::unexpected(std::move(statusCallbacks.error()));
   if (auto result = m_primaryScript.addCallbacks("status", std::move(*statusCallbacks)); !result) return std::unexpected(std::move(result.error()));
-  auto entityCallbacks = LuaBindings::makeEntityCallbacks(m_parentEntity);
+  auto entityCallbacks = LuaBindings::makeEntityCallbacks(m_parentEntity->get());
   if (!entityCallbacks) return std::unexpected(std::move(entityCallbacks.error()));
   if (auto result = m_primaryScript.addCallbacks("entity", std::move(*entityCallbacks)); !result) return std::unexpected(std::move(result.error()));
   if (m_primaryAnimatorId != EffectAnimatorGroup::NullElementId) {
     auto animator = m_effectAnimators.getNetElement(m_primaryAnimatorId);
     if (!animator) return std::unexpected(std::move(animator.error()));
-    auto callbacks = LuaBindings::makeNetworkedAnimatorCallbacks((*animator)->animator.get());
+    auto callbacks = LuaBindings::makeNetworkedAnimatorCallbacks(*(*animator)->animator);
     if (!callbacks) return std::unexpected(std::move(callbacks.error()));
     if (auto result = m_primaryScript.addCallbacks("animator", std::move(*callbacks)); !result) return std::unexpected(std::move(result.error()));
   }
-  if (auto result = m_primaryScript.addActorMovementCallbacks(m_movementController); !result) return std::unexpected(std::move(result.error()));
-  auto world = m_parentEntity->world();
+  if (auto result = m_primaryScript.addActorMovementCallbacks(m_movementController->get()); !result) return std::unexpected(std::move(result.error()));
+  auto world = m_parentEntity->get().world();
   if (!world) return std::unexpected(std::move(world.error()));
-  auto initialized = m_primaryScript.init(*world);
+  auto initialized = m_primaryScript.init(world->get());
   if (!initialized && !initialized.error().is<LuaException>()) return std::unexpected(std::move(initialized.error()));
   return {};
 }
@@ -1080,7 +1080,7 @@ std::expected<void, StarException> StatusController::initUniqueEffectScript(Uniq
   auto effectCallbacks = makeUniqueEffectCallbacks(uniqueEffect);
   if (!effectCallbacks) return std::unexpected(std::move(effectCallbacks.error()));
   if (auto result = uniqueEffect.script.addCallbacks("effect", std::move(*effectCallbacks)); !result) return std::unexpected(std::move(result.error()));
-  auto statusCallbacks = LuaBindings::makeStatusControllerCallbacks(this);
+  auto statusCallbacks = LuaBindings::makeStatusControllerCallbacks(*this);
   if (!statusCallbacks) return std::unexpected(std::move(statusCallbacks.error()));
   if (auto result = uniqueEffect.script.addCallbacks("status", std::move(*statusCallbacks)); !result) return std::unexpected(std::move(result.error()));
   auto configCallbacks = LuaBindings::makeConfigCallbacks([&uniqueEffect](String const& name, Json const& def) {
@@ -1088,20 +1088,20 @@ std::expected<void, StarException> StatusController::initUniqueEffectScript(Uniq
   });
   if (!configCallbacks) return std::unexpected(std::move(configCallbacks.error()));
   if (auto result = uniqueEffect.script.addCallbacks("config", std::move(*configCallbacks)); !result) return std::unexpected(std::move(result.error()));
-  auto entityCallbacks = LuaBindings::makeEntityCallbacks(m_parentEntity);
+  auto entityCallbacks = LuaBindings::makeEntityCallbacks(m_parentEntity->get());
   if (!entityCallbacks) return std::unexpected(std::move(entityCallbacks.error()));
   if (auto result = uniqueEffect.script.addCallbacks("entity", std::move(*entityCallbacks)); !result) return std::unexpected(std::move(result.error()));
   if (uniqueEffect.animatorId != EffectAnimatorGroup::NullElementId) {
     auto animator = m_effectAnimators.getNetElement(uniqueEffect.animatorId);
     if (!animator) return std::unexpected(std::move(animator.error()));
-    auto callbacks = LuaBindings::makeNetworkedAnimatorCallbacks((*animator)->animator.get());
+    auto callbacks = LuaBindings::makeNetworkedAnimatorCallbacks(*(*animator)->animator);
     if (!callbacks) return std::unexpected(std::move(callbacks.error()));
     if (auto result = uniqueEffect.script.addCallbacks("animator", std::move(*callbacks)); !result) return std::unexpected(std::move(result.error()));
   }
-  if (auto result = uniqueEffect.script.addActorMovementCallbacks(m_movementController); !result) return std::unexpected(std::move(result.error()));
-  auto world = m_parentEntity->world();
+  if (auto result = uniqueEffect.script.addActorMovementCallbacks(m_movementController->get()); !result) return std::unexpected(std::move(result.error()));
+  auto world = m_parentEntity->get().world();
   if (!world) return std::unexpected(std::move(world.error()));
-  auto initialized = uniqueEffect.script.init(*world);
+  auto initialized = uniqueEffect.script.init(world->get());
   if (!initialized && !initialized.error().is<LuaException>()) return std::unexpected(std::move(initialized.error()));
   return {};
 }
@@ -1124,39 +1124,39 @@ std::expected<void, StarException> StatusController::uninitUniqueEffectScript(Un
 
 std::expected<LuaCallbacks, StarException> StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect) {
   LuaCallbacks callbacks;
-  if (auto result = callbacks.registerCallback("name", [this, &uniqueEffect]() -> std::expected<UniqueStatusEffect, StarException> {
-    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+  if (auto result = callbacks.registerCallback("name", [&controller = *this, &uniqueEffect]() -> std::expected<UniqueStatusEffect, StarException> {
+    auto metadata = controller.m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
     if (!metadata) return std::unexpected(std::move(metadata.error()));
     return (*metadata)->effect;
   }); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("duration", [this, &uniqueEffect]() -> std::expected<std::optional<float>, StarException> {
-    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+  if (auto result = callbacks.registerCallback("duration", [&controller = *this, &uniqueEffect]() -> std::expected<std::optional<float>, StarException> {
+    auto metadata = controller.m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
     if (!metadata) return std::unexpected(std::move(metadata.error()));
     return (*metadata)->duration;
   }); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("modifyDuration", [this, &uniqueEffect](float duration) -> std::expected<void, StarException> {
-    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+  if (auto result = callbacks.registerCallback("modifyDuration", [&controller = *this, &uniqueEffect](float duration) -> std::expected<void, StarException> {
+    auto metadata = controller.m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
     if (!metadata) return std::unexpected(std::move(metadata.error()));
     if ((*metadata)->duration) *(*metadata)->duration += duration;
     return {};
   }); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("setDuration", [this, &uniqueEffect](float duration) -> std::expected<void, StarException> {
-    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+  if (auto result = callbacks.registerCallback("setDuration", [&controller = *this, &uniqueEffect](float duration) -> std::expected<void, StarException> {
+    auto metadata = controller.m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
     if (!metadata) return std::unexpected(std::move(metadata.error()));
     if ((*metadata)->duration) *(*metadata)->duration = duration;
     return {};
   }); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("expire", [this, &uniqueEffect]() -> std::expected<void, StarException> {
-    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+  if (auto result = callbacks.registerCallback("expire", [&controller = *this, &uniqueEffect]() -> std::expected<void, StarException> {
+    auto metadata = controller.m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
     if (!metadata) return std::unexpected(std::move(metadata.error()));
     if ((*metadata)->duration) (*metadata)->duration = 0.0f;
     return {};
   }); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("sourceEntity", [this, &uniqueEffect]() -> std::expected<std::optional<EntityId>, StarException> {
-    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+  if (auto result = callbacks.registerCallback("sourceEntity", [&controller = *this, &uniqueEffect]() -> std::expected<std::optional<EntityId>, StarException> {
+    auto metadata = controller.m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
     if (!metadata) return std::unexpected(std::move(metadata.error()));
     auto source = (*metadata)->sourceEntityId.get();
-    if (!source) return std::optional<EntityId>(m_parentEntity->entityId());
+    if (!source) return std::optional<EntityId>(controller.m_parentEntity->get().entityId());
     if (source == NullEntityId) return std::optional<EntityId>{};
     return source;
   }); !result) return std::unexpected(std::move(result.error()));
@@ -1166,30 +1166,30 @@ std::expected<LuaCallbacks, StarException> StatusController::makeUniqueEffectCal
   if (auto result = callbacks.registerCallback("getParameter", [&uniqueEffect](String const& name, Json const& def) -> std::expected<Json, StarException> {
     return uniqueEffect.effectConfig.effectConfig.query(name, def);
   }); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("addStatModifierGroup", [this, &uniqueEffect](List<StatModifier> const& modifiers) -> std::expected<StatModifierGroupId, StarException> {
-    auto id = m_statCollection->addStatModifierGroup(modifiers);
+  if (auto result = callbacks.registerCallback("addStatModifierGroup", [&controller = *this, &uniqueEffect](List<StatModifier> const& modifiers) -> std::expected<StatModifierGroupId, StarException> {
+    auto id = controller.m_statCollection->addStatModifierGroup(modifiers);
     if (!id) return std::unexpected(std::move(id.error()));
     uniqueEffect.modifierGroups.add(*id);
     return *id;
   }); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("setStatModifierGroup", [this, &uniqueEffect](StatModifierGroupId groupId, List<StatModifier> const& modifiers) -> std::expected<void, StarException> {
+  if (auto result = callbacks.registerCallback("setStatModifierGroup", [&controller = *this, &uniqueEffect](StatModifierGroupId groupId, List<StatModifier> const& modifiers) -> std::expected<void, StarException> {
     if (!uniqueEffect.modifierGroups.contains(groupId))
       return std::unexpected(StatusException("Cannot set stat modifier group that was not added from this effect"));
-    return m_statCollection->setStatModifierGroup(groupId, modifiers);
+    return controller.m_statCollection->setStatModifierGroup(groupId, modifiers);
   }); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("removeStatModifierGroup", [this, &uniqueEffect](StatModifierGroupId groupId) -> std::expected<void, StarException> {
+  if (auto result = callbacks.registerCallback("removeStatModifierGroup", [&controller = *this, &uniqueEffect](StatModifierGroupId groupId) -> std::expected<void, StarException> {
     if (!uniqueEffect.modifierGroups.contains(groupId))
       return std::unexpected(StatusException("Cannot remove stat modifier group that was not added from this effect"));
-    m_statCollection->removeStatModifierGroup(groupId);
+    controller.m_statCollection->removeStatModifierGroup(groupId);
     uniqueEffect.modifierGroups.remove(groupId);
     return {};
   }); !result) return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("setToolUsageSuppressed", [this, &uniqueEffect](bool suppressed) -> void {
+  if (auto result = callbacks.registerCallback("setToolUsageSuppressed", [&controller = *this, &uniqueEffect](bool suppressed) -> void {
     if (uniqueEffect.toolUsageSuppressed == suppressed) return;
     uniqueEffect.toolUsageSuppressed = suppressed;
     bool anySuppressed = false;
-    for (auto& entry : m_uniqueEffects) anySuppressed = anySuppressed || entry.second.toolUsageSuppressed;
-    m_toolUsageSuppressed.set(anySuppressed);
+    for (auto& entry : controller.m_uniqueEffects) anySuppressed = anySuppressed || entry.second.toolUsageSuppressed;
+    controller.m_toolUsageSuppressed.set(anySuppressed);
   }); !result) return std::unexpected(std::move(result.error()));
   return callbacks;
 }

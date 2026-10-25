@@ -70,7 +70,7 @@ import star.tool_user_entity;
 namespace Star {
 
 struct ToolUserItemExceptionTag {
-  static constexpr char const* name() { return "ToolUserItemException"; }
+  static constexpr std::string_view name() { return "ToolUserItemException"; }
 };
 using ToolUserItemException = StarError<ToolUserItemExceptionTag, StarException>;
 
@@ -88,10 +88,10 @@ public:
   ToolUserItem();
   virtual ~ToolUserItem() = default;
 
-  // Owner must be initialized when a ToolUserItem is initialized and
-  // uninitialized before the owner is uninitialized.
+  // Owner must be initialized when a ToolUserItem is initialized, and the item
+  // must be uninitialized before its owner is uninitialized.
   [[nodiscard]]
-  virtual std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand);
+  virtual std::expected<void, StarException> init(ToolUserEntity& owner, ToolHand hand);
   [[nodiscard]]
   virtual std::expected<void, StarException> uninit();
 
@@ -111,16 +111,16 @@ public:
 
   // Accessors report an error when initialized() is false.
   [[nodiscard]]
-  std::expected<ToolUserEntity*, StarException> owner() const;
+  std::expected<std::reference_wrapper<ToolUserEntity>, StarException> owner() const;
   [[nodiscard]]
   std::expected<EntityMode, StarException> entityMode() const;
   [[nodiscard]]
   std::expected<ToolHand, StarException> hand() const;
   [[nodiscard]]
-  std::expected<World*, StarException> world() const;
+  std::expected<std::reference_wrapper<World>, StarException> world() const;
 
 private:
-  ToolUserEntity* m_owner;
+  std::optional<std::reference_wrapper<ToolUserEntity>> m_owner;
   std::optional<ToolHand> m_hand;
 };
 

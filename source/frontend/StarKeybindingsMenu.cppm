@@ -65,7 +65,7 @@ private:
   explicit KeybindingsMenu(GuiContext& guiContext);
   [[nodiscard]] std::expected<void, StarException> init();
   [[nodiscard]] std::expected<void, StarException> buildListsFromConfig();
-  [[nodiscard]] std::expected<void, StarException> activateBinding(Widget* widget);
+  [[nodiscard]] std::expected<void, StarException> activateBinding(Widget& widget);
   [[nodiscard]] std::expected<void, StarException> setKeybinding(KeyChord desc);
   [[nodiscard]] std::expected<void, StarException> clearActive();
   [[nodiscard]] std::expected<void, StarException> exitActiveMode();
@@ -73,9 +73,9 @@ private:
   [[nodiscard]] std::expected<void, StarException> revert();
   [[nodiscard]] std::expected<void, StarException> resetDefaults();
 
-  Widget* m_activeKeybinding;
+  std::weak_ptr<Widget> m_activeKeybinding;
 
-  Map<Widget*, InterfaceAction> m_childToAction;
+  Map<std::weak_ptr<Widget>, InterfaceAction, std::owner_less<std::weak_ptr<Widget>>> m_childToAction;
   std::shared_ptr<TabSetWidget> m_tabSet;
   std::shared_ptr<ListWidget> m_playerList;
   std::shared_ptr<ListWidget> m_toolBarList;

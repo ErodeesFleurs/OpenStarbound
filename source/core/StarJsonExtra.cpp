@@ -34,14 +34,14 @@ Json jsonFromSize(std::size_t s) {
 
 namespace {
   template <typename Vec, std::size_t Size, typename Getter>
-  std::expected<Vec, StarException> jsonVector(Json const& v, Getter getter, char const* diagnostic) {
+  std::expected<Vec, StarException> jsonVector(Json const& v, Getter getter, std::string_view diagnostic) {
     if (v.type() != Json::Type::Array)
-      return std::unexpected(JsonException(diagnostic));
+      return std::unexpected(JsonException(std::string(diagnostic)));
     auto size = v.size();
     if (!size)
       return std::unexpected(std::move(size.error()));
     if (*size != Size)
-      return std::unexpected(JsonException(diagnostic));
+      return std::unexpected(JsonException(std::string(diagnostic)));
     Vec result;
     for (std::size_t i = 0; i < Size; ++i) {
       auto element = std::invoke(getter, v, i);
@@ -99,7 +99,7 @@ Json jsonFromVec3I(Vec3I const& v) { return JsonArray{v[0], v[1], v[2]}; }
 
 namespace {
   template <typename Rect, typename Vec, typename Getter, typename Converter>
-  std::expected<Rect, StarException> jsonRect(Json const& v, Getter getter, Converter converter, char const* name) {
+  std::expected<Rect, StarException> jsonRect(Json const& v, Getter getter, Converter& converter, std::string_view name) {
     if (v.type() != Json::Type::Array)
       return std::unexpected(JsonException(strf("Json not an array in {}", name)));
     auto size = v.size();
@@ -306,7 +306,8 @@ Json jsonFromDirectivesList(List<Directives> const& v) {
   JsonArray result;
   for (auto const& entry : v)
     if (entry)
-      result.push_back(*entry.stringPtr());
+      if (auto text = entry.maybeString())
+        result.push_back(text->get());
   return result;
 }
 

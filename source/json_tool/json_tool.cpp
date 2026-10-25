@@ -243,32 +243,36 @@ std::expected<void, StarException> forEachChild(FormattedJson const& parent, Jso
 [[nodiscard]]
 std::expected<void, StarException> process(JsonOutput const& output,
     Command const& command, Options const& options, FormattedJson const& input) {
-  if (auto get = std::get_if<GetCommand>(&command)) {
-    auto value = get->path->get(input);
+  if (std::holds_alternative<GetCommand>(command)) {
+    auto const& get = std::get<GetCommand>(command);
+    auto value = get.path->get(input);
     if (!value) {
-      if (get->opt && value.error().is<JsonPath::TraversalException>())
+      if (get.opt && value.error().is<JsonPath::TraversalException>())
         return {};
       return std::unexpected(std::move(value.error()));
     }
-    auto emitted = get->children ? forEachChild(*value, output) : output(*value);
-    if (!emitted && get->opt && emitted.error().is<JsonPath::TraversalException>())
+    auto emitted = get.children ? forEachChild(*value, output) : output(*value);
+    if (!emitted && get.opt && emitted.error().is<JsonPath::TraversalException>())
       return {};
     return emitted;
   }
-  if (auto set = std::get_if<SetCommand>(&command)) {
-    auto value = addOrSet(false, set->path, input, options.insertLocation, set->value);
+  if (std::holds_alternative<SetCommand>(command)) {
+    auto const& set = std::get<SetCommand>(command);
+    auto value = addOrSet(false, set.path, input, options.insertLocation, set.value);
     if (!value)
       return std::unexpected(std::move(value.error()));
     return output(*value);
   }
-  if (auto add = std::get_if<AddCommand>(&command)) {
-    auto value = addOrSet(true, add->path, input, options.insertLocation, add->value);
+  if (std::holds_alternative<AddCommand>(command)) {
+    auto const& add = std::get<AddCommand>(command);
+    auto value = addOrSet(true, add.path, input, options.insertLocation, add.value);
     if (!value)
       return std::unexpected(std::move(value.error()));
     return output(*value);
   }
-  if (auto remove = std::get_if<RemoveCommand>(&command)) {
-    auto value = remove->path->remove(input);
+  if (std::holds_alternative<RemoveCommand>(command)) {
+    auto const& remove = std::get<RemoveCommand>(command);
+    auto value = remove.path->remove(input);
     if (!value)
       return std::unexpected(std::move(value.error()));
     return output(*value);
@@ -288,11 +292,11 @@ std::expected<void, StarException> process(
 [[nodiscard]]
 std::expected<void, StarException> process(Logger& logger,
     JsonOutput output, Command const& command, Options const& options, Input const& input) {
-  if (auto literal = std::get_if<JsonLiteralInput>(&input))
-    return process(output, command, options, literal->json);
+  if (std::holds_alternative<JsonLiteralInput>(input))
+    return process(output, command, options, std::get<JsonLiteralInput>(input).json);
   StringList files;
-  if (auto file = std::get_if<FileInput>(&input)) {
-    files.append(file->filename);
+  if (std::holds_alternative<FileInput>(input)) {
+    files.append(std::get<FileInput>(input).filename);
   } else {
     auto found = findFiles(logger, std::get<FindInput>(input));
     if (!found)
@@ -342,7 +346,7 @@ std::expected<std::optional<ParsedArgs>, StarException> parseArgs(int argc, char
   ParsedArgs parsed;
   int next = 1;
   auto available = [&] { return argc - next; };
-  auto take = [&] { return String(argv[next++]); };
+  auto take = [&] { return String(std::string_view(argv[next++])); };
   auto noCommand = [&] { return std::holds_alternative<std::monostate>(parsed.command); };
   auto noLocation = [&] { return std::holds_alternative<std::monostate>(parsed.options.insertLocation); };
 
@@ -476,7 +480,7 @@ std::expected<String, StarException> readStdin() {
   char buffer[1024];
   while (!std::feof(stdin)) {
     std::size_t readBytes = std::fread(buffer, 1, sizeof(buffer), stdin);
-    result.append(buffer, readBytes);
+    result.append(std::string_view(buffer, readBytes));
     if (std::ferror(stdin))
       return std::unexpected(IOException("Failed reading JSON from standard input"));
   }

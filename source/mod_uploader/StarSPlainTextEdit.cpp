@@ -1,11 +1,13 @@
 #include <QPlainTextEdit>
 
+import std;
+
 import star.s_plain_text_edit;
 
 namespace Star {
 
-SPlainTextEdit::SPlainTextEdit(QWidget* parent)
-  : QPlainTextEdit(parent), m_changed(false) {
+SPlainTextEdit::SPlainTextEdit(std::optional<std::reference_wrapper<QWidget>> parent)
+  : QPlainTextEdit(parent ? &parent->get() : nullptr), m_changed(false) {
 
   connect(this, SIGNAL(textChanged()), this, SLOT(wasChanged()));
 }

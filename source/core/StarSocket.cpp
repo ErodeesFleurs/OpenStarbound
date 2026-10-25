@@ -330,7 +330,7 @@ std::expected<void, StarException> Socket::configure() {
   return setNonBlocking(false);
 }
 
-std::expected<void, StarException> Socket::checkOpen(char const* methodName) const {
+std::expected<void, StarException> Socket::checkOpen(std::string_view methodName) const {
   if (m_socketMode == SocketMode::Closed)
     return std::unexpected(SocketClosedException::format("Socket not open in {}", methodName));
   return {};

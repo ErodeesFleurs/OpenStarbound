@@ -6,7 +6,7 @@ import star.type_identity;
 namespace Star {
 
 struct PointerConvertExceptionTag {
-  static constexpr char const* name() { return "PointerConvertException"; }
+  static constexpr std::string_view name() { return "PointerConvertException"; }
 };
 using PointerConvertException = StarError<PointerConvertExceptionTag, StarException>;
 
@@ -51,6 +51,16 @@ std::shared_ptr<Type1 const> as(std::shared_ptr<Type2 const> const& p) {
   return {};
 }
 
+// Capability lookup borrows the supplied object and preserves its constness.
+template <typename Target, typename Source>
+auto asRef(Source& value)
+    -> std::optional<std::reference_wrapper<std::conditional_t<std::is_const_v<Source>, std::add_const_t<Target>, Target>>> {
+  using Result = std::conditional_t<std::is_const_v<Source>, std::add_const_t<Target>, Target>;
+  if (auto adjusted = queryCast<Result>(std::addressof(value)))
+    return std::reference_wrapper<Result>(*adjusted);
+  return std::nullopt;
+}
+
 template <typename Type1, typename Type2>
 bool is(Type2* p) {
   return as<Type1>(p) != nullptr;
@@ -92,13 +102,17 @@ template <typename Type, typename Ptr>
 }
 
 template <typename Type1, typename Type2>
-[[nodiscard]] std::expected<Type1*, StarException> rconvert(Type2& r) {
-  return convert<Type1>(&r);
+[[nodiscard]] std::expected<std::reference_wrapper<Type1>, StarException> rconvert(Type2& r) {
+  if (auto result = asRef<Type1>(r))
+    return *result;
+  return std::unexpected(PointerConvertException::format("Could not convert from {} to {}", r.dynamicTypeName(), typeName<Type1>()));
 }
 
 template <typename Type1, typename Type2>
-[[nodiscard]] std::expected<Type1 const*, StarException> rconvert(Type2 const& r) {
-  return convert<Type1 const>(&r);
+[[nodiscard]] std::expected<std::reference_wrapper<Type1 const>, StarException> rconvert(Type2 const& r) {
+  if (auto result = asRef<Type1 const>(r))
+    return *result;
+  return std::unexpected(PointerConvertException::format("Could not convert from {} to {}", r.dynamicTypeName(), typeName<Type1 const>()));
 }
 
 template <typename Type>
@@ -121,6 +135,7 @@ export namespace Star {
   using ::Star::is;
   using ::Star::ris;
   using ::Star::as;
+  using ::Star::asRef;
   using ::Star::convert;
   using ::Star::rconvert;
   using ::Star::asWeak;

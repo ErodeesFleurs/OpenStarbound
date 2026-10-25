@@ -45,6 +45,7 @@ import star.world;
 namespace Star {
 
 class Root;
+class Player;
 
 class Companion {
 public:
@@ -78,7 +79,7 @@ public:
 
   List<std::shared_ptr<Companion>> getCompanions(String const& category) const;
 
-  [[nodiscard]] std::expected<void, StarException> init(Entity* player, World* world);
+  [[nodiscard]] std::expected<void, StarException> init(Player& player, World& world);
   [[nodiscard]] std::expected<void, StarException> uninit();
 
   [[nodiscard]] std::expected<void, StarException> dismissCompanion(String const& category, Uuid const& podUuid);
@@ -90,7 +91,6 @@ private:
   Root& m_root;
   [[nodiscard]] std::expected<LuaCallbacks, StarException> makeCompanionsCallbacks();
 
-  World* m_world = nullptr;
   Json m_config;
   StringMap<List<std::shared_ptr<Companion>>> m_companions;
 

@@ -23,8 +23,8 @@ class Root;
 // "any <bandage>", whereas the text for QuestItemList is always a list, e.g.
 // "<1 bandage, 3 apple>."
 struct QuestItem {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestItem& param);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestItem const& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestItem& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestItem const& param);
 
   bool operator==(QuestItem const& rhs) const;
   [[nodiscard]] std::expected<ItemDescriptor, StarException> descriptor() const;
@@ -109,8 +109,8 @@ typedef QuestItemListWrapper<List<ItemDescriptor>> QuestItemList;
 
 // The uniqueId of a specific entity
 struct QuestEntity {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestEntity& param);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestEntity const& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestEntity& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestEntity const& param);
 
   bool operator==(QuestEntity const& rhs) const;
 
@@ -121,8 +121,8 @@ struct QuestEntity {
 
 // A location within the world, which could represent a spawn point or a dungeon
 struct QuestLocation {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestLocation& param);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestLocation const& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestLocation& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestLocation const& param);
   bool operator==(QuestLocation const& rhs) const;
 
   std::optional<String> uniqueId;
@@ -130,8 +130,8 @@ struct QuestLocation {
 };
 
 struct QuestMonsterType {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestMonsterType& param);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestMonsterType const& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestMonsterType& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestMonsterType const& param);
 
   bool operator==(QuestMonsterType const& rhs) const;
 
@@ -140,8 +140,8 @@ struct QuestMonsterType {
 };
 
 struct QuestNpcType {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestNpcType& param);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestNpcType const& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestNpcType& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestNpcType const& param);
 
   bool operator==(QuestNpcType const& rhs) const;
 
@@ -152,8 +152,8 @@ struct QuestNpcType {
 };
 
 struct QuestCoordinate {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestCoordinate& param);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestCoordinate const& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestCoordinate& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestCoordinate const& param);
 
   bool operator==(QuestCoordinate const& rhs) const;
 
@@ -165,8 +165,8 @@ typedef Json QuestJson;
 typedef std::variant<std::monostate, QuestItem, QuestItemTag, QuestItemList, QuestEntity, QuestLocation, QuestMonsterType, QuestNpcType, QuestCoordinate, QuestJson> QuestParamDetail;
 
 struct QuestParam {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestParam& param);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestParam const& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestParam& param);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestParam const& param);
 
   [[nodiscard]] static std::expected<QuestParam, StarException> fromJson(Json const& json);
   [[nodiscard]] static std::expected<QuestParam, StarException> diskLoad(Root& root, Json const& json);
@@ -183,8 +183,8 @@ struct QuestParam {
 };
 
 struct QuestDescriptor {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestDescriptor& quest);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestDescriptor const& quest);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestDescriptor& quest);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestDescriptor const& quest);
 
   [[nodiscard]] static std::expected<QuestDescriptor, StarException> fromJson(Root& root, Json const& json);
   [[nodiscard]] static std::expected<QuestDescriptor, StarException> diskLoad(Root& root, Json const& json);
@@ -201,8 +201,8 @@ struct QuestDescriptor {
 };
 
 struct QuestArcDescriptor {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestArcDescriptor& questArc);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestArcDescriptor const& questArc);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestArcDescriptor& questArc);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestArcDescriptor const& questArc);
 
   [[nodiscard]] static std::expected<QuestArcDescriptor, StarException> fromJson(Root& root, Json const& json);
   [[nodiscard]] static std::expected<QuestArcDescriptor, StarException> diskLoad(Root& root, Json const& json);
@@ -224,24 +224,24 @@ struct QuestArcDescriptor {
 [[nodiscard]] std::expected<Json, StarException> questParamsToJson(StringMap<QuestParam> const& parameters);
 [[nodiscard]] std::expected<Json, StarException> questParamsDiskStore(Root& root, StringMap<QuestParam> const& parameters);
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestItem& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestItem const& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestEntity& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestEntity const& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestLocation& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestLocation const& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestMonsterType& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestMonsterType const& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestNpcType& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestNpcType const& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestCoordinate& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestCoordinate const& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestParam& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestParam const& param);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestDescriptor& quest);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestDescriptor const& quest);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestArcDescriptor& questArc);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestArcDescriptor const& questArc);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestItem& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestItem const& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestEntity& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestEntity const& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestLocation& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestLocation const& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestMonsterType& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestMonsterType const& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestNpcType& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestNpcType const& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestCoordinate& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestCoordinate const& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestParam& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestParam const& param);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestDescriptor& quest);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestDescriptor const& quest);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestArcDescriptor& questArc);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestArcDescriptor const& questArc);
 }
 
 export module star.quest_descriptor;

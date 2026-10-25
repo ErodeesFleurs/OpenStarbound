@@ -192,9 +192,9 @@ std::expected<std::size_t, StarException> base64Decode(std::span<char const> src
   return written;
 }
 
-String hexEncode(char const* data, std::size_t len) {
-  std::string res(len * 2, '\0');
-  std::size_t encoded = hexEncode({data, len}, {res.data(), res.size()});
+String hexEncode(std::span<char const> data) {
+  std::string res(data.size() * 2, '\0');
+  std::size_t encoded = hexEncode(data, res);
   ((void)(encoded));
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((encoded == res.size()));
@@ -202,9 +202,9 @@ String hexEncode(char const* data, std::size_t len) {
   return res;
 }
 
-String base64Encode(char const* data, std::size_t len) {
-  std::string res(len * 4 / 3 + 3, '\0');
-  std::size_t encoded = base64Encode({data, len}, {res.data(), res.size()});
+String base64Encode(std::span<char const> data) {
+  std::string res(data.size() * 4 / 3 + 3, '\0');
+  std::size_t encoded = base64Encode(data, res);
   ((void)(encoded));
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((encoded <= res.size()));
@@ -214,24 +214,24 @@ String base64Encode(char const* data, std::size_t len) {
 }
 
 String hexEncode(ByteArray const& data) {
-  return hexEncode(data.ptr(), data.size());
+  return hexEncode(data.span());
 }
 
 std::expected<ByteArray, StarException> hexDecode(String const& encodedData) {
   ByteArray res(encodedData.utf8Size() / 2, 0);
-  auto decoded = hexDecode({encodedData.utf8Ptr(), encodedData.utf8Size()}, {res.ptr(), res.size()});
+  auto decoded = hexDecode(encodedData.utf8(), res.span());
   if (!decoded)
     return std::unexpected(std::move(decoded.error()));
   return res;
 }
 
 String base64Encode(ByteArray const& data) {
-  return base64Encode(data.ptr(), data.size());
+  return base64Encode(data.span());
 }
 
 std::expected<ByteArray, StarException> base64Decode(String const& encodedData) {
   ByteArray res((encodedData.utf8Size() + 3) / 4 * 3, 0);
-  auto decoded = base64Decode({encodedData.utf8Ptr(), encodedData.utf8Size()}, {res.ptr(), res.size()});
+  auto decoded = base64Decode(encodedData.utf8(), res.span());
   if (!decoded)
     return std::unexpected(std::move(decoded.error()));
   res.resize(*decoded);

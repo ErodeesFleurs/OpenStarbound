@@ -43,7 +43,7 @@ extern std::expected<EnumMap<EquipmentSlot>, StarException> const EquipmentSlotN
     if (!EquipmentSlotNames) return std::unexpected(EquipmentSlotNames.error());
     auto slot = EquipmentSlotNames->getLeft(*name);
     if (!slot) return std::unexpected(std::move(slot.error()));
-    return InventorySlot(**slot);
+    return InventorySlot(slot->get());
   } else if (*type == "swap") {
     return InventorySlot(SwapSlot());
   } else if (*type == "trash") {
@@ -56,11 +56,11 @@ extern std::expected<EnumMap<EquipmentSlot>, StarException> const EquipmentSlotN
 }
 
 [[nodiscard]] std::expected<Json, StarException> jsonFromInventorySlot(InventorySlot const& slot) {
-  if (auto equipment = std::get_if<EquipmentSlot>(&slot)) {
+  if (std::holds_alternative<EquipmentSlot>(slot)) {
     if (!EquipmentSlotNames) return std::unexpected(EquipmentSlotNames.error());
-    auto name = EquipmentSlotNames->getRight(*equipment);
+    auto name = EquipmentSlotNames->getRight(std::get<EquipmentSlot>(slot));
     if (!name) return std::unexpected(std::move(name.error()));
-    return JsonObject{{"type", "equipment"}, {"location", **name}};
+    return JsonObject{{"type", "equipment"}, {"location", name->get()}};
   } else if (std::holds_alternative<SwapSlot>(slot)) {
     return JsonObject{{"type", "swap"}};
   } else if (std::holds_alternative<TrashSlot>(slot)) {
@@ -71,12 +71,12 @@ extern std::expected<EnumMap<EquipmentSlot>, StarException> const EquipmentSlotN
   }
 }
 
-[[nodiscard]] std::expected<std::ostream*, StarException> operator<<(std::ostream& stream, InventorySlot const& slot) {
-  if (auto equipment = std::get_if<EquipmentSlot>(&slot)) {
+[[nodiscard]] std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& stream, InventorySlot const& slot) {
+  if (std::holds_alternative<EquipmentSlot>(slot)) {
     if (!EquipmentSlotNames) return std::unexpected(EquipmentSlotNames.error());
-    auto name = EquipmentSlotNames->getRight(*equipment);
+    auto name = EquipmentSlotNames->getRight(std::get<EquipmentSlot>(slot));
     if (!name) return std::unexpected(std::move(name.error()));
-    format(stream, "InventorySlot{{type: equipment, location: {}}}", **name);
+    format(stream, "InventorySlot{{type: equipment, location: {}}}", name->get());
   }
   else if (std::holds_alternative<SwapSlot>(slot))
     format(stream, "InventorySlot{{type: swap}}");
@@ -86,7 +86,7 @@ extern std::expected<EnumMap<EquipmentSlot>, StarException> const EquipmentSlotN
     auto const& bag = std::get<BagSlot>(slot);
     format(stream, "InventorySlot{{type: {}, location: {}}}", bag.first, bag.second);
   }
-  return &stream;
+  return std::ref(stream);
 }
 
 extern std::expected<EnumMap<EssentialItem>, StarException> const EssentialItemNames = EnumMap<EssentialItem>::create({
@@ -103,7 +103,7 @@ extern std::expected<EnumMap<EssentialItem>, StarException> const EssentialItemN
     if (!EssentialItemNames) return std::unexpected(EssentialItemNames.error());
     auto item = EssentialItemNames->getLeft(*name);
     if (!item) return std::unexpected(std::move(item.error()));
-    return SelectedActionBarLocation(**item);
+    return SelectedActionBarLocation(item->get());
   } else if (json.isNull()) {
     return SelectedActionBarLocation();
   } else {
@@ -114,13 +114,13 @@ extern std::expected<EnumMap<EssentialItem>, StarException> const EssentialItemN
 }
 
 [[nodiscard]] std::expected<Json, StarException> jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location) {
-  if (auto index = std::get_if<CustomBarIndex>(&location))
-    return Json(*index);
-  if (auto item = std::get_if<EssentialItem>(&location)) {
+  if (std::holds_alternative<CustomBarIndex>(location))
+    return Json(std::get<CustomBarIndex>(location));
+  if (std::holds_alternative<EssentialItem>(location)) {
     if (!EssentialItemNames) return std::unexpected(EssentialItemNames.error());
-    auto name = EssentialItemNames->getRight(*item);
+    auto name = EssentialItemNames->getRight(std::get<EssentialItem>(location));
     if (!name) return std::unexpected(std::move(name.error()));
-    return Json(**name);
+    return Json(name->get());
   }
   return Json();
 }

@@ -44,7 +44,7 @@ public:
     return Star::typeName<ToolUserEntity>();
   }
 
-  virtual Input* input() const { return nullptr; }
+  virtual std::optional<std::reference_wrapper<Input>> input() const { return std::nullopt; }
 
   // Translates the given arm position into it's final entity space position
   // based on the given facing direction, and arm angle, and an offset from the

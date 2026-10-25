@@ -10,7 +10,7 @@ import star.matrix3;
 namespace Star {
 
 struct AnimatedPartSetExceptionTag {
-  static constexpr char const* name() { return "AnimatedPartSetException"; }
+  static constexpr std::string_view name() { return "AnimatedPartSetException"; }
 };
 using AnimatedPartSetException = StarError<AnimatedPartSetExceptionTag, StarException>;
 
@@ -103,7 +103,7 @@ public:
 
     // Lazily refreshed frame information; state changes still require nonconst access.
     mutable ActiveStateInformation activeState;
-    State const* activeStatePointer;
+    std::optional<std::reference_wrapper<State const>> activeStateReference;
     mutable bool activeStateDirty;
   };
 
@@ -148,9 +148,9 @@ public:
   // Restart this given state type's timer off at the beginning.
   [[nodiscard]] std::expected<void, StarException> restartState(String const& stateTypeName);
 
-  [[nodiscard]] std::expected<ActiveStateInformation const*, StarException> activeState(String const& stateTypeName) const;
-  [[nodiscard]] std::expected<ActivePartInformation const*, StarException> activePart(String const& partName) const;
-  [[nodiscard]] std::expected<State const*, StarException> getState(String const& stateTypeName, String const& stateName) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<ActiveStateInformation const>, StarException> activeState(String const& stateTypeName) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<ActivePartInformation const>, StarException> activePart(String const& partName) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<State const>, StarException> getState(String const& stateTypeName, String const& stateName) const;
 
   StringMap<Part> const& constParts() const;
   StringMap<Part>& parts();

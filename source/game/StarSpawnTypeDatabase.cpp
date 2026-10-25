@@ -51,7 +51,7 @@ std::expected<SpawnParameters, StarException> SpawnParameters::create(Json const
     else {
       auto area = AreaNames->getLeft(**areaName);
       if (!area) return std::unexpected(std::move(area.error()));
-      result.areas.add(**area);
+      result.areas.add(area->get());
     }
   } else {
     auto areaNames = config.optArray("areas");
@@ -62,7 +62,7 @@ std::expected<SpawnParameters, StarException> SpawnParameters::create(Json const
         if (!name) return std::unexpected(std::move(name.error()));
         auto area = AreaNames->getLeft(*name);
         if (!area) return std::unexpected(std::move(area.error()));
-        result.areas.add(**area);
+        result.areas.add(area->get());
       }
     }
   }
@@ -70,12 +70,12 @@ std::expected<SpawnParameters, StarException> SpawnParameters::create(Json const
   if (!regionName) return std::unexpected(std::move(regionName.error()));
   auto region = RegionNames->getLeft(*regionName);
   if (!region) return std::unexpected(std::move(region.error()));
-  result.region = **region;
+  result.region = region->get();
   auto timeName = config.getString("time");
   if (!timeName) return std::unexpected(std::move(timeName.error()));
   auto time = TimeNames->getLeft(*timeName);
   if (!time) return std::unexpected(std::move(time.error()));
-  result.time = **time;
+  result.time = time->get();
   return result;
 }
 
@@ -196,10 +196,10 @@ std::expected<std::shared_ptr<SpawnTypeDatabase>, StarException> SpawnTypeDataba
   auto result = std::shared_ptr<SpawnTypeDatabase>(new SpawnTypeDatabase());
   auto files = assets->scanExtension("spawntypes");
   if (!files) return std::unexpected(std::move(files.error()));
-  auto queued = assets->queueJsons(**files);
+  auto queued = assets->queueJsons(files->get());
   if (!queued) return std::unexpected(std::move(queued.error()));
   std::uint64_t seedMix = 0;
-  for (auto const& path : **files) {
+  for (auto const& path : files->get()) {
     auto const& file = path.string();
     auto readFile = [&]() -> std::expected<void, StarException> {
       auto config = assets->json(file);

@@ -210,7 +210,7 @@ m_questIndicatorOffset = std::move(*result9);
   if (!ClientEntityModeNames) return std::unexpected(ClientEntityModeNames.error());
   auto result11 = ClientEntityModeNames->getLeft(std::move(*result10));
   if (!result11) return std::unexpected(std::move(result11.error()));
-  m_clientEntityMode = (**result11);
+  m_clientEntityMode = result11->get();
 }
 
   m_isInteractive.set(false);
@@ -327,7 +327,7 @@ if (!result39) return std::unexpected(std::move(result39.error()));
 if (!Humanoid::StateNames) return std::unexpected(Humanoid::StateNames.error());
 auto result40 = Humanoid::StateNames->getLeft(std::move(*result39));
 if (!result40) return std::unexpected(std::move(result40.error()));
-auto result41 = std::move(*result38)->setState((**result40));
+auto result41 = std::move(*result38)->setState(result40->get());
 if (!result41) return std::unexpected(std::move(result41.error()));
 
   auto result42 = humanoid();
@@ -337,7 +337,7 @@ if (!result43) return std::unexpected(std::move(result43.error()));
 if (!HumanoidEmoteNames) return std::unexpected(HumanoidEmoteNames.error());
 auto result44 = HumanoidEmoteNames->getLeft(std::move(*result43));
 if (!result44) return std::unexpected(std::move(result44.error()));
-auto result45 = std::move(*result42)->setEmoteState((**result44));
+auto result45 = std::move(*result42)->setEmoteState(result44->get());
 if (!result45) return std::unexpected(std::move(result45.error()));
 
   auto result46 = diskStore.getBool("isInteractive");
@@ -446,8 +446,8 @@ return JsonObject{
     {"armor", std::move(*result70)},
     {"tools", std::move(*result71)},
     {"aimPosition", jsonFromVec2F({m_xAimPosition.get(), m_yAimPosition.get()})},
-    {"humanoidState", (**result73)},
-    {"humanoidEmoteState", (**result75)},
+    {"humanoidState", result73->get()},
+    {"humanoidEmoteState", result75->get()},
     {"isInteractive", m_isInteractive.get()},
     {"shifting", m_shifting.get()},
     {"damageOnTouch", m_damageOnTouch.get()},
@@ -476,16 +476,16 @@ ClientEntityMode Npc::clientEntityMode() const {
   return m_clientEntityMode;
 }
 
-std::expected<void, StarException> Npc::init(World* world, EntityId entityId, EntityMode mode) {
+std::expected<void, StarException> Npc::init(World& world, EntityId entityId, EntityMode mode) {
   auto result80 = Entity::init(world, entityId, mode);
 if (!result80) return std::unexpected(std::move(result80.error()));
 
   m_movementController->init(world);
   m_movementController->setIgnorePhysicsEntities({entityId});
-  auto result81 = m_statusController->init(this, m_movementController.get());
+  auto result81 = m_statusController->init(*this, *m_movementController);
 if (!result81) return std::unexpected(std::move(result81.error()));
 
-  auto result82 = m_tools->init(this);
+  auto result82 = m_tools->init(*this);
 if (!result82) return std::unexpected(std::move(result82.error()));
 
 
@@ -521,41 +521,42 @@ auto result91 = m_scriptComponent.addCallbacks("config",
         std::move(*result90));
 if (!result91) return std::unexpected(std::move(result91.error()));
 
-    auto result92 = LuaBindings::makeEntityCallbacks(this);
+    auto result92 = LuaBindings::makeEntityCallbacks(*this);
 if (!result92) return std::unexpected(std::move(result92.error()));
 auto result93 = m_scriptComponent.addCallbacks("entity", std::move(*result92));
 if (!result93) return std::unexpected(std::move(result93.error()));
 
-    auto result94 = LuaBindings::makeStatusControllerCallbacks(m_statusController.get());
+    auto result94 = LuaBindings::makeStatusControllerCallbacks(*m_statusController);
 if (!result94) return std::unexpected(std::move(result94.error()));
 auto result95 = m_scriptComponent.addCallbacks("status", std::move(*result94));
 if (!result95) return std::unexpected(std::move(result95.error()));
 
-    auto result96 = LuaBindings::makeBehaviorCallbacks(this->root(), &m_behaviors);
+    auto result96 = LuaBindings::makeBehaviorCallbacks(this->root(), m_behaviors);
 if (!result96) return std::unexpected(std::move(result96.error()));
 auto result97 = m_scriptComponent.addCallbacks("behavior", std::move(*result96));
 if (!result97) return std::unexpected(std::move(result97.error()));
 
-    auto result98 = LuaBindings::makeSongbookCallbacks(m_songbook.get());
+    auto result98 = LuaBindings::makeSongbookCallbacks(*m_songbook);
 if (!result98) return std::unexpected(std::move(result98.error()));
 auto result99 = m_scriptComponent.addCallbacks("songbook", std::move(*result98));
 if (!result99) return std::unexpected(std::move(result99.error()));
 
     auto result100 = humanoid();
 if (!result100) return std::unexpected(std::move(result100.error()));
-auto result101 = LuaBindings::makeNetworkedAnimatorCallbacks(std::move(*result100)->networkedAnimator());
+auto animator = (*result100)->networkedAnimator();
+auto result101 = LuaBindings::makeNetworkedAnimatorCallbacks(animator->get());
 if (!result101) return std::unexpected(std::move(result101.error()));
 auto result102 = m_scriptComponent.addCallbacks("animator", std::move(*result101));
 if (!result102) return std::unexpected(std::move(result102.error()));
 
-    auto result103 = m_scriptComponent.addActorMovementCallbacks(m_movementController.get());
+    auto result103 = m_scriptComponent.addActorMovementCallbacks(*m_movementController);
 if (!result103) return std::unexpected(std::move(result103.error()));
 
     auto result104 = m_scriptComponent.init(world);
 if (!result104) return std::unexpected(std::move(result104.error()));
 
   }
-  if (world->isClient()) {
+  if (world.isClient()) {
     auto result105 = humanoid();
 if (!result105) return std::unexpected(std::move(result105.error()));
 auto result106 = m_scriptedAnimator.setScripts(std::move(*result105)->animationScripts());
@@ -563,7 +564,8 @@ if (!result106) return std::unexpected(std::move(result106.error()));
 
     auto result107 = humanoid();
 if (!result107) return std::unexpected(std::move(result107.error()));
-auto result108 = LuaBindings::makeScriptedAnimatorCallbacks(std::move(*result107)->networkedAnimator(),
+auto animator = (*result107)->networkedAnimator();
+auto result108 = LuaBindings::makeScriptedAnimatorCallbacks(animator->get(),
       [this](String const& name, Json const& defaultValue) -> Json {
         return m_scriptedAnimationParameters.value(name, defaultValue);
       });
@@ -578,7 +580,7 @@ auto result111 = m_scriptedAnimator.addCallbacks("config",
         std::move(*result110));
 if (!result111) return std::unexpected(std::move(result111.error()));
 
-    auto result112 = LuaBindings::makeEntityCallbacks(this);
+    auto result112 = LuaBindings::makeEntityCallbacks(*this);
 if (!result112) return std::unexpected(std::move(result112.error()));
 auto result113 = m_scriptedAnimator.addCallbacks("entity", std::move(*result112));
 if (!result113) return std::unexpected(std::move(result113.error()));
@@ -627,7 +629,7 @@ if (!result124) return std::unexpected(std::move(result124.error()));
   {
   auto result125 = world();
   if (!result125) return std::unexpected(std::move(result125.error()));
-  if (std::move(*result125)->isClient()) {
+  if (result125->get().isClient()) {
       auto result126 = m_scriptedAnimator.uninit();
   if (!result126) return std::unexpected(std::move(result126.error()));
 
@@ -833,7 +835,7 @@ std::expected<std::optional<HitType>, StarException> Npc::queryHit(DamageSource 
   {
   auto result169 = world();
   if (!result169) return std::unexpected(std::move(result169.error()));
-  auto result170 = source.intersectsWithPoly(std::move(*result169)->geometry(), m_movementController->collisionBody());
+  auto result170 = source.intersectsWithPoly(result169->get().geometry(), m_movementController->collisionBody());
   if (!result170) return std::unexpected(std::move(result170.error()));
   if (std::move(*result170))
       return HitType::Hit;
@@ -886,7 +888,7 @@ std::expected<bool, StarException> Npc::shouldDestroy() const {
   return !m_statusController->resourcePositive("health") || m_scriptComponent.error();
 }
 
-std::expected<void, StarException> Npc::destroy(RenderCallback* renderCallback) {
+std::expected<void, StarException> Npc::destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) {
   auto result174 = m_scriptComponent.invoke("die");
 if (!result174) return std::unexpected(std::move(result174.error()));
 
@@ -899,7 +901,7 @@ auto treasureDatabase = std::move(*result175);
       {
   auto result176 = staticRandomFrom(m_dropPools.get(), m_npcVariant.seed);
   if (!result176) return std::unexpected(std::move(result176.error()));
-  auto result177 = treasureDatabase->createTreasure((**result176), m_npcVariant.level);
+  auto result177 = treasureDatabase->createTreasure(result176->get(), m_npcVariant.level);
   if (!result177) return std::unexpected(std::move(result177.error()));
   for (auto const& treasureItem :
             std::move(*result177))
@@ -908,7 +910,7 @@ auto treasureDatabase = std::move(*result175);
     if (!result178) return std::unexpected(std::move(result178.error()));
     auto result179 = ItemDrop::createRandomizedDrop(this->root(), treasureItem, position());
     if (!result179) return std::unexpected(std::move(result179.error()));
-    auto result180 = std::move(*result178)->addEntity(std::move(*result179));
+    auto result180 = result178->get().addEntity(std::move(*result179));
     if (!result180) return std::unexpected(std::move(result180.error()));
 
   }
@@ -929,7 +931,7 @@ if (!result181) return std::unexpected(std::move(result181.error()));
   if (!result182) return std::unexpected(std::move(result182.error()));
   auto result183 = std::move(*result182)->particles(*m_deathParticleBurst.get());
   if (!result183) return std::unexpected(std::move(result183.error()));
-  auto result184 = renderCallback->addParticles(std::move(*result183), position());
+  auto result184 = renderCallback->get().addParticles(std::move(*result183), position());
   if (!result184) return std::unexpected(std::move(result184.error()));
 }
 
@@ -965,24 +967,25 @@ if (!result185) return std::unexpected(std::move(result185.error()));
   }
 }
 
-    if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
-      if (loungeAnchor->emote)
+    auto anchor = m_movementController->entityAnchor();
+    if (auto loungeAnchor = anchor ? asRef<LoungeAnchor>(*anchor) : std::nullopt) {
+      if (loungeAnchor->get().emote)
         {
-  auto result188 = requestEmote(*loungeAnchor->emote);
+  auto result188 = requestEmote(*loungeAnchor->get().emote);
   if (!result188) return std::unexpected(std::move(result188.error()));
 
 }
-      if (loungeAnchor->dance)
+      if (loungeAnchor->get().dance)
         {
-  auto result189 = setDance(loungeAnchor->dance);
+  auto result189 = setDance(loungeAnchor->get().dance);
   if (!result189) return std::unexpected(std::move(result189.error()));
 
 }
-      auto result190 = m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
+      auto result190 = m_statusController->setPersistentEffects("lounging", loungeAnchor->get().statusEffects);
 if (!result190) return std::unexpected(std::move(result190.error()));
 
-      m_effectEmitter->addEffectSources("normal", loungeAnchor->effectEmitters);
-      switch (loungeAnchor->orientation) {
+      m_effectEmitter->addEffectSources("normal", loungeAnchor->get().effectEmitters);
+      switch (loungeAnchor->get().orientation) {
         case LoungeOrientation::Sit:
           {
   auto result191 = humanoid();
@@ -1173,16 +1176,17 @@ if (!result235) return std::unexpected(std::move(result235.error()));
   {
   auto result236 = world();
   if (!result236) return std::unexpected(std::move(result236.error()));
-  if (std::move(*result236)->isClient())
+  if (result236->get().isClient())
       this->root().spatialLogger().logPoly("world", m_movementController->collisionBody(), {0, 255, 0, 255});
 }
   return {};
 }
 
-std::expected<void, StarException> Npc::render(RenderCallback* renderCallback) {
+std::expected<void, StarException> Npc::render(RenderCallback& renderCallback) {
   EntityRenderLayer renderLayer = RenderLayerNpc;
-  if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
-    renderLayer = loungeAnchor->loungeRenderLayer;
+  auto anchor = m_movementController->entityAnchor();
+  if (auto loungeAnchor = anchor ? asRef<LoungeAnchor>(*anchor) : std::nullopt)
+    renderLayer = loungeAnchor->get().loungeRenderLayer;
 
   auto result237 = humanoid();
 if (!result237) return std::unexpected(std::move(result237.error()));
@@ -1218,30 +1222,30 @@ std::move(*result240)->setScale(scale);
     if (!result244) return std::unexpected(std::move(result244.error()));
 
   }
-      auto result245 = renderCallback->addDrawable(std::move(drawable), renderLayer);
+      auto result245 = renderCallback.addDrawable(std::move(drawable), renderLayer);
   if (!result245) return std::unexpected(std::move(result245.error()));
     }
 }
 
-  auto result246 = renderCallback->addParticles(m_humanoidDynamicTarget.pullNewParticles());
+  auto result246 = renderCallback.addParticles(m_humanoidDynamicTarget.pullNewParticles());
 if (!result246) return std::unexpected(std::move(result246.error()));
-  auto result247 = renderCallback->addAudios(m_humanoidDynamicTarget.pullNewAudios());
+  auto result247 = renderCallback.addAudios(m_humanoidDynamicTarget.pullNewAudios());
 if (!result247) return std::unexpected(std::move(result247.error()));
 
   auto result248 = m_statusController->drawables();
 if (!result248) return std::unexpected(std::move(result248.error()));
-auto result249 = renderCallback->addDrawables(std::move(*result248), renderLayer);
+auto result249 = renderCallback.addDrawables(std::move(*result248), renderLayer);
 if (!result249) return std::unexpected(std::move(result249.error()));
-  auto result250 = renderCallback->addParticles(m_statusController->pullNewParticles());
+  auto result250 = renderCallback.addParticles(m_statusController->pullNewParticles());
 if (!result250) return std::unexpected(std::move(result250.error()));
-  auto result251 = renderCallback->addAudios(m_statusController->pullNewAudios());
+  auto result251 = renderCallback.addAudios(m_statusController->pullNewAudios());
 if (!result251) return std::unexpected(std::move(result251.error()));
 
   auto result252 = world();
 if (!result252) return std::unexpected(std::move(result252.error()));
-auto result253 = m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), std::move(*result252));
+auto result253 = m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), result252->get());
 if (!result253) return std::unexpected(std::move(result253.error()));
-auto result254 = renderCallback->addParticles(std::move(*result253));
+auto result254 = renderCallback.addParticles(std::move(*result253));
 if (!result254) return std::unexpected(std::move(result254.error()));
 
   auto result255 = inToolRange();
@@ -1256,7 +1260,7 @@ auto result258 = inToolRange();
 if (!result258) return std::unexpected(std::move(result258.error()));
 auto result259 = m_tools->renderObjectPreviews(std::move(*result257), walkingDirection(), std::move(*result258), favoriteColor());
 if (!result259) return std::unexpected(std::move(result259.error()));
-auto result260 = renderCallback->addDrawables(std::move(*result259), renderLayer);
+auto result260 = renderCallback.addDrawables(std::move(*result259), renderLayer);
 if (!result260) return std::unexpected(std::move(result260.error()));
 
   auto result261 = m_effectEmitter->render(renderCallback);
@@ -1268,10 +1272,10 @@ if (!result262) return std::unexpected(std::move(result262.error()));
   return {};
 }
 
-std::expected<void, StarException> Npc::renderLightSources(RenderCallback* renderCallback) {
+std::expected<void, StarException> Npc::renderLightSources(RenderCallback& renderCallback) {
   auto result263 = lightSources();
 if (!result263) return std::unexpected(std::move(result263.error()));
-auto result264 = renderCallback->addLightSources(std::move(*result263));
+auto result264 = renderCallback.addLightSources(std::move(*result263));
 if (!result264) return std::unexpected(std::move(result264.error()));
   return {};
 }
@@ -1353,7 +1357,7 @@ std::expected<void, StarException> Npc::tickShared(float dt) {
 
   auto result267 = world();
 if (!result267) return std::unexpected(std::move(result267.error()));
-auto result268 = m_songbook->update(*entityMode(), std::move(*result267));
+auto result268 = m_songbook->update(*entityMode(), result267->get());
 if (!result268) return std::unexpected(std::move(result268.error()));
 
 
@@ -1397,20 +1401,22 @@ if (!result280) return std::unexpected(std::move(result280.error()));
 std::move(*result280)->setRotation(m_movementController->rotation());
 
   ActorMovementModifiers firingModifiers;
-  if (auto fireableMain = as<FireableItem>(handItem(ToolHand::Primary))) {
-    if (fireableMain->firing()) {
-      if (fireableMain->stopWhileFiring())
+  auto mainItem = handItem(ToolHand::Primary);
+  if (auto fireableMain = mainItem ? asRef<FireableItem>(*mainItem) : std::nullopt) {
+    if (fireableMain->get().firing()) {
+      if (fireableMain->get().stopWhileFiring())
         firingModifiers.movementSuppressed = true;
-      else if (fireableMain->walkWhileFiring())
+      else if (fireableMain->get().walkWhileFiring())
         firingModifiers.runningSuppressed = true;
     }
   }
 
-  if (auto fireableAlt = as<FireableItem>(handItem(ToolHand::Alt))) {
-    if (fireableAlt->firing()) {
-      if (fireableAlt->stopWhileFiring())
+  auto altItem = handItem(ToolHand::Alt);
+  if (auto fireableAlt = altItem ? asRef<FireableItem>(*altItem) : std::nullopt) {
+    if (fireableAlt->get().firing()) {
+      if (fireableAlt->get().stopWhileFiring())
         firingModifiers.movementSuppressed = true;
-      else if (fireableAlt->walkWhileFiring())
+      else if (fireableAlt->get().walkWhileFiring())
         firingModifiers.runningSuppressed = true;
     }
   }
@@ -1442,10 +1448,10 @@ if (!result284) return std::unexpected(std::move(result284.error()));
   {
   auto result288 = world();
   if (!result288) return std::unexpected(std::move(result288.error()));
-  if (std::move(*result288)->isClient()) {
+  if (result288->get().isClient()) {
       auto result289 = humanoid();
   if (!result289) return std::unexpected(std::move(result289.error()));
-  auto result290 = std::move(*result289)->animate(dt, &m_humanoidDynamicTarget);
+  auto result290 = std::move(*result289)->animate(dt, std::ref(m_humanoidDynamicTarget));
   if (!result290) return std::unexpected(std::move(result290.error()));
 
       m_humanoidDynamicTarget.updatePosition(position());
@@ -1477,7 +1483,7 @@ if (!result296) return std::unexpected(std::move(result296.error()));
 if (!GenderNames) return std::unexpected(GenderNames.error());
 auto result297 = GenderNames->getRight(std::move(*result296)->identity().gender);
 if (!result297) return std::unexpected(std::move(result297.error()));
-return (**result297); });
+return result297->get(); });
 if (!result298) return std::unexpected(std::move(result298.error()));
 
   auto result300 = callbacks.registerCallback("humanoidIdentity", [this]() -> std::expected<Json, StarException> { auto result299 = humanoid();
@@ -1707,7 +1713,7 @@ if (!result365) return std::unexpected(std::move(result365.error()));
   auto result368 = callbacks.registerCallback("setGender", [this](String const& gender) -> std::expected<void, StarException> { if (!GenderNames) return std::unexpected(GenderNames.error());
 auto result366 = GenderNames->getLeft(gender);
 if (!result366) return std::unexpected(std::move(result366.error()));
-auto result367 = setGender((**result366));
+auto result367 = setGender(result366->get());
 if (!result367) return std::unexpected(std::move(result367.error()));
    return {};
 });
@@ -1791,7 +1797,7 @@ if (!result386) return std::unexpected(std::move(result386.error()));
   auto result388 = callbacks.registerCallback("emote", [this](String const& arg1) -> std::expected<void, StarException> { if (!HumanoidEmoteNames) return std::unexpected(HumanoidEmoteNames.error());
 auto result387 = HumanoidEmoteNames->getLeft(arg1);
 if (!result387) return std::unexpected(std::move(result387.error()));
-addEmote((**result387));   return {};
+addEmote(result387->get());   return {};
 });
 if (!result388) return std::unexpected(std::move(result388.error()));
 
@@ -1808,7 +1814,7 @@ if (!result391) return std::unexpected(std::move(result391.error()));
       std::size_t anchorIndex = maybeAnchorIndex.value_or(0);
       auto result392 = world();
 if (!result392) return std::unexpected(std::move(result392.error()));
-      auto loungeableEntity = std::move(*result392)->get<LoungeableEntity>(loungeableEntityId);
+      auto loungeableEntity = result392->get().get<LoungeableEntity>(loungeableEntityId);
       {
   bool condition395 = static_cast<bool>(!loungeableEntity || anchorIndex >= loungeableEntity->anchorCount());
   if (!condition395) {
@@ -1878,10 +1884,10 @@ if (!result407) return std::unexpected(std::move(result407.error()));
   auto result412 = callbacks.registerCallback("getItemSlot", [this](String const& entry) -> std::expected<Json, StarException> {
       {
   if (!EquipmentSlotNames) return std::unexpected(EquipmentSlotNames.error());
-  auto result408 = EquipmentSlotNames->leftPtr(entry);
+  auto result408 = EquipmentSlotNames->maybeLeftRef(entry);
   if (!result408) return std::unexpected(std::move(result408.error()));
   if (auto equipmentSlot = std::move(*result408)) {
-          return m_armor->itemDescriptor((std::uint8_t)*equipmentSlot).toJson();
+          return m_armor->itemDescriptor((std::uint8_t)equipmentSlot->get()).toJson();
         } else {
     auto result409 = entry.equalsIgnoreCase("primary");
     if (!result409) return std::unexpected(std::move(result409.error()));
@@ -1896,7 +1902,7 @@ if (!result407) return std::unexpected(std::move(result407.error()));
               {
         auto result411 = m_npcVariant.items.get(entry);
         if (!result411) return std::unexpected(std::move(result411.error()));
-        return (**result411).toJson();
+        return result411->get().toJson();
       }
     }
   }
@@ -1930,7 +1936,7 @@ if (!result421) return std::unexpected(std::move(result421.error()));
   auto result423 = callbacks.registerCallback("setAimPosition", [this](Vec2F const& pos) -> std::expected<void, StarException> {
       auto result422 = world();
 if (!result422) return std::unexpected(std::move(result422.error()));
-auto aimPosition = std::move(*result422)->geometry().diff(pos, position());
+auto aimPosition = result422->get().geometry().diff(pos, position());
       m_xAimPosition.set(aimPosition[0]);
       m_yAimPosition.set(aimPosition[1]);
       return {};
@@ -1974,10 +1980,10 @@ if (!result433) return std::unexpected(std::move(result433.error()));
 }
 
 std::expected<void, StarException> Npc::setupNetStates() {
-  auto result434 = m_netGroup.addNetElement(&m_xAimPosition);
+  auto result434 = m_netGroup.addNetElement(m_xAimPosition);
 if (!result434) return std::unexpected(std::move(result434.error()));
 
-  auto result435 = m_netGroup.addNetElement(&m_yAimPosition);
+  auto result435 = m_netGroup.addNetElement(m_yAimPosition);
 if (!result435) return std::unexpected(std::move(result435.error()));
 
 
@@ -1986,116 +1992,116 @@ if (!result435) return std::unexpected(std::move(result435.error()));
   m_xAimPosition.setInterpolator(lerp<float, float>);
   m_yAimPosition.setInterpolator(lerp<float, float>);
 
-  auto result436 = m_netGroup.addNetElement(&m_uniqueIdNetState);
+  auto result436 = m_netGroup.addNetElement(m_uniqueIdNetState);
 if (!result436) return std::unexpected(std::move(result436.error()));
 
-  auto result437 = m_netGroup.addNetElement(&m_teamNetState);
+  auto result437 = m_netGroup.addNetElement(m_teamNetState);
 if (!result437) return std::unexpected(std::move(result437.error()));
 
-  auto result438 = m_netGroup.addNetElement(&m_humanoidStateNetState);
+  auto result438 = m_netGroup.addNetElement(m_humanoidStateNetState);
 if (!result438) return std::unexpected(std::move(result438.error()));
 
-  auto result439 = m_netGroup.addNetElement(&m_humanoidEmoteStateNetState);
+  auto result439 = m_netGroup.addNetElement(m_humanoidEmoteStateNetState);
 if (!result439) return std::unexpected(std::move(result439.error()));
 
-  auto result440 = m_netGroup.addNetElement(&m_humanoidDanceNetState);
+  auto result440 = m_netGroup.addNetElement(m_humanoidDanceNetState);
 if (!result440) return std::unexpected(std::move(result440.error()));
 
 
-  auto result441 = m_netGroup.addNetElement(&m_newChatMessageEvent);
+  auto result441 = m_netGroup.addNetElement(m_newChatMessageEvent);
 if (!result441) return std::unexpected(std::move(result441.error()));
 
-  auto result442 = m_netGroup.addNetElement(&m_chatMessage);
+  auto result442 = m_netGroup.addNetElement(m_chatMessage);
 if (!result442) return std::unexpected(std::move(result442.error()));
 
-  auto result443 = m_netGroup.addNetElement(&m_chatPortrait);
+  auto result443 = m_netGroup.addNetElement(m_chatPortrait);
 if (!result443) return std::unexpected(std::move(result443.error()));
 
-  auto result444 = m_netGroup.addNetElement(&m_chatConfig);
+  auto result444 = m_netGroup.addNetElement(m_chatConfig);
 if (!result444) return std::unexpected(std::move(result444.error()));
 
 
-  auto result445 = m_netGroup.addNetElement(&m_statusText);
+  auto result445 = m_netGroup.addNetElement(m_statusText);
 if (!result445) return std::unexpected(std::move(result445.error()));
 
-  auto result446 = m_netGroup.addNetElement(&m_displayNametag);
+  auto result446 = m_netGroup.addNetElement(m_displayNametag);
 if (!result446) return std::unexpected(std::move(result446.error()));
 
 
-  auto result447 = m_netGroup.addNetElement(&m_isInteractive);
+  auto result447 = m_netGroup.addNetElement(m_isInteractive);
 if (!result447) return std::unexpected(std::move(result447.error()));
 
 
-  auto result448 = m_netGroup.addNetElement(&m_offeredQuests);
+  auto result448 = m_netGroup.addNetElement(m_offeredQuests);
 if (!result448) return std::unexpected(std::move(result448.error()));
 
-  auto result449 = m_netGroup.addNetElement(&m_turnInQuests);
+  auto result449 = m_netGroup.addNetElement(m_turnInQuests);
 if (!result449) return std::unexpected(std::move(result449.error()));
 
 
-  auto result450 = m_netGroup.addNetElement(&m_shifting);
+  auto result450 = m_netGroup.addNetElement(m_shifting);
 if (!result450) return std::unexpected(std::move(result450.error()));
 
-  auto result451 = m_netGroup.addNetElement(&m_damageOnTouch);
+  auto result451 = m_netGroup.addNetElement(m_damageOnTouch);
 if (!result451) return std::unexpected(std::move(result451.error()));
 
 
-  auto result452 = m_netGroup.addNetElement(&m_disableWornArmor);
+  auto result452 = m_netGroup.addNetElement(m_disableWornArmor);
 if (!result452) return std::unexpected(std::move(result452.error()));
 
 
-  auto result453 = m_netGroup.addNetElement(&m_deathParticleBurst);
+  auto result453 = m_netGroup.addNetElement(m_deathParticleBurst);
 if (!result453) return std::unexpected(std::move(result453.error()));
 
 
-  auto result454 = m_netGroup.addNetElement(&m_dropPools);
+  auto result454 = m_netGroup.addNetElement(m_dropPools);
 if (!result454) return std::unexpected(std::move(result454.error()));
 
-  auto result455 = m_netGroup.addNetElement(&m_aggressive);
+  auto result455 = m_netGroup.addNetElement(m_aggressive);
 if (!result455) return std::unexpected(std::move(result455.error()));
 
 
-  auto result456 = m_netGroup.addNetElement(m_movementController.get());
+  auto result456 = m_netGroup.addNetElement(*m_movementController);
 if (!result456) return std::unexpected(std::move(result456.error()));
 
-  auto result457 = m_netGroup.addNetElement(m_effectEmitter.get());
+  auto result457 = m_netGroup.addNetElement(*m_effectEmitter);
 if (!result457) return std::unexpected(std::move(result457.error()));
 
-  auto result458 = m_netGroup.addNetElement(m_statusController.get());
+  auto result458 = m_netGroup.addNetElement(*m_statusController);
 if (!result458) return std::unexpected(std::move(result458.error()));
 
-  auto result459 = m_netGroup.addNetElement(m_armor.get());
+  auto result459 = m_netGroup.addNetElement(*m_armor);
 if (!result459) return std::unexpected(std::move(result459.error()));
 
-  auto result460 = m_netGroup.addNetElement(m_tools.get());
+  auto result460 = m_netGroup.addNetElement(*m_tools);
 if (!result460) return std::unexpected(std::move(result460.error()));
 
   m_songbook->setCompatibilityVersion(6);
-  auto result461 = m_netGroup.addNetElement(m_songbook.get());
+  auto result461 = m_netGroup.addNetElement(*m_songbook);
 if (!result461) return std::unexpected(std::move(result461.error()));
 
 
   m_identityNetState.setCompatibilityVersion(10);
-  auto result462 = m_netGroup.addNetElement(&m_identityNetState);
+  auto result462 = m_netGroup.addNetElement(m_identityNetState);
 if (!result462) return std::unexpected(std::move(result462.error()));
 
   m_refreshedHumanoidParameters.setCompatibilityVersion(10);
-  auto result463 = m_netGroup.addNetElement(&m_refreshedHumanoidParameters);
+  auto result463 = m_netGroup.addNetElement(m_refreshedHumanoidParameters);
 if (!result463) return std::unexpected(std::move(result463.error()));
 
 
   m_netHumanoid.setCompatibilityVersion(10);
-  auto result464 = m_netGroup.addNetElement(&m_netHumanoid);
+  auto result464 = m_netGroup.addNetElement(m_netHumanoid);
 if (!result464) return std::unexpected(std::move(result464.error()));
 
 
   m_scriptedAnimationParameters.setCompatibilityVersion(10);
-  auto result465 = m_netGroup.addNetElement(&m_scriptedAnimationParameters);
+  auto result465 = m_netGroup.addNetElement(m_scriptedAnimationParameters);
 if (!result465) return std::unexpected(std::move(result465.error()));
 
 
-  m_netGroup.setNeedsStoreCallback(std::bind(&Npc::setNetStates, this));
-  m_netGroup.setNeedsLoadCallback(std::bind(&Npc::getNetStates, this, std::placeholders::_1));
+  m_netGroup.setNeedsStoreCallback([this] { return setNetStates(); });
+  m_netGroup.setNeedsLoadCallback([this](bool initial) { return getNetStates(initial); });
   return {};
 }
 
@@ -2294,10 +2300,10 @@ auto item = std::move(*result491);
 
   {
   if (!EquipmentSlotNames) return std::unexpected(EquipmentSlotNames.error());
-  auto result492 = EquipmentSlotNames->leftPtr(slot);
+  auto result492 = EquipmentSlotNames->maybeLeftRef(slot);
   if (!result492) return std::unexpected(std::move(result492.error()));
   if (auto equipmentSlot = std::move(*result492)) {
-      m_armor->setItem((std::uint8_t)*equipmentSlot, as<ArmorItem>(item));
+      m_armor->setItem((std::uint8_t)equipmentSlot->get(), as<ArmorItem>(item));
     } else {
     auto result493 = slot.equalsIgnoreCase("primary");
     if (!result493) return std::unexpected(std::move(result493.error()));
@@ -2330,8 +2336,9 @@ std::expected<bool, StarException> Npc::canUseTool() const {
 if (!result497) return std::unexpected(std::move(result497.error()));
 bool canUse = !std::move(*result497) && !m_statusController->toolUsageSuppressed();
   if (canUse) {
-    if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
-      if (loungeAnchor->suppressTools.value_or(loungeAnchor->controllable))
+    auto anchor = m_movementController->entityAnchor();
+    if (auto loungeAnchor = anchor ? asRef<LoungeAnchor>(*anchor) : std::nullopt)
+      if (loungeAnchor->get().suppressTools.value_or(loungeAnchor->get().controllable))
         return false;
   }
   return canUse;
@@ -2351,7 +2358,8 @@ if (!result499) return std::unexpected(std::move(result499.error()));
 lights.appendAll(std::move(*result499));
   auto result500 = humanoid();
 if (!result500) return std::unexpected(std::move(result500.error()));
-auto result501 = std::move(*result500)->networkedAnimator()->lightSources();
+auto animator = (*result500)->networkedAnimator();
+auto result501 = animator->get().lightSources();
 if (!result501) return std::unexpected(std::move(result501.error()));
 lights.appendAll(std::move(*result501));
   return lights;
@@ -2360,14 +2368,14 @@ lights.appendAll(std::move(*result501));
 std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Npc::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   auto result502 = world();
 if (!result502) return std::unexpected(std::move(result502.error()));
-auto result503 = m_scriptComponent.handleMessage(message, std::move(*result502)->connection() == sendingConnection, args);
+auto result503 = m_scriptComponent.handleMessage(message, result502->get().connection() == sendingConnection, args);
 if (!result503) return std::unexpected(std::move(result503.error()));
 std::optional<ChainableJsonMessageResponse> result = std::move(*result503);
   if (!result)
     {
   auto result504 = world();
   if (!result504) return std::unexpected(std::move(result504.error()));
-  auto result505 = m_statusController->receiveMessage(message, std::move(*result504)->connection() == sendingConnection, args);
+  auto result505 = m_statusController->receiveMessage(message, result504->get().connection() == sendingConnection, args);
   if (!result505) return std::unexpected(std::move(result505.error()));
   result = std::move(*result505);
 }
@@ -2411,7 +2419,7 @@ Vec2F Npc::velocity() const {
 std::expected<Vec2F, StarException> Npc::aimPosition() const {
   auto result510 = world();
 if (!result510) return std::unexpected(std::move(result510.error()));
-return std::move(*result510)->geometry().xwrap(Vec2F(m_xAimPosition.get(), m_yAimPosition.get()) + position());
+return result510->get().geometry().xwrap(Vec2F(m_xAimPosition.get(), m_yAimPosition.get()) + position());
 }
 
 std::expected<float, StarException> Npc::interactRadius() const {
@@ -2520,23 +2528,23 @@ std::expected<void, StarException> Npc::requestEmote(String const& emote) {
     if (!HumanoidEmoteNames) return std::unexpected(HumanoidEmoteNames.error());
 auto result514 = HumanoidEmoteNames->getLeft(emote);
 if (!result514) return std::unexpected(std::move(result514.error()));
-auto state = (**result514);
+auto state = result514->get();
     if (state != HumanoidEmote::Idle && (m_emoteState == HumanoidEmote::Idle || m_emoteState == HumanoidEmote::Blink))
       addEmote(state);
   }
   return {};
 }
 
-ActorMovementController* Npc::movementController() {
-  return m_movementController.get();
+ActorMovementController& Npc::movementController() {
+  return *m_movementController;
 }
 
-StatusController* Npc::statusController() {
-  return m_statusController.get();
+StatusController& Npc::statusController() {
+  return *m_statusController;
 }
 
-Songbook* Npc::songbook() {
-  return m_songbook.get();
+Songbook& Npc::songbook() {
+  return *m_songbook;
 }
 
 void Npc::setCameraFocusEntity(std::optional<EntityId> const&) {
@@ -2573,8 +2581,8 @@ auto damageSources = std::move(*result515);
     auto result520 = DamageSource::create(config);
 if (!result520) return std::unexpected(std::move(result520.error()));
 auto damageSource = std::move(*result520);
-    if (auto damagePoly = std::get_if<PolyF>(&damageSource.damageArea))
-      damagePoly->rotate(m_movementController->rotation());
+    if (std::holds_alternative<PolyF>(damageSource.damageArea))
+      std::get<PolyF>(damageSource.damageArea).rotate(m_movementController->rotation());
     damageSource.damage *= m_statusController->stat("powerMultiplier");
     damageSources.append(damageSource);
   }
@@ -2632,7 +2640,7 @@ std::expected<void, StarException> Npc::setHumanoidParameter(String key, std::op
   auto elements = m_netHumanoid.netElements();
   auto result526 = elements.last();
 if (!result526) return std::unexpected(std::move(result526.error()));
-auto result527 = (**result526)->setHumanoidParameters(m_npcVariant.humanoidParameters);
+auto result527 = result526->get()->setHumanoidParameters(m_npcVariant.humanoidParameters);
 if (!result527) return std::unexpected(std::move(result527.error()));
 
   return {};
@@ -2648,7 +2656,7 @@ std::expected<void, StarException> Npc::setHumanoidParameters(JsonObject paramet
   auto elements = m_netHumanoid.netElements();
   auto result528 = elements.last();
 if (!result528) return std::unexpected(std::move(result528.error()));
-auto result529 = (**result528)->setHumanoidParameters(m_npcVariant.humanoidParameters);
+auto result529 = result528->get()->setHumanoidParameters(m_npcVariant.humanoidParameters);
 if (!result529) return std::unexpected(std::move(result529.error()));
 
   return {};
@@ -2811,13 +2819,13 @@ std::expected<std::shared_ptr<Humanoid>, StarException> Npc::humanoid() {
   auto elements = m_netHumanoid.netElements();
   auto last = elements.last();
   if (!last) return std::unexpected(std::move(last.error()));
-  return (**last)->humanoid();
+  return last->get()->humanoid();
 }
 std::expected<std::shared_ptr<Humanoid>, StarException> Npc::humanoid() const {
   auto elements = m_netHumanoid.netElements();
   auto last = elements.last();
   if (!last) return std::unexpected(std::move(last.error()));
-  return (**last)->humanoid();
+  return last->get()->humanoid();
 }
 
 std::expected<void, StarException> Npc::refreshHumanoidParameters() {
@@ -2844,7 +2852,7 @@ m_deathParticleBurst.set(std::move(*result554)->defaultDeathParticles());
     auto elements = m_netHumanoid.netElements();
     auto result555 = elements.last();
 if (!result555) return std::unexpected(std::move(result555.error()));
-m_npcVariant.humanoidParameters = (**result555)->humanoidParameters();
+m_npcVariant.humanoidParameters = result555->get()->humanoidParameters();
   }
 
   auto result556 = m_armor->diskStore();
@@ -2875,7 +2883,8 @@ if (!result563) return std::unexpected(std::move(result563.error()));
 
         auto result564 = humanoid();
 if (!result564) return std::unexpected(std::move(result564.error()));
-auto result565 = LuaBindings::makeNetworkedAnimatorCallbacks(std::move(*result564)->networkedAnimator());
+auto animator = (*result564)->networkedAnimator();
+auto result565 = LuaBindings::makeNetworkedAnimatorCallbacks(animator->get());
 if (!result565) return std::unexpected(std::move(result565.error()));
 auto result566 = m_scriptComponent.addCallbacks("animator", std::move(*result565));
 if (!result566) return std::unexpected(std::move(result566.error()));
@@ -2888,7 +2897,7 @@ if (!result567) return std::unexpected(std::move(result567.error()));
     {
   auto result568 = world();
   if (!result568) return std::unexpected(std::move(result568.error()));
-  if (std::move(*result568)->isClient() && m_scriptedAnimator.initialized()) {
+  if (result568->get().isClient() && m_scriptedAnimator.initialized()) {
         auto result569 = m_scriptedAnimator.uninit();
   if (!result569) return std::unexpected(std::move(result569.error()));
 
@@ -2909,7 +2918,8 @@ if (!result567) return std::unexpected(std::move(result567.error()));
 
         auto result575 = humanoid();
   if (!result575) return std::unexpected(std::move(result575.error()));
-  auto result576 = LuaBindings::makeScriptedAnimatorCallbacks(std::move(*result575)->networkedAnimator(),
+  auto animator = (*result575)->networkedAnimator();
+  auto result576 = LuaBindings::makeScriptedAnimatorCallbacks(animator->get(),
           [this](String const& name, Json const& defaultValue) -> Json {
             return m_scriptedAnimationParameters.value(name, defaultValue);
           });
@@ -2924,14 +2934,14 @@ if (!result567) return std::unexpected(std::move(result567.error()));
             std::move(*result578));
   if (!result579) return std::unexpected(std::move(result579.error()));
 
-        auto result580 = LuaBindings::makeEntityCallbacks(this);
+        auto result580 = LuaBindings::makeEntityCallbacks(*this);
   if (!result580) return std::unexpected(std::move(result580.error()));
   auto result581 = m_scriptedAnimator.addCallbacks("entity", std::move(*result580));
   if (!result581) return std::unexpected(std::move(result581.error()));
 
         auto result582 = world();
   if (!result582) return std::unexpected(std::move(result582.error()));
-  auto result583 = m_scriptedAnimator.init(std::move(*result582));
+  auto result583 = m_scriptedAnimator.init(result582->get());
   if (!result583) return std::unexpected(std::move(result583.error()));
 
       }

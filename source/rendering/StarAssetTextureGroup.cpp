@@ -60,27 +60,30 @@ void AssetTextureGroup::cleanup(std::int64_t textureTimeout) {
   } else {
     std::int64_t time = Time::monotonicMilliseconds();
 
-    List<Texture const*> liveTextures;
+    List<std::reference_wrapper<Texture const>> liveTextures;
     filter(m_textureMap, [&](auto const& pair) {
         if (time - pair.second.second < textureTimeout) {
-          liveTextures.append(pair.second.first.get());
+          liveTextures.append(std::cref(*pair.second.first));
           return true;
         }
         return false;
       });
 
-    liveTextures.sort();
+    auto textureLess = [](auto const& lhs, auto const& rhs) {
+      return std::less<Texture const*>{}(std::addressof(lhs.get()), std::addressof(rhs.get()));
+    };
+    std::sort(liveTextures.begin(), liveTextures.end(), textureLess);
 
     eraseWhere(m_textureDeduplicationMap, [&](auto const& p) {
-        return !liveTextures.containsSorted(p.second.get());
+        return !std::binary_search(liveTextures.begin(), liveTextures.end(), std::cref(*p.second), textureLess);
       });
   }
 }
 
 std::expected<TexturePtr, StarException> AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTexture) {
-  if (auto p = m_textureMap.ptr(imagePath)) {
-    p->second = Time::monotonicMilliseconds();
-    return p->first;
+  if (auto p = m_textureMap.maybeRef(imagePath)) {
+    p->get().second = Time::monotonicMilliseconds();
+    return p->get().first;
   }
 
   auto assetsResult = m_root.assets();

@@ -60,10 +60,10 @@ std::expected<std::shared_ptr<AiDatabase>, StarException> AiDatabase::create(Roo
   auto missions = (*assets)->scanExtension("aimission");
   if (!missions)
     return std::unexpected(std::move(missions.error()));
-  auto queued = (*assets)->queueJsons(**missions);
+  auto queued = (*assets)->queueJsons(missions->get());
   if (!queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& assetFile : **missions) {
+  for (auto const& assetFile : missions->get()) {
     auto const& file = assetFile.string();
     auto missionConfig = (*assets)->json(file);
     if (!missionConfig)
@@ -148,10 +148,10 @@ std::expected<std::shared_ptr<AiDatabase>, StarException> AiDatabase::create(Roo
     auto animation = Animation::create(root, pair.second, "/ai/");
     if (!animation)
       return std::unexpected(std::move(animation.error()));
-    auto existing = result->m_animationConfig.aiAnimations.ptr(pair.first);
+    auto existing = result->m_animationConfig.aiAnimations.maybeRef(pair.first);
     if (!existing)
       return std::unexpected(AiException("AI animation publication failed"));
-    *existing = std::move(*animation);
+    existing->get() = std::move(*animation);
   }
   return result;
 }
@@ -160,7 +160,7 @@ std::expected<AiMission, StarException> AiDatabase::mission(String const& missio
   auto mission = m_missions.get(missionName);
   if (!mission)
     return std::unexpected(std::move(mission.error()));
-  return **mission;
+  return mission->get();
 }
 
 std::expected<AiSpeech, StarException> AiDatabase::shipStatus(unsigned shipLevel) const {
@@ -184,18 +184,18 @@ std::expected<String, StarException> AiDatabase::portraitImage(String const& spe
   auto parameters = m_speciesParameters.get(species);
   if (!parameters)
     return std::unexpected(std::move(parameters.error()));
-  return strf("/ai/{}:{}", (*parameters)->portraitFrames, frame);
+  return strf("/ai/{}:{}", parameters->get().portraitFrames, frame);
 }
 
 std::expected<Animation, StarException> AiDatabase::animation(String const& species, String const& animationName) const {
   auto configured = m_animationConfig.aiAnimations.get(animationName);
   if (!configured)
     return std::unexpected(std::move(configured.error()));
-  auto animation = **configured;
+  auto animation = configured->get();
   auto parameters = m_speciesParameters.get(species);
   if (!parameters)
     return std::unexpected(std::move(parameters.error()));
-  animation.setTag("image", (*parameters)->aiFrames);
+  animation.setTag("image", parameters->get().aiFrames);
   return animation;
 }
 
@@ -204,7 +204,7 @@ std::expected<Animation, StarException> AiDatabase::staticAnimation(String const
   auto parameters = m_speciesParameters.get(species);
   if (!parameters)
     return std::unexpected(std::move(parameters.error()));
-  animation.setTag("image", (*parameters)->staticFrames);
+  animation.setTag("image", parameters->get().staticFrames);
   animation.setColor(Color::rgbaf(1.0f, 1.0f, 1.0f, m_animationConfig.staticOpacity));
   return animation;
 }

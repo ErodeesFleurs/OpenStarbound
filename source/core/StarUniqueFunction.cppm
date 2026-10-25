@@ -8,7 +8,7 @@ namespace Star {
 template <typename Result>
 struct UniqueFunctionInvocationResult {
   using Type = std::expected<std::conditional_t<std::is_reference_v<Result>,
-      std::add_pointer_t<std::remove_reference_t<Result>>, Result>, StarException>;
+      std::reference_wrapper<std::remove_reference_t<Result>>, Result>, StarException>;
 };
 
 template <typename Value, typename Error>
@@ -83,7 +83,7 @@ class UniqueFunction<Result(Args...)> {
 
 public:
   // Preserve an error-valued task's result instead of nesting expected values.
-  // Ordinary reference results use pointers so invocation failure is explicit.
+  // Ordinary reference results borrow the value; invocation failure remains explicit.
   using InvocationResult = typename UniqueFunctionInvocationResult<Result>::Type;
 
   UniqueFunction() noexcept = default;
@@ -145,7 +145,7 @@ public:
       return {};
     } else if constexpr (std::is_reference_v<Result>) {
       auto&& result = m_operations->invoke(m_storage, std::forward<Args>(args)...);
-      return std::addressof(result);
+      return std::reference_wrapper<std::remove_reference_t<Result>>(result);
     } else {
       return m_operations->invoke(m_storage, std::forward<Args>(args)...);
     }

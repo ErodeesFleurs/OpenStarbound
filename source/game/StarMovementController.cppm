@@ -36,7 +36,7 @@ class World;
 class Root;
 
 struct MovementControllerExceptionTag {
-  static constexpr char const* name() { return "MovementControllerException"; }
+  static constexpr std::string_view name() { return "MovementControllerException"; }
 };
 using MovementControllerException = StarError<MovementControllerExceptionTag, StarException>;
 
@@ -44,8 +44,8 @@ using MovementControllerException = StarError<MovementControllerExceptionTag, St
 // object.  Each parameter is optional so that this structure can be used to
 // selectively merge a specific set of parameters on top of another.
 struct MovementParameters {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, MovementParameters& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, MovementParameters const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, MovementParameters& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, MovementParameters const& value);
   // Load sensible defaults from a config file.
   [[nodiscard]] static std::expected<MovementParameters, StarException> sensibleDefaults(Root& root);
 
@@ -100,8 +100,8 @@ struct MovementParameters {
   std::optional<int> restDuration;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, MovementParameters& movementParameters);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, MovementParameters const& movementParameters);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, MovementParameters& movementParameters);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, MovementParameters const& movementParameters);
 
 class MovementController : public NetElementGroup {
 public:
@@ -208,8 +208,8 @@ public:
   void approachXVelocity(float targetXVelocity, float maxControlForce);
   void approachYVelocity(float targetYVelocity, float maxControlForce);
 
-  void init(World* world);
-  void uninit();
+  void init(World& world);
+  virtual void uninit();
 
   // Stores dt value for Lua calls.
   void setTimestep(float dt);
@@ -242,7 +242,7 @@ protected:
   // Velocity of the surface that the body is resting on, if any
   Vec2F surfaceVelocity() const;
 
-  [[nodiscard]] std::expected<World*, StarException> world();
+  [[nodiscard]] std::expected<std::reference_wrapper<World>, StarException> world();
 
 protected:
   explicit MovementController(Root& root);
@@ -292,7 +292,7 @@ private:
   MovementParameters m_parameters;
   Root& m_root;
 
-  World* m_world;
+  std::optional<std::reference_wrapper<World>> m_world;
 
   Set<EntityId> m_ignorePhysicsEntities;
 

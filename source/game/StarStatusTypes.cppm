@@ -12,7 +12,7 @@ import star.id_map;
 namespace Star {
 
 struct StatusExceptionTag {
-  static constexpr char const* name() { return "StatusException"; }
+  static constexpr std::string_view name() { return "StatusException"; }
 };
 using StatusException = StarError<StatusExceptionTag, StarException>;
 
@@ -21,44 +21,44 @@ using StatusException = StarError<StatusExceptionTag, StarException>;
 // they do not interact with each other, thus stacking a 0.0 and a 2.0 leaves
 // the stat unmodified
 struct StatBaseMultiplier {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatBaseMultiplier& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatBaseMultiplier const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, StatBaseMultiplier& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, StatBaseMultiplier const& value);
   String statName;
   float baseMultiplier;
 
   bool operator==(StatBaseMultiplier const& rhs) const;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatBaseMultiplier& baseMultiplier);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatBaseMultiplier const& baseMultiplier);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, StatBaseMultiplier& baseMultiplier);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, StatBaseMultiplier const& baseMultiplier);
 
 struct StatValueModifier {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatValueModifier& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatValueModifier const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, StatValueModifier& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, StatValueModifier const& value);
   String statName;
   float value;
 
   bool operator==(StatValueModifier const& rhs) const;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatValueModifier& valueModifier);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatValueModifier const& valueModifier);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, StatValueModifier& valueModifier);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, StatValueModifier const& valueModifier);
 
 // Unlike base multipliers, these all stack multiplicatively with the final
 // stat value (including all base and value modifiers) such that an effective
 // multiplier of 0.0 will ALWAYS reduce the stat to 0 regardless of other
 // effects
 struct StatEffectiveMultiplier {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatEffectiveMultiplier& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatEffectiveMultiplier const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, StatEffectiveMultiplier& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, StatEffectiveMultiplier const& value);
   String statName;
   float effectiveMultiplier;
 
   bool operator==(StatEffectiveMultiplier const& rhs) const;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatEffectiveMultiplier& effectiveMultiplier);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatEffectiveMultiplier const& effectiveMultiplier);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, StatEffectiveMultiplier& effectiveMultiplier);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, StatEffectiveMultiplier const& effectiveMultiplier);
 
 typedef std::variant<std::monostate, StatValueModifier, StatBaseMultiplier, StatEffectiveMultiplier> StatModifier;
 
@@ -85,16 +85,16 @@ typedef std::variant<std::monostate, StatModifier, UniqueStatusEffect> Persisten
 // Ephemeral effects are always unique effects and either use the default
 // duration in their config or optionally the default
 struct EphemeralStatusEffect {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, EphemeralStatusEffect& value);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, EphemeralStatusEffect const& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EphemeralStatusEffect& value);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EphemeralStatusEffect const& value);
   UniqueStatusEffect uniqueEffect;
   std::optional<float> duration;
 
   bool operator==(EphemeralStatusEffect const& rhs) const;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, EphemeralStatusEffect& ephemeralStatusEffect);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, EphemeralStatusEffect const& ephemeralStatusEffect);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, EphemeralStatusEffect& ephemeralStatusEffect);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, EphemeralStatusEffect const& ephemeralStatusEffect);
 
 // Reads either a name of a unique stat effect or an object containing the
 // type name and optionally the duration.

@@ -58,17 +58,17 @@ import star.byte_array;
 import star.algorithm;
 
 namespace Star {
-char const* const VersionedJson::Magic = "SBVJ01";
+std::string_view const VersionedJson::Magic = "SBVJ01";
 std::size_t const VersionedJson::MagicStringSize = 6;
 VersionNumber const VersionedJson::SubVersioning = 1;
 
 std::expected<VersionedJson, StarException> VersionedJson::readFile(String const& filename) {
   auto file = File::open(filename, IOMode::Read);
   if (!file) return std::unexpected(std::move(file.error()));
-  DataStreamIODevice ds(*file);
+  DataStreamIODevice ds(**file);
   auto magic = ds.readBytes(MagicStringSize);
   if (!magic) return std::unexpected(std::move(magic.error()));
-  if (*magic != ByteArray(Magic, MagicStringSize))
+  if (*magic != ByteArray(std::span<char const>(Magic)))
     return std::unexpected(IOException::format("Wrong magic bytes at start of versioned json file, expected '{}'", Magic));
   auto result = ds.read<VersionedJson>();
   if (!result) return std::unexpected(std::move(result.error()));
@@ -78,7 +78,7 @@ std::expected<VersionedJson, StarException> VersionedJson::readFile(String const
 }
 std::expected<void, StarException> VersionedJson::writeFile(VersionedJson const& versionedJson, String const& filename) {
   DataStreamBuffer ds;
-  auto magic = ds.writeData(Magic, MagicStringSize);
+  auto magic = ds.writeData(std::span<char const>(Magic));
   if (!magic) return std::unexpected(std::move(magic.error()));
   auto written = ds.write(versionedJson);
   if (!written) return std::unexpected(std::move(written.error()));
@@ -155,7 +155,7 @@ std::expected<void, StarException> VersionedJson::expectIdentifier(String const&
     return std::unexpected(VersionedJsonException::format("VersionedJson identifier mismatch, expected '{}' but got '{}'", expectedIdentifier, identifier));
   return {};
 }
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, VersionedJson& versionedJson) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, VersionedJson& versionedJson) {
   auto id = ds.read(versionedJson.identifier);
   if (!id) return std::unexpected(std::move(id.error()));
   // Keep the legacy optional-version wire representation.
@@ -181,16 +181,16 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, VersionedJs
       versionedJson.content = std::move(*stripped);
     }
   }
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, VersionedJson const& versionedJson) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, VersionedJson const& versionedJson) {
   auto id = ds.write(versionedJson.identifier);
   if (!id) return std::unexpected(std::move(id.error()));
   auto version = ds.write(std::optional<VersionNumber>(versionedJson.version));
   if (!version) return std::unexpected(std::move(version.error()));
   auto content = ds.write(versionedJson.content);
   if (!content) return std::unexpected(std::move(content.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 std::expected<std::shared_ptr<VersioningDatabase>, StarException> VersioningDatabase::create(Root& root) {
@@ -273,19 +273,19 @@ std::expected<VersionedJson, StarException> VersioningDatabase::makeCurrentVersi
   lockWithDiagnostics(locker);
   auto version = m_currentVersions.get(identifier);
   if (!version) return std::unexpected(std::move(version.error()));
-  return VersionedJson{identifier, **version, content, m_currentSubVersions.value(identifier)};
+  return VersionedJson{identifier, version->get(), content, m_currentSubVersions.value(identifier)};
 }
 std::expected<bool, StarException> VersioningDatabase::versionedJsonCurrent(VersionedJson const& json) const {
   std::unique_lock locker(m_mutex, std::defer_lock);
   lockWithDiagnostics(locker);
   auto version = m_currentVersions.get(json.identifier);
   if (!version) return std::unexpected(std::move(version.error()));
-  return json.version == **version && json.subVersions == m_currentSubVersions.value(json.identifier);
+  return json.version == version->get() && json.subVersions == m_currentSubVersions.value(json.identifier);
 }
 std::expected<VersionedJson, StarException> VersioningDatabase::updateVersionedJson(VersionedJson const& json) const {
-  return updateVersionedJson(json, nullptr);
+  return updateVersionedJson(json, std::nullopt);
 }
-std::expected<VersionedJson, StarException> VersioningDatabase::updateVersionedJson(VersionedJson const& versionedJson, ItemDatabase const* itemCatalog) const {
+std::expected<VersionedJson, StarException> VersioningDatabase::updateVersionedJson(VersionedJson const& versionedJson, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
   std::unique_lock locker(m_mutex, std::defer_lock);
   lockWithDiagnostics(locker);
   auto celestialDatabase = CelestialMasterDatabase::create(m_root);
@@ -389,9 +389,9 @@ std::expected<VersionedJson, StarException> VersioningDatabase::updateVersionedJ
   return result;
 }
 std::expected<Json, StarException> VersioningDatabase::loadVersionedJson(VersionedJson const& json, String const& expectedIdentifier) const {
-  return loadVersionedJson(json, expectedIdentifier, nullptr);
+  return loadVersionedJson(json, expectedIdentifier, std::nullopt);
 }
-std::expected<Json, StarException> VersioningDatabase::loadVersionedJson(VersionedJson const& json, String const& expectedIdentifier, ItemDatabase const* itemCatalog) const {
+std::expected<Json, StarException> VersioningDatabase::loadVersionedJson(VersionedJson const& json, String const& expectedIdentifier, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
   auto identifier = json.expectIdentifier(expectedIdentifier);
   if (!identifier) return std::unexpected(std::move(identifier.error()));
   auto current = versionedJsonCurrent(json);
@@ -401,13 +401,13 @@ std::expected<Json, StarException> VersioningDatabase::loadVersionedJson(Version
   if (!updated) return std::unexpected(std::move(updated.error()));
   return std::move(updated->content);
 }
-std::expected<LuaCallbacks, StarException> VersioningDatabase::makeVersioningCallbacks(ItemDatabase const* itemCatalog) const {
+std::expected<LuaCallbacks, StarException> VersioningDatabase::makeVersioningCallbacks(std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) const {
   LuaCallbacks callbacks;
-  auto registered = callbacks.registerCallback("loadVersionedJson", [this, itemCatalog](String const& storagePath) -> std::expected<Json, StarException> {
+  auto registered = callbacks.registerCallback("loadVersionedJson", [&database = *this, itemCatalog](String const& storagePath) -> std::expected<Json, StarException> {
     auto loaded = [&]() -> std::expected<Json, StarException> {
-      auto filePath = File::fullPath(m_root.toStoragePath(storagePath));
+      auto filePath = File::fullPath(database.m_root.toStoragePath(storagePath));
       if (!filePath) return std::unexpected(std::move(filePath.error()));
-      auto basePath = File::fullPath(m_root.toStoragePath("."));
+      auto basePath = File::fullPath(database.m_root.toStoragePath("."));
       if (!basePath) return std::unexpected(std::move(basePath.error()));
       auto withinStorage = filePath->beginsWith(*basePath);
       if (!withinStorage) return std::unexpected(std::move(withinStorage.error()));
@@ -415,12 +415,12 @@ std::expected<LuaCallbacks, StarException> VersioningDatabase::makeVersioningCal
         return std::unexpected(VersioningDatabaseException("Cannot load external VersionedJson outside of the Root storage path"));
       auto file = VersionedJson::readFile(*filePath);
       if (!file) return std::unexpected(std::move(file.error()));
-      auto updated = updateVersionedJson(*file, itemCatalog);
+      auto updated = database.updateVersionedJson(*file, itemCatalog);
       if (!updated) return std::unexpected(std::move(updated.error()));
       return std::move(updated->content);
     }();
     if (!loaded && loaded.error().is<IOException>()) {
-      auto logged = m_root.logger().debug("Unable to load versioned JSON file {} in versioning script: {}", storagePath, outputException(ExceptionDiagnostic(loaded.error()), false));
+      auto logged = database.m_root.logger().debug("Unable to load versioned JSON file {} in versioning script: {}", storagePath, outputException(ExceptionDiagnostic(loaded.error()), false));
       if (!logged) return std::unexpected(std::move(logged.error()));
       return Json();
     }

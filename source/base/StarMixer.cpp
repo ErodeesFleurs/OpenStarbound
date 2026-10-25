@@ -264,7 +264,7 @@ void Mixer::stopAll(float rampTime) {
     p.first->stop(vel);
 }
 
-std::expected<void, StarException> Mixer::read(std::int16_t* outBuffer, std::size_t frameCount, ExtraMixFunction extraMixFunction) {
+std::expected<void, StarException> Mixer::read(std::span<std::int16_t> outBuffer, std::size_t frameCount, ExtraMixFunction extraMixFunction) {
   // Make this method as least locky as possible by copying all the needed
   // member data before the expensive audio / effect stuff.
   float speed;
@@ -347,7 +347,7 @@ std::expected<void, StarException> Mixer::read(std::int16_t* outBuffer, std::siz
         ramt += silentSamples * channels;
       }
       auto mixed = [&]() -> std::expected<void, StarException> {
-        auto resampled = audioInstance->m_audio.resample(channels, sampleRate, m_mixBuffer.ptr() + ramt, bufferSize - ramt, pitchMultiplier);
+        auto resampled = audioInstance->m_audio.resample(channels, sampleRate, std::span(m_mixBuffer).subspan(ramt, bufferSize - ramt), pitchMultiplier);
         if (!resampled)
           return std::unexpected(std::move(resampled.error()));
         ramt += *resampled;
@@ -359,7 +359,7 @@ std::expected<void, StarException> Mixer::read(std::int16_t* outBuffer, std::siz
             auto sought = audioInstance->m_audio.seekSample(0);
             if (!sought)
               return std::unexpected(std::move(sought.error()));
-            auto loopSamples = audioInstance->m_audio.resample(channels, sampleRate, m_mixBuffer.ptr() + ramt, bufferSize - ramt, pitchMultiplier);
+            auto loopSamples = audioInstance->m_audio.resample(channels, sampleRate, std::span(m_mixBuffer).subspan(ramt, bufferSize - ramt), pitchMultiplier);
             if (!loopSamples)
               return std::unexpected(std::move(loopSamples.error()));
             ramt += *loopSamples;
@@ -439,8 +439,8 @@ std::expected<void, StarException> Mixer::read(std::int16_t* outBuffer, std::siz
       else
         effectEnd = approach(1.0f, effectBegin, effectInfo->velocity * time);
 
-      std::copy(outBuffer, outBuffer + bufferSize, m_mixBuffer.begin());
-      auto effected = effectInfo->effectFunction(m_mixBuffer.ptr(), frameCount, channels);
+      std::copy_n(outBuffer.begin(), bufferSize, m_mixBuffer.begin());
+      auto effected = effectInfo->effectFunction(std::span(m_mixBuffer), frameCount, channels);
       if (!effected)
         return std::unexpected(std::move(effected.error()));
 
@@ -475,7 +475,7 @@ Mixer::EffectFunction Mixer::lowpass(std::size_t avgSize) const {
     std::size_t avgSize;
     List<Deque<float>> filter;
 
-    [[nodiscard]] std::expected<void, StarException> operator()(std::int16_t* buffer, std::size_t frames, unsigned channels) {
+    [[nodiscard]] std::expected<void, StarException> operator()(std::span<std::int16_t> buffer, std::size_t frames, unsigned channels) {
       filter.resize(channels);
       for (std::size_t f = 0; f < frames; ++f) {
         for (std::size_t c = 0; c < channels; ++c) {
@@ -503,7 +503,7 @@ Mixer::EffectFunction Mixer::echo(float time, float dry, float wet) const {
     float wet;
     List<Deque<float>> filter;
 
-    [[nodiscard]] std::expected<void, StarException> operator()(std::int16_t* buffer, std::size_t frames, unsigned channels) {
+    [[nodiscard]] std::expected<void, StarException> operator()(std::span<std::int16_t> buffer, std::size_t frames, unsigned channels) {
       if (echoLength == 0)
         return {};
 

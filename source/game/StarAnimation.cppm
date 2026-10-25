@@ -42,11 +42,11 @@ public:
   void reset();
 
 private:
-  explicit Animation(Root& root) : m_root(&root) {}
+  explicit Animation(Root& root) : m_root(root) {}
   [[nodiscard]] std::expected<void, StarException> initialize(Json config, String const& directory);
   enum AnimationMode { Stop, EndAndDisappear, LoopForever };
   static std::expected<EnumMap<AnimationMode>, StarException> const AnimationModeNames;
-  Root* m_root;
+  std::reference_wrapper<Root> m_root;
 
   AnimationMode m_mode;
   String m_directory;

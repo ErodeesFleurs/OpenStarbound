@@ -12,7 +12,7 @@ namespace Star {
 class Assets;
 
 struct TechDatabaseExceptionTag {
-  static constexpr char const* name() { return "TechDatabaseException"; }
+  static constexpr std::string_view name() { return "TechDatabaseException"; }
 };
 using TechDatabaseException = StarError<TechDatabaseExceptionTag, StarException>;
 

@@ -214,7 +214,7 @@ std::expected<Json, StarException> CelestialParameters::randomizeParameterList(S
   auto selected = staticRandomFrom(*array, mix, m_seed, name);
   if (!selected)
     return std::unexpected(std::move(selected.error()));
-  return **selected;
+  return selected->get();
 }
 
 std::expected<Json, StarException> CelestialParameters::randomizeParameterRange(String const& name, std::int32_t mix) const {

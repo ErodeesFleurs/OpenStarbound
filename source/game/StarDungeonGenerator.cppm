@@ -28,7 +28,7 @@ namespace Star {
 class Root;
 
 struct DungeonExceptionTag {
-  static constexpr char const* name() { return "DungeonException"; }
+  static constexpr std::string_view name() { return "DungeonException"; }
 };
 using DungeonException = StarError<DungeonExceptionTag, StarException>;
 
@@ -184,7 +184,7 @@ namespace Dungeon {
 
     virtual ~Rule() {}
 
-    [[nodiscard]] virtual std::expected<bool, StarException> checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const;
+    [[nodiscard]] virtual std::expected<bool, StarException> checkTileCanPlace(Vec2I position, DungeonGeneratorWriter& writer) const;
 
     virtual bool overdrawable() const;
     virtual bool ignorePartMaximum() const;
@@ -208,7 +208,7 @@ namespace Dungeon {
 
     WorldGenMustContainAirRule(TileLayer layer) : layer(layer) {}
 
-    [[nodiscard]] virtual std::expected<bool, StarException> checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<bool, StarException> checkTileCanPlace(Vec2I position, DungeonGeneratorWriter& writer) const override;
 
     virtual bool requiresOpen() const override {
       return true;
@@ -224,7 +224,7 @@ namespace Dungeon {
 
     WorldGenMustContainSolidRule(TileLayer layer) : layer(layer) {}
 
-    [[nodiscard]] virtual std::expected<bool, StarException> checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<bool, StarException> checkTileCanPlace(Vec2I position, DungeonGeneratorWriter& writer) const override;
 
     virtual bool requiresSolid() const override {
       return true;
@@ -240,7 +240,7 @@ namespace Dungeon {
 
     WorldGenMustContainLiquidRule() {}
 
-    [[nodiscard]] virtual std::expected<bool, StarException> checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<bool, StarException> checkTileCanPlace(Vec2I position, DungeonGeneratorWriter& writer) const override;
     
     virtual bool requiresLiquid() const override {
       return true;
@@ -254,7 +254,7 @@ namespace Dungeon {
 
     WorldGenMustNotContainLiquidRule() {}
 
-    [[nodiscard]] virtual std::expected<bool, StarException> checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<bool, StarException> checkTileCanPlace(Vec2I position, DungeonGeneratorWriter& writer) const override;
   };
 
   class AllowOverdrawingRule : public Rule {
@@ -353,7 +353,7 @@ namespace Dungeon {
 
     virtual ~Brush() {}
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const = 0;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const = 0;
 
   protected:
     Brush() {}
@@ -363,7 +363,7 @@ namespace Dungeon {
   public:
     [[nodiscard]] static std::expected<std::shared_ptr<RandomBrush>, StarException> create(Root& root, Json const& brush);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     RandomBrush() = default;
@@ -375,14 +375,14 @@ namespace Dungeon {
   public:
     ClearBrush() {}
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
   };
 
   class FrontBrush : public Brush {
   public:
     FrontBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     String m_material;
@@ -396,7 +396,7 @@ namespace Dungeon {
   public:
     BackBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     String m_material;
@@ -410,7 +410,7 @@ namespace Dungeon {
   public:
     ObjectBrush(String const& object, Star::Direction direction, Json const& parameters);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     String m_object;
@@ -422,7 +422,7 @@ namespace Dungeon {
   public:
     VehicleBrush(String const& vehicle, Json const& parameters);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     String m_vehicle;
@@ -433,21 +433,21 @@ namespace Dungeon {
   public:
     BiomeItemsBrush() {}
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
   };
 
   class BiomeTreeBrush : public Brush {
   public:
     BiomeTreeBrush() {}
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
   };
 
   class ItemBrush : public Brush {
   public:
     ItemBrush(ItemDescriptor const& item);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     ItemDescriptor m_item;
@@ -457,7 +457,7 @@ namespace Dungeon {
   public:
     [[nodiscard]] static std::expected<std::shared_ptr<NpcBrush>, StarException> create(Root& root, Json const& brush);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     NpcBrush() = default;
@@ -468,7 +468,7 @@ namespace Dungeon {
   public:
     StagehandBrush(Json const& definition);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     Json m_definition;
@@ -478,7 +478,7 @@ namespace Dungeon {
   public:
     DungeonIdBrush(DungeonId dungeonId);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     DungeonId m_dungeonId;
@@ -488,7 +488,7 @@ namespace Dungeon {
   public:
     SurfaceBrush(std::optional<int> variant, std::optional<String> mod);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     int m_variant;
@@ -499,7 +499,7 @@ namespace Dungeon {
   public:
     SurfaceBackgroundBrush(std::optional<int> variant, std::optional<String> mod);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     int m_variant;
@@ -510,7 +510,7 @@ namespace Dungeon {
   public:
     LiquidBrush(String const& liquidName, float quantity, bool source);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     String m_liquid;
@@ -522,7 +522,7 @@ namespace Dungeon {
   public:
     WireBrush(String wireGroup, bool partLocal) : m_wireGroup(wireGroup), m_partLocal(partLocal) {}
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     String m_wireGroup;
@@ -531,7 +531,7 @@ namespace Dungeon {
 
   class PlayerStartBrush : public Brush {
   public:
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
   };
 
   // InvalidBrush reports an error when it is painted. This brush is used on
@@ -541,7 +541,7 @@ namespace Dungeon {
   public:
     InvalidBrush(std::optional<String> nameHint);
 
-    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> paint(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const override;
 
   private:
     std::optional<String> m_nameHint;
@@ -559,13 +559,13 @@ namespace Dungeon {
 
   class Connector {
   public:
-    Connector(Part* part, String value, bool forwardOnly, Direction direction, Vec2I offset);
+    Connector(Part const& part, String value, bool forwardOnly, Direction direction, Vec2I offset);
 
     [[nodiscard]] std::expected<bool, StarException> connectsTo(std::shared_ptr<Connector const> connector) const;
 
     String value() const;
     Vec2I positionAdjustment() const;
-    Part* part() const;
+    Part const& part() const;
     Vec2I offset() const;
 
   private:
@@ -573,7 +573,7 @@ namespace Dungeon {
     bool m_forwardOnly;
     Direction m_direction;
     Vec2I m_offset;
-    Part* m_part;
+    std::reference_wrapper<Part const> m_part;
   };
 
   // Callback errors propagate through readers, scans and placement. A successful
@@ -606,7 +606,7 @@ namespace Dungeon {
     Root& m_root;
   public:
     Root& root() const { return m_root; }
-    [[nodiscard]] static std::expected<std::shared_ptr<Part>, StarException> create(Root& root, DungeonDefinition* dungeon, Json const& part, std::shared_ptr<PartReader> reader);
+    [[nodiscard]] static std::expected<std::shared_ptr<Part>, StarException> create(Root& root, DungeonDefinition const& dungeon, Json const& part, std::shared_ptr<PartReader> reader);
 
     String const& name() const;
     Vec2U size() const;
@@ -620,19 +620,19 @@ namespace Dungeon {
     bool ignoresPartMaximum() const;
     bool allowsPlacement(int currentPlacementCount) const;
     List<std::shared_ptr<Connector const>> const& connections() const;
-    bool doesNotConnectTo(Part* part) const;
+    bool doesNotConnectTo(Part const& part) const;
     bool checkPartCombinationsAllowed(StringMap<int> const& placementCounts) const;
     [[nodiscard]] std::expected<bool, StarException> collidesWithPlaces(Vec2I pos, Set<Vec2I>& places) const;
 
-    [[nodiscard]] std::expected<bool, StarException> canPlace(Vec2I pos, DungeonGeneratorWriter* writer) const;
+    [[nodiscard]] std::expected<bool, StarException> canPlace(Vec2I pos, DungeonGeneratorWriter& writer) const;
 
-    [[nodiscard]] std::expected<void, StarException> place(Vec2I pos, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const;
+    [[nodiscard]] std::expected<void, StarException> place(Vec2I pos, Set<Vec2I> const& places, DungeonGeneratorWriter& writer) const;
 
     [[nodiscard]] std::expected<void, StarException> forEachTile(TileCallback const& callback) const;
 
   private:
     explicit Part(Root& root) : m_root(root) {}
-    [[nodiscard]] std::expected<void, StarException> placePhase(Vec2I pos, Phase phase, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const;
+    [[nodiscard]] std::expected<void, StarException> placePhase(Vec2I pos, Phase phase, Set<Vec2I> const& places, DungeonGeneratorWriter& writer) const;
 
     [[nodiscard]] std::expected<bool, StarException> tileUsesPlaces(Vec2I pos) const;
     [[nodiscard]] std::expected<Direction, StarException> pickByEdge(Vec2I position, Vec2U size) const;
@@ -644,7 +644,7 @@ namespace Dungeon {
 
     String m_name;
     List<std::shared_ptr<Rule const>> m_rules;
-    DungeonDefinition* m_dungeon;
+
     List<std::shared_ptr<Connector const>> m_connections;
     Vec2I m_anchorPoint;
     bool m_overrideAllowAlways;
@@ -663,8 +663,8 @@ namespace Dungeon {
   };
 
   struct Tile {
-    [[nodiscard]] std::expected<bool, StarException> canPlace(Vec2I position, DungeonGeneratorWriter* writer) const;
-    [[nodiscard]] std::expected<void, StarException> place(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const;
+    [[nodiscard]] std::expected<bool, StarException> canPlace(Vec2I position, DungeonGeneratorWriter& writer) const;
+    [[nodiscard]] std::expected<void, StarException> place(Vec2I position, Phase phase, DungeonGeneratorWriter& writer) const;
     bool usesPlaces() const;
     bool modifiesPlaces() const;
     bool collidesWithPlaces() const;
@@ -749,7 +749,7 @@ public:
 
   [[nodiscard]] std::expected<std::optional<std::pair<List<RectI>, Set<Vec2I>>>, StarException> generate(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
 
-  [[nodiscard]] std::expected<std::pair<List<RectI>, Set<Vec2I>>, StarException> buildDungeon(std::shared_ptr<Dungeon::Part const> anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement);
+  [[nodiscard]] std::expected<std::pair<List<RectI>, Set<Vec2I>>, StarException> buildDungeon(std::shared_ptr<Dungeon::Part const> anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter& writer, bool forcePlacement);
   [[nodiscard]] std::expected<std::shared_ptr<Dungeon::Part const>, StarException> pickAnchor();
   [[nodiscard]] std::expected<List<std::shared_ptr<Dungeon::Connector const>>, StarException> findConnectablePart(std::shared_ptr<Dungeon::Connector const> connector) const;
 

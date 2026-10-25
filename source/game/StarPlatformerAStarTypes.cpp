@@ -23,7 +23,7 @@ Node Node::withVelocity(Vec2F velocity) const {
   return {position, velocity};
 }
 
-std::expected<String const*, StarException> actionName(Action action) {
+std::expected<std::reference_wrapper<String const>, StarException> actionName(Action action) {
   if (!ActionNames)
     return std::unexpected(ActionNames.error());
   return ActionNames->getRight(action);
@@ -34,7 +34,7 @@ std::expected<String, StarException> printEdge(Edge const& edge) {
   if (!name)
     return std::unexpected(std::move(name.error()));
   return strf("Edge{{cost = {}, action = {}, jumpVelocity = {}, source = {}, target = {}}}",
-      edge.cost, **name, edge.jumpVelocity, edge.source, edge.target);
+      edge.cost, name->get(), edge.jumpVelocity, edge.source, edge.target);
 }
 
 }

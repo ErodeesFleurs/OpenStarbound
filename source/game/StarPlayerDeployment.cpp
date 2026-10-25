@@ -115,8 +115,7 @@ std::expected<Json, StarException> PlayerDeployment::diskStore() const {
   return JsonObject{{"scriptStorage", std::move(*storage)}};
 }
 
-std::expected<void, StarException> PlayerDeployment::init(Entity* player, World* world) {
-  m_world = world;
+std::expected<void, StarException> PlayerDeployment::init(Player& player, World& world) {
   m_deployed = m_deploying;
   m_deploying = false;
   auto setup = [&]() -> std::expected<void, StarException> {
@@ -140,9 +139,9 @@ std::expected<void, StarException> PlayerDeployment::init(Entity* player, World*
     };
     if (auto result = add("entity", LuaBindings::makeEntityCallbacks(player)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = add("player", LuaBindings::makePlayerCallbacks(m_root, as<Player>(player))); !result)
+    if (auto result = add("player", LuaBindings::makePlayerCallbacks(m_root, player)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = add("status", LuaBindings::makeStatusControllerCallbacks(as<Player>(player)->statusController())); !result)
+    if (auto result = add("status", LuaBindings::makeStatusControllerCallbacks(player.statusController())); !result)
       return std::unexpected(std::move(result.error()));
     if (auto result = add("config", LuaBindings::makeConfigCallbacks(
         [this](String const& name, Json const& def) { return m_config.query(name, def); })); !result)
@@ -187,9 +186,8 @@ std::expected<void, StarException> PlayerDeployment::uninit() {
     }
   };
   remember(m_scriptComponent.uninit());
-  for (auto const& name : {"entity", "player", "status", "config"})
+  for (auto const& name : std::initializer_list<std::string_view>{"entity", "player", "status", "config"})
     remember(m_scriptComponent.removeCallbacks(name));
-  m_world = nullptr;
   if (error)
     return std::unexpected(std::move(*error));
   return {};
@@ -213,27 +211,27 @@ std::expected<void, StarException> PlayerDeployment::update(float dt) {
   return {};
 }
 
-std::expected<void, StarException> PlayerDeployment::render(RenderCallback* renderCallback, Vec2F const& position) {
+std::expected<void, StarException> PlayerDeployment::render(RenderCallback& renderCallback, Vec2F const& position) {
   for (auto drawablePair : m_scriptComponent.drawables()) {
     drawablePair.first.translate(position);
-    auto added = renderCallback->addDrawable(drawablePair.first, drawablePair.second.value_or(RenderLayerPlayer));
+    auto added = renderCallback.addDrawable(drawablePair.first, drawablePair.second.value_or(RenderLayerPlayer));
     if (!added)
       return std::unexpected(std::move(added.error()));
   }
-  auto particles = renderCallback->addParticles(m_scriptComponent.pullNewParticles());
+  auto particles = renderCallback.addParticles(m_scriptComponent.pullNewParticles());
   if (!particles)
     return std::unexpected(std::move(particles.error()));
   for (auto audio : m_scriptComponent.pullNewAudios()) {
     audio->setPosition(position);
-    auto added = renderCallback->addAudio(audio);
+    auto added = renderCallback.addAudio(audio);
     if (!added)
       return std::unexpected(std::move(added.error()));
   }
   return {};
 }
 
-std::expected<void, StarException> PlayerDeployment::renderLightSources(RenderCallback* renderCallback) {
-  return renderCallback->addLightSources(m_scriptComponent.lightSources());
+std::expected<void, StarException> PlayerDeployment::renderLightSources(RenderCallback& renderCallback) {
+  return renderCallback.addLightSources(m_scriptComponent.lightSources());
 }
 
 }

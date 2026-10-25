@@ -84,7 +84,7 @@ public:
   [[nodiscard]] static std::expected<String, StarException> readFileString(String const& filename);
   [[nodiscard]] static std::expected<StreamOffset, StarException> fileSize(String const& filename);
 
-  [[nodiscard]] static std::expected<void, StarException> writeFile(char const* data, std::size_t len, String const& filename);
+  [[nodiscard]] static std::expected<void, StarException> writeFile(std::span<char const> data, String const& filename);
   [[nodiscard]] static std::expected<void, StarException> writeFile(ByteArray const& data, String const& filename);
   [[nodiscard]] static std::expected<void, StarException> writeFile(String const& data, String const& filename);
 
@@ -93,7 +93,7 @@ public:
   // operation completes.  Writes to the same path as the existing file to
   // avoid different partition copying.  This may clobber anything in the given
   // path that matches filename + newSuffix.
-  [[nodiscard]] static std::expected<void, StarException> overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix = ".new");
+  [[nodiscard]] static std::expected<void, StarException> overwriteFileWithRename(std::span<char const> data, String const& filename, String const& newSuffix = ".new");
   [[nodiscard]] static std::expected<void, StarException> overwriteFileWithRename(ByteArray const& data, String const& filename, String const& newSuffix = ".new");
   [[nodiscard]] static std::expected<void, StarException> overwriteFileWithRename(String const& data, String const& filename, String const& newSuffix = ".new");
 

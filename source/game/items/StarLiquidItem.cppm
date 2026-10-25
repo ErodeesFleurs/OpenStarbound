@@ -107,7 +107,7 @@ public:
   std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
   [[nodiscard]]
-  std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  std::expected<void, StarException> init(ToolUserEntity& owner, ToolHand hand) override;
   [[nodiscard]]
   std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
@@ -195,7 +195,7 @@ std::expected<std::shared_ptr<Item>, StarException> LiquidItem::clone() const {
   return std::make_shared<LiquidItem>(*this);
 }
 
-std::expected<void, StarException> LiquidItem::init(ToolUserEntity* owner, ToolHand hand) {
+std::expected<void, StarException> LiquidItem::init(ToolUserEntity& owner, ToolHand hand) {
   auto initialized = FireableItem::init(owner, hand);
   if (!initialized)
     return std::unexpected(std::move(initialized.error()));
@@ -230,7 +230,7 @@ std::expected<void, StarException> LiquidItem::fire(FireMode mode, bool shifting
   auto itemOwner = owner();
   if (!itemOwner)
     return std::unexpected(std::move(itemOwner.error()));
-  auto range = (*itemOwner)->inToolRange();
+  auto range = itemOwner->get().inToolRange();
   if (!range)
     return std::unexpected(std::move(range.error()));
   if (!*range)
@@ -240,7 +240,7 @@ std::expected<void, StarException> LiquidItem::fire(FireMode mode, bool shifting
   float radius = shifting ? m_altBlockRadius : m_blockRadius;
   if (!multiplaceEnabled())
     radius = 1;
-  auto aimPosition = (*itemOwner)->aimPosition();
+  auto aimPosition = itemOwner->get().aimPosition();
   if (!aimPosition)
     return std::unexpected(std::move(aimPosition.error()));
   for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
@@ -256,7 +256,7 @@ std::expected<void, StarException> LiquidItem::fire(FireMode mode, bool shifting
   auto itemWorld = world();
   if (!itemWorld)
     return std::unexpected(std::move(itemWorld.error()));
-  auto failed = (*itemWorld)->applyTileModifications(modifications, false);
+  auto failed = itemWorld->get().applyTileModifications(modifications, false);
   if (!failed)
     return std::unexpected(std::move(failed.error()));
   if (failed->size() < modifications.size()) {
@@ -287,7 +287,7 @@ std::expected<List<PreviewTile>, StarException> LiquidItem::previewTiles(bool sh
     if (!multiplaceEnabled())
       radius = 1;
     std::size_t c = 0;
-    auto aimPosition = (*itemOwner)->aimPosition();
+    auto aimPosition = itemOwner->get().aimPosition();
     if (!aimPosition)
       return std::unexpected(std::move(aimPosition.error()));
     for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
@@ -312,7 +312,7 @@ std::expected<bool, StarException> LiquidItem::canPlace(bool shifting) const {
     float radius = shifting ? m_altBlockRadius : m_blockRadius;
     if (!multiplaceEnabled())
       radius = 1;
-    auto aimPosition = (*itemOwner)->aimPosition();
+    auto aimPosition = itemOwner->get().aimPosition();
     if (!aimPosition)
       return std::unexpected(std::move(aimPosition.error()));
     for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
@@ -330,11 +330,11 @@ std::expected<bool, StarException> LiquidItem::canPlaceAtTile(Vec2I pos) const {
   auto itemWorld = world();
   if (!itemWorld)
     return std::unexpected(std::move(itemWorld.error()));
-  auto bgTileMaterial = (*itemWorld)->material(pos, TileLayer::Background);
+  auto bgTileMaterial = itemWorld->get().material(pos, TileLayer::Background);
   if (bgTileMaterial != EmptyMaterialId) {
-    auto fgTileMaterial = (*itemWorld)->material(pos, TileLayer::Foreground);
+    auto fgTileMaterial = itemWorld->get().material(pos, TileLayer::Foreground);
     if (fgTileMaterial == EmptyMaterialId) {
-      auto tileLiquid = (*itemWorld)->liquidLevel(pos).liquid;
+      auto tileLiquid = itemWorld->get().liquidLevel(pos).liquid;
       if (tileLiquid == EmptyLiquidId || tileLiquid == liquidId())
         return true;
     }

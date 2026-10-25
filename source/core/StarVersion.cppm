@@ -3,10 +3,10 @@ import std;
 
 namespace Star {
 
-extern char const* const OpenStarVersionString;
-extern char const* const StarVersionString;
-extern char const* const StarSourceIdentifierString;
-extern char const* const StarArchitectureString;
+extern std::string_view const OpenStarVersionString;
+extern std::string_view const StarVersionString;
+extern std::string_view const StarSourceIdentifierString;
+extern std::string_view const StarArchitectureString;
 
 typedef std::uint32_t VersionNumber;
 

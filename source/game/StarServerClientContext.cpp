@@ -156,38 +156,38 @@ std::expected<std::shared_ptr<ServerClientContext>, StarException> ServerClientC
 }
 
 std::expected<void, StarException> ServerClientContext::initialize() {
-  auto upgradeHandler = m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> std::expected<Json, StarException> {
-    std::unique_lock locker(m_mutex, std::defer_lock);
+  auto upgradeHandler = m_rpc.registerHandler("ship.applyShipUpgrades", [&self = *this](Json const& args) -> std::expected<Json, StarException> {
+    std::unique_lock locker(self.m_mutex, std::defer_lock);
     lockWithDiagnostics(locker);
-    auto upgrades = shipUpgrades();
+    auto upgrades = self.shipUpgrades();
     auto applied = upgrades.apply(args);
     if (!applied)
       return std::unexpected(std::move(applied.error()));
-    setShipUpgrades(std::move(upgrades));
+    self.setShipUpgrades(std::move(upgrades));
     return Json(true);
   });
   if (!upgradeHandler)
     return std::unexpected(std::move(upgradeHandler.error()));
 
-  auto speciesHandler = m_rpc.registerHandler("ship.setShipSpecies", [this](Json const& species) -> std::expected<Json, StarException> {
-    std::unique_lock locker(m_mutex, std::defer_lock);
+  auto speciesHandler = m_rpc.registerHandler("ship.setShipSpecies", [&self = *this](Json const& species) -> std::expected<Json, StarException> {
+    std::unique_lock locker(self.m_mutex, std::defer_lock);
     lockWithDiagnostics(locker);
     auto newSpecies = species.toString();
     if (!newSpecies)
       return std::unexpected(std::move(newSpecies.error()));
-    if (!m_validShipSpecies.contains(*newSpecies)) {
-      auto logged = m_root.logger().warn("ServerClientContext: <User: {}> tried to set unknown ship species '{}'", m_playerName, *newSpecies);
+    if (!self.m_validShipSpecies.contains(*newSpecies)) {
+      auto logged = self.m_root.logger().warn("ServerClientContext: <User: {}> tried to set unknown ship species '{}'", self.m_playerName, *newSpecies);
       if (!logged)
         return std::unexpected(std::move(logged.error()));
       return Json(false);
     }
-    setShipSpecies(std::move(*newSpecies));
+    self.setShipSpecies(std::move(*newSpecies));
     return Json(true);
   });
   if (!speciesHandler)
     return std::unexpected(std::move(speciesHandler.error()));
 
-  auto containerHandler = m_rpc.registerHandler("world.containerPutItems", [this](Json const& args) -> std::expected<Json, StarException> {
+  auto containerHandler = m_rpc.registerHandler("world.containerPutItems", [&self = *this](Json const& args) -> std::expected<Json, StarException> {
     auto items = args.getArray("items");
     if (!items)
       return std::unexpected(std::move(items.error()));
@@ -199,17 +199,17 @@ std::expected<void, StarException> ServerClientContext::initialize() {
         return std::unexpected(std::move(descriptor.error()));
       overflow.append(std::move(*descriptor));
     }
-    std::unique_lock locker(m_mutex, std::defer_lock);
+    std::unique_lock locker(self.m_mutex, std::defer_lock);
     lockWithDiagnostics(locker);
-    if (m_worldThread) {
-      auto executed = m_worldThread->executeAction([args, items = std::move(*items), &overflow](WorldServerThread*, WorldServer* server) -> std::expected<void, StarException> {
+    if (self.m_worldThread) {
+      auto executed = self.m_worldThread->executeAction([args, items = std::move(*items), &overflow](WorldServerThread&, WorldServer& server) -> std::expected<void, StarException> {
         auto entityId = args.getInt("entityId");
         if (!entityId)
           return std::unexpected(std::move(entityId.error()));
-        auto itemDatabase = server->root().itemDatabase();
+        auto itemDatabase = server.root().itemDatabase();
         if (!itemDatabase)
           return std::unexpected(std::move(itemDatabase.error()));
-        if (auto containerEntity = as<ContainerEntity>(server->entity(*entityId))) {
+        if (auto containerEntity = as<ContainerEntity>(server.entity(*entityId))) {
           overflow.clear();
           for (auto const& itemData : items) {
             auto descriptor = ItemDescriptor::create(itemData);
@@ -238,15 +238,15 @@ std::expected<void, StarException> ServerClientContext::initialize() {
   if (!containerHandler)
     return std::unexpected(std::move(containerHandler.error()));
 
-  auto flagHandler = m_rpc.registerHandler("universe.setFlag", [this](Json const& args) -> std::expected<Json, StarException> {
+  auto flagHandler = m_rpc.registerHandler("universe.setFlag", [&self = *this](Json const& args) -> std::expected<Json, StarException> {
     auto flagName = args.toString();
     if (!flagName)
       return std::unexpected(std::move(flagName.error()));
-    std::unique_lock locker(m_mutex, std::defer_lock);
+    std::unique_lock locker(self.m_mutex, std::defer_lock);
     lockWithDiagnostics(locker);
-    if (m_worldThread) {
-      auto executed = m_worldThread->executeAction([flagName = std::move(*flagName)](WorldServerThread*, WorldServer* server) -> std::expected<void, StarException> {
-        return server->universeSettings()->setFlag(flagName);
+    if (self.m_worldThread) {
+      auto executed = self.m_worldThread->executeAction([flagName = std::move(*flagName)](WorldServerThread&, WorldServer& server) -> std::expected<void, StarException> {
+        return server.universeSettings()->setFlag(flagName);
       });
       if (!executed)
         return std::unexpected(std::move(executed.error()));
@@ -256,9 +256,9 @@ std::expected<void, StarException> ServerClientContext::initialize() {
   if (!flagHandler)
     return std::unexpected(std::move(flagHandler.error()));
 
-  for (auto* element : std::initializer_list<NetElement*>{
-      &m_orbitWarpActionNetState, &m_playerWorldIdNetState, &m_isAdminNetState,
-      &m_teamNetState, &m_shipUpgrades, &m_shipCoordinate}) {
+  for (auto element : std::initializer_list<std::reference_wrapper<NetElement>>{
+      m_orbitWarpActionNetState, m_playerWorldIdNetState, m_isAdminNetState,
+      m_teamNetState, m_shipUpgrades, m_shipCoordinate}) {
     auto added = m_netGroup.addNetElement(element);
     if (!added)
       return std::unexpected(std::move(added.error()));
@@ -613,8 +613,8 @@ std::expected<void, StarException> ServerClientContext::failWorldRequests() {
 std::optional<WorldChunks> ServerClientContext::customWorldChunks(String name) const {
   std::unique_lock locker(m_mutex, std::defer_lock);
   lockWithDiagnostics(locker);
-  if (auto world = m_customWorlds.ptr(name))
-    return world->chunks;
+  if (auto world = m_customWorlds.maybeRef(name))
+    return world->get().chunks;
   return {};
 }
 
@@ -629,8 +629,8 @@ void ServerClientContext::updateCustomWorldChunks(String name, WorldChunks newWo
 void ServerClientContext::setCustomWorldActive(String name, bool active) {
   std::unique_lock locker(m_mutex, std::defer_lock);
   lockWithDiagnostics(locker);
-  if (auto world = m_customWorlds.ptr(name))
-    world->active = active;
+  if (auto world = m_customWorlds.maybeRef(name))
+    world->get().active = active;
 }
 
 List<String> ServerClientContext::customWorlds() const {
@@ -643,8 +643,8 @@ std::expected<void, StarException> ServerClientContext::cleanInactiveCustomWorld
   std::unique_lock locker(m_mutex, std::defer_lock);
   lockWithDiagnostics(locker);
   for (auto const& worldName : m_customWorlds.keys()) {
-    if (auto world = m_customWorlds.ptr(worldName)) {
-      if (!world->active && world->chunksUpdate.empty()) {
+    if (auto world = m_customWorlds.maybeRef(worldName)) {
+      if (!world->get().active && world->get().chunksUpdate.empty()) {
         auto logged = m_root.logger().info("Removing inactive custom world '{}' for client '{}'", worldName, m_playerUuid.hex());
         if (!logged)
           return std::unexpected(std::move(logged.error()));

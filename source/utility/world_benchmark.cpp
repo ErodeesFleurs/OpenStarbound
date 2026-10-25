@@ -123,13 +123,13 @@ using namespace Star;
 template <typename T>
 [[nodiscard]]
 static std::expected<T, StarException> numericOption(OptionParser::Options const& options, String const& name, T fallback) {
-  auto values = options.parameters.ptr(name);
+  auto values = options.parameters.maybeRef(name);
   if (!values)
     return fallback;
-  auto text = values->first();
+  auto text = values->get().first();
   if (!text)
     return std::unexpected(std::move(text.error()));
-  return lexicalCast<T>(**text);
+  return lexicalCast<T>(text->get());
 }
 
 [[nodiscard]]
@@ -180,7 +180,7 @@ static std::expected<void, StarException> run(int argc, char** argv) {
   auto dungeonArgument = options.arguments.first();
   if (!dungeonArgument)
     return std::unexpected(std::move(dungeonArgument.error()));
-  String dungeon = **dungeonArgument;
+  String dungeon = dungeonArgument->get();
   auto worldParameters = generateFloatingDungeonWorldParameters(*root, dungeon);
   if (!worldParameters)
     return std::unexpected(std::move(worldParameters.error()));

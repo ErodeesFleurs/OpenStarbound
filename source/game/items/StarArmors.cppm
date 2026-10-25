@@ -172,7 +172,7 @@ public:
   Directives const& maskDirectives() const;
 
   [[nodiscard]]
-  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  std::expected<List<Drawable>, StarException> preview(std::optional<std::reference_wrapper<TileDrawer>>, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   explicit HeadArmor(Root& root) : ArmorItem(root) {}
@@ -208,7 +208,7 @@ public:
   String const& backSleeveFrameset(Gender gender) const;
 
   [[nodiscard]]
-  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  std::expected<List<Drawable>, StarException> preview(std::optional<std::reference_wrapper<TileDrawer>>, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   explicit ChestArmor(Root& root) : ArmorItem(root) {}
@@ -243,7 +243,7 @@ public:
   String const& frameset(Gender gender) const;
 
   [[nodiscard]]
-  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  std::expected<List<Drawable>, StarException> preview(std::optional<std::reference_wrapper<TileDrawer>>, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   explicit LegsArmor(Root& root) : ArmorItem(root) {}
@@ -273,7 +273,7 @@ public:
   String const& frameset(Gender gender) const;
 
   [[nodiscard]]
-  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  std::expected<List<Drawable>, StarException> preview(std::optional<std::reference_wrapper<TileDrawer>>, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   explicit BackArmor(Root& root) : ArmorItem(root) {}

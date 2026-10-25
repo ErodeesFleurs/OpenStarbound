@@ -116,12 +116,12 @@ import star.root;
 
 namespace {
 thread_local int threadStartsBeforeFailure = -1;
-thread_local std::atomic<unsigned>* completedInjectedThreads = nullptr;
+thread_local std::optional<std::reference_wrapper<std::atomic<unsigned>>> completedInjectedThreads;
 
 struct InjectedThreadStart {
   void* (*function)(void*);
   void* argument;
-  std::atomic<unsigned>* completed;
+  std::reference_wrapper<std::atomic<unsigned>> completed;
 };
 }
 
@@ -136,7 +136,7 @@ extern "C" int __wrap_pthread_create(pthread_t* thread, pthread_attr_t const* at
     return EAGAIN;
   }
   auto start = std::unique_ptr<InjectedThreadStart>(
-      new (std::nothrow) InjectedThreadStart{function, argument, completedInjectedThreads});
+      new (std::nothrow) InjectedThreadStart{function, argument, *completedInjectedThreads});
   if (!start) {
     threadStartsBeforeFailure = -1;
     return EAGAIN;
@@ -144,7 +144,7 @@ extern "C" int __wrap_pthread_create(pthread_t* thread, pthread_attr_t const* at
   auto run = [](void* argument) -> void* {
     std::unique_ptr<InjectedThreadStart> start(static_cast<InjectedThreadStart*>(argument));
     auto result = start->function(start->argument);
-    ++*start->completed;
+    ++start->completed.get();
     return result;
   };
   int result = __real_pthread_create(thread, attributes, run, start.get());
@@ -313,9 +313,9 @@ private:
 
 const GameTestRegistration universeConnectionsAll("UniverseConnections", "All", [](GameTest& fixture) {
   auto& logger = fixture.root().logger();
-  auto server = UniverseConnectionServer::create(logger, [](UniverseConnectionServer* server, ConnectionId clientId,
+  auto server = UniverseConnectionServer::create(logger, [](UniverseConnectionServer& server, ConnectionId clientId,
       List<std::shared_ptr<::Star::Packet>> packets) -> std::expected<void, StarException> {
-    return server->sendPackets(clientId, std::move(packets));
+    return server.sendPackets(clientId, std::move(packets));
   });
   ASSERT_TRUE(server) << server.error().what();
 
@@ -428,7 +428,7 @@ namespace {
   auto sizeWritten = frame.writeVlqI(payload.size());
   if (!sizeWritten)
     return std::unexpected(std::move(sizeWritten.error()));
-  auto dataWritten = frame.writeData(payload.ptr(), payload.size());
+  auto dataWritten = frame.writeData(payload.span());
   if (!dataWritten)
     return std::unexpected(std::move(dataWritten.error()));
   return frame.takeData();
@@ -456,8 +456,8 @@ public:
   [[nodiscard]] static std::expected<std::unique_ptr<ConnectionTestAsync>, StarException> create(Function function) {
     auto task = std::unique_ptr<ConnectionTestAsync>(new ConnectionTestAsync);
     auto thread = ThreadFunction<void>::create(
-        [task = task.get(), function = std::move(function)]() mutable -> std::expected<void, StarException> {
-          task->m_promise.set_value(function());
+        [&task = *task, function = std::move(function)]() mutable -> std::expected<void, StarException> {
+          task.m_promise.set_value(function());
           return {};
         }, "UniverseConnectionTestAsync");
     if (!thread)
@@ -570,13 +570,13 @@ const GameTestRegistration universeConnectionsTcpPartialHeaderBodyAndZeroDeadlin
   ASSERT_TRUE(frameResult) << frameResult.error().what();
   auto& frame = *frameResult;
   ASSERT_GT(frame.size(), 2u);
-  ASSERT_EQ(sender->send(frame.ptr(), 1), 1u);
+  ASSERT_EQ(sender->send(std::span<char const>(frame).first(1)), 1u);
   ASSERT_TRUE(socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2)));
   EXPECT_EQ(receiver.receiveAny(0), false);
-  ASSERT_EQ(sender->send(frame.ptr() + 1, frame.size() - 2), frame.size() - 2);
+  ASSERT_EQ(sender->send(std::span<char const>(frame).subspan(1, frame.size() - 2)), frame.size() - 2);
   ASSERT_TRUE(socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2)));
   EXPECT_EQ(receiver.receiveAny(0), false);
-  ASSERT_EQ(sender->send(frame.ptr() + frame.size() - 1, 1), 1u);
+  ASSERT_EQ(sender->send(std::span<char const>(frame).last(1)), 1u);
   ASSERT_TRUE(socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2)));
   ASSERT_EQ(receiver.receiveAny(0), true);
   EXPECT_EQ(connectionTestVersion(receiver), 43u);
@@ -595,7 +595,7 @@ const GameTestRegistration universeConnectionsTcpCompletePacketBeforeEofAndTrunc
     auto frameResult = connectionTestFrame(44);
     ASSERT_TRUE(frameResult) << frameResult.error().what();
     auto& frame = *frameResult;
-    ASSERT_EQ(sender->send(frame.ptr(), frame.size()), frame.size());
+    ASSERT_EQ(sender->send(frame), frame.size());
     sender->close();
     ASSERT_EQ(receiver.receiveAny(1000), true);
     EXPECT_EQ(connectionTestVersion(receiver), 44u);
@@ -612,7 +612,7 @@ const GameTestRegistration universeConnectionsTcpCompletePacketBeforeEofAndTrunc
     auto frameResult = connectionTestFrame(45);
     ASSERT_TRUE(frameResult) << frameResult.error().what();
     auto& frame = *frameResult;
-    ASSERT_EQ(sender->send(frame.ptr(), frame.size() - 1), frame.size() - 1);
+    ASSERT_EQ(sender->send(std::span<char const>(frame).first(frame.size() - 1)), frame.size() - 1);
     sender->close();
     EXPECT_EQ(receiver.receiveAny(1000), false);
     EXPECT_FALSE(receiver.isOpen());
@@ -656,7 +656,7 @@ const GameTestRegistration universeConnectionsTcpBufferedPacketSurvivesLocalClos
   ASSERT_TRUE(packetSocket) << packetSocket.error().what();
   auto frame = connectionTestFrame(49);
   ASSERT_TRUE(frame) << frame.error().what();
-  ASSERT_EQ(sender->send(frame->ptr(), frame->size()), frame->size());
+  ASSERT_EQ(sender->send(*frame), frame->size());
   ASSERT_TRUE(socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2)));
   ASSERT_EQ((*packetSocket)->readData(), true);
 
@@ -749,7 +749,7 @@ const GameTestRegistration universeConnectionsTcpCompressedBackpressureRetainsAn
   ASSERT_TRUE(SocketTestAccess::setBufferSize(*incoming, SO_RCVBUF, 65536));
   auto sendSocket = TcpPacketSocket::open(fixture.root().logger(), outgoing);
   ASSERT_TRUE(sendSocket) << sendSocket.error().what();
-  auto* sendTransport = sendSocket->get();
+  auto& sendTransport = **sendSocket;
   (*sendSocket)->setCompressionStreamEnabled(true);
   auto receiveSocket = TcpPacketSocket::open(fixture.root().logger(), incoming);
   ASSERT_TRUE(receiveSocket) << receiveSocket.error().what();
@@ -779,11 +779,11 @@ const GameTestRegistration universeConnectionsTcpCompressedBackpressureRetainsAn
     backpressured = !*sent;
   }
   ASSERT_TRUE(backpressured) << "Native socket never reported backpressure after " << packetCount << " packets";
-  ASSERT_TRUE(sendTransport->sentPacketsPending());
+  ASSERT_TRUE(sendTransport.sentPacketsPending());
   // Already-compressed bytes retain their wire encoding even if no new stream
   // compression is requested. Disabling the mode must not hide that tail.
-  sendTransport->setCompressionStreamEnabled(false);
-  EXPECT_TRUE(sendTransport->sentPacketsPending());
+  sendTransport.setCompressionStreamEnabled(false);
+  EXPECT_TRUE(sendTransport.sentPacketsPending());
   auto receiveTask = ConnectionTestAsync<bool>::create([&]() -> std::expected<bool, StarException> {
     std::uint32_t receiveState = 0x12345678;
     for (std::size_t i = 0; i < packetCount; ++i) {
@@ -807,7 +807,7 @@ const GameTestRegistration universeConnectionsTcpCompressedBackpressureRetainsAn
   auto& received = **receiveTask;
   EXPECT_EQ(sender.sendAll(5000), true);
   EXPECT_EQ(received.get(), true);
-  EXPECT_FALSE(sendTransport->sentPacketsPending());
+  EXPECT_FALSE(sendTransport.sentPacketsPending());
 });
 
 const GameTestRegistration universeConnectionsShardCallbacksReenterAndRemovalReturnsUnprocessedQueues(
@@ -818,25 +818,25 @@ const GameTestRegistration universeConnectionsShardCallbacksReenterAndRemovalRet
   auto callbackRelease = release.get_future().share();
   std::atomic<unsigned> calls = 0;
   std::atomic<unsigned> active = 0;
-  auto server = UniverseConnectionServer::create(fixture.root().logger(), [&](UniverseConnectionServer* server, ConnectionId id,
+  auto server = UniverseConnectionServer::create(fixture.root().logger(), [&](UniverseConnectionServer& server, ConnectionId id,
       List<std::shared_ptr<Packet>> packets) -> std::expected<void, StarException> {
     if (id == 2) {
       EXPECT_EQ(active.fetch_add(1), 0u);
       auto leave = finally([&]() { --active; });
       if (calls++ == 0) {
-        EXPECT_TRUE(server->hasConnection(id));
-        auto connection = server->removeConnection(id);
+        EXPECT_TRUE(server.hasConnection(id));
+        auto connection = server.removeConnection(id);
         if (!connection)
           return std::unexpected(std::move(connection.error()));
-        auto added = server->addConnection(id, std::move(*connection));
+        auto added = server.addConnection(id, std::move(*connection));
         if (!added)
           return std::unexpected(std::move(added.error()));
         entered.set_value();
         callbackRelease.wait_for(std::chrono::seconds(2));
       }
-      return server->sendPackets(id, std::move(packets));
+      return server.sendPackets(id, std::move(packets));
     }
-    return server->sendPackets(id, std::move(packets));
+    return server.sendPackets(id, std::move(packets));
   }, 2);
   ASSERT_TRUE(server) << server.error().what();
   auto gatePair = LocalPacketSocket::openPair();
@@ -893,19 +893,19 @@ const GameTestRegistration universeConnectionsStartupFailureJoinsEveryPreviously
     alarm(5);
     for (int failAfter : {0, 1, 3}) {
       std::atomic<unsigned> completed = 0;
-      completedInjectedThreads = &completed;
+      completedInjectedThreads = std::ref(completed);
       threadStartsBeforeFailure = failAfter;
       auto server = UniverseConnectionServer::create(logger,
-          [](auto*, auto, auto) -> std::expected<void, StarException> { return {}; }, 4);
+          [](auto&, auto, auto) -> std::expected<void, StarException> { return {}; }, 4);
       threadStartsBeforeFailure = -1;
-      completedInjectedThreads = nullptr;
+      completedInjectedThreads.reset();
       if (server || completed.load() != static_cast<unsigned>(failAfter))
         std::_Exit(1);
     }
     // Injection resets on failure; a subsequent ordinary startup still works.
     {
       auto server = UniverseConnectionServer::create(logger,
-          [](auto*, auto, auto) -> std::expected<void, StarException> { return {}; }, 2);
+          [](auto&, auto, auto) -> std::expected<void, StarException> { return {}; }, 2);
       if (!server)
         std::_Exit(1);
     }

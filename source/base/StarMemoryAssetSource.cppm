@@ -73,16 +73,16 @@ StringList MemoryAssetSource::assetPaths() const {
 
 std::expected<std::shared_ptr<IODevice>, StarException> MemoryAssetSource::open(String const& path) {
   struct AssetReader : public IODevice {
-    AssetReader(char* assetData, std::size_t assetSize, String name) {
+    AssetReader(std::span<char const> assetData, String name) {
       this->assetData = assetData;
-      this->assetSize = assetSize;
+      this->assetSize = assetData.size();
       this->name = std::move(name);
       setMode(IOMode::Read);
     }
 
     [[nodiscard]] std::expected<std::size_t, StarException> read(std::span<char> data) override {
       auto len = std::min<std::size_t>(data.size(), assetSize - static_cast<std::size_t>(assetPos));
-      std::memcpy(data.data(), assetData + assetPos, len);
+      std::memcpy(data.data(), assetData.subspan(static_cast<std::size_t>(assetPos), len).data(), len);
       assetPos += len;
       return len;
     }
@@ -123,31 +123,32 @@ std::expected<std::shared_ptr<IODevice>, StarException> MemoryAssetSource::open(
     }
 
     [[nodiscard]] std::expected<std::shared_ptr<IODevice>, StarException> clone() override {
-      auto cloned = std::make_shared<AssetReader>(assetData, assetSize, name);
+      auto cloned = std::make_shared<AssetReader>(assetData, name);
       cloned->assetPos = assetPos;
       return cloned;
     }
 
-    char* assetData;
+    std::span<char const> assetData;
     std::size_t assetSize;
     StreamOffset assetPos = 0;
     String name;
   };
 
-  auto p = m_files.ptr(path);
+  auto p = m_files.maybeRef(path);
   if (!p)
     return std::unexpected(AssetSourceException::format("Requested file '{}' does not exist in memory", path));
-  else if (auto byteArray = std::get_if<ByteArray>(p)) {
-    if (byteArray->size() > static_cast<std::uint64_t>(std::numeric_limits<StreamOffset>::max()))
+  else if (std::holds_alternative<ByteArray>(p->get())) {
+    auto const& byteArray = std::get<ByteArray>(p->get());
+    if (byteArray.size() > static_cast<std::uint64_t>(std::numeric_limits<StreamOffset>::max()))
       return std::unexpected(AssetSourceException::format("Requested file '{}' is too large to open", path));
-    return std::make_shared<AssetReader>(byteArray->ptr(), byteArray->size(), path);
+    return std::make_shared<AssetReader>(byteArray.span(), path);
   } else {
-    auto image = std::get<std::shared_ptr<Image>>(*p).get();
-    std::uint64_t pixels = static_cast<std::uint64_t>(image->width()) * image->height();
-    auto bpp = image->bytesPerPixel();
+    auto const& image = *std::get<std::shared_ptr<Image>>(p->get());
+    std::uint64_t pixels = static_cast<std::uint64_t>(image.width()) * image.height();
+    auto bpp = image.bytesPerPixel();
     if (bpp && pixels > static_cast<std::uint64_t>(std::numeric_limits<StreamOffset>::max()) / bpp)
       return std::unexpected(AssetSourceException::format("Requested file '{}' is too large to open", path));
-    return std::make_shared<AssetReader>((char*)image->data(), pixels * bpp, path);
+    return std::make_shared<AssetReader>(std::span(reinterpret_cast<char const*>(image.data().data()), pixels * bpp), path);
   }
 }
 
@@ -176,27 +177,27 @@ void MemoryAssetSource::set(String const& path, Image&& image) {
 }
 
 std::expected<ByteArray, StarException> MemoryAssetSource::read(String const& path) {
-  auto p = m_files.ptr(path);
+  auto p = m_files.maybeRef(path);
   if (!p)
     return std::unexpected(AssetSourceException::format("Requested file '{}' does not exist in memory", path));
-  else if (auto bytes = std::get_if<ByteArray>(p))
-    return *bytes;
+  else if (std::holds_alternative<ByteArray>(p->get()))
+    return std::get<ByteArray>(p->get());
   else {
-    Image const* image = std::get<std::shared_ptr<Image>>(*p).get();
-    std::uint64_t pixels = static_cast<std::uint64_t>(image->width()) * image->height();
-    auto bpp = image->bytesPerPixel();
+    auto const& image = *std::get<std::shared_ptr<Image>>(p->get());
+    std::uint64_t pixels = static_cast<std::uint64_t>(image.width()) * image.height();
+    auto bpp = image.bytesPerPixel();
     if (bpp && pixels > std::numeric_limits<std::size_t>::max() / bpp)
       return std::unexpected(AssetSourceException::format("Requested file '{}' is too large to read", path));
-    return ByteArray((char const*)image->data(), pixels * bpp);
+    return ByteArray(std::span(reinterpret_cast<char const*>(image.data().data()), pixels * bpp));
   }
 }
 
 std::expected<std::shared_ptr<Image const>, StarException> MemoryAssetSource::image(String const& path) {
-  auto p = m_files.ptr(path);
+  auto p = m_files.maybeRef(path);
   if (!p)
     return std::unexpected(AssetSourceException::format("Requested file '{}' does not exist in memory", path));
-  else if (auto imagePtr = std::get_if<std::shared_ptr<Image>>(p))
-    return *imagePtr;
+  else if (std::holds_alternative<std::shared_ptr<Image>>(p->get()))
+    return std::get<std::shared_ptr<Image>>(p->get());
   else
     return nullptr;
 }

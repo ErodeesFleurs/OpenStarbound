@@ -28,9 +28,9 @@ public:
   List<Key> keys() const;
   List<Value> values() const;
 
-  // If the value is in the cache, returns a pointer to it and marks it as
-  // accessed, otherwise returns nullptr.
-  Value* ptr(Key const& key);
+  // A mutable lookup marks the entry as accessed; const lookup only observes it.
+  std::optional<std::reference_wrapper<Value>> maybeRef(Key const& key);
+  std::optional<std::reference_wrapper<Value const>> maybeRef(Key const& key) const;
 
   // Put the given value into the cache.
   void set(Key const& key, Value value);
@@ -48,7 +48,7 @@ public:
   // value.
   template <typename Producer>
     requires std::invocable<Producer&, Key const&>
-  [[nodiscard]] std::expected<Value*, StarException> get(Key const& key, Producer&& producer);
+  [[nodiscard]] std::expected<std::reference_wrapper<Value>, StarException> get(Key const& key, Producer&& producer);
 
   // Clear all cached entries.
   void clear();
@@ -102,12 +102,17 @@ auto LruCacheBase<OrderedMapType>::values() const -> List<Value> {
 }
 
 template <typename OrderedMapType>
-auto LruCacheBase<OrderedMapType>::ptr(Key const& key) -> Value * {
+auto LruCacheBase<OrderedMapType>::maybeRef(Key const& key) -> std::optional<std::reference_wrapper<Value>> {
   auto i = m_map.find(key);
   if (i == m_map.end())
-    return nullptr;
+    return std::nullopt;
   i = m_map.toBack(i);
-  return &i->second;
+  return std::reference_wrapper<Value>(i->second);
+}
+
+template <typename OrderedMapType>
+auto LruCacheBase<OrderedMapType>::maybeRef(Key const& key) const -> std::optional<std::reference_wrapper<Value const>> {
+  return m_map.maybeRef(key);
 }
 
 template <typename OrderedMapType>
@@ -138,12 +143,12 @@ void LruCacheBase<OrderedMapType>::removeWhere(Filter&& filter) {
 template <typename OrderedMapType>
 template <typename Producer>
   requires std::invocable<Producer&, typename OrderedMapType::key_type const&>
-[[nodiscard]] auto LruCacheBase<OrderedMapType>::get(Key const& key, Producer&& producer) -> std::expected<Value*, StarException> {
+[[nodiscard]] auto LruCacheBase<OrderedMapType>::get(Key const& key, Producer&& producer) -> std::expected<std::reference_wrapper<Value>, StarException> {
   auto i = m_map.find(key);
   if (i == m_map.end()) {
     while (m_map.size() > m_maxSize - 1)
       m_map.erase(m_map.begin());
-    if constexpr (requires { producer == nullptr; }) {
+    if constexpr (!std::is_function_v<std::remove_reference_t<Producer>> && requires { producer == nullptr; }) {
       if (producer == nullptr)
         return std::unexpected(StarException("Cannot invoke an empty cache producer"));
     }
@@ -159,7 +164,7 @@ template <typename Producer>
     i = m_map.toBack(i);
   }
 
-  return &i->second;
+  return std::reference_wrapper<Value>(i->second);
 }
 
 template <typename OrderedMapType>

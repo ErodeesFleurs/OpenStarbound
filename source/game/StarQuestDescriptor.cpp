@@ -58,7 +58,7 @@ bool QuestCoordinate::operator==(QuestCoordinate const& rhs) const { return coor
       if (!GenderNames) return std::unexpected(GenderNames.error());
       auto value = GenderNames->getLeft(**name);
       if (!value) return std::unexpected(std::move(value.error()));
-      gender = **value;
+      gender = value->get();
     }
     return QuestParamDetail(QuestEntity{*id, *species, gender});
   } else if (*type == "location") {
@@ -141,37 +141,44 @@ std::expected<QuestParam, StarException> QuestParam::diskLoad(Root& root, Json c
   return QuestParam{std::move(*detail), *name, *portrait, *indicator};
 }
 [[nodiscard]] std::expected<Json, StarException> questParamDetailToJson(QuestParamDetail const& detail) {
-  if (auto item = std::get_if<QuestItem>(&detail)) {
-    auto descriptor = item->descriptor();
+  if (std::holds_alternative<QuestItem>(detail)) {
+    auto descriptor = std::get<QuestItem>(detail).descriptor();
     if (!descriptor) return std::unexpected(std::move(descriptor.error()));
     return JsonObject{{"type", "item"}, {"item", descriptor->toJson()}};
-  } else if (auto tag = std::get_if<QuestItemTag>(&detail)) return JsonObject{{"type", "itemTag"}, {"tag", *tag}};
-  else if (auto items = std::get_if<QuestItemList>(&detail)) {
+  } else if (std::holds_alternative<QuestItemTag>(detail)) return JsonObject{{"type", "itemTag"}, {"tag", std::get<QuestItemTag>(detail)}};
+  else if (std::holds_alternative<QuestItemList>(detail)) {
     JsonArray array;
-    for (auto const& item : *items) array.append(item.toJson());
+    for (auto const& item : std::get<QuestItemList>(detail)) array.append(item.toJson());
     return JsonObject{{"type", "itemList"}, {"items", std::move(array)}};
-  } else if (auto entity = std::get_if<QuestEntity>(&detail)) {
+  } else if (std::holds_alternative<QuestEntity>(detail)) {
+    auto const& entity = std::get<QuestEntity>(detail);
     Json gender;
-    if (entity->gender) {
+    if (entity.gender) {
       if (!GenderNames) return std::unexpected(GenderNames.error());
-      auto name = GenderNames->getRight(*entity->gender);
+      auto name = GenderNames->getRight(*entity.gender);
       if (!name) return std::unexpected(std::move(name.error()));
-      gender = **name;
+      gender = name->get();
     }
-    return JsonObject{{"type", "entity"}, {"uniqueId", jsonFromOptional(entity->uniqueId)}, {"species", jsonFromOptional(entity->species)}, {"gender", gender}};
-  } else if (auto location = std::get_if<QuestLocation>(&detail)) return JsonObject{{"type", "location"}, {"uniqueId", jsonFromOptional(location->uniqueId)}, {"region", jsonFromRectF(location->region)}};
-  else if (auto monster = std::get_if<QuestMonsterType>(&detail)) return JsonObject{{"type", "monsterType"}, {"typeName", monster->typeName}, {"parameters", monster->parameters}};
-  else if (auto npc = std::get_if<QuestNpcType>(&detail)) return JsonObject{{"type", "npcType"}, {"species", npc->species}, {"typeName", npc->typeName}, {"parameters", npc->parameters}, {"seed", jsonFromOptional(npc->seed)}};
-  else if (auto coordinate = std::get_if<QuestCoordinate>(&detail)) return JsonObject{{"type", "coordinate"}, {"coordinate", coordinate->coordinate.toJson()}};
-  else if (auto json = std::get_if<QuestJson>(&detail)) return json->set("type", "json");
+    return JsonObject{{"type", "entity"}, {"uniqueId", jsonFromOptional(entity.uniqueId)}, {"species", jsonFromOptional(entity.species)}, {"gender", gender}};
+  } else if (std::holds_alternative<QuestLocation>(detail)) {
+    auto const& location = std::get<QuestLocation>(detail);
+    return JsonObject{{"type", "location"}, {"uniqueId", jsonFromOptional(location.uniqueId)}, {"region", jsonFromRectF(location.region)}};
+  } else if (std::holds_alternative<QuestMonsterType>(detail)) {
+    auto const& monster = std::get<QuestMonsterType>(detail);
+    return JsonObject{{"type", "monsterType"}, {"typeName", monster.typeName}, {"parameters", monster.parameters}};
+  } else if (std::holds_alternative<QuestNpcType>(detail)) {
+    auto const& npc = std::get<QuestNpcType>(detail);
+    return JsonObject{{"type", "npcType"}, {"species", npc.species}, {"typeName", npc.typeName}, {"parameters", npc.parameters}, {"seed", jsonFromOptional(npc.seed)}};
+  } else if (std::holds_alternative<QuestCoordinate>(detail)) return JsonObject{{"type", "coordinate"}, {"coordinate", std::get<QuestCoordinate>(detail).coordinate.toJson()}};
+  else if (std::holds_alternative<QuestJson>(detail)) return std::get<QuestJson>(detail).set("type", "json");
   return JsonObject{{"type", "noDetail"}};
 }
 [[nodiscard]] std::expected<Json, StarException> questParamDetailDiskStore(Root& root, QuestParamDetail const& detail) {
   if (!std::holds_alternative<QuestItem>(detail) && !std::holds_alternative<QuestItemList>(detail)) return questParamDetailToJson(detail);
   auto database = root.versioningDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
-  if (auto item = std::get_if<QuestItem>(&detail)) {
-    auto descriptor = item->descriptor();
+  if (std::holds_alternative<QuestItem>(detail)) {
+    auto descriptor = std::get<QuestItem>(detail).descriptor();
     if (!descriptor) return std::unexpected(std::move(descriptor.error()));
     auto store = descriptor->diskStore(**database);
     if (!store) return std::unexpected(std::move(store.error()));
@@ -328,15 +335,15 @@ std::expected<String, StarException> questParamText(Root& root, QuestParam const
   if (parameter.name) return *parameter.name;
   auto database = root.itemDatabase();
   if (!database) return std::unexpected(std::move(database.error()));
-  if (auto item = std::get_if<QuestItem>(&parameter.detail)) {
-    auto descriptor = item->descriptor();
+  if (std::holds_alternative<QuestItem>(parameter.detail)) {
+    auto descriptor = std::get<QuestItem>(parameter.detail).descriptor();
     if (!descriptor) return std::unexpected(std::move(descriptor.error()));
     auto value = (*database)->itemShared(*descriptor);
     if (!value) return std::unexpected(std::move(value.error()));
     return (*value)->friendlyName();
-  } else if (auto items = std::get_if<QuestItemList>(&parameter.detail)) {
+  } else if (std::holds_alternative<QuestItemList>(parameter.detail)) {
     StringList strings;
-    for (auto const& descriptor : *items) {
+    for (auto const& descriptor : std::get<QuestItemList>(parameter.detail)) {
       auto item = (*database)->itemShared(descriptor);
       if (!item) return std::unexpected(std::move(item.error()));
       strings.append(strf("{} {}", descriptor.count(), (*item)->friendlyName()));
@@ -354,99 +361,99 @@ std::expected<StringMap<String>, StarException> questParamTags(Root& root, Strin
   }
   return result;
 }
-std::expected<StringMap<QuestParam>, StarException> questParamsFromJson(Json const& json) { return jsonToMapV<StringMap<QuestParam>>(json, &QuestParam::fromJson); }
+std::expected<StringMap<QuestParam>, StarException> questParamsFromJson(Json const& json) { return jsonToMapV<StringMap<QuestParam>>(json, [](Json const& param) { return QuestParam::fromJson(param); }); }
 std::expected<StringMap<QuestParam>, StarException> questParamsDiskLoad(Root& root, Json const& json) { return jsonToMapV<StringMap<QuestParam>>(json, [&root](Json const& param) { return QuestParam::diskLoad(root, param); }); }
 std::expected<Json, StarException> questParamsToJson(StringMap<QuestParam> const& parameters) { return jsonFromMapV(parameters, [](QuestParam const& param) { return param.toJson(); }); }
 std::expected<Json, StarException> questParamsDiskStore(Root& root, StringMap<QuestParam> const& parameters) { return jsonFromMapV(parameters, [&root](QuestParam const& param) { return param.diskStore(root); }); }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestItem& item) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestItem& item) {
   auto result = ds >> item.itemName >> item.parameters;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestItem const& item) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestItem const& item) {
   auto result = ds << item.itemName << item.parameters;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestEntity& entity) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestEntity& entity) {
   auto result = ds >> entity.uniqueId >> entity.species >> entity.gender;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestEntity const& entity) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestEntity const& entity) {
   auto result = ds << entity.uniqueId << entity.species << entity.gender;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestLocation& location) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestLocation& location) {
   auto result = ds >> location.uniqueId >> location.region;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestLocation const& location) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestLocation const& location) {
   auto result = ds << location.uniqueId << location.region;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestMonsterType& monster) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestMonsterType& monster) {
   auto result = ds >> monster.typeName >> monster.parameters;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestMonsterType const& monster) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestMonsterType const& monster) {
   auto result = ds << monster.typeName << monster.parameters;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestNpcType& npc) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestNpcType& npc) {
   auto result = ds >> npc.species >> npc.typeName >> npc.parameters >> npc.seed;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestNpcType const& npc) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestNpcType const& npc) {
   auto result = ds << npc.species << npc.typeName << npc.parameters << npc.seed;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestCoordinate& coordinate) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestCoordinate& coordinate) {
   auto result = ds >> coordinate.coordinate;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestCoordinate const& coordinate) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestCoordinate const& coordinate) {
   auto result = ds << coordinate.coordinate;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestParam& param) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestParam& param) {
   auto result = ds >> param.detail >> param.name >> param.portrait >> param.indicator;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestParam const& param) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestParam const& param) {
   auto result = ds << param.detail << param.name << param.portrait << param.indicator;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestDescriptor& quest) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestDescriptor& quest) {
   auto result = ds >> quest.questId >> quest.templateId >> quest.parameters >> quest.seed;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestDescriptor const& quest) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestDescriptor const& quest) {
   auto result = ds << quest.questId << quest.templateId << quest.parameters << quest.seed;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, QuestArcDescriptor& arc) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, QuestArcDescriptor& arc) {
   auto result = ds >> arc.quests >> arc.stagehandUniqueId;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, QuestArcDescriptor const& arc) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, QuestArcDescriptor const& arc) {
   auto result = ds << arc.quests << arc.stagehandUniqueId;
   if (!result) return std::unexpected(std::move(result.error()));
-  return &ds;
+  return std::ref(ds);
 }
 }

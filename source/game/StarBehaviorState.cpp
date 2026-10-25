@@ -33,15 +33,15 @@ std::expected<void, StarException> Blackboard::set(NodeParameterType type, Strin
   auto board = m_board.get(type);
   if (!board) return std::unexpected(std::move(board.error()));
   if (std::holds_alternative<LuaNilType>(value))
-    (*board)->remove(key);
+    board->get().remove(key);
   else
-    (*board)->set(key, value);
+    board->get().set(key, value);
   auto inputs = m_input.get(type);
   if (!inputs) return std::unexpected(std::move(inputs.error()));
-  for (auto const& input : (*inputs)->maybe(key).value_or(List<std::pair<std::uint64_t, String>>{})) {
+  for (auto const& input : inputs->get().maybe(key).value_or(List<std::pair<std::uint64_t, String>>{})) {
     auto table = m_parameters.get(input.first);
     if (!table) return std::unexpected(std::move(table.error()));
-    auto set = (*table)->set(input.second, value);
+    auto set = table->get().set(input.second, value);
     if (!set) return std::unexpected(std::move(set.error()));
   }
   if (type == NodeParameterType::Number) {
@@ -56,7 +56,7 @@ std::expected<void, StarException> Blackboard::set(NodeParameterType type, Strin
 std::expected<LuaValue, StarException> Blackboard::get(NodeParameterType type, String const& key) const {
   auto board = m_board.get(type);
   if (!board) return std::unexpected(std::move(board.error()));
-  return (*board)->maybe(key).value_or(LuaNil);
+  return board->get().maybe(key).value_or(LuaNil);
 }
 
 std::expected<LuaTable, StarException> Blackboard::parameters(StringMap<NodeParameter> const& parameters, std::uint64_t nodeId) {
@@ -65,11 +65,12 @@ std::expected<LuaTable, StarException> Blackboard::parameters(StringMap<NodePara
   if (!created) return std::unexpected(std::move(created.error()));
   LuaTable table = std::move(*created);
   for (auto const& p : parameters) {
-    if (auto key = std::get_if<String>(&p.second.second)) {
+    if (std::holds_alternative<String>(p.second.second)) {
+      auto const& key = std::get<String>(p.second.second);
       auto input = m_input.get(p.second.first);
       if (!input) return std::unexpected(std::move(input.error()));
-      (**input)[*key].append({nodeId, p.first});
-      auto value = get(p.second.first, *key);
+      input->get()[key].append({nodeId, p.first});
+      auto value = get(p.second.first, key);
       if (!value) return std::unexpected(std::move(value.error()));
       auto set = table.set(p.first, *value);
       if (!set) return std::unexpected(std::move(set.error()));
@@ -165,7 +166,7 @@ std::expected<std::shared_ptr<BehaviorState>, StarException> BehaviorState::crea
 std::expected<NodeStatus, StarException> BehaviorState::run(float dt) {
   m_lastDt = dt;
   std::optional<Set<std::pair<NodeParameterType, String>>> ephemeral;
-  if (auto master = std::get_if<std::shared_ptr<Blackboard>>(&m_board)) ephemeral = (*master)->takeEphemerals();
+  if (std::holds_alternative<std::shared_ptr<Blackboard>>(m_board)) ephemeral = std::get<std::shared_ptr<Blackboard>>(m_board)->takeEphemerals();
   auto status = runNode(*m_tree->root, m_rootState);
   if (!status) return std::unexpected(std::move(status.error()));
   if (ephemeral) {
@@ -176,7 +177,7 @@ std::expected<NodeStatus, StarException> BehaviorState::run(float dt) {
 }
 void BehaviorState::clear() { m_rootState.reset(); }
 std::weak_ptr<Blackboard> BehaviorState::blackboardPtr() {
-  if (auto master = std::get_if<std::shared_ptr<Blackboard>>(&m_board)) return *master;
+  if (std::holds_alternative<std::shared_ptr<Blackboard>>(m_board)) return std::get<std::shared_ptr<Blackboard>>(m_board);
   return std::get<std::weak_ptr<Blackboard>>(m_board);
 }
 std::expected<std::shared_ptr<Blackboard>, StarException> BehaviorState::board() {
@@ -193,15 +194,15 @@ std::expected<LuaThread, StarException> BehaviorState::nodeLuaThread(String cons
   }
   auto function = m_functions.get(name);
   if (!function) return std::unexpected(std::move(function.error()));
-  auto pushed = thread->pushFunction(**function);
+  auto pushed = thread->pushFunction(function->get());
   if (!pushed) return std::unexpected(std::move(pushed.error()));
   return std::move(*thread);
 }
 std::expected<NodeStatus, StarException> BehaviorState::runNode(BehaviorNode const& node, NodeState& state) {
-  auto status = [&]() -> std::expected<NodeStatus, StarException> {
-    if (auto value = std::get_if<ActionNode>(&node)) return runAction(*value, state);
-    if (auto value = std::get_if<DecoratorNode>(&node)) return runDecorator(*value, state);
-    if (auto value = std::get_if<CompositeNode>(&node)) return runComposite(*value, state);
+  auto status = [&self = *this, &node, &state]() -> std::expected<NodeStatus, StarException> {
+    if (std::holds_alternative<ActionNode>(node)) return self.runAction(std::get<ActionNode>(node), state);
+    if (std::holds_alternative<DecoratorNode>(node)) return self.runDecorator(std::get<DecoratorNode>(node), state);
+    if (std::holds_alternative<CompositeNode>(node)) return self.runComposite(std::get<CompositeNode>(node), state);
     return std::unexpected(BehaviorException("Unidentified behavior node type"));
   }();
   if (!status) return std::unexpected(std::move(status.error()));
@@ -237,8 +238,8 @@ std::expected<NodeStatus, StarException> BehaviorState::runAction(ActionNode con
     auto status = std::get<0>(result);
     if (status == NodeStatus::Success || status == NodeStatus::Failure) m_threads.append(thread);
   }
-  if (auto table = std::get_if<LuaTable>(&std::get<1>(result))) {
-    auto output = (*blackboard)->setOutput(node, *table);
+  if (std::holds_alternative<LuaTable>(std::get<1>(result))) {
+    auto output = (*blackboard)->setOutput(node, std::get<LuaTable>(std::get<1>(result)));
     if (!output) return std::unexpected(std::move(output.error()));
   }
   return std::get<0>(result);
@@ -279,13 +280,13 @@ std::expected<NodeStatus, StarException> BehaviorState::runDecorator(DecoratorNo
   return status;
 }
 std::expected<NodeStatus, StarException> BehaviorState::runComposite(CompositeNode const& node, NodeState& state) {
-  return std::visit([&](auto const& value) -> std::expected<NodeStatus, StarException> {
+  return std::visit([&self = *this, &state](auto const& value) -> std::expected<NodeStatus, StarException> {
     using T = std::decay_t<decltype(value)>;
-    if constexpr (std::is_same_v<T, SequenceNode>) return runSequence(value, state);
-    else if constexpr (std::is_same_v<T, SelectorNode>) return runSelector(value, state);
-    else if constexpr (std::is_same_v<T, ParallelNode>) return runParallel(value, state);
-    else if constexpr (std::is_same_v<T, DynamicNode>) return runDynamic(value, state);
-    else return runRandomize(value, state);
+    if constexpr (std::is_same_v<T, SequenceNode>) return self.runSequence(value, state);
+    else if constexpr (std::is_same_v<T, SelectorNode>) return self.runSelector(value, state);
+    else if constexpr (std::is_same_v<T, ParallelNode>) return self.runParallel(value, state);
+    else if constexpr (std::is_same_v<T, DynamicNode>) return self.runDynamic(value, state);
+    else return self.runRandomize(value, state);
   }, node);
 }
 std::expected<NodeStatus, StarException> BehaviorState::runSequence(SequenceNode const& node, NodeState& state) {
@@ -331,13 +332,13 @@ std::expected<NodeStatus, StarException> BehaviorState::runDynamic(DynamicNode c
     if (!child) return std::unexpected(std::move(child.error()));
     auto childState = composite.children.at(i);
     if (!childState) return std::unexpected(std::move(childState.error()));
-    auto status = runNode(***child, ***childState);
+    auto status = runNode(*child->get(), *childState->get());
     if (!status) return std::unexpected(std::move(status.error()));
     if (*status == NodeStatus::Failure && i == composite.index) ++composite.index;
     if (i < composite.index && (*status == NodeStatus::Success || *status == NodeStatus::Running)) {
       auto previous = composite.children.at(composite.index);
       if (!previous) return std::unexpected(std::move(previous.error()));
-      (**previous)->reset();
+      previous->get()->reset();
       composite.index = i;
     }
     if (*status == NodeStatus::Success || composite.index >= node.children.size()) return *status;
@@ -348,13 +349,13 @@ std::expected<NodeStatus, StarException> BehaviorState::runRandomize(RandomizeNo
   if (!state) {
     auto root = luaExecutionRoot(m_luaContext.engine());
     if (!root) return std::unexpected(std::move(root.error()));
-    state.emplace(CompositeState(node.children.size(), (*root)->random().randUInt(node.children.size() - 1)));
+    state.emplace(CompositeState(node.children.size(), root->get().random().randUInt(node.children.size() - 1)));
   }
   auto& composite = std::get<CompositeState>(*state);
   auto child = node.children.at(composite.index);
   if (!child) return std::unexpected(std::move(child.error()));
   auto childState = composite.children.at(composite.index);
   if (!childState) return std::unexpected(std::move(childState.error()));
-  return runNode(***child, ***childState);
+  return runNode(*child->get(), *childState->get());
 }
 }

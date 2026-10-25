@@ -121,22 +121,18 @@ bool RandomSource::randb() {
   return (std::popcount(gen32()) & 1) != 0;
 }
 
-void RandomSource::randBytes(char* buf, std::size_t len) {
-  while (len) {
+void RandomSource::randBytes(std::span<char> bytes) {
+  std::size_t offset = 0;
+  while (offset < bytes.size()) {
     std::uint32_t ui = gen32();
-    for (std::size_t i = 0; i < 4; ++i) {
-      if (len) {
-        *buf = (char)(ui >> (i * 8));
-        --len;
-        ++buf;
-      }
-    }
+    for (std::size_t i = 0; i < 4 && offset < bytes.size(); ++i)
+      bytes[offset++] = (char)(ui >> (i * 8));
   }
 }
 
 ByteArray RandomSource::randBytes(std::size_t len) {
   ByteArray array(len, 0);
-  randBytes(array.ptr(), len);
+  randBytes(array.span());
   return array;
 }
 
@@ -265,7 +261,7 @@ std::expected<double, StarException> RandomService::randd(double min, double max
 STAR_RANDOM_METHOD(float, nrandf, (float stddev, float mean), (stddev, mean))
 STAR_RANDOM_METHOD(double, nrandd, (double stddev, double mean), (stddev, mean))
 STAR_RANDOM_METHOD(std::int64_t, stochasticRound, (double val), (val))
-STAR_RANDOM_METHOD(void, randBytes, (char* buf, std::size_t len), (buf, len))
+STAR_RANDOM_METHOD(void, randBytes, (std::span<char> bytes), (bytes))
 STAR_RANDOM_METHOD(ByteArray, randBytes, (std::size_t len), (len))
 
 #undef STAR_RANDOM_METHOD

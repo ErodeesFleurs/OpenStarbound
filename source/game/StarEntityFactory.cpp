@@ -195,7 +195,7 @@ std::expected<ByteArray, StarException> EntityFactory::netStoreEntity(std::share
     if (!EntityTypeNames) return std::unexpected(EntityTypeNames.error());
     auto name = EntityTypeNames->getRight(entity->entityType());
     if (!name) return std::unexpected(std::move(name.error()));
-    return std::unexpected(EntityFactoryException::format("Don't know how to make net store for entity type '{}'", **name));
+    return std::unexpected(EntityFactoryException::format("Don't know how to make net store for entity type '{}'", name->get()));
   }
 }
 
@@ -227,7 +227,7 @@ std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::netLoadEnti
     if (!EntityTypeNames) return std::unexpected(EntityTypeNames.error());
     auto name = EntityTypeNames->getRight(type);
     if (!name) return std::unexpected(std::move(name.error()));
-    return std::unexpected(EntityFactoryException::format("Don't know how to create entity type '{}' from net store", **name));
+    return std::unexpected(EntityFactoryException::format("Don't know how to create entity type '{}' from net store", name->get()));
   }
 }
 
@@ -255,7 +255,7 @@ std::expected<Json, StarException> EntityFactory::diskStoreEntity(std::shared_pt
     if (!EntityTypeNames) return std::unexpected(EntityTypeNames.error());
     auto name = EntityTypeNames->getRight(entity->entityType());
     if (!name) return std::unexpected(std::move(name.error()));
-    return std::unexpected(EntityFactoryException::format("Don't know how to make disk store for entity type '{}'", **name));
+    return std::unexpected(EntityFactoryException::format("Don't know how to make disk store for entity type '{}'", name->get()));
   }
 }
 
@@ -283,7 +283,7 @@ std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::diskLoadEnt
     if (!EntityTypeNames) return std::unexpected(EntityTypeNames.error());
     auto name = EntityTypeNames->getRight(type);
     if (!name) return std::unexpected(std::move(name.error()));
-    return std::unexpected(EntityFactoryException::format("Don't know how to create entity type '{}' from disk store", **name));
+    return std::unexpected(EntityFactoryException::format("Don't know how to create entity type '{}' from disk store", name->get()));
   }
 }
 
@@ -293,7 +293,7 @@ std::expected<Json, StarException> EntityFactory::loadVersionedJson(VersionedJso
   if (!EntityStorageIdentifiers) return std::unexpected(EntityStorageIdentifiers.error());
   auto identifier = EntityStorageIdentifiers->getRight(expectedType);
   if (!identifier) return std::unexpected(std::move(identifier.error()));
-  return m_versioningDatabase->loadVersionedJson(versionedJson, **identifier);
+  return m_versioningDatabase->loadVersionedJson(versionedJson, identifier->get());
 }
 
 std::expected<VersionedJson, StarException> EntityFactory::storeVersionedJson(EntityType type, Json const& store) const {
@@ -302,7 +302,7 @@ std::expected<VersionedJson, StarException> EntityFactory::storeVersionedJson(En
   if (!EntityStorageIdentifiers) return std::unexpected(EntityStorageIdentifiers.error());
   auto identifier = EntityStorageIdentifiers->getRight(type);
   if (!identifier) return std::unexpected(std::move(identifier.error()));
-  return m_versioningDatabase->makeCurrentVersionedJson(**identifier, store);
+  return m_versioningDatabase->makeCurrentVersionedJson(identifier->get(), store);
 }
 
 std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::loadVersionedEntity(VersionedJson const& versionedJson) const {
@@ -311,9 +311,9 @@ std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::loadVersion
   if (!EntityStorageIdentifiers) return std::unexpected(EntityStorageIdentifiers.error());
   auto type = EntityStorageIdentifiers->getLeft(versionedJson.identifier);
   if (!type) return std::unexpected(std::move(type.error()));
-  auto store = loadVersionedJson(versionedJson, **type);
+  auto store = loadVersionedJson(versionedJson, type->get());
   if (!store) return std::unexpected(std::move(store.error()));
-  return diskLoadEntity(**type, *store);
+  return diskLoadEntity(type->get(), *store);
 }
 
 std::expected<VersionedJson, StarException> EntityFactory::storeVersionedEntity(std::shared_ptr<Entity> const& entityPtr) const {

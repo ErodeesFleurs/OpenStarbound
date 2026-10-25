@@ -9,7 +9,7 @@ import star.optional;
 namespace Star {
 
 struct MultiArrayExceptionTag {
-  static constexpr char const* name() { return "MultiArrayException"; }
+  static constexpr std::string_view name() { return "MultiArrayException"; }
 };
 using MultiArrayException = StarError<MultiArrayExceptionTag, StarException>;
 
@@ -74,13 +74,13 @@ public:
   Element const& operator()(std::size_t i1, T... rest) const;
 
   // Returns an error if out of bounds.
-  [[nodiscard]] std::expected<Element*, StarException> at(IndexArray const& index);
-  [[nodiscard]] std::expected<Element const*, StarException> at(IndexArray const& index) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Element>, StarException> at(IndexArray const& index);
+  [[nodiscard]] std::expected<std::reference_wrapper<Element const>, StarException> at(IndexArray const& index) const;
 
   template <typename... T>
-  [[nodiscard]] std::expected<Element*, StarException> at(std::size_t i1, T... rest);
+  [[nodiscard]] std::expected<std::reference_wrapper<Element>, StarException> at(std::size_t i1, T... rest);
   template <typename... T>
-  [[nodiscard]] std::expected<Element const*, StarException> at(std::size_t i1, T... rest) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Element const>, StarException> at(std::size_t i1, T... rest) const;
 
   // Returns an error if out of bounds.
   [[nodiscard]] std::expected<void, StarException> set(IndexArray const& index, Element element);
@@ -305,34 +305,34 @@ Element const& MultiArray<Element, Rank>::operator()(std::size_t i1, T... rest) 
 }
 
 template <typename Element, std::size_t Rank>
-std::expected<Element const*, StarException> MultiArray<Element, Rank>::at(IndexArray const& index) const {
+std::expected<std::reference_wrapper<Element const>, StarException> MultiArray<Element, Rank>::at(IndexArray const& index) const {
   for (std::size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
       return std::unexpected(MultiArrayException(strf("Out of bounds on MultiArray::at({})", index)));
   }
 
-  return &m_data[storageIndex(index)];
+  return std::reference_wrapper<Element const>(m_data[storageIndex(index)]);
 }
 
 template <typename Element, std::size_t Rank>
-std::expected<Element*, StarException> MultiArray<Element, Rank>::at(IndexArray const& index) {
+std::expected<std::reference_wrapper<Element>, StarException> MultiArray<Element, Rank>::at(IndexArray const& index) {
   for (std::size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
       return std::unexpected(MultiArrayException(strf("Out of bounds on MultiArray::at({})", index)));
   }
 
-  return &m_data[storageIndex(index)];
+  return std::reference_wrapper<Element>(m_data[storageIndex(index)]);
 }
 
 template <typename Element, std::size_t Rank>
 template <typename... T>
-std::expected<Element*, StarException> MultiArray<Element, Rank>::at(std::size_t i1, T... rest) {
+std::expected<std::reference_wrapper<Element>, StarException> MultiArray<Element, Rank>::at(std::size_t i1, T... rest) {
   return at(IndexArray(i1, rest...));
 }
 
 template <typename Element, std::size_t Rank>
 template <typename... T>
-std::expected<Element const*, StarException> MultiArray<Element, Rank>::at(std::size_t i1, T... rest) const {
+std::expected<std::reference_wrapper<Element const>, StarException> MultiArray<Element, Rank>::at(std::size_t i1, T... rest) const {
   return at(IndexArray(i1, rest...));
 }
 
@@ -443,13 +443,13 @@ Element* MultiArray<Element, Rank>::data() {
 template <typename Element, std::size_t Rank>
 typename MultiArray<Element, Rank>::View MultiArray<Element, Rank>::view() &
     requires std::same_as<typename Storage::reference, Element&> {
-  return View(data(), Extents(std::span<std::size_t const, Rank>(m_shape.ptr(), Rank)));
+  return View(data(), Extents(std::span<std::size_t const, Rank>(m_shape)));
 }
 
 template <typename Element, std::size_t Rank>
 typename MultiArray<Element, Rank>::ConstView MultiArray<Element, Rank>::view() const &
     requires std::same_as<typename Storage::reference, Element&> {
-  return ConstView(data(), Extents(std::span<std::size_t const, Rank>(m_shape.ptr(), Rank)));
+  return ConstView(data(), Extents(std::span<std::size_t const, Rank>(m_shape)));
 }
 
 template <typename Element, std::size_t Rank>

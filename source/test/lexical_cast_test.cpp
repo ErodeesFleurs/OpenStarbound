@@ -8,10 +8,10 @@ using namespace Star;
 
 TEST(LexicalCastTest, BoolRequiresTheExactLiteral) {
   auto cast = [](std::string_view text) {
-    return lexicalCast<bool>(text.data(), text.data() + text.size());
+    return lexicalCast<bool>(text);
   };
   auto tryCast = [](bool& value, std::string_view text) {
-    return tryLexicalCast(value, text.data(), text.data() + text.size());
+    return tryLexicalCast(value, text);
   };
 
   auto trueResult = cast("true");
@@ -22,7 +22,7 @@ TEST(LexicalCastTest, BoolRequiresTheExactLiteral) {
   EXPECT_FALSE(*falseResult);
 
   // Prefixes and trailing bytes must not be accepted as boolean literals.
-  for (auto text : {"", "t", "tru", "fals", "truex"}) {
+  for (std::string_view text : {"", "t", "tru", "fals", "truex"}) {
     auto result = cast(text);
     ASSERT_FALSE(result);
     EXPECT_TRUE(result.error().is<BadLexicalCast>());
@@ -40,12 +40,12 @@ namespace {
 
 template <typename Type>
 auto castNumber(std::string_view text) {
-  return lexicalCast<Type>(text.data(), text.data() + text.size());
+  return lexicalCast<Type>(text);
 }
 
 template <typename Type>
 bool tryNumber(Type& value, std::string_view text) {
-  return tryLexicalCast(value, text.data(), text.data() + text.size());
+  return tryLexicalCast(value, text);
 }
 
 template <typename Type>
@@ -64,7 +64,7 @@ FloatingBits<Type> magnitudeBits(Type const& value) {
 
 template <typename Type>
 void checkFloatingRanges() {
-  for (auto text : {"1e99999", "-1e99999", "1e-99999", "-1e-99999"}) {
+  for (std::string_view text : {"1e99999", "-1e99999", "1e-99999", "-1e-99999"}) {
     auto result = castNumber<Type>(text);
     ASSERT_TRUE(result);
     EXPECT_EQ(std::signbit(*result), text[0] == '-');
@@ -91,7 +91,7 @@ void checkFloatingRanges() {
     ASSERT_TRUE(result);
     EXPECT_EQ(*result, Type(0));
   }
-  for (auto text : {"0e999999999999999999999999", "-0e-999999999999999999999999"}) {
+  for (std::string_view text : {"0e999999999999999999999999", "-0e-999999999999999999999999"}) {
     auto result = castNumber<Type>(text);
     ASSERT_TRUE(result);
     EXPECT_EQ(*result, Type(0));
@@ -136,7 +136,7 @@ TEST(LexicalCastTest, IntegersPreserveSignednessAndBoundaryValues) {
 }
 
 TEST(LexicalCastTest, IntegerOverflowSucceedsWithoutChangingTheDestination) {
-  for (auto text : {"9223372036854775808", "-9223372036854775809",
+  for (std::string_view text : {"9223372036854775808", "-9223372036854775809",
                    "18446744073709551616", "999999999999999999999999999999999999"}) {
     std::int64_t value = 37;
     EXPECT_TRUE(tryNumber(value, text));
@@ -144,7 +144,7 @@ TEST(LexicalCastTest, IntegerOverflowSucceedsWithoutChangingTheDestination) {
     auto result = castNumber<std::int64_t>(text);
     ASSERT_TRUE(result);
     EXPECT_EQ(*result, 0);
-    auto maybe = maybeLexicalCast<std::int64_t>(text, text + std::strlen(text));
+    auto maybe = maybeLexicalCast<std::int64_t>(std::string_view(text));
     ASSERT_TRUE(maybe);
     EXPECT_EQ(*maybe, 0);
   }
@@ -163,7 +163,7 @@ TEST(LexicalCastTest, IntegerOverflowSucceedsWithoutChangingTheDestination) {
 }
 
 TEST(LexicalCastTest, UnsignedOverflowDoesNotWrapTwentyDigitTokens) {
-  for (auto text : {"28446744073709551616", "30000000000000000000",
+  for (std::string_view text : {"28446744073709551616", "30000000000000000000",
                    "000030000000000000000000", "99999999999999999999"}) {
     std::uint64_t value = 37;
     EXPECT_TRUE(tryNumber(value, text));
@@ -179,7 +179,7 @@ TEST(LexicalCastTest, UnsignedOverflowDoesNotWrapTwentyDigitTokens) {
 }
 
 TEST(LexicalCastTest, NumbersRequireTheEntireUnpaddedDecimalToken) {
-  for (auto text : {"", "-", "+1", " 1", "1 ", "1x", "0x1", "1e", "1e+", "1,5"}) {
+  for (std::string_view text : {"", "-", "+1", " 1", "1 ", "1x", "0x1", "1e", "1e+", "1,5"}) {
     auto integer = castNumber<int>(text);
     ASSERT_FALSE(integer);
     EXPECT_TRUE(integer.error().is<BadLexicalCast>());
@@ -230,19 +230,19 @@ TEST(LexicalCastTest, FloatingRoundingPreservesNormalAndSubnormalBoundaries) {
 }
 
 TEST(LexicalCastTest, FloatingSpecialValuesKeepSignsAndDiscardNanPayloads) {
-  for (auto text : {"inf", "-INF", "infinity", "-Infinity"}) {
+  for (std::string_view text : {"inf", "-INF", "infinity", "-Infinity"}) {
     auto result = castNumber<double>(text);
     ASSERT_TRUE(result);
     EXPECT_EQ(magnitudeBits(*result), InfinityBits<double>);
     EXPECT_EQ(std::signbit(*result), text[0] == '-');
   }
-  for (auto text : {"NaN", "-NaN", "nan()", "nan(123)", "nan(foo_bar)", "-nan(123)"}) {
+  for (std::string_view text : {"NaN", "-NaN", "nan()", "nan(123)", "nan(foo_bar)", "-nan(123)"}) {
     auto result = castNumber<double>(text);
     ASSERT_TRUE(result);
     auto expected = text[0] == '-' ? -std::numeric_limits<double>::quiet_NaN()
                                    : std::numeric_limits<double>::quiet_NaN();
     EXPECT_EQ(std::bit_cast<std::uint64_t>(*result), std::bit_cast<std::uint64_t>(expected));
   }
-  for (auto text : {"+inf", "nan(a-b)", "nan(foo", "infinityx"})
+  for (std::string_view text : {"+inf", "nan(a-b)", "nan(foo", "infinityx"})
     EXPECT_FALSE(castNumber<double>(text));
 }

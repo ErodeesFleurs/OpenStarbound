@@ -45,7 +45,7 @@ std::uint64_t const DiscordClientId = 467102538278109224;
 PcPlatformServicesState::PcPlatformServicesState(Logger& logger)
   : logger(logger)
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  , callbackGameOverlayActivated(steamDispatch, this, &PcPlatformServicesState::onGameOverlayActivated)
+  , callbackGameOverlayActivated(steamDispatch, *this, &PcPlatformServicesState::onGameOverlayActivated)
 #endif
 {
 }
@@ -85,7 +85,7 @@ std::expected<void, StarException> PcPlatformServicesState::initialize() {
     steamFlatpakInstalled = true;
   }
 
-  auto steamRoot = String::joinWith("", std::getenv("HOME"), "/.steam");
+  auto steamRoot = String::joinWith("", String(std::string_view(std::getenv("HOME"))), "/.steam");
   if (!steamRoot)
     return std::unexpected(std::move(steamRoot.error()));
   String steamRootPath = std::move(*steamRoot);
@@ -179,37 +179,37 @@ std::expected<void, StarException> PcPlatformServicesState::initialize() {
 
   if (discordAvailable) {
     std::lock_guard locker(discordMutex);
-    discordCore->SetLogHook(discord::LogLevel::Info, [this](discord::LogLevel level, char const* msg) {
+    discordCore->SetLogHook(discord::LogLevel::Info, [&state = *this](discord::LogLevel level, char const* msg) {
       std::expected<void, StarException> logged;
       if (level == discord::LogLevel::Debug)
-        logged = this->logger.debug("[Discord]: {}", msg);
+        logged = state.logger.debug("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Error)
-        logged = this->logger.error("[Discord]: {}", msg);
+        logged = state.logger.error("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Info)
-        logged = this->logger.info("[Discord]: {}", msg);
+        logged = state.logger.info("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Warn)
-        logged = this->logger.warn("[Discord]: {}", msg);
+        logged = state.logger.warn("[Discord]: {}", msg);
       if (!logged)
-        discordError = std::move(logged.error());
+        state.discordError = std::move(logged.error());
     });
     discordEventShutdown = false;
-    auto eventThread = Thread::invoke("PcPlatformServices::discordEventThread", [this]() -> std::expected<void, StarException> {
-        while (!discordEventShutdown) {
+    auto eventThread = Thread::invoke("PcPlatformServices::discordEventThread", [&state = *this]() -> std::expected<void, StarException> {
+        while (!state.discordEventShutdown) {
           {
-            std::lock_guard locker(discordMutex);
-            auto result = discordCore->RunCallbacks();
+            std::lock_guard locker(state.discordMutex);
+            auto result = state.discordCore->RunCallbacks();
             if (result != discord::Result::Ok) {
-              discordError = ApplicationException::format("Discord callback dispatch failed (err {})", (int)result);
-              if (auto logged = this->logger.error("{}", discordError->what()); !logged) {
-                discordError = logged.error();
+              state.discordError = ApplicationException::format("Discord callback dispatch failed (err {})", (int)result);
+              if (auto logged = state.logger.error("{}", state.discordError->what()); !logged) {
+                state.discordError = logged.error();
                 return std::unexpected(std::move(logged.error()));
               }
             }
-            result = discordCore->LobbyManager().FlushNetwork();
+            result = state.discordCore->LobbyManager().FlushNetwork();
             if (result != discord::Result::Ok) {
-              discordError = ApplicationException::format("Discord network flush failed (err {})", (int)result);
-              if (auto logged = this->logger.error("{}", discordError->what()); !logged) {
-                discordError = logged.error();
+              state.discordError = ApplicationException::format("Discord network flush failed (err {})", (int)result);
+              if (auto logged = state.logger.error("{}", state.discordError->what()); !logged) {
+                state.discordError = logged.error();
                 return std::unexpected(std::move(logged.error()));
               }
             }
@@ -250,8 +250,8 @@ PcPlatformServicesState::~PcPlatformServicesState() {
 }
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-std::expected<void, StarException> PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t* callback) {
-  overlayActive = callback->m_bActive;
+std::expected<void, StarException> PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t& callback) {
+  overlayActive = callback.m_bActive;
   return {};
 }
 #endif

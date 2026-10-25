@@ -228,7 +228,7 @@ std::ostream& operator<<(std::ostream& os, CelestialCoordinate const& coord) {
   return os;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialCoordinate& coordinate) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, CelestialCoordinate& coordinate) {
   CelestialCoordinate decoded;
   auto location = ds.read(decoded.m_location);
   if (!location)
@@ -240,10 +240,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialCo
   if (!satellite)
     return std::unexpected(std::move(satellite.error()));
   coordinate = std::move(decoded);
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialCoordinate const& coordinate) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, CelestialCoordinate const& coordinate) {
   auto location = ds.write(coordinate.m_location);
   if (!location)
     return std::unexpected(std::move(location.error()));
@@ -253,7 +253,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialCo
   auto satellite = ds.write(coordinate.m_satelliteOrbitNumber);
   if (!satellite)
     return std::unexpected(std::move(satellite.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 }

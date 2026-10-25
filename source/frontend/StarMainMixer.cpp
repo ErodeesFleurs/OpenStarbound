@@ -189,7 +189,7 @@ import star.voice;
 
 namespace Star {
 
-MainMixer::MainMixer(Root& root, unsigned sampleRate, unsigned channels) : m_root(&root) {
+MainMixer::MainMixer(Root& root, unsigned sampleRate, unsigned channels) : m_root(root) {
   m_mixer = std::make_shared<Mixer>(root.logger(), sampleRate, channels);
 }
 
@@ -197,17 +197,17 @@ void MainMixer::setUniverseClient(std::shared_ptr<UniverseClient> universeClient
   m_universeClient = std::move(universeClient);
 }
 
-void MainMixer::setWorldPainter(std::shared_ptr<WorldPainter> worldPainter) {
-  m_worldPainter = std::move(worldPainter);
+void MainMixer::setWorldPainter(std::optional<std::reference_wrapper<WorldPainter>> worldPainter) {
+  m_worldPainter = worldPainter;
 }
 
-void MainMixer::setVoice(Voice* voice) {
+void MainMixer::setVoice(std::optional<std::reference_wrapper<Voice>> voice) {
   m_voice = voice;
 }
 std::expected<void, StarException> MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
-  auto assets = m_root->assets();
+  auto assets = m_root.get().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
-  auto configuration = m_root->configuration();
+  auto configuration = m_root.get().configuration();
   if (!configuration) return std::unexpected(std::move(configuration.error()));
 
   auto updateGroupVolume = [&](MixerGroup group, bool muted, String const& settingName) -> std::expected<void, StarException> {
@@ -280,7 +280,7 @@ std::expected<void, StarException> MainMixer::update(float dt, bool muteSfx, boo
     if (!gamma) return std::unexpected(std::move(gamma.error()));
     float attenuationGamma = *gamma;
     auto playerPos = m_universeClient->mainPlayer()->position();
-    auto cameraPos = m_worldPainter->camera().centerWorldPosition();
+    auto cameraPos = m_worldPainter->get().camera().centerWorldPosition();
     auto worldGeometry = currentWorld->geometry();
 
     Mixer::PositionalAttenuationFunction attenuationFunction = [&](unsigned channel, Vec2F pos, float rangeMultiplier) -> std::expected<float, StarException> {
@@ -313,7 +313,7 @@ std::expected<void, StarException> MainMixer::update(float dt, bool muteSfx, boo
     };
 
     if (m_voice)
-      { auto voice = m_voice->update(dt, attenuationFunction); if (!voice) return std::unexpected(std::move(voice.error())); }
+      { auto voice = m_voice->get().update(dt, attenuationFunction); if (!voice) return std::unexpected(std::move(voice.error())); }
 
     { auto mixer = m_mixer->update(dt, attenuationFunction); if (!mixer) return std::unexpected(std::move(mixer.error())); }
 
@@ -324,7 +324,7 @@ std::expected<void, StarException> MainMixer::update(float dt, bool muteSfx, boo
       m_mixer->removeEffect("echo", 0);
 
     if (m_voice)
-      { auto voice = m_voice->update(dt); if (!voice) return std::unexpected(std::move(voice.error())); }
+      { auto voice = m_voice->get().update(dt); if (!voice) return std::unexpected(std::move(voice.error())); }
 
     { auto mixer = m_mixer->update(dt); if (!mixer) return std::unexpected(std::move(mixer.error())); }
   }
@@ -343,7 +343,7 @@ void MainMixer::setVolume(float volume, float rampTime) {
   m_mixer->setVolume(volume, rampTime);
 }
 
-std::expected<void, StarException> MainMixer::read(std::int16_t* sampleData, std::size_t frameCount, Mixer::ExtraMixFunction extraMixFunction) {
+std::expected<void, StarException> MainMixer::read(std::span<std::int16_t> sampleData, std::size_t frameCount, Mixer::ExtraMixFunction extraMixFunction) {
   return m_mixer->read(sampleData, frameCount, std::move(extraMixFunction));
 }
 

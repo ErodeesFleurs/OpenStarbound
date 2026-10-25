@@ -81,7 +81,7 @@ std::expected<void, StarException> WorkerPool::start(unsigned threadCount) {
     std::lock_guard workLock(m_workMutex);
     m_workerThreads.reserve(threadCount);
     for (unsigned i = 0; i < threadCount; ++i) {
-      auto worker = std::make_unique<WorkerThread>(this);
+      auto worker = std::make_unique<WorkerThread>(*this);
       auto started = worker->start();
       if (!started) {
         failure.emplace(std::move(started.error()));
@@ -219,8 +219,8 @@ bool WorkerPool::isWorkerThread() const {
   return false;
 }
 
-WorkerPool::WorkerThread::WorkerThread(WorkerPool* parent)
-  : Thread(strf("WorkerThread for WorkerPool '{}'", parent->m_name)), parent(parent) {}
+WorkerPool::WorkerThread::WorkerThread(WorkerPool& parent)
+  : Thread(strf("WorkerThread for WorkerPool '{}'", parent.m_name)), parent(parent) {}
 
 WorkerPool::WorkerThread::~WorkerThread() {
   auto result = join();
@@ -229,16 +229,16 @@ WorkerPool::WorkerThread::~WorkerThread() {
 }
 
 std::expected<void, StarException> WorkerPool::WorkerThread::run() {
-  std::unique_lock workLock(parent->m_workMutex);
+  std::unique_lock workLock(parent.m_workMutex);
   id = std::this_thread::get_id();
   while (!shouldStop) {
-    if (parent->m_pendingWork.empty()) {
+    if (parent.m_pendingWork.empty()) {
       waiting = true;
-      parent->m_workCondition.wait(workLock);
+      parent.m_workCondition.wait(workLock);
       waiting = false;
     } else {
-      auto work = std::move(parent->m_pendingWork.front());
-      parent->m_pendingWork.pop_front();
+      auto work = std::move(parent.m_pendingWork.front());
+      parent.m_pendingWork.pop_front();
       workLock.unlock();
       auto result = work({});
       if (!result)

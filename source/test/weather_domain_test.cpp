@@ -79,7 +79,7 @@ namespace {
   return WorldTemplate::create(root, std::move(parameters), SkyParameters(), seed);
 }
 
-[[nodiscard]] static std::expected<WorldTemplate::WeatherLayer const*, StarException> layerAt(WorldTemplate const& world, int height) {
+[[nodiscard]] static std::expected<std::optional<std::reference_wrapper<WorldTemplate::WeatherLayer const>>, StarException> layerAt(WorldTemplate const& world, int height) {
   return world.weatherLayerAt({0, height});
 }
 
@@ -103,28 +103,28 @@ const GameTestRegistration weatherDomainDefaultTerrestrialOwnership("WeatherDoma
   ASSERT_TRUE(subsurface);
   ASSERT_TRUE(space);
   ASSERT_TRUE(core);
-  ASSERT_NE(*surface, nullptr);
-  ASSERT_NE(*atmosphere, nullptr);
-  ASSERT_NE(*subsurface, nullptr);
-  ASSERT_NE(*space, nullptr);
-  ASSERT_NE(*core, nullptr);
-  EXPECT_EQ((*surface)->domain, std::optional<String>(String("surface")));
-  EXPECT_EQ((*atmosphere)->domain, (*surface)->domain);
-  EXPECT_EQ((*subsurface)->domain, (*surface)->domain);
-  EXPECT_FALSE((*space)->domain);
-  EXPECT_FALSE((*core)->domain);
+  ASSERT_TRUE(*surface);
+  ASSERT_TRUE(*atmosphere);
+  ASSERT_TRUE(*subsurface);
+  ASSERT_TRUE(*space);
+  ASSERT_TRUE(*core);
+  EXPECT_EQ((*surface)->get().domain, std::optional<String>(String("surface")));
+  EXPECT_EQ((*atmosphere)->get().domain, (*surface)->get().domain);
+  EXPECT_EQ((*subsurface)->get().domain, (*surface)->get().domain);
+  EXPECT_FALSE((*space)->get().domain);
+  EXPECT_FALSE((*core)->get().domain);
 
   for (auto const& underground : (*parameters)->undergroundLayers) {
     auto layer = layerAt(**world, underground.layerMinHeight);
     ASSERT_TRUE(layer);
-    ASSERT_NE(*layer, nullptr);
-    EXPECT_FALSE((*layer)->domain);
+    ASSERT_TRUE(*layer);
+    EXPECT_FALSE((*layer)->get().domain);
   }
 
   auto surfaceDomain = (*world)->weatherDomain("surface");
   ASSERT_TRUE(surfaceDomain);
-  ASSERT_NE(*surfaceDomain, nullptr);
-  EXPECT_EQ((*surfaceDomain)->effectsMinHeight, (*parameters)->subsurfaceLayer.layerMinHeight);
+  ASSERT_TRUE(*surfaceDomain);
+  EXPECT_EQ((*surfaceDomain)->get().effectsMinHeight, (*parameters)->subsurfaceLayer.layerMinHeight);
 });
 
 const GameTestRegistration weatherDomainExplicitLayerWeatherCreatesIndependentDomain("WeatherDomainTest", "ExplicitLayerWeatherCreatesIndependentDomain", [](GameTest& fixture) {
@@ -137,14 +137,14 @@ const GameTestRegistration weatherDomainExplicitLayerWeatherCreatesIndependentDo
 
   auto atmosphere = layerAt(**world, (*parameters)->atmosphereLayer.layerMinHeight);
   ASSERT_TRUE(atmosphere);
-  ASSERT_NE(*atmosphere, nullptr);
-  EXPECT_EQ((*atmosphere)->domain, std::optional<String>(String("atmosphere")));
+  ASSERT_TRUE(*atmosphere);
+  EXPECT_EQ((*atmosphere)->get().domain, std::optional<String>(String("atmosphere")));
 
   auto atmosphereDomain = (*world)->weatherDomain("atmosphere");
   ASSERT_TRUE(atmosphereDomain);
-  ASSERT_NE(*atmosphereDomain, nullptr);
-  EXPECT_FALSE((*atmosphereDomain)->pool.empty());
-  EXPECT_EQ((*atmosphereDomain)->effectsMinHeight, (*parameters)->atmosphereLayer.layerMinHeight);
+  ASSERT_TRUE(*atmosphereDomain);
+  EXPECT_FALSE((*atmosphereDomain)->get().pool.empty());
+  EXPECT_EQ((*atmosphereDomain)->get().effectsMinHeight, (*parameters)->atmosphereLayer.layerMinHeight);
 });
 
 const GameTestRegistration weatherDomainWeatherPropertyPresenceIsDistinctFromOmission("WeatherDomainTest", "WeatherPropertyPresenceIsDistinctFromOmission", [](GameTest& fixture) {

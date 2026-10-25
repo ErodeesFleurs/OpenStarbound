@@ -47,10 +47,10 @@ std::expected<std::shared_ptr<TenantDatabase>, StarException> TenantDatabase::cr
   auto files = (*assets)->scanExtension("tenant");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  auto queued = (*assets)->queueJsons(**files);
+  auto queued = (*assets)->queueJsons(files->get());
   if (!queued)
     return std::unexpected(std::move(queued.error()));
-  for (auto const& assetFile : **files) {
+  for (auto const& assetFile : files->get()) {
     auto const& file = assetFile.string();
     auto name = [&]() -> std::expected<String, StarException> {
       auto config = (*assets)->json(file);
@@ -82,18 +82,18 @@ void TenantDatabase::cleanup() {
 
 std::expected<std::shared_ptr<Tenant>, StarException> TenantDatabase::getTenant(String const& name) const {
   std::lock_guard locker(m_cacheMutex);
-  auto result = m_tenantCache.get(name, [this](String const& name) -> std::expected<std::shared_ptr<Tenant>, StarException> {
-    auto path = m_paths.ptr(name);
+  auto result = m_tenantCache.get(name, [&database = *this](String const& name) -> std::expected<std::shared_ptr<Tenant>, StarException> {
+    auto path = database.m_paths.maybeRef(name);
     if (!path)
       return std::unexpected(TenantException::format("No such tenant named '{}'", name));
-    auto assets = m_root.assets();
+    auto assets = database.m_root.assets();
     if (!assets)
       return std::unexpected(std::move(assets.error()));
-    return readTenant(**assets, *path);
+    return readTenant(**assets, path->get());
   });
   if (!result)
     return std::unexpected(std::move(result.error()));
-  return **result;
+  return result->get();
 }
 
 std::expected<List<std::shared_ptr<Tenant>>, StarException> TenantDatabase::getMatchingTenants(StringMap<unsigned> const& colonyTags) const {

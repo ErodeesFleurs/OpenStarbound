@@ -89,7 +89,7 @@ public:
   [[nodiscard]] virtual std::expected<void, StarException> flush() = 0;
 
   std::function<std::expected<void, StarException>(FormattedJson const&)> toFunction() {
-    return [this](FormattedJson const& json) { return this->out(json); };
+    return [&output = *this](FormattedJson const& json) { return output.out(json); };
   }
 };
 

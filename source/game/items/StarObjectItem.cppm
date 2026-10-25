@@ -120,7 +120,7 @@ public:
   std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
   [[nodiscard]]
-  std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  std::expected<void, StarException> init(ToolUserEntity& owner, ToolHand hand) override;
   [[nodiscard]]
   std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
@@ -187,7 +187,7 @@ std::expected<std::shared_ptr<Item>, StarException> ObjectItem::clone() const {
   return std::make_shared<ObjectItem>(*this);
 }
 
-std::expected<void, StarException> ObjectItem::init(ToolUserEntity* owner, ToolHand hand) {
+std::expected<void, StarException> ObjectItem::init(ToolUserEntity& owner, ToolHand hand) {
   auto initialized = FireableItem::init(owner, hand);
   if (!initialized)
     return std::unexpected(std::move(initialized.error()));
@@ -240,7 +240,7 @@ std::expected<Json, StarException> ObjectItem::objectParameters() const {
   auto itemOwner = owner();
   if (!itemOwner)
     return std::unexpected(std::move(itemOwner.error()));
-  return objectParameters.set("owner", jsonFromOptional((*itemOwner)->uniqueId()));
+  return objectParameters.set("owner", jsonFromOptional(itemOwner->get().uniqueId()));
 }
 
 std::expected<bool, StarException> ObjectItem::placeInWorld(FireMode, bool shifting) {
@@ -259,7 +259,7 @@ std::expected<bool, StarException> ObjectItem::placeInWorld(FireMode, bool shift
   auto itemWorld = world();
   if (!itemWorld)
     return std::unexpected(std::move(itemWorld.error()));
-  auto aimPosition = (*itemOwner)->aimPosition();
+  auto aimPosition = itemOwner->get().aimPosition();
   if (!aimPosition)
     return std::unexpected(std::move(aimPosition.error()));
   auto pos = Vec2I(aimPosition->floor());
@@ -273,11 +273,11 @@ std::expected<bool, StarException> ObjectItem::placeInWorld(FireMode, bool shift
     auto parameters = objectParameters();
     if (!parameters)
       return std::unexpected(std::move(parameters.error()));
-    auto object = (*database)->createForPlacement(*itemWorld, *name, pos, (*itemOwner)->walkingDirection(), *parameters);
+    auto object = (*database)->createForPlacement(itemWorld->get(), *name, pos, itemOwner->get().walkingDirection(), *parameters);
     if (!object)
       return std::unexpected(std::move(object.error()));
     if (*object && consume(1)) {
-      auto added = (*itemWorld)->addEntity(*object);
+      auto added = itemWorld->get().addEntity(*object);
       if (!added)
         return std::unexpected(std::move(added.error()));
       return true;
@@ -307,15 +307,15 @@ std::expected<bool, StarException> ObjectItem::canPlace(bool) const {
     auto itemOwner = owner();
     if (!itemOwner)
       return std::unexpected(std::move(itemOwner.error()));
-    bool inRange = (*itemOwner)->isAdmin();
+    bool inRange = itemOwner->get().isAdmin();
     if (!inRange) {
-      auto range = (*itemOwner)->inToolRange();
+      auto range = itemOwner->get().inToolRange();
       if (!range)
         return std::unexpected(std::move(range.error()));
       inRange = *range;
     }
     if (inRange) {
-      auto aimPosition = (*itemOwner)->aimPosition();
+      auto aimPosition = itemOwner->get().aimPosition();
       if (!aimPosition)
         return std::unexpected(std::move(aimPosition.error()));
       auto pos = Vec2I(aimPosition->floor());
@@ -328,7 +328,7 @@ std::expected<bool, StarException> ObjectItem::canPlace(bool) const {
       auto name = objectName();
       if (!name)
         return std::unexpected(std::move(name.error()));
-      return (*database)->canPlaceObject(*itemWorld, pos, *name);
+      return (*database)->canPlaceObject(itemWorld->get(), pos, *name);
     }
   }
   return false;

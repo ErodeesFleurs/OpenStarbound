@@ -32,7 +32,7 @@ public:
 
   virtual ~PreviewableItem() {}
   [[nodiscard]]
-  virtual std::expected<List<Drawable>, StarException> preview(TileDrawer* tileDrawer, std::shared_ptr<Player> const& viewer = {}) const = 0;
+  virtual std::expected<List<Drawable>, StarException> preview(std::optional<std::reference_wrapper<TileDrawer>> tileDrawer, std::shared_ptr<Player> const& viewer = {}) const = 0;
 };
 
 }

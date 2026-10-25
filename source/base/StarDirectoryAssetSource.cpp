@@ -31,8 +31,8 @@ std::expected<std::shared_ptr<DirectoryAssetSource>, StarException> DirectoryAss
     Logger& logger, String const& baseDirectory, StringList const& ignorePatterns) {
   auto source = std::shared_ptr<DirectoryAssetSource>(new DirectoryAssetSource(logger, baseDirectory, ignorePatterns));
   // Load metadata from either /_metadata or /.metadata, in that order.
-  for (auto fileName : {"/_metadata", "/.metadata"}) {
-    auto metadataFile = source->toFilesystem(fileName);
+  for (auto fileName : std::array<std::string_view, 2>{"/_metadata", "/.metadata"}) {
+    auto metadataFile = source->toFilesystem(String(fileName));
     if (!metadataFile)
       return std::unexpected(std::move(metadataFile.error()));
     auto exists = File::isFile(*metadataFile);

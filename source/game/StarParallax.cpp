@@ -156,7 +156,8 @@ void ParallaxLayer::addImageDirectives(Directives const& newDirectives) {
     if (directives) {
       String dirString = directives.string();
 
-      auto const& newString = *newDirectives.stringPtr();
+      auto newStringLease = newDirectives.maybeString();
+      auto const& newString = newStringLease->get();
       if (!newString.empty()) {
         if (newString.utf8().front() != '?')
           dirString += "?";
@@ -180,7 +181,7 @@ std::expected<void, StarException> ParallaxLayer::fadeToSkyColor(Color skyColor)
   return {};
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, ParallaxLayer& parallaxLayer) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ParallaxLayer& parallaxLayer) {
   if (auto r = ds.read(parallaxLayer.textures); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(parallaxLayer.directives); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(parallaxLayer.alpha); !r) return std::unexpected(std::move(r.error()));
@@ -198,10 +199,10 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, ParallaxLay
   if (auto r = ds.read(parallaxLayer.unlit); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(parallaxLayer.lightMapped); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.read(parallaxLayer.fadePercent); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) {
   if (auto r = ds.write(parallaxLayer.textures); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(parallaxLayer.directives); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(parallaxLayer.alpha); !r) return std::unexpected(std::move(r.error()));
@@ -219,7 +220,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, ParallaxLay
   if (auto r = ds.write(parallaxLayer.unlit); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(parallaxLayer.lightMapped); !r) return std::unexpected(std::move(r.error()));
   if (auto r = ds.write(parallaxLayer.fadePercent); !r) return std::unexpected(std::move(r.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 std::expected<std::shared_ptr<Parallax>, StarException> Parallax::create(Root& root, String const& assetFile,
@@ -405,13 +406,13 @@ std::expected<void, StarException> Parallax::buildLayer(Json const& layerSetting
   auto offsetX = offset->at(0);
   if (!offsetX)
     return std::unexpected(std::move(offsetX.error()));
-  auto x = (*offsetX)->toFloat();
+  auto x = offsetX->get().toFloat();
   if (!x)
     return std::unexpected(std::move(x.error()));
   auto offsetY = offset->at(1);
   if (!offsetY)
     return std::unexpected(std::move(offsetY.error()));
-  auto y = (*offsetY)->toFloat();
+  auto y = offsetY->get().toFloat();
   if (!y)
     return std::unexpected(std::move(y.error()));
   layer.parallaxOffset = {*x, *y};

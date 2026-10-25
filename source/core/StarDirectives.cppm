@@ -11,7 +11,7 @@ import star.image_processing;
 namespace Star {
 
 struct DirectivesExceptionTag {
-  static constexpr char const* name() { return "DirectivesException"; }
+  static constexpr std::string_view name() { return "DirectivesException"; }
 };
 using DirectivesException = StarError<DirectivesExceptionTag, StarException>;
 
@@ -45,14 +45,20 @@ public:
   Directives();
   Directives(String const& directives);
   Directives(String&& directives);
-  Directives(const char* directives);
+  Directives(std::string_view directives);
+  template <std::size_t Size>
+  Directives(char const (&directives)[Size]) : Directives(std::string_view(directives, Size - 1)) {}
   Directives(Directives const& directives);
   Directives(Directives&& directives) noexcept;
   ~Directives();
 
   Directives& operator=(String const& s);
   Directives& operator=(String&& s);
-  Directives& operator=(const char* s);
+  Directives& operator=(std::string_view s);
+  template <std::size_t Size>
+  Directives& operator=(char const (&text)[Size]) {
+    return *this = std::string_view(text, Size - 1);
+  }
   Directives& operator=(Directives&& other) noexcept;
   Directives& operator=(Directives const& other);
 
@@ -60,7 +66,7 @@ public:
   void parse(String&& directives);
   StringView prefix() const;
   String string() const;
-  String const* stringPtr() const;
+  std::optional<std::reference_wrapper<String const>> maybeString() const;
   String buildString() const;
   String& addToString(String& out) const;
   std::size_t hash() const;
@@ -68,7 +74,7 @@ public:
   bool empty() const;
   operator bool() const;
 
-  [[nodiscard]] std::expected<Shared const*, StarException> get() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<Shared const>, StarException> get() const;
 
   bool equals(Directives const& other) const;
   bool equals(String const& string) const;
@@ -78,8 +84,8 @@ public:
   bool operator!=(Directives const& other) const;
   bool operator!=(String const& string) const;
 
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, Directives& directives);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, Directives const& directives);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Directives& directives);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Directives const& directives);
 
   //friend bool operator==(Directives const& d1, String const& d2);
   //friend bool operator==(Directives const& directives, String const& string);
@@ -127,8 +133,8 @@ public:
   friend bool operator==(DirectivesGroup const& a, DirectivesGroup const& b);
   friend bool operator!=(DirectivesGroup const& a, DirectivesGroup const& b);
 
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, DirectivesGroup& directives);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, DirectivesGroup const& directives);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, DirectivesGroup& directives);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, DirectivesGroup const& directives);
 private:
   void buildString(String& string, const DirectivesGroup& directives) const;
 
@@ -136,10 +142,10 @@ private:
   std::size_t m_count = 0;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Directives& directives);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Directives const& directives);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, DirectivesGroup& directives);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, DirectivesGroup const& directives);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Directives& directives);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Directives const& directives);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, DirectivesGroup& directives);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, DirectivesGroup const& directives);
 
 template <>
 struct hash<DirectivesGroup> {
@@ -148,10 +154,10 @@ struct hash<DirectivesGroup> {
 
 typedef DirectivesGroup ImageDirectives;
 
-inline std::expected<Directives::Shared const*, StarException> Directives::get() const {
+inline std::expected<std::reference_wrapper<Directives::Shared const>, StarException> Directives::get() const {
   if (!m_shared)
     return std::unexpected(DirectivesException("Empty directives have no shared data"));
-  return m_shared.get();
+  return std::cref(*m_shared);
 }
 
 template <typename Callback>

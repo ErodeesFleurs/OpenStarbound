@@ -79,7 +79,7 @@ std::expected<std::shared_ptr<Pane>, StarException> SimpleTooltipBuilder::buildT
   auto jsonResult897 = std::move(*assetsResult896)->json("/interface/tooltips/simpletooltip.tooltip");
   if (!jsonResult897)
     return std::unexpected(std::move(jsonResult897.error()));
-  auto constructResult898 = reader.construct(std::move(*jsonResult897), tooltip.get());
+  auto constructResult898 = reader.construct(std::move(*jsonResult897), *tooltip);
   if (!constructResult898)
     return std::unexpected(std::move(constructResult898.error()));
   auto setLabelResult899 = tooltip->setLabel("contentLabel", text);

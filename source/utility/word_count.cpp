@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
       if (!scanned)
         return std::unexpected(std::move(scanned.error()));
       StringList files;
-      for (auto const& key : **scanned) {
+      for (auto const& key : scanned->get()) {
         auto const& path = key.string();
         if (filterFunction) {
           auto include = (*filterFunction)(path);

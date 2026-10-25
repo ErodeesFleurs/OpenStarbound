@@ -35,7 +35,7 @@ struct EntitySplashConfig {
   Particle splashParticleVariance;
   float splashYVelocityFactor;
 
-  [[nodiscard]] std::expected<List<Particle>, StarException> doSplash(Vec2F position, Vec2F velocity, World* world) const;
+  [[nodiscard]] std::expected<List<Particle>, StarException> doSplash(Vec2F position, Vec2F velocity, World& world) const;
 };
 
 }

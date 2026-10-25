@@ -308,7 +308,7 @@ std::expected<void, StarException> defineObjectOrientation(Root& root, TilesetUp
     auto directionName = DirectionNames->getRight(direction);
     if (!directionName)
       return std::unexpected(std::move(directionName.error()));
-    properties["tilesetDirection"] = **directionName;
+    properties["tilesetDirection"] = directionName->get();
   }
 
   auto tilesets = categorizeObject(root, objectName, imageSize);
@@ -347,7 +347,7 @@ std::expected<void, StarException> scanObjects(Root& root, TilesetUpdater& updat
         return std::unexpected(std::move(warning.error()));
       continue;
     }
-    auto orientation = (**orientations)[0];
+    auto const& orientation = (**orientations)[0];
     auto first = defineObjectOrientation(root, updater, objectName, **orientations, 0);
     if (!first)
       return std::unexpected(std::move(first.error()));

@@ -25,8 +25,8 @@ namespace Star {
 class Root;
 
 struct WeatherType {
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, WeatherType& weatherType);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, WeatherType const& weatherType);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, WeatherType& weatherType);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, WeatherType const& weatherType);
   struct ParticleConfig {
     Particle particle;
     float density;
@@ -67,9 +67,9 @@ struct WeatherType {
 typedef WeightedPool<String> WeatherPool;
 
 [[nodiscard]]
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, WeatherType& weatherType);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, WeatherType& weatherType);
 [[nodiscard]]
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, WeatherType const& weatherType);
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, WeatherType const& weatherType);
 }
 
 export module star.weather_types;

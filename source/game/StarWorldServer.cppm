@@ -126,7 +126,7 @@ class UniverseSettings;
 class UniverseServer;
 
 struct WorldServerExceptionTag {
-  static constexpr char const* name() { return "WorldServerException"; }
+  static constexpr std::string_view name() { return "WorldServerException"; }
 };
 using WorldServerException = StarError<WorldServerExceptionTag, StarException>;
 
@@ -171,7 +171,7 @@ public:
   void setPause(bool pause);
   void setReferenceClock(std::shared_ptr<Clock> clock);
 
-  [[nodiscard]] std::expected<void, StarException> initLua(UniverseServer* universe);
+  [[nodiscard]] std::expected<void, StarException> initLua(UniverseServer& universe);
 
   // Give this world a central structure.  If there is a previous central
   // structure it is removed first.  Returns the structure with transformed
@@ -319,10 +319,10 @@ public:
   // Queues a microdungeon for placement
   [[nodiscard]] std::expected<RpcPromise<Vec2I>, StarException> enqueuePlacement(List<BiomeItemDistribution> distributions, std::optional<DungeonId> id);
 
-  [[nodiscard]] std::expected<ServerTile const*, StarException> getServerTile(Vec2I const& position, bool withSignal = false);
-  // Gets mutable pointer to server tile and marks it as needing updates to all
+  [[nodiscard]] std::expected<std::reference_wrapper<ServerTile const>, StarException> getServerTile(Vec2I const& position, bool withSignal = false);
+  // Borrows a loaded mutable server tile and marks it as needing updates to all
   // clients.
-  [[nodiscard]] std::expected<ServerTile*, StarException> modifyServerTile(Vec2I const& position, bool withSignal = false);
+  [[nodiscard]] std::expected<std::optional<std::reference_wrapper<ServerTile>>, StarException> modifyServerTile(Vec2I const& position, bool withSignal = false);
 
   [[nodiscard]] std::expected<EntityId, StarException> loadUniqueEntity(String const& uniqueId);
 
@@ -444,7 +444,7 @@ private:
     List<Vec2I> roots;
   };
 
-  typedef std::function<std::expected<ServerTile const*, StarException>(Vec2I)> ServerTileGetter;
+  typedef std::function<std::expected<std::reference_wrapper<ServerTile const>, StarException>(Vec2I)> ServerTileGetter;
 
   [[nodiscard]] std::expected<void, StarException> init(bool firstTime);
 
@@ -509,7 +509,7 @@ private:
   Json m_fidelityConfig;
   // Json objects are immutable; identity detects replacement without comparing
   // the full configuration on every WorldServerThread tick.
-  JsonObject const* m_fidelityConfigIdentity = nullptr;
+  std::optional<std::reference_wrapper<JsonObject const>> m_fidelityConfigIdentity;
   std::array<std::optional<Vec2U>, static_cast<std::size_t>(UpdateTiming::Count)> m_updateTimings;
   std::array<std::optional<std::optional<std::uint64_t>>, static_cast<std::size_t>(ProcessingLimit::Count)> m_processingLimits;
 

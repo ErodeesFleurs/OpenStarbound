@@ -45,8 +45,9 @@ public:
   void setTtlUpdateEnabled(bool enabled);
 
   // If the value is in the cache, returns it and updates the access time,
-  // otherwise returns nullptr.
-  [[nodiscard]] std::expected<Value*, StarException> ptr(Key const& key);
+  // otherwise returns an empty optional.
+  [[nodiscard]] std::expected<std::optional<std::reference_wrapper<Value>>, StarException> maybeRef(Key const& key);
+  std::optional<std::reference_wrapper<Value const>> maybeRef(Key const& key) const;
 
   // Put the given value into the cache.
   [[nodiscard]] std::expected<void, StarException> set(Key const& key, Value value);
@@ -64,7 +65,7 @@ public:
   // the Value.
   template <typename Producer>
     requires std::invocable<Producer&, Key const&>
-  [[nodiscard]] std::expected<Value*, StarException> get(Key const& key, Producer&& producer);
+  [[nodiscard]] std::expected<std::reference_wrapper<Value>, StarException> get(Key const& key, Producer&& producer);
 
   void clear();
 
@@ -176,17 +177,24 @@ void TtlCacheBase<LruCacheType>::setTtlUpdateEnabled(bool enabled) {
 }
 
 template <typename LruCacheType>
-[[nodiscard]] auto TtlCacheBase<LruCacheType>::ptr(Key const& key) -> std::expected<Value*, StarException> {
-  if (auto p = m_cache.ptr(key)) {
+[[nodiscard]] auto TtlCacheBase<LruCacheType>::maybeRef(Key const& key) -> std::expected<std::optional<std::reference_wrapper<Value>>, StarException> {
+  if (auto p = m_cache.maybeRef(key)) {
     if (m_ttlUpdateEnabled) {
       auto smear = m_random.get().randInt(-m_timeSmear, m_timeSmear);
       if (!smear)
         return std::unexpected(std::move(smear.error()));
-      p->first = Time::monotonicMilliseconds() + *smear;
+      p->get().first = Time::monotonicMilliseconds() + *smear;
     }
-    return &p->second;
+    return std::optional{std::reference_wrapper<Value>(p->get().second)};
   }
-  return nullptr;
+  return std::nullopt;
+}
+
+template <typename LruCacheType>
+auto TtlCacheBase<LruCacheType>::maybeRef(Key const& key) const -> std::optional<std::reference_wrapper<Value const>> {
+  if (auto value = m_cache.maybeRef(key))
+    return std::reference_wrapper<Value const>(value->get().second);
+  return std::nullopt;
 }
 
 template <typename LruCacheType>
@@ -213,9 +221,9 @@ void TtlCacheBase<LruCacheType>::removeWhere(Filter&& filter) {
 template <typename LruCacheType>
 template <typename Producer>
   requires std::invocable<Producer&, typename LruCacheType::Key const&>
-[[nodiscard]] auto TtlCacheBase<LruCacheType>::get(Key const& key, Producer&& producer) -> std::expected<Value*, StarException> {
+[[nodiscard]] auto TtlCacheBase<LruCacheType>::get(Key const& key, Producer&& producer) -> std::expected<std::reference_wrapper<Value>, StarException> {
   auto result = m_cache.get(key, [&producer](Key const& key) -> std::expected<std::pair<std::int64_t, Value>, StarException> {
-      if constexpr (requires { producer == nullptr; }) {
+      if constexpr (!std::is_function_v<std::remove_reference_t<Producer>> && requires { producer == nullptr; }) {
         if (producer == nullptr)
           return std::unexpected(StarException("Cannot invoke an empty cache producer"));
       }
@@ -230,14 +238,14 @@ template <typename Producer>
     });
   if (!result)
     return std::unexpected(std::move(result.error()));
-  auto& value = **result;
+  auto& value = result->get();
   if (value.first == 0 || m_ttlUpdateEnabled) {
     auto smear = m_random.get().randInt(-m_timeSmear, m_timeSmear);
     if (!smear)
       return std::unexpected(std::move(smear.error()));
     value.first = Time::monotonicMilliseconds() + *smear;
   }
-  return &value.second;
+  return std::reference_wrapper<Value>(value.second);
 }
 
 template <typename LruCacheType>

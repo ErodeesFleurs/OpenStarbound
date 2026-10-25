@@ -46,7 +46,7 @@ namespace PlatformerAStar {
 
   class PathFinder {
   public:
-    [[nodiscard]] static std::expected<std::shared_ptr<PathFinder>, StarException> create(World* world,
+    [[nodiscard]] static std::expected<std::shared_ptr<PathFinder>, StarException> create(World& world,
         Vec2F searchFrom,
         Vec2F searchTo,
         ActorMovementParameters movementParameters,
@@ -59,7 +59,7 @@ namespace PlatformerAStar {
     std::optional<Path> const& result() const;
 
   private:
-    PathFinder(World* world, Vec2F searchFrom, Vec2F searchTo, ActorMovementParameters movementParameters, Parameters searchParameters);
+    PathFinder(World& world, Vec2F searchFrom, Vec2F searchTo, ActorMovementParameters movementParameters, Parameters searchParameters);
     enum class BoundBoxKind { Full, Drop, Stand };
 
     [[nodiscard]] std::expected<void, StarException> initAStar();
@@ -99,7 +99,7 @@ namespace PlatformerAStar {
     [[nodiscard]] std::expected<Vec2F, StarException> roundToNode(Vec2F pos) const;
     float distance(Vec2F a, Vec2F b) const;
 
-    World* m_world;
+    std::reference_wrapper<World> m_world;
     Vec2F m_searchFrom;
     Vec2F m_searchTo;
     ActorMovementParameters m_movementParams;

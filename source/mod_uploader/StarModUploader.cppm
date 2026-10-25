@@ -50,23 +50,24 @@ private:
   [[nodiscard]] std::expected<void, StarException> resetModIdImpl();
   [[nodiscard]] std::expected<void, StarException> uploadToSteamImpl(QProgressDialog& progress);
   void closeEvent(QCloseEvent* event) override;
-  [[nodiscard]] std::expected<void, StarException> onSteamCreateItem(CreateItemResult_t* result, bool ioFailure);
-  [[nodiscard]] std::expected<void, StarException> onSteamSubmitItem(SubmitItemUpdateResult_t* result, bool ioFailure);
+  [[nodiscard]] std::expected<void, StarException> onSteamCreateItem(CreateItemResult_t& result, bool ioFailure);
+  [[nodiscard]] std::expected<void, StarException> onSteamSubmitItem(SubmitItemUpdateResult_t& result, bool ioFailure);
 
   Logger& m_logger;
   RandomService& m_random;
 
-  QPushButton* m_reloadButton;
-  QLabel* m_directoryLabel;
-  QLineEdit* m_nameEditor;
-  QLineEdit* m_titleEditor;
-  QLineEdit* m_authorEditor;
-  QLineEdit* m_versionEditor;
-  SPlainTextEdit* m_descriptionEditor;
-  QLabel* m_previewImageLabel;
-  QLabel* m_modIdLabel;
-  QWidget* m_editorSection;
-  HashMap<String, QCheckBox*> m_categorySelectors;
+  // The section outlives its independently owned children during destruction.
+  std::unique_ptr<QWidget> m_editorSection;
+  std::unique_ptr<QPushButton> m_reloadButton;
+  std::unique_ptr<QLabel> m_directoryLabel;
+  std::unique_ptr<QLineEdit> m_nameEditor;
+  std::unique_ptr<QLineEdit> m_titleEditor;
+  std::unique_ptr<QLineEdit> m_authorEditor;
+  std::unique_ptr<QLineEdit> m_versionEditor;
+  std::unique_ptr<SPlainTextEdit> m_descriptionEditor;
+  std::unique_ptr<QLabel> m_previewImageLabel;
+  std::unique_ptr<QLabel> m_modIdLabel;
+  HashMap<String, std::unique_ptr<QCheckBox>> m_categorySelectors;
 
   std::optional<String> m_modDirectory;
   std::shared_ptr<DirectoryAssetSource> m_assetSource;

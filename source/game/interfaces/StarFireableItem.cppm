@@ -117,7 +117,7 @@ public:
   virtual Vec2F handPosition() const;
 
   [[nodiscard]]
-  virtual std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  virtual std::expected<void, StarException> init(ToolUserEntity& owner, ToolHand hand) override;
   [[nodiscard]]
   virtual std::expected<void, StarException> uninit() override;
   [[nodiscard]]

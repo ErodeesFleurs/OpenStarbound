@@ -35,7 +35,7 @@ struct PcPlatformServicesState {
   bool steamIsFlatpak = false;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  [[nodiscard]] std::expected<void, StarException> onGameOverlayActivated(GameOverlayActivated_t* callback);
+  [[nodiscard]] std::expected<void, StarException> onGameOverlayActivated(GameOverlayActivated_t& callback);
   SteamDispatch steamDispatch;
   SteamCallback<PcPlatformServicesState, GameOverlayActivated_t> callbackGameOverlayActivated;
 

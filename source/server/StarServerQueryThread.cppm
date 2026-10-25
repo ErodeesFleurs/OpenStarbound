@@ -143,7 +143,7 @@ export namespace Star {
 
 class ServerQueryThread : public Thread {
 public:
-  [[nodiscard]] static std::expected<std::unique_ptr<ServerQueryThread>, StarException> create(UniverseServer* universe, HostAddressWithPort const& bindAddress);
+  [[nodiscard]] static std::expected<std::unique_ptr<ServerQueryThread>, StarException> create(UniverseServer& universe, HostAddressWithPort const& bindAddress);
   ~ServerQueryThread();
 
   [[nodiscard]] std::expected<void, StarException> start();
@@ -153,7 +153,7 @@ protected:
   [[nodiscard]] std::expected<void, StarException> run() override;
 
 private:
-  ServerQueryThread(UniverseServer* universe, std::unique_ptr<UdpServer> server, std::uint8_t maxPlayers, String serverName);
+  ServerQueryThread(UniverseServer& universe, std::unique_ptr<UdpServer> server, std::uint8_t maxPlayers, String serverName);
   static constexpr std::uint8_t A2A_PING_REQUEST = 0x69;
   static constexpr std::uint8_t A2A_PING_REPLY = 0x6a;
   static constexpr std::uint8_t A2S_CHALLENGE_REQUEST = 0x57;
@@ -179,17 +179,17 @@ private:
   static constexpr std::uint8_t A2S_TYPE_TV = 'p';
   static constexpr std::uint8_t A2S_VAC_OFF = 0x00;
   static constexpr std::uint8_t A2S_VAC_ON = 0x01;
-  static constexpr const char* A2S_INFO_REQUEST_STRING = "Source Engine Query";
+  static constexpr std::string_view A2S_INFO_REQUEST_STRING = "Source Engine Query";
   static constexpr std::uint16_t A2S_APPID = (std::uint16_t)0xfffe;
   static constexpr std::uint16_t A2S_PACKET_SIZE = (std::uint16_t)0x4e0;
   static constexpr std::uint32_t A2S_HEAD_INT = 0xffffffff;
-  static constexpr const char* GAME_DIR = "starbound";
-  static constexpr const char* GAME_DESC = "Starbound";
-  static constexpr const char* GAME_TYPE = "SMP";
+  static constexpr std::string_view GAME_DIR = "starbound";
+  static constexpr std::string_view GAME_DESC = "Starbound";
+  static constexpr std::string_view GAME_TYPE = "SMP";
   static constexpr std::int32_t challengeCheckInterval = 30000;
   static constexpr std::int32_t responseCacheTime = 5000;
 
-  [[nodiscard]] std::expected<void, StarException> sendTo(HostAddressWithPort const& address, DataStreamBuffer* ds);
+  [[nodiscard]] std::expected<void, StarException> sendTo(HostAddressWithPort const& address, DataStreamBuffer const& ds);
   [[nodiscard]] std::expected<bool, StarException> processPacket(HostAddressWithPort const& address, std::span<std::uint8_t const> data);
   [[nodiscard]] std::expected<void, StarException> buildPlayerResponse();
   [[nodiscard]] std::expected<void, StarException> buildRuleResponse();
@@ -201,10 +201,10 @@ private:
   // Server API
   std::uint8_t serverPlayerCount();
   bool serverPassworded();
-  const char* serverPlugins();
+  std::string_view serverPlugins();
   [[nodiscard]] std::expected<String, StarException> serverWorldNames();
 
-  UniverseServer* m_universe;
+  std::reference_wrapper<UniverseServer> m_universe;
   std::unique_ptr<UdpServer> m_queryServer;
   bool m_stop;
   DataStreamBuffer m_playersResponse;
@@ -236,11 +236,11 @@ private:
 
 namespace Star {
 
-std::expected<std::unique_ptr<ServerQueryThread>, StarException> ServerQueryThread::create(UniverseServer* universe, HostAddressWithPort const& bindAddress) {
-  auto server = UdpServer::create(universe->root().logger(), bindAddress);
+std::expected<std::unique_ptr<ServerQueryThread>, StarException> ServerQueryThread::create(UniverseServer& universe, HostAddressWithPort const& bindAddress) {
+  auto server = UdpServer::create(universe.root().logger(), bindAddress);
   if (!server)
     return std::unexpected(std::move(server.error()));
-  auto configuration = universe->root().configuration();
+  auto configuration = universe.root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
   auto maxPlayers = (*configuration)->get("maxPlayers");
@@ -258,7 +258,7 @@ std::expected<std::unique_ptr<ServerQueryThread>, StarException> ServerQueryThre
   return std::unique_ptr<ServerQueryThread>(new ServerQueryThread(universe, std::move(*server), *count, std::move(*text)));
 }
 
-ServerQueryThread::ServerQueryThread(UniverseServer* universe, std::unique_ptr<UdpServer> server, std::uint8_t maxPlayers, String serverName)
+ServerQueryThread::ServerQueryThread(UniverseServer& universe, std::unique_ptr<UdpServer> server, std::uint8_t maxPlayers, String serverName)
   : Thread("QueryServer"), m_universe(universe), m_queryServer(std::move(server)), m_stop(true),
     m_playersResponse(A2S_PACKET_SIZE), m_rulesResponse(A2S_PACKET_SIZE), m_generalResponse(A2S_PACKET_SIZE),
     m_serverPort(0), m_maxPlayers(maxPlayers), m_serverName(std::move(serverName)),
@@ -293,15 +293,15 @@ void ServerQueryThread::stop() {
   m_queryServer->close();
 }
 
-std::expected<void, StarException> ServerQueryThread::sendTo(HostAddressWithPort const& address, DataStreamBuffer* ds) {
-  auto sent = m_queryServer->send(address, ds->ptr(), ds->size());
+std::expected<void, StarException> ServerQueryThread::sendTo(HostAddressWithPort const& address, DataStreamBuffer const& ds) {
+  auto sent = m_queryServer->send(address, ds.span());
   if (!sent)
     return std::unexpected(std::move(sent.error()));
   return {};
 }
 
 std::uint8_t ServerQueryThread::serverPlayerCount() {
-  return m_universe->numberOfClients();
+  return m_universe.get().numberOfClients();
 }
 
 bool ServerQueryThread::serverPassworded() {
@@ -310,7 +310,7 @@ bool ServerQueryThread::serverPassworded() {
 }
 
 std::expected<String, StarException> ServerQueryThread::serverWorldNames() {
-  auto activeWorlds = m_universe->activeWorlds();
+  auto activeWorlds = m_universe.get().activeWorlds();
   if (!activeWorlds)
     return std::unexpected(std::move(activeWorlds.error()));
   if (activeWorlds->empty())
@@ -325,7 +325,7 @@ std::expected<String, StarException> ServerQueryThread::serverWorldNames() {
   return names.join(",");
 }
 
-const char* ServerQueryThread::serverPlugins() {
+std::string_view ServerQueryThread::serverPlugins() {
   // TODO: implement
   return "none";
 }
@@ -369,7 +369,7 @@ std::expected<bool, StarException> ServerQueryThread::processPacket(HostAddressW
       if (!response)
         return std::unexpected(std::move(response.error()));
 
-      auto sent = sendTo(address, &m_generalResponse);
+      auto sent = sendTo(address, m_generalResponse);
       if (!sent)
         return std::unexpected(std::move(sent.error()));
       return true;
@@ -394,7 +394,7 @@ std::expected<bool, StarException> ServerQueryThread::processPacket(HostAddressW
       auto response = buildPlayerResponse();
       if (!response)
         return std::unexpected(std::move(response.error()));
-      auto sent = sendTo(address, &m_playersResponse);
+      auto sent = sendTo(address, m_playersResponse);
       if (!sent)
         return std::unexpected(std::move(sent.error()));
       return true;
@@ -413,7 +413,7 @@ std::expected<bool, StarException> ServerQueryThread::processPacket(HostAddressW
       auto response = buildRuleResponse();
       if (!response)
         return std::unexpected(std::move(response.error()));
-      auto sent = sendTo(address, &m_rulesResponse);
+      auto sent = sendTo(address, m_rulesResponse);
       if (!sent)
         return std::unexpected(std::move(sent.error()));
       return true;
@@ -427,7 +427,7 @@ std::expected<void, StarException> ServerQueryThread::buildPlayerResponse() {
   std::int64_t now = Time::monotonicMilliseconds();
   if (now < m_lastPlayersResponse + responseCacheTime)
     return {};
-  auto clientIds = m_universe->clientIdsAndCreationTime();
+  auto clientIds = m_universe.get().clientIdsAndCreationTime();
   if (!clientIds)
     return std::unexpected(std::move(clientIds.error()));
   std::uint8_t count = static_cast<std::uint8_t>(clientIds->count());
@@ -438,7 +438,7 @@ std::expected<void, StarException> ServerQueryThread::buildPlayerResponse() {
     return std::unexpected(std::move(header.error()));
   std::uint8_t i = 0;
   for (auto const& pair : *clientIds) {
-    auto name = m_universe->clientNick(pair.first);
+    auto name = m_universe.get().clientNick(pair.first);
     if (!name)
       return std::unexpected(std::move(name.error()));
     auto timeConnected = float(now - pair.second) / 1000.f;
@@ -464,13 +464,13 @@ std::expected<void, StarException> ServerQueryThread::buildRuleResponse() {
 }
 
 std::expected<void, StarException> ServerQueryThread::sendChallenge(HostAddressWithPort const& address) {
-  auto challenge = std::make_shared<RequestChallenge>(m_universe->root().random());
+  auto challenge = std::make_shared<RequestChallenge>(m_universe.get().root().random());
   m_validChallenges[address.address()] = challenge;
   m_generalResponse.clear();
   auto response = m_generalResponse << A2S_HEAD_INT << A2S_CHALLENGE_RESPONSE << challenge->getChallenge();
   if (!response)
     return std::unexpected(std::move(response.error()));
-  return sendTo(address, &m_generalResponse);
+  return sendTo(address, m_generalResponse);
 }
 
 void ServerQueryThread::pruneChallenges() {
@@ -494,11 +494,11 @@ std::expected<void, StarException> ServerQueryThread::run() {
   char udpData[MaxUdpData];
   auto report = [this](StarException const& error) -> std::expected<void, StarException> {
     if (!error.is<SocketClosedException>())
-      return m_universe->root().logger().error("ServerQueryThread error: {}", outputException(ExceptionDiagnostic(error), true));
+      return m_universe.get().root().logger().error("ServerQueryThread error: {}", outputException(ExceptionDiagnostic(error), true));
     return {};
   };
   while (!m_stop) {
-    auto received = m_queryServer->receive(&udpAddress, udpData, MaxUdpData, 100);
+    auto received = m_queryServer->receive(std::ref(udpAddress), std::span(udpData), 100);
     if (!received) {
       auto logged = report(received.error());
       if (!logged)
@@ -535,7 +535,8 @@ bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, std::
     return false;
   }
 
-  if (m_validChallenges.count(address.address()) == 0) {
+  auto knownChallenge = m_validChallenges.maybeRef(address.address());
+  if (!knownChallenge) {
     // Don't know this source address ignore
     return false;
   }
@@ -543,7 +544,7 @@ bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, std::
   std::int32_t challenge = ((std::int32_t)b[8] & 0xff) << 24 | ((std::int32_t)b[7] & 0xff) << 16 | ((std::int32_t)b[6] & 0xff) << 8
       | ((std::int32_t)b[5] & 0xff);
   // Note: No byte order swapping needed as protcol performs no conversion
-  if (m_validChallenges.ptr(address.address())->get()->getChallenge() != challenge) {
+  if (knownChallenge->get()->getChallenge() != challenge) {
     // Challenges didnt match ignore
     return false;
   }

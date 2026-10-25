@@ -51,7 +51,7 @@ public:
 
   List<std::shared_ptr<Element>> netElements() const;
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version = std::nullopt) override;
 
   // Values are never interpolated, but they will be delayed for the given
   // interpolationTime.
@@ -155,7 +155,7 @@ private:
   [[nodiscard]] std::expected<void, StarException> readyElement(std::shared_ptr<Element> const& element);
 
   std::function<std::expected<std::shared_ptr<Element>, StarException>()> m_createElement;
-  NetElementVersion const* m_netVersion = nullptr;
+  std::optional<std::reference_wrapper<NetElementVersion const>> m_netVersion = std::nullopt;
   bool m_interpolationEnabled = false;
   float m_extrapolationHint = 0.0f;
 
@@ -198,7 +198,7 @@ template <typename Element>
 [[nodiscard]] auto NetElementDynamicGroup<Element>::getNetElement(ElementId id) const -> std::expected<std::shared_ptr<Element>, StarException> {
   auto element = m_idMap.get(id);
   if (!element) return std::unexpected(std::move(element.error()));
-  return **element;
+  return element->get();
 }
 
 template <typename Element>
@@ -207,7 +207,7 @@ auto NetElementDynamicGroup<Element>::netElements() const -> List<std::shared_pt
 }
 
 template <typename Element>
-void NetElementDynamicGroup<Element>::initNetVersion(NetElementVersion const* version) {
+void NetElementDynamicGroup<Element>::initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version) {
   m_netVersion = version;
   m_changeData.clear();
   m_changeDataLastVersion = 0;
@@ -263,7 +263,7 @@ template <typename Element>
 [[nodiscard]] std::expected<void, StarException> NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return {};
   m_changeData.clear();
-  m_changeDataLastVersion = m_netVersion ? m_netVersion->current() : 0;
+  m_changeDataLastVersion = m_netVersion ? m_netVersion->get().current() : 0;
   m_idMap.clear();
   addChangeData(ElementReset());
   auto count = ds.readVlqU();
@@ -309,9 +309,9 @@ template <typename Element>
 
     for (auto const& p : m_changeData) {
       if (p.first >= fromVersion) {
-        if (ElementAddition const* elementAddition = std::get_if<ElementAddition>(&p.second)) {
-          ElementId id = elementAddition->first;
-          if (std::shared_ptr<Element> const* element = m_idMap.ptr(id)) {
+        if (std::holds_alternative<ElementAddition>(p.second)) {
+          ElementId id = std::get<ElementAddition>(p.second).first;
+          if (auto element = m_idMap.maybeRef(id)) {
             { auto result = willWrite(); if (!result) return std::unexpected(std::move(result.error())); }
             { auto result = ds.writeVlqU(1); if (!result) return std::unexpected(std::move(result.error())); }
             DataStreamBuffer storeBuffer;
@@ -362,19 +362,19 @@ template <typename Element>
       if (!change) return std::unexpected(std::move(change.error()));
       if (std::holds_alternative<ElementReset>(*change)) {
         m_idMap.clear();
-      } else if (auto addition = std::get_if<ElementAddition>(&*change)) {
-        if (addition->first == NullElementId)
+      } else if (std::holds_alternative<ElementAddition>(*change)) {
+        if (std::get<ElementAddition>(*change).first == NullElementId)
           return std::unexpected(IOException("Invalid dynamic net element id"));
         if (!m_createElement) return std::unexpected(IOException("Missing dynamic net element factory"));
         auto element = m_createElement();
         if (!element) return std::unexpected(std::move(element.error()));
         if (!*element) return std::unexpected(IOException("Null dynamic net element"));
-        DataStreamBuffer storeBuffer(addition->second);
+        DataStreamBuffer storeBuffer(std::get<ElementAddition>(*change).second);
         { auto result = (*element)->netLoad(storeBuffer, rules); if (!result) return std::unexpected(std::move(result.error())); }
         { auto result = readyElement(*element); if (!result) return std::unexpected(std::move(result.error())); }
-        { auto result = m_idMap.add(addition->first, std::move(*element)); if (!result) return std::unexpected(std::move(result.error())); }
-      } else if (auto removal = std::get_if<ElementRemoval>(&*change)) {
-        m_idMap.remove(*removal);
+        { auto result = m_idMap.add(std::get<ElementAddition>(*change).first, std::move(*element)); if (!result) return std::unexpected(std::move(result.error())); }
+      } else if (std::holds_alternative<ElementRemoval>(*change)) {
+        m_idMap.remove(std::get<ElementRemoval>(*change));
       }
       addChangeData(std::move(*change));
     } else {
@@ -383,7 +383,7 @@ template <typename Element>
       ElementId id = static_cast<ElementId>(*code - 1);
       auto element = m_idMap.get(id);
       if (!element) return std::unexpected(std::move(element.error()));
-      { auto result = (**element)->readNetDelta(ds, interpolationTime, rules); if (!result) return std::unexpected(std::move(result.error())); }
+      { auto result = element->get()->readNetDelta(ds, interpolationTime, rules); if (!result) return std::unexpected(std::move(result.error())); }
       if (m_interpolationEnabled) m_receivedDeltaIds.add(id);
     }
   }
@@ -407,7 +407,7 @@ template <typename Element>
 
 template <typename Element>
 void NetElementDynamicGroup<Element>::addChangeData(ElementChange change) {
-  std::uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
+  std::uint64_t currentVersion = m_netVersion ? m_netVersion->get().current() : 0;
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((m_changeData.empty() || m_changeData.back().first <= currentVersion));
   }

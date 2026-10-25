@@ -57,7 +57,7 @@ public:
   bool operator!=(ItemDescriptor const& rhs) const;
 
   bool matches(ItemDescriptor const& other, bool exactMatch = false) const;
-  bool matches(std::shared_ptr<Item const> const& other, bool exactMatch = false) const;
+  bool matches(Item const& other, bool exactMatch = false) const;
 
   // Stores ItemDescriptor to versioned structure not meant for human reading / writing.
   [[nodiscard]]
@@ -66,10 +66,10 @@ public:
   // Converts ItemDescriptor to spec format
   Json toJson() const;
 
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ItemDescriptor& itemDescriptor);
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ItemDescriptor& itemDescriptor);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor);
 
-  friend std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemDescriptor const& descriptor);
+  friend std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, ItemDescriptor const& descriptor);
 
   friend struct hash<ItemDescriptor>;
 
@@ -86,9 +86,9 @@ private:
   mutable std::optional<std::size_t> m_parametersHash;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ItemDescriptor& itemDescriptor);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor);
-[[nodiscard]] std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemDescriptor const& descriptor);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ItemDescriptor& itemDescriptor);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor);
+[[nodiscard]] std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& os, ItemDescriptor const& descriptor);
 
 template <>
 struct hash<ItemDescriptor> {

@@ -37,18 +37,18 @@ module star.camera_lua_bindings;
 
 namespace Star {
 
-std::expected<LuaCallbacks, StarException> LuaBindings::makeCameraCallbacks(Root& root, WorldCamera* camera) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeCameraCallbacks(Root& root, WorldCamera& camera) {
   LuaCallbacks callbacks;
 
-  if (auto result = callbacks.registerCallbackWithSignature<Vec2F>("position", std::bind(&WorldCamera::centerWorldPosition, camera)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<Vec2F>("position", std::bind(&WorldCamera::centerWorldPosition, std::ref(camera))); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<float>("pixelRatio", std::bind(&WorldCamera::pixelRatio, camera)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<float>("pixelRatio", std::bind(&WorldCamera::pixelRatio, std::ref(camera))); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("setPixelRatio", [&root, camera](float pixelRatio, std::optional<bool> smooth) -> std::expected<void, StarException> {
+  if (auto result = callbacks.registerCallback("setPixelRatio", [&root, &camera](float pixelRatio, std::optional<bool> smooth) -> std::expected<void, StarException> {
     if (smooth.value_or(false))
-      camera->setTargetPixelRatio(pixelRatio);
+      camera.setTargetPixelRatio(pixelRatio);
     else
-      camera->setPixelRatio(pixelRatio);
+      camera.setPixelRatio(pixelRatio);
     auto configuration = root.configuration();
     if (!configuration)
       return std::unexpected(std::move(configuration.error()));
@@ -56,17 +56,17 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeCameraCallbacks(Root
   }); !result)
     return std::unexpected(std::move(result.error()));
 
-  if (auto result = callbacks.registerCallbackWithSignature<Vec2U>("screenSize", std::bind(&WorldCamera::screenSize, camera)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<Vec2U>("screenSize", std::bind(&WorldCamera::screenSize, std::ref(camera))); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<RectF>("worldScreenRect", std::bind(&WorldCamera::worldScreenRect, camera)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<RectF>("worldScreenRect", std::bind(&WorldCamera::worldScreenRect, std::ref(camera))); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<RectI>("worldTileRect", std::bind(&WorldCamera::worldTileRect, camera)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<RectI>("worldTileRect", std::bind(&WorldCamera::worldTileRect, std::ref(camera))); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<Vec2F>("tileMinScreen", std::bind(&WorldCamera::tileMinScreen, camera)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<Vec2F>("tileMinScreen", std::bind(&WorldCamera::tileMinScreen, std::ref(camera))); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("screenToWorld", std::bind(&WorldCamera::screenToWorld, camera, std::placeholders::_1)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("screenToWorld", std::bind(&WorldCamera::screenToWorld, std::ref(camera), std::placeholders::_1)); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("worldToScreen", std::bind(&WorldCamera::worldToScreen, camera, std::placeholders::_1)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("worldToScreen", std::bind(&WorldCamera::worldToScreen, std::ref(camera), std::placeholders::_1)); !result)
     return std::unexpected(std::move(result.error()));
 
   return callbacks;

@@ -7,9 +7,9 @@ namespace Star {
 class World;
 class Root;
 namespace LuaBindings {
-  // Borrows the script domain's root and world; both must outlive the callbacks.
-  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWorldThreadCallbacks(Root& root, World* world);
-  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWorldCallbacks(Root& root, World* world);
+  // Requires the script domain's root and world; both must outlive the callbacks.
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWorldThreadCallbacks(Root& root, World& world);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWorldCallbacks(Root& root, World& world);
 }
 }
 

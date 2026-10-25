@@ -4,7 +4,7 @@ import std;
 import star.format;
 
 namespace Star {
-struct UnicodeExceptionTag { static constexpr char const* name() { return "UnicodeException"; } };
+struct UnicodeExceptionTag { static constexpr std::string_view name() { return "UnicodeException"; } };
 using UnicodeException = StarError<UnicodeExceptionTag, StarException>;
 using Utf8Type = char;
 using Utf32Type = char32_t;

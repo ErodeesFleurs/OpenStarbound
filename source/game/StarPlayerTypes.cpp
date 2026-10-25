@@ -113,7 +113,7 @@ Json ShipUpgrades::toJson() const {
       {"capabilities", std::move(capabilitiesJson)}};
 }
 
-std::expected<ShipUpgrades*, StarException> ShipUpgrades::apply(Json const& upgrades) {
+std::expected<std::reference_wrapper<ShipUpgrades>, StarException> ShipUpgrades::apply(Json const& upgrades) {
   auto level = upgrades.optUInt("shipLevel");
   if (!level)
     return std::unexpected(std::move(level.error()));
@@ -146,7 +146,7 @@ std::expected<ShipUpgrades*, StarException> ShipUpgrades::apply(Json const& upgr
       return std::unexpected(std::move(additional.error()));
     capabilities.addAll(*additional);
   }
-  return this;
+  return std::ref(*this);
 }
 
 bool ShipUpgrades::operator==(ShipUpgrades const& rhs) const {

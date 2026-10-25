@@ -293,8 +293,8 @@ std::expected<StringSet, StarException> Tileset::updateTiles(JsonObject& tilePro
     Json properties = tile->properties;
     std::size_t id = 0;
 
-    if (auto existing = existingTiles.ptr(tile->name)) {
-      id = *existing;
+    if (auto existing = existingTiles.maybeRef(tile->name)) {
+      id = existing->get();
     } else {
       coutf("Adding '{}' to {}\n", tile->name, tilesetPath);
       id = nextId++;
@@ -317,7 +317,7 @@ std::expected<void, StarException> Tileset::invalidateTiles(StringSet const& inv
     auto indexed = existingTiles.get(tileName);
     if (!indexed)
       return std::unexpected(std::move(indexed.error()));
-    std::size_t id = **indexed;
+    std::size_t id = indexed->get();
 
     if (std::shared_ptr<::Star::Tile> const& tile = m_database->getTile(tileName)) {
       // Tile has moved category, but we're leaving it in this tileset to avoid

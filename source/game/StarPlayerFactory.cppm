@@ -46,7 +46,7 @@ class Rebuilder;
 class Player;
 
 struct PlayerExceptionTag {
-  static constexpr char const* name() { return "PlayerException"; }
+  static constexpr std::string_view name() { return "PlayerException"; }
 };
 using PlayerException = StarError<PlayerExceptionTag, StarException>;
 

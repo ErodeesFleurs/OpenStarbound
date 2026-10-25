@@ -11,5 +11,5 @@ class Entity;
 export module star.entity_lua_bindings;
 
 export namespace Star::LuaBindings {
-  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeEntityCallbacks(Entity const* entity);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeEntityCallbacks(Entity const& entity);
 }

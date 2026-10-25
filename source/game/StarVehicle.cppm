@@ -75,7 +75,7 @@ namespace Star {
 class Root;
 
 struct VehicleExceptionTag {
-  static constexpr char const* name() { return "VehicleException"; }
+  static constexpr std::string_view name() { return "VehicleException"; }
 };
 using VehicleException = StarError<VehicleExceptionTag, StarException>;
 
@@ -114,7 +114,7 @@ public:
   [[nodiscard]] std::expected<List<DamageNotification>, StarException> applyDamage(DamageRequest const& damage) override;
   [[nodiscard]] std::expected<List<DamageNotification>, StarException> selfDamageNotifications() override;
 
-  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> init(World& world, EntityId entityId, EntityMode mode) override;
   [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   Vec2F position() const override;
@@ -130,14 +130,14 @@ public:
 
   [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderer) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback& renderer) override;
 
-  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback* renderer) override;
+  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback& renderer) override;
 
   [[nodiscard]] std::expected<List<LightSource>, StarException> lightSources() const override;
 
   [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
-  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> destroy(std::optional<std::reference_wrapper<RenderCallback>> renderCallback) override;
 
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
@@ -157,7 +157,7 @@ public:
   [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
   [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> evalScript(String const& code) override;
   
-  MovementController* movementController() override;
+  MovementController& movementController() override;
 
   void setPosition(Vec2F const& position);
 

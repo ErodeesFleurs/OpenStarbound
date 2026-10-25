@@ -50,7 +50,7 @@ std::expected<PhysicsMovingCollision, StarException> PhysicsMovingCollision::fro
   auto kind = CollisionKindNames->getLeft(*kindName);
   if (!kind)
     return std::unexpected(std::move(kind.error()));
-  pmc.collisionKind = **kind;
+  pmc.collisionKind = kind->get();
   auto filter = jsonToPhysicsCategoryFilter(json);
   if (!filter)
     return std::unexpected(std::move(filter.error()));
@@ -70,16 +70,16 @@ bool PhysicsMovingCollision::operator==(PhysicsMovingCollision const& rhs) const
   return std::tie(position, collision, collisionKind, categoryFilter) == std::tie(rhs.position, rhs.collision, rhs.collisionKind, rhs.categoryFilter);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, PhysicsMovingCollision& pmc) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, PhysicsMovingCollision& pmc) {
   PhysicsMovingCollision decoded;
   auto read = ds >> decoded.position >> decoded.collision >> decoded.collisionKind >> decoded.categoryFilter;
   if (!read)
     return std::unexpected(std::move(read.error()));
   pmc = std::move(decoded);
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, PhysicsMovingCollision const& pmc) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, PhysicsMovingCollision const& pmc) {
   return ds << pmc.position << pmc.collision << pmc.collisionKind << pmc.categoryFilter;
 }
 
@@ -100,7 +100,7 @@ MovingCollisionId::operator bool() const {
   return valid();
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, MovingCollisionId& mci) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, MovingCollisionId& mci) {
   MovingCollisionId decoded;
   auto id = ds.read(decoded.physicsEntityId);
   if (!id)
@@ -109,17 +109,17 @@ std::expected<DataStream*, StarException> operator>>(DataStream& ds, MovingColli
   if (!index)
     return std::unexpected(std::move(index.error()));
   mci = decoded;
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, MovingCollisionId const& mci) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, MovingCollisionId const& mci) {
   auto id = ds.write(mci.physicsEntityId);
   if (!id)
     return std::unexpected(std::move(id.error()));
   auto index = ds.writeVlqS(mci.collisionIndex);
   if (!index)
     return std::unexpected(std::move(index.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 std::expected<List<PhysicsForceRegion>, StarException> PhysicsEntity::forceRegions() const {

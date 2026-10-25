@@ -143,17 +143,17 @@ std::expected<std::shared_ptr<CodexInterface>, StarException> CodexInterface::cr
 }
 
 std::expected<void, StarException> CodexInterface::initialize() {
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets) return std::unexpected(std::move(assets.error()));
-  GuiReader reader(*context());
-  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { dismiss(); return {}; });
-  reader.registerCallback("prevButton", [this](Widget*) { return backwardPage(); });
-  reader.registerCallback("nextButton", [this](Widget*) { return forwardPage(); });
-  reader.registerCallback("selectCodex", [this](Widget*) { return showSelectedContents(); });
-  reader.registerCallback("updateSpecies", [this](Widget*) { return updateSpecies(); });
+  GuiReader reader(context());
+  reader.registerCallback("close", [this](Widget&) -> std::expected<void, StarException> { dismiss(); return {}; });
+  reader.registerCallback("prevButton", [this](Widget&) { return backwardPage(); });
+  reader.registerCallback("nextButton", [this](Widget&) { return forwardPage(); });
+  reader.registerCallback("selectCodex", [this](Widget&) { return showSelectedContents(); });
+  reader.registerCallback("updateSpecies", [this](Widget&) { return updateSpecies(); });
   auto layout = (*assets)->json("/interface/windowconfig/codex.config:paneLayout");
   if (!layout) return std::unexpected(std::move(layout.error()));
-  auto constructed = reader.construct(*layout, this);
+  auto constructed = reader.construct(*layout, *this);
   if (!constructed) return std::unexpected(std::move(constructed.error()));
   auto speciesTabs = fetchChild<ButtonGroupWidget>("speciesTabs");
   if (!speciesTabs) return std::unexpected(std::move(speciesTabs.error()));
@@ -242,10 +242,10 @@ std::expected<void, StarException> CodexInterface::backwardPage() {
 std::expected<bool, StarException> CodexInterface::showNewCodex() {
   if (auto newCodex = m_player->codexes()->firstNewCodex()) {
     for (auto const& button : m_speciesTabs->buttons()) {
-      auto species = button->data().getString("species");
+      auto species = button.get().data().getString("species");
       if (!species) return std::unexpected(std::move(species.error()));
       if (*species == newCodex->species()) {
-        auto selected = m_speciesTabs->select(m_speciesTabs->id(button));
+        auto selected = m_speciesTabs->select(m_speciesTabs->id(button.get()));
         if (!selected) return std::unexpected(std::move(selected.error()));
         break;
       }
@@ -260,7 +260,7 @@ std::expected<bool, StarException> CodexInterface::showNewCodex() {
 std::expected<void, StarException> CodexInterface::updateSpecies() {
   String newSpecies = "other";
   if (auto speciesButton = m_speciesTabs->checkedButton()) {
-    auto species = speciesButton->data().getString("species");
+    auto species = speciesButton->get().data().getString("species");
     if (!species) return std::unexpected(std::move(species.error()));
     newSpecies = std::move(*species);
   }

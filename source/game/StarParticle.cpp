@@ -78,7 +78,7 @@ std::expected<Particle, StarException> Particle::create(Root& root, Json const& 
   auto type = TypeNames->getLeft(*typeName);
   if (!type)
     return std::unexpected(std::move(type.error()));
-  particle.type = **type;
+  particle.type = type->get();
   particle.color = particle.type == Type::Variance ? Color::Clear : Color::White;
   auto size = config.getFloat("size", particle.type == Type::Variance ? 0.0f : 1.0f);
   if (!size)
@@ -203,7 +203,7 @@ std::expected<Particle, StarException> Particle::create(Root& root, Json const& 
   auto action = DestructionActionNames->getLeft(*actionName);
   if (!action)
     return std::unexpected(std::move(action.error()));
-  particle.destructionAction = **action;
+  particle.destructionAction = action->get();
   auto destructionImage = config.getString("destructionImage", "");
   if (!destructionImage)
     return std::unexpected(std::move(destructionImage.error()));
@@ -226,7 +226,7 @@ std::expected<Particle, StarException> Particle::create(Root& root, Json const& 
   auto layer = LayerNames->getLeft(*layerName);
   if (!layer)
     return std::unexpected(std::move(layer.error()));
-  particle.layer = **layer;
+  particle.layer = layer->get();
   auto underwaterOnly = config.getBool("underwaterOnly", false);
   if (!underwaterOnly)
     return std::unexpected(std::move(underwaterOnly.error()));
@@ -339,7 +339,7 @@ std::expected<Json, StarException> Particle::toJson() const {
   auto layerName = LayerNames->getRight(layer);
   if (!layerName)
     return std::unexpected(std::move(layerName.error()));
-  return JsonObject{{"type", **typeName},
+  return JsonObject{{"type", typeName->get()},
       {"size", size},
       {"string", string},
       {"color", jsonFromColor(color)},
@@ -355,11 +355,11 @@ std::expected<Json, StarException> Particle::toJson() const {
       {"rotation", rotation * 180.0f / std::numbers::pi},
       {"angularVelocity", angularVelocity * 180.0f / std::numbers::pi},
       {"length", length},
-      {"destructionAction", **actionName},
+      {"destructionAction", actionName->get()},
       {"destructionImage", AssetPath::join(destructionImage)},
       {"destructionTime", destructionTime},
       {"timeToLive", timeToLive},
-      {"layer", **layerName},
+      {"layer", layerName->get()},
       {"collidesForeground", collidesForeground},
       {"collidesLiquid", collidesLiquid},
       {"underwaterOnly", underwaterOnly},
@@ -468,7 +468,7 @@ std::expected<void, StarException> Particle::initializeAnimation(Root& root) {
   return {};
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, Particle const& particle) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Particle const& particle) {
   auto type = ds.viwrite(particle.type);
   if (!type)
     return std::unexpected(std::move(type.error()));
@@ -484,7 +484,7 @@ std::expected<DataStream*, StarException> operator<<(DataStream& ds, Particle co
       << particle.collidesForeground << particle.collidesLiquid << particle.underwaterOnly << particle.ignoreWind;
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, Particle& particle) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Particle& particle) {
   auto type = ds.viread(particle.type);
   if (!type)
     return std::unexpected(std::move(type.error()));

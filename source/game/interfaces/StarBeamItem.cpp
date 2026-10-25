@@ -74,7 +74,7 @@ import star.item;
 import star.line;
 namespace Star {
 
-BeamItem::BeamItem(Root& root) : m_beamRoot(&root) {}
+BeamItem::BeamItem(Root& root) : m_beamRoot(root) {}
 
 std::expected<void, StarException> BeamItem::initializeBeam(Json config) {
   auto assets = beamRoot().assets();
@@ -100,14 +100,14 @@ std::expected<void, StarException> BeamItem::initializeBeam(Json config) {
   m_endImages = std::move(*endImages);
   m_endType = EndType::Invalid;
   for (auto const& [key, target] : {
-      std::pair{"segmentsPerUnit", &m_segmentsPerUnit},
-      std::pair{"nearControlPointElasticity", &m_nearControlPointElasticity},
-      std::pair{"farControlPointElasticity", &m_farControlPointElasticity},
-      std::pair{"nearControlPointDistance", &m_nearControlPointDistance}}) {
+      std::pair{std::string_view("segmentsPerUnit"), std::ref(m_segmentsPerUnit)},
+      std::pair{std::string_view("nearControlPointElasticity"), std::ref(m_nearControlPointElasticity)},
+      std::pair{std::string_view("farControlPointElasticity"), std::ref(m_farControlPointElasticity)},
+      std::pair{std::string_view("nearControlPointDistance"), std::ref(m_nearControlPointDistance)}}) {
     auto value = config.getFloat(key);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *target = *value;
+    target.get() = *value;
   }
   auto hand = config.get("handPosition").and_then(jsonToVec2F);
   if (!hand)
@@ -119,13 +119,13 @@ std::expected<void, StarException> BeamItem::initializeBeam(Json config) {
   m_firePosition = *fire;
   m_range = 1.0f;
   for (auto const& [key, target] : {
-      std::pair{"targetSegmentRun", &m_targetSegmentRun},
-      std::pair{"minBeamWidth", &m_minBeamWidth},
-      std::pair{"maxBeamWidth", &m_maxBeamWidth}}) {
+      std::pair{std::string_view("targetSegmentRun"), std::ref(m_targetSegmentRun)},
+      std::pair{std::string_view("minBeamWidth"), std::ref(m_minBeamWidth)},
+      std::pair{std::string_view("maxBeamWidth"), std::ref(m_maxBeamWidth)}}) {
     auto value = config.getFloat(key);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *target = *value;
+    target.get() = *value;
   }
   auto widthDev = config.getFloat("beamWidthDev", (m_maxBeamWidth - m_minBeamWidth) / 3);
   if (!widthDev)
@@ -164,13 +164,13 @@ std::expected<void, StarException> BeamItem::initializeBeam(Json config) {
     return std::unexpected(std::move(maxLines.error()));
   m_maxBeamLines = *maxLines;
   for (auto const& [key, target] : {
-      std::pair{"innerBrightnessScale", &m_innerBrightnessScale},
-      std::pair{"firstStripeThickness", &m_firstStripeThickness},
-      std::pair{"secondStripeThickness", &m_secondStripeThickness}}) {
+      std::pair{std::string_view("innerBrightnessScale"), std::ref(m_innerBrightnessScale)},
+      std::pair{std::string_view("firstStripeThickness"), std::ref(m_firstStripeThickness)},
+      std::pair{std::string_view("secondStripeThickness"), std::ref(m_secondStripeThickness)}}) {
     auto value = config.getFloat(key);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *target = *value;
+    target.get() = *value;
   }
   m_color = Color::White;
   m_particleGenerateCooldown = .25;
@@ -178,15 +178,15 @@ std::expected<void, StarException> BeamItem::initializeBeam(Json config) {
   return {};
 }
 
-std::expected<void, StarException> BeamItem::init(ToolUserEntity* owner, ToolHand hand) {
+std::expected<void, StarException> BeamItem::init(ToolUserEntity& owner, ToolHand hand) {
   auto initialized = ToolUserItem::init(owner, hand);
   if (!initialized)
     return std::unexpected(std::move(initialized.error()));
   m_beamCurve = CSplineF();
   if (!this->initialized())
     return std::unexpected(ItemException("BeamItem::init: Beam Gun not init'd properly, or user not recognized as Tool User."));
-  m_color = owner->favoriteColor();
-  auto radius = owner->beamGunRadius();
+  m_color = owner.favoriteColor();
+  auto radius = owner.beamGunRadius();
   if (!radius)
     return std::unexpected(std::move(radius.error()));
   m_range = *radius;
@@ -207,19 +207,19 @@ std::expected<void, StarException> BeamItem::update(float dt, FireMode, bool, Ha
   auto itemWorld = world();
   if (!itemWorld)
     return std::unexpected(std::move(itemWorld.error()));
-  auto position = (*itemOwner)->handPosition(*itemHand, (m_firePosition - m_handPosition) / TilePixels);
+  auto position = itemOwner->get().handPosition(*itemHand, (m_firePosition - m_handPosition) / TilePixels);
   if (!position)
     return std::unexpected(std::move(position.error()));
   m_beamCurve.origin() = *position;
-  auto aimPosition = (*itemOwner)->aimPosition();
+  auto aimPosition = itemOwner->get().aimPosition();
   if (!aimPosition)
     return std::unexpected(std::move(aimPosition.error()));
   if (m_endType == EndType::TileGroup)
-    m_beamCurve.dest() = (*itemWorld)->geometry().diff(aimPosition->round(), (*itemOwner)->position());
+    m_beamCurve.dest() = itemWorld->get().geometry().diff(aimPosition->round(), itemOwner->get().position());
   else if (m_endType == EndType::Wire)
-    m_beamCurve.dest() = (*itemWorld)->geometry().diff(*aimPosition, (*itemOwner)->position());
+    m_beamCurve.dest() = itemWorld->get().geometry().diff(*aimPosition, itemOwner->get().position());
   else
-    m_beamCurve.dest() = (*itemWorld)->geometry().diff(centerOfTile(*aimPosition), (*itemOwner)->position());
+    m_beamCurve.dest() = itemWorld->get().geometry().diff(centerOfTile(*aimPosition), itemOwner->get().position());
 
   if (m_beamCurve.dest().magnitudeSquared() < m_beamCurve.origin().magnitudeSquared())
     m_beamCurve[2] = m_beamCurve.dest();
@@ -230,7 +230,7 @@ std::expected<void, StarException> BeamItem::update(float dt, FireMode, bool, Ha
 
   if (m_beamCurve.dest().magnitudeSquared() < m_beamCurve.origin().magnitudeSquared())
     m_beamCurve[1] = m_beamCurve.origin();
-  else if ((*itemOwner)->facingDirection() != getAngleSide(m_beamCurve[1].angle()).second)
+  else if (itemOwner->get().facingDirection() != getAngleSide(m_beamCurve[1].angle()).second)
     m_beamCurve[1] = desiredNearControlPoint;
   else
     m_beamCurve[1] = m_beamCurve[1] + (desiredNearControlPoint - m_beamCurve[1]) * m_nearControlPointElasticity;
@@ -307,7 +307,7 @@ std::expected<List<Drawable>, StarException> BeamItem::beamDrawables(bool canPla
     auto itemOwner = owner();
     if (!itemOwner)
       return std::unexpected(std::move(itemOwner.error()));
-    auto aimPosition = (*itemOwner)->aimPosition();
+    auto aimPosition = itemOwner->get().aimPosition();
     if (!aimPosition)
       return std::unexpected(std::move(aimPosition.error()));
     Vec2F endPoint;
@@ -318,7 +318,7 @@ std::expected<List<Drawable>, StarException> BeamItem::beamDrawables(bool canPla
     else
       endPoint = centerOfTile(*aimPosition);
 
-    if ((endPoint - (*itemOwner)->position()).magnitude() <= m_range && curveLen <= m_range) {
+    if ((endPoint - itemOwner->get().position()).magnitude() <= m_range && curveLen <= m_range) {
       m_inRangeLastUpdate = true;
       int numLines = projectOntoRange(m_minBeamLines, m_maxBeamLines);
       Color mainColor = m_color;
@@ -428,7 +428,7 @@ std::expected<List<Drawable>, StarException> BeamItem::beamDrawables(bool canPla
           beamLeftovers.append(beamParticle);
         }
 
-        auto added = (*itemOwner)->addParticles(beamLeftovers);
+        auto added = itemOwner->get().addParticles(beamLeftovers);
         if (!added)
           return std::unexpected(std::move(added.error()));
       }
@@ -439,7 +439,7 @@ std::expected<List<Drawable>, StarException> BeamItem::beamDrawables(bool canPla
 }
 
 Root& BeamItem::beamRoot() const {
-  return *m_beamRoot;
+  return m_beamRoot.get();
 }
 
 }

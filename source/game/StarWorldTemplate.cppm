@@ -224,8 +224,8 @@ public:
   WeatherPool weathers() const;
 
   List<WeatherDomain> const& weatherDomains() const;
-  [[nodiscard]] std::expected<WeatherDomain const*, StarException> weatherDomain(String const& name) const;
-  [[nodiscard]] std::expected<WeatherLayer const*, StarException> weatherLayerAt(Vec2I const& position) const;
+  [[nodiscard]] std::expected<std::optional<std::reference_wrapper<WeatherDomain const>>, StarException> weatherDomain(String const& name) const;
+  [[nodiscard]] std::expected<std::optional<std::reference_wrapper<WeatherLayer const>>, StarException> weatherLayerAt(Vec2I const& position) const;
 
   // Return potential items that would spawn at the given block.
   [[nodiscard]] std::expected<void, StarException> addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, std::optional<BiomePlacementMode> mode = {}) const;

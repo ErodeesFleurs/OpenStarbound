@@ -28,9 +28,9 @@ struct BenchmarkSession {
   Root& root;
   bool failed = false;
 
-  void fail(benchmark::State& state, char const* message) {
+  void fail(benchmark::State& state, std::string_view message) {
     failed = true;
-    state.SkipWithError(message);
+    state.SkipWithError(message.data());
   }
 
   void fail(benchmark::State& state, StarException const& error) {
@@ -47,7 +47,7 @@ struct BenchmarkLifetime {
 
 std::expected<void, StarException> requirePrivateStorage(String const& storage) {
   // A benchmark bootconfig must point at private storage, never a save tree.
-  for (auto const* name : {"player", "universe"}) {
+  for (std::string_view name : {"player", "universe"}) {
     auto exists = File::exists(File::relativeTo(storage, name));
     if (!exists)
       return std::unexpected(std::move(exists.error()));
@@ -99,7 +99,7 @@ std::expected<ObjectFixture, StarException> prepareObjects(Root& root) {
     fixture.configs.push_back(std::move(*config));
     if (!fixture.label.empty())
       fixture.label += ",";
-    fixture.label += name.utf8Ptr();
+    fixture.label += name.utf8();
     if (selected[0] == 4 && selected[1] == 4)
       break;
   }
@@ -189,11 +189,11 @@ void projectileColdCatalogParse(benchmark::State& state, BenchmarkSession& sessi
     session.fail(state, files.error());
     return;
   }
-  if ((**files).size() != names.size()) {
+  if (files->get().size() != names.size()) {
     session.fail(state, "Projectile factory skipped or duplicated a real asset input");
     return;
   }
-  for (auto const& file : **files) {
+  for (auto const& file : files->get()) {
     auto input = (*assets)->json(file.string());
     if (!input) {
       session.fail(state, input.error());
@@ -299,7 +299,7 @@ void worldLayoutToJson(benchmark::State& state, BenchmarkSession& session) {
   // Biomes contain unordered spawn/plant sets; their serialized array order
   // need not survive loading. Compare geometry, indices and noise, not that
   // incidental set iteration order. create() above validates biome payloads.
-  for (auto const* field : {"worldSize", "terrainSelectors", "layers", "regionBlending",
+  for (std::string_view field : {"worldSize", "terrainSelectors", "layers", "regionBlending",
       "blockNoise", "blendNoise", "playerStartSearchRegions"}) {
     auto original = reference->get(field);
     auto restored = roundTrip->get(field);

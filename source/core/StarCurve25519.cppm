@@ -37,18 +37,18 @@ public:
   explicit KeySet(RandomSource& random);
 
   PublicKey const& publicKey() const;
-  Signature sign(void* data, std::size_t len) const;
+  Signature sign(std::span<char const> data) const;
 
 private:
   void generate() const;
 
-  std::variant<RandomService*, RandomSource*> m_random;
+  std::variant<std::reference_wrapper<RandomService>, std::reference_wrapper<RandomSource>> m_random;
   mutable std::once_flag m_generated;
   mutable PrivateKey m_privateKey;
   mutable PublicKey m_publicKey;
 };
 
-bool verify(std::uint8_t const* signature, std::uint8_t const* publicKey, void* data, std::size_t len);
+bool verify(std::span<std::uint8_t const, SignatureSize> signature, std::span<std::uint8_t const, PublicKeySize> publicKey, std::span<char const> data);
 
 
 }
@@ -57,15 +57,15 @@ bool verify(std::uint8_t const* signature, std::uint8_t const* publicKey, void* 
 // Keep the native crypto definitions in the implementation portion.
 namespace Star {
 namespace Curve25519 {
-KeySet::KeySet(RandomService& random) : m_random(&random) {}
+KeySet::KeySet(RandomService& random) : m_random(std::ref(random)) {}
 
-KeySet::KeySet(RandomSource& random) : m_random(&random) {}
+KeySet::KeySet(RandomSource& random) : m_random(std::ref(random)) {}
 
 void KeySet::generate() const {
   std::call_once(m_generated, [this] {
     SecretKey secret;
-    std::visit([&secret](auto* random) {
-      random->randBytes((char*)secret.data(), SecretKeySize);
+    std::visit([&secret](auto random) {
+      random.get().randBytes({reinterpret_cast<char*>(secret.data()), secret.size()});
     }, m_random);
     secret[0]  &= 248;
     secret[31] &= 127;
@@ -80,15 +80,15 @@ PublicKey const& KeySet::publicKey() const {
   return m_publicKey;
 }
 
-Signature KeySet::sign(void* data, std::size_t len) const {
+Signature KeySet::sign(std::span<char const> data) const {
   generate();
   Signature signature;
-  ed25519_SignMessage(signature.data(), m_privateKey.data(), nullptr, (unsigned char*)data, len);
+  ed25519_SignMessage(signature.data(), m_privateKey.data(), nullptr, reinterpret_cast<unsigned char const*>(data.data()), data.size());
   return signature;
 }
 
-bool verify(std::uint8_t const* signature, std::uint8_t const* publicKey, void* data, std::size_t len) {
-  return ed25519_VerifySignature(signature, publicKey, (unsigned char*)data, len);
+bool verify(std::span<std::uint8_t const, SignatureSize> signature, std::span<std::uint8_t const, PublicKeySize> publicKey, std::span<char const> data) {
+  return ed25519_VerifySignature(signature.data(), publicKey.data(), reinterpret_cast<unsigned char const*>(data.data()), data.size());
 }
 
 

@@ -4,6 +4,8 @@ import star.list;
 import star.format;
 import star.string;
 import star.static_vector;
+import star.map;
+import star.optional;
 
 #include "gtest/gtest.h"
 
@@ -109,13 +111,13 @@ void expectMoveOnlyFilterContract() {
 
 struct RemovalProbe {
   int value;
-  int* destructions;
-  std::vector<int>* comparisons;
+  std::reference_wrapper<int> destructions;
+  std::reference_wrapper<std::vector<int>> comparisons;
 
-  ~RemovalProbe() { ++*destructions; }
+  ~RemovalProbe() { ++destructions.get(); }
 
   friend bool operator==(RemovalProbe const& left, RemovalProbe const& right) {
-    left.comparisons->push_back(*left.destructions);
+    left.comparisons.get().push_back(left.destructions.get());
     return left.value == right.value;
   }
 };
@@ -150,8 +152,8 @@ TEST(ListTest, RemovalObservesAliasingAndImmediateDestruction) {
   List<RemovalProbe> input;
   input.reserve(4);
   for (int value : {1, 2, 1, 3})
-    input.emplaceAppend(value, &destructions, &comparisons);
-  RemovalProbe key{1, &destructions, &comparisons};
+    input.emplaceAppend(value, std::ref(destructions), std::ref(comparisons));
+  RemovalProbe key{1, std::ref(destructions), std::ref(comparisons)};
   EXPECT_EQ(input.remove(key), 2u);
   EXPECT_EQ(comparisons, (std::vector<int>{0, 1, 1, 2}));
   EXPECT_EQ(destructions, 2);
@@ -246,4 +248,70 @@ TEST(ListTest, IndexedQueriesRetainDefaultArguments) {
   auto bounded = StaticList<int, 3>::create({1, 2, 1});
   ASSERT_TRUE(bounded);
   expectDefaults(*bounded);
+}
+
+TEST(ContainerBorrowTest, ReferenceEntriesRemainRebindableSlots) {
+  int original = 10;
+  int replacement = 20;
+  Map<int, std::reference_wrapper<int>> entries;
+  auto added = entries.add(1, std::ref(original));
+  ASSERT_TRUE(added);
+  added->get() = std::ref(replacement);
+  EXPECT_EQ(entries.begin()->second.get(), 20);
+  EXPECT_EQ(original, 10);
+
+  auto checked = entries.get(1);
+  ASSERT_TRUE(checked);
+  checked->get() = std::ref(original);
+  EXPECT_EQ(entries.begin()->second.get(), 10);
+  auto nullable = entries.maybeRef(1);
+  ASSERT_TRUE(nullable);
+  nullable->get() = std::ref(replacement);
+  replacement = 21;
+  auto const& constEntries = entries;
+  auto observed = constEntries.at(1);
+  ASSERT_TRUE(observed);
+  EXPECT_EQ(observed->get().get(), 21);
+  auto nullableObserved = constEntries.maybeRef(1);
+  ASSERT_TRUE(nullableObserved);
+  EXPECT_EQ(nullableObserved->get().get(), 21);
+  EXPECT_EQ(original, 10);
+  EXPECT_FALSE(entries.maybeRef(2));
+  EXPECT_FALSE(constEntries.maybeRef(2));
+  auto missing = entries.get(2);
+  ASSERT_FALSE(missing);
+  EXPECT_TRUE(missing.error().is<MapException>());
+  EXPECT_EQ(entries.size(), 1u);
+
+  List<std::reference_wrapper<int>> sequence{std::ref(original)};
+  auto slot = sequence.at(0);
+  ASSERT_TRUE(slot);
+  slot->get() = std::ref(replacement);
+  replacement = 22;
+  auto const& constSequence = sequence;
+  auto first = constSequence.first();
+  ASSERT_TRUE(first);
+  EXPECT_EQ(first->get().get(), 22);
+  EXPECT_EQ(sequence[0].get(), 22);
+  EXPECT_EQ(original, 10);
+  auto outOfRange = sequence.at(1);
+  ASSERT_FALSE(outOfRange);
+  EXPECT_TRUE(outOfRange.error().is<OutOfRangeException>());
+  EXPECT_EQ(sequence.size(), 1u);
+
+  std::optional<std::reference_wrapper<int>> optional{std::ref(original)};
+  auto optionalSlot = optionalRef(optional);
+  ASSERT_TRUE(optionalSlot);
+  optionalSlot->get() = std::ref(replacement);
+  replacement = 23;
+  ASSERT_TRUE(optional);
+  EXPECT_EQ(optional->get(), 23);
+  auto const& constOptional = optional;
+  auto optionalObserved = optionalRef(constOptional);
+  ASSERT_TRUE(optionalObserved);
+  EXPECT_EQ(optionalObserved->get().get(), 23);
+  EXPECT_EQ(original, 10);
+  optional.reset();
+  EXPECT_FALSE(optionalRef(optional));
+  EXPECT_FALSE(optionalRef(constOptional));
 }

@@ -84,12 +84,12 @@ inline bool netErrorInterrupt() {
   switch (mode) {
     case NetworkMode::IPv4: {
       struct sockaddr_in* addr4 = (struct sockaddr_in*)sockAddr;
-      addressWithPort = HostAddressWithPort(mode, (std::uint8_t*)&(addr4->sin_addr.s_addr), ntohs(addr4->sin_port));
+      addressWithPort = HostAddressWithPort(mode, {(std::uint8_t*)&(addr4->sin_addr.s_addr), sizeof(addr4->sin_addr.s_addr)}, ntohs(addr4->sin_port));
       break;
     }
     case NetworkMode::IPv6: {
       struct sockaddr_in6* addr6 = (struct sockaddr_in6*)sockAddr;
-      addressWithPort = HostAddressWithPort(mode, (std::uint8_t*)&addr6->sin6_addr.s6_addr, ntohs(addr6->sin6_port));
+      addressWithPort = HostAddressWithPort(mode, {(std::uint8_t*)&addr6->sin6_addr.s6_addr, sizeof(addr6->sin6_addr.s6_addr)}, ntohs(addr6->sin6_port));
       break;
     }
     default:
@@ -107,7 +107,7 @@ inline bool netErrorInterrupt() {
       std::memset(addr4, 0, *sockAddrLen);
       addr4->sin_family = AF_INET;
       addr4->sin_port = htons(addressWithPort.port());
-      std::memcpy(((char*)&addr4->sin_addr.s_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
+      std::memcpy(((char*)&addr4->sin_addr.s_addr), addressWithPort.address().bytes().data(), addressWithPort.address().size());
 
       break;
     }
@@ -118,7 +118,7 @@ inline bool netErrorInterrupt() {
       std::memset(addr6, 0, *sockAddrLen);
       addr6->sin6_family = AF_INET6;
       addr6->sin6_port = htons(addressWithPort.port());
-      std::memcpy(((char*)&addr6->sin6_addr.s6_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
+      std::memcpy(((char*)&addr6->sin6_addr.s6_addr), addressWithPort.address().bytes().data(), addressWithPort.address().size());
       break;
     }
     default:

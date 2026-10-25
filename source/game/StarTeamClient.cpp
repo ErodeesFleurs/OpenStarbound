@@ -190,14 +190,14 @@ std::expected<void, StarException> TeamClient::invitePlayer(String const& player
   auto name = m_mainPlayer->name();
   if (!name) return std::unexpected(std::move(name.error()));
   request["inviterName"] = *name;
-  return invokeRemote("team.invite", request, [=, this](Json response) -> std::expected<void, StarException> {
+  return invokeRemote("team.invite", request, [playerName, &self = *this](Json response) -> std::expected<void, StarException> {
     if (!response)
-      m_pendingInviteResults.append(std::make_pair(playerName, true));
+      self.m_pendingInviteResults.append(std::make_pair(playerName, true));
     else if (response == "inviteeNotFound")
-      m_pendingInviteResults.append(std::make_pair(playerName, false));
+      self.m_pendingInviteResults.append(std::make_pair(playerName, false));
     else if (response.isType(Json::Type::Array)) {
-      m_pendingInviteResults.push_back(StringList());
-      StringList& invited = std::get<StringList>(m_pendingInviteResults.back());
+      self.m_pendingInviteResults.push_back(StringList());
+      StringList& invited = std::get<StringList>(self.m_pendingInviteResults.back());
       auto entries = response.toArray();
       if (!entries) return std::unexpected(std::move(entries.error()));
       for (auto& entry : *entries) {
@@ -219,7 +219,7 @@ std::expected<void, StarException> TeamClient::acceptInvitation(Uuid const& invi
   JsonObject request;
   request["inviterUuid"] = inviterUuid.hex();
   request["inviteeUuid"] = m_clientContext->playerUuid().hex();
-  return invokeRemote("team.acceptInvitation", request, [this](Json) -> std::expected<void, StarException> { forceUpdate(); return {}; });
+  return invokeRemote("team.acceptInvitation", request, [&self = *this](Json) -> std::expected<void, StarException> { self.forceUpdate(); return {}; });
 }
 
 std::optional<Uuid> TeamClient::currentTeam() const {
@@ -234,7 +234,7 @@ std::expected<void, StarException> TeamClient::makeLeader(Uuid const& playerUuid
   JsonObject request;
   request["teamUuid"] = m_teamUuid->hex();
   request["playerUuid"] = playerUuid.hex();
-  return invokeRemote("team.makeLeader", request, [this](Json) -> std::expected<void, StarException> { forceUpdate(); return {}; });
+  return invokeRemote("team.makeLeader", request, [&self = *this](Json) -> std::expected<void, StarException> { self.forceUpdate(); return {}; });
 }
 
 std::expected<void, StarException> TeamClient::removeFromTeam(Uuid const& playerUuid) {
@@ -245,7 +245,7 @@ std::expected<void, StarException> TeamClient::removeFromTeam(Uuid const& player
   JsonObject request;
   request["teamUuid"] = m_teamUuid->hex();
   request["playerUuid"] = playerUuid.hex();
-  return invokeRemote("team.removeFromTeam", request, [this](Json) -> std::expected<void, StarException> { forceUpdate(); return {}; });
+  return invokeRemote("team.removeFromTeam", request, [&self = *this](Json) -> std::expected<void, StarException> { self.forceUpdate(); return {}; });
 }
 
 bool TeamClient::hasInvitationPending() {
@@ -275,16 +275,16 @@ std::expected<void, StarException> TeamClient::update() {
       m_pollInvitationsTimer = Time::monotonicTime();
       JsonObject request;
       request["playerUuid"] = m_clientContext->playerUuid().hex();
-      auto invoked = invokeRemote("team.pollInvitation", request, [this](Json response) -> std::expected<void, StarException> {
-        if (response.isNull() || m_hasPendingInvitation) return {};
+      auto invoked = invokeRemote("team.pollInvitation", request, [&self = *this](Json response) -> std::expected<void, StarException> {
+        if (response.isNull() || self.m_hasPendingInvitation) return {};
         auto uuidText = response.getString("inviterUuid");
         if (!uuidText) return std::unexpected(std::move(uuidText.error()));
         auto uuid = Uuid::create(*uuidText);
         if (!uuid) return std::unexpected(std::move(uuid.error()));
         auto name = response.getString("inviterName");
         if (!name) return std::unexpected(std::move(name.error()));
-        m_pendingInvitation = {*uuid, std::move(*name)};
-        m_hasPendingInvitation = true;
+        self.m_pendingInvitation = {*uuid, std::move(*name)};
+        self.m_hasPendingInvitation = true;
         return {};
       });
       if (!invoked) return std::unexpected(std::move(invoked.error()));
@@ -320,26 +320,26 @@ std::expected<void, StarException> TeamClient::pullFullUpdate() {
   m_fullUpdateRunning = true;
   JsonObject request;
   request["playerUuid"] = m_clientContext->playerUuid().hex();
-  return invokeRemote("team.fetchTeamStatus", request, [this](Json response) -> std::expected<void, StarException> {
-    m_fullUpdateRunning = false;
+  return invokeRemote("team.fetchTeamStatus", request, [&self = *this](Json response) -> std::expected<void, StarException> {
+    self.m_fullUpdateRunning = false;
     auto version = response.optInt("version");
     if (!version) return std::unexpected(std::move(version.error()));
-    m_teamManagerVersion = version->value_or(0);
+    self.m_teamManagerVersion = version->value_or(0);
     auto teamText = response.optString("teamUuid");
     if (!teamText) return std::unexpected(std::move(teamText.error()));
-    m_teamUuid.reset();
+    self.m_teamUuid.reset();
     if (*teamText) {
       auto team = Uuid::create(**teamText);
       if (!team) return std::unexpected(std::move(team.error()));
-      m_teamUuid = *team;
+      self.m_teamUuid = *team;
     }
-    if (m_teamUuid) {
+    if (self.m_teamUuid) {
       auto leaderText = response.getString("leader");
       if (!leaderText) return std::unexpected(std::move(leaderText.error()));
       auto leader = Uuid::create(*leaderText);
       if (!leader) return std::unexpected(std::move(leader.error()));
-      m_teamLeader = *leader;
-      m_members.clear();
+      self.m_teamLeader = *leader;
+      self.m_members.clear();
       auto entries = response.getArray("members");
       if (!entries) return std::unexpected(std::move(entries.error()));
       for (auto const& m : *entries) {
@@ -372,7 +372,7 @@ std::expected<void, StarException> TeamClient::pullFullUpdate() {
         if (!portraitJson) return std::unexpected(std::move(portraitJson.error()));
         auto portraitEntries = portraitJson->toArray();
         if (!portraitEntries) return std::unexpected(std::move(portraitEntries.error()));
-        auto metadata = m_root.imageMetadataDatabase();
+        auto metadata = self.m_root.imageMetadataDatabase();
         if (!metadata) return std::unexpected(std::move(metadata.error()));
         List<Drawable> portrait;
         for (auto const& value : *portraitEntries) {
@@ -380,11 +380,11 @@ std::expected<void, StarException> TeamClient::pullFullUpdate() {
           if (!drawable) return std::unexpected(std::move(drawable.error()));
           portrait.append(std::move(*drawable));
         }
-        m_members.push_back(Member{std::move(*name), *uuid, static_cast<EntityId>(*entity), *health, *energy, std::move(*world), Vec2F(*x, *y), **warp, std::move(portrait)});
+        self.m_members.push_back(Member{std::move(*name), *uuid, static_cast<EntityId>(*entity), *health, *energy, std::move(*world), Vec2F(*x, *y), warp->get(), std::move(portrait)});
       }
-      std::sort(m_members.begin(), m_members.end(), [](Member const& a, Member const& b) { return a.name < b.name; });
+      std::sort(self.m_members.begin(), self.m_members.end(), [](Member const& a, Member const& b) { return a.name < b.name; });
     } else {
-      clearTeam();
+      self.clearTeam();
     }
     return {};
   });
@@ -403,8 +403,8 @@ std::expected<void, StarException> TeamClient::statusUpdate() {
   auto written = writePlayerData(request, player, true);
   if (!written) return std::unexpected(std::move(written.error()));
 
-  return invokeRemote("team.updateStatus", request, [this](Json) -> std::expected<void, StarException> {
-      m_statusUpdateRunning = false;
+  return invokeRemote("team.updateStatus", request, [&self = *this](Json) -> std::expected<void, StarException> {
+      self.m_statusUpdateRunning = false;
       return {};
     });
 }
@@ -477,7 +477,7 @@ std::expected<void, StarException> TeamClient::writePlayerData(JsonObject& reque
   if (!WarpModeNames) return std::unexpected(WarpModeNames.error());
   auto warp = WarpModeNames->getRight(mode);
   if (!warp) return std::unexpected(std::move(warp.error()));
-  request["warpMode"] = **warp;
+  request["warpMode"] = warp->get();
 
   if (fullWrite) {
     auto name = player->name();

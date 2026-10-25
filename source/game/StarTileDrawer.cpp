@@ -196,14 +196,14 @@ std::expected<bool, StarException> TileDrawer::produceTerrainDrawables(Drawables
   if ((isBlock && terrainLayer == TerrainLayer::Midground) || (!isBlock && terrainLayer == TerrainLayer::Foreground))
     return false;
 
-  auto getPieceImage = [](std::shared_ptr<MaterialRenderPiece const> const& piece, Box<float, 2> const& box, MaterialHue hue, Directives const* directives) -> AssetPath {
+  auto getPieceImage = [](std::shared_ptr<MaterialRenderPiece const> const& piece, Box<float, 2> const& box, MaterialHue hue, std::optional<std::reference_wrapper<Directives const>> directives) -> AssetPath {
     String path = (hue == 0)
       ? strf("{}?crop={};{};{};{}", piece->texture, box.xMin(), box.yMin(), box.xMax(), box.yMax())
       : strf("{}?crop={};{};{};{}?hueshift={}", piece->texture, box.xMin(), box.yMin(), box.xMax(), box.yMax(), materialHueToDegrees(hue));
 
     AssetPath image(path);
     if (directives)
-      image.directives += *directives;
+      image.directives += directives->get();
 
     return image;
   };
@@ -218,25 +218,25 @@ std::expected<bool, StarException> TileDrawer::produceTerrainDrawables(Drawables
     auto& drawList = drawables[materialZLevel(materialRenderProfile->zLevel, material, materialHue, materialColorVariant)];
 
     MaterialPieceResultList pieces;
-    auto matched = determineMatchingPieces(pieces, &occlude, materialDatabase, materialRenderProfile->mainMatchList, renderData, pos,
+    auto matched = determineMatchingPieces(pieces, std::ref(occlude), materialDatabase, materialRenderProfile->mainMatchList, renderData, pos,
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, false);
     if (!matched)
       return std::unexpected(std::move(matched.error()));
-    Directives const* directives = nullptr;
+    std::optional<std::reference_wrapper<Directives const>> directives;
     if (!materialRenderProfile->colorDirectives.empty()) {
       auto selected = materialRenderProfile->colorDirectives.wrap(materialColorVariant);
       if (!selected)
         return std::unexpected(std::move(selected.error()));
-      directives = *selected;
+      directives = selected->get();
     }
     for (auto const& piecePair : pieces) {
-      auto variant = piecePair.first->variants.ptr(materialColorVariant);
-      if (!variant) variant = piecePair.first->variants.ptr(0);
+      auto variant = piecePair.first->variants.maybeRef(materialColorVariant);
+      if (!variant) variant = piecePair.first->variants.maybeRef(0);
       if (!variant) continue;
-      auto textureCoords = variant->wrap(variance);
+      auto textureCoords = variant->get().wrap(variance);
       if (!textureCoords)
         return std::unexpected(std::move(textureCoords.error()));
-      auto image = getPieceImage(piecePair.first, **textureCoords, materialHue, directives);
+      auto image = getPieceImage(piecePair.first, textureCoords->get(), materialHue, directives);
       auto drawable = Drawable::makeImage(*imageMetadata, image, scale, false, piecePair.second * scale + Vec2F(pos), color);
       if (!drawable)
         return std::unexpected(std::move(drawable.error()));
@@ -250,25 +250,25 @@ std::expected<bool, StarException> TileDrawer::produceTerrainDrawables(Drawables
     auto& drawList = drawables[modZLevel(modRenderProfile->zLevel, mod, modHue, modColorVariant)];
 
     MaterialPieceResultList pieces;
-    auto matched = determineMatchingPieces(pieces, &occlude, materialDatabase, modRenderProfile->mainMatchList, renderData, pos,
+    auto matched = determineMatchingPieces(pieces, std::ref(occlude), materialDatabase, modRenderProfile->mainMatchList, renderData, pos,
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, true);
     if (!matched)
       return std::unexpected(std::move(matched.error()));
-    Directives const* directives = nullptr;
+    std::optional<std::reference_wrapper<Directives const>> directives;
     if (!modRenderProfile->colorDirectives.empty()) {
       auto selected = modRenderProfile->colorDirectives.wrap(modColorVariant);
       if (!selected)
         return std::unexpected(std::move(selected.error()));
-      directives = *selected;
+      directives = selected->get();
     }
     for (auto const& piecePair : pieces) {
-      auto variant = piecePair.first->variants.ptr(modColorVariant);
-      if (!variant) variant = piecePair.first->variants.ptr(0);
+      auto variant = piecePair.first->variants.maybeRef(modColorVariant);
+      if (!variant) variant = piecePair.first->variants.maybeRef(0);
       if (!variant) continue;
-      auto textureCoords = variant->wrap(variance);
+      auto textureCoords = variant->get().wrap(variance);
       if (!textureCoords)
         return std::unexpected(std::move(textureCoords.error()));
-      auto image = getPieceImage(piecePair.first, **textureCoords, modHue, directives);
+      auto image = getPieceImage(piecePair.first, textureCoords->get(), modHue, directives);
       auto drawable = Drawable::makeImage(*imageMetadata, image, scale, false, piecePair.second * scale + Vec2F(pos), color);
       if (!drawable)
         return std::unexpected(std::move(drawable.error()));
@@ -281,7 +281,7 @@ std::expected<bool, StarException> TileDrawer::produceTerrainDrawables(Drawables
     auto crackingImage = materialRenderProfile->damageImage(damageLevel, damageType);
     if (!crackingImage)
       return std::unexpected(std::move(crackingImage.error()));
-    auto drawable = Drawable::makeImage(*imageMetadata, (*crackingImage)->first, scale, false, (*crackingImage)->second * scale + Vec2F(pos), color);
+    auto drawable = Drawable::makeImage(*imageMetadata, crackingImage->get().first, scale, false, crackingImage->get().second * scale + Vec2F(pos), color);
     if (!drawable)
       return std::unexpected(std::move(drawable.error()));
     drawList.emplace_back(std::move(*drawable));
@@ -331,7 +331,7 @@ TileDrawer::QuadZLevel TileDrawer::damageZLevel() {
   return (std::uint64_t)(-1);
 }
 
-std::expected<bool, StarException> TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, std::shared_ptr<MaterialDatabase const> const& materialDb, MaterialRenderMatchList const& matchList,
+std::expected<bool, StarException> TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, std::optional<std::reference_wrapper<bool>> occlude, std::shared_ptr<MaterialDatabase const> const& materialDb, MaterialRenderMatchList const& matchList,
     WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod) {
   RenderTile const& tile = getRenderTile(renderData, basePos);
 
@@ -371,18 +371,19 @@ std::expected<bool, StarException> TileDrawer::determineMatchingPieces(MaterialP
             valid = isConnectableMaterial(neighborMaterial);
           } else if (std::holds_alternative<MaterialRule::RuleShadows>(ruleEntry.rule)) {
             valid = neighborShadowing;
-          } else if (auto equalsSelf = std::get_if<4>(&ruleEntry.rule)) {
+          } else if (ruleEntry.rule.index() == 4) {
             valid = neighborMod == baseMod;
-            if (equalsSelf->matchHue)
+            if (std::get<4>(ruleEntry.rule).matchHue)
               valid = valid && baseModHue == neighborModHue;
-          } else if (auto equalsId = std::get_if<MaterialRule::RuleEqualsId>(&ruleEntry.rule)) {
-            valid = neighborMod == equalsId->id;
-          } else if (auto propertyEquals = std::get_if<MaterialRule::RulePropertyEquals>(&ruleEntry.rule)) {
+          } else if (std::holds_alternative<MaterialRule::RuleEqualsId>(ruleEntry.rule)) {
+            valid = neighborMod == std::get<MaterialRule::RuleEqualsId>(ruleEntry.rule).id;
+          } else if (std::holds_alternative<MaterialRule::RulePropertyEquals>(ruleEntry.rule)) {
+            auto const& propertyEquals = std::get<MaterialRule::RulePropertyEquals>(ruleEntry.rule);
             if (auto profile = materialDb->modRenderProfile(neighborMod)) {
-              auto property = profile->ruleProperties.get(propertyEquals->propertyName, Json());
+              auto property = profile->ruleProperties.get(propertyEquals.propertyName, Json());
               if (!property)
                 return std::unexpected(std::move(property.error()));
-              valid = *property == propertyEquals->compare;
+              valid = *property == propertyEquals.compare;
             } else {
               valid = false;
             }
@@ -394,18 +395,19 @@ std::expected<bool, StarException> TileDrawer::determineMatchingPieces(MaterialP
             valid = isConnectableMaterial(neighborMaterial);
           } else if (std::holds_alternative<MaterialRule::RuleShadows>(ruleEntry.rule)) {
             valid = neighborShadowing;
-          } else if (auto equalsSelf = std::get_if<4>(&ruleEntry.rule)) {
+          } else if (ruleEntry.rule.index() == 4) {
             valid = neighborMaterial == baseMaterial;
-            if (equalsSelf->matchHue)
+            if (std::get<4>(ruleEntry.rule).matchHue)
               valid = valid && baseHue == neighborHue;
-          } else if (auto equalsId = std::get_if<MaterialRule::RuleEqualsId>(&ruleEntry.rule)) {
-            valid = neighborMaterial == equalsId->id;
-          } else if (auto propertyEquals = std::get_if<MaterialRule::RulePropertyEquals>(&ruleEntry.rule)) {
+          } else if (std::holds_alternative<MaterialRule::RuleEqualsId>(ruleEntry.rule)) {
+            valid = neighborMaterial == std::get<MaterialRule::RuleEqualsId>(ruleEntry.rule).id;
+          } else if (std::holds_alternative<MaterialRule::RulePropertyEquals>(ruleEntry.rule)) {
+            auto const& propertyEquals = std::get<MaterialRule::RulePropertyEquals>(ruleEntry.rule);
             if (auto profile = materialDb->materialRenderProfile(neighborMaterial)) {
-              auto property = profile->ruleProperties.get(propertyEquals->propertyName);
+              auto property = profile->ruleProperties.get(propertyEquals.propertyName);
               if (!property)
                 return std::unexpected(std::move(property.error()));
-              valid = *property == propertyEquals->compare;
+              valid = *property == propertyEquals.compare;
             } else {
               valid = false;
             }
@@ -440,8 +442,8 @@ std::expected<bool, StarException> TileDrawer::determineMatchingPieces(MaterialP
     if (!matches)
       return std::unexpected(std::move(matches.error()));
     if (*matches) {
-      if (match->occlude)
-        *occlude = *match->occlude;
+      if (match->occlude && occlude)
+        occlude->get() = *match->occlude;
 
       subMatchResult = true;
 

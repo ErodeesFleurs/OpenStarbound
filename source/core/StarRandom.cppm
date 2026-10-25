@@ -7,7 +7,7 @@ import star.byte_array;
 namespace Star {
 
 struct RandomExceptionTag {
-  static constexpr char const* name() { return "RandomException"; }
+  static constexpr std::string_view name() { return "RandomException"; }
 };
 using RandomException = StarError<RandomExceptionTag, StarException>;
 
@@ -62,14 +62,14 @@ public:
   // the time it will round to 6.
   std::int64_t stochasticRound(double val);
 
-  void randBytes(char* buf, std::size_t len);
+  void randBytes(std::span<char> bytes);
   ByteArray randBytes(std::size_t len);
 
   // Pick a random value out of a container
   template <typename Container>
-  [[nodiscard]] std::expected<typename Container::value_type const*, StarException> randFrom(Container const& container);
+  [[nodiscard]] std::expected<std::reference_wrapper<typename Container::value_type const>, StarException> randFrom(Container const& container);
   template <typename Container>
-  [[nodiscard]] std::expected<typename Container::value_type*, StarException> randFrom(Container& container);
+  [[nodiscard]] std::expected<std::reference_wrapper<typename Container::value_type>, StarException> randFrom(Container& container);
   template <typename Container>
   typename Container::value_type randValueFrom(Container const& container);
   template <typename Container>
@@ -116,13 +116,13 @@ public:
 
   std::int64_t stochasticRound(double val);
 
-  void randBytes(char* buf, std::size_t len);
+  void randBytes(std::span<char> bytes);
   ByteArray randBytes(std::size_t len);
 
   template <typename Container>
-  [[nodiscard]] std::expected<typename Container::value_type const*, StarException> randFrom(Container const& container);
+  [[nodiscard]] std::expected<std::reference_wrapper<typename Container::value_type const>, StarException> randFrom(Container const& container);
   template <typename Container>
-  [[nodiscard]] std::expected<typename Container::value_type*, StarException> randFrom(Container& container);
+  [[nodiscard]] std::expected<std::reference_wrapper<typename Container::value_type>, StarException> randFrom(Container& container);
   template <typename Container>
   typename Container::value_type randValueFrom(Container const& container);
   template <typename Container>
@@ -136,43 +136,43 @@ private:
 };
 
 template <typename Container>
-std::expected<typename Container::value_type const*, StarException> RandomSource::randFrom(Container const& container) {
+std::expected<std::reference_wrapper<typename Container::value_type const>, StarException> RandomSource::randFrom(Container const& container) {
   if (container.empty())
     return std::unexpected(RandomException("Empty container in randFrom"));
 
   auto i = container.begin();
   std::advance(i, randUInt(container.size() - 1));
-  return std::addressof(*i);
+  return std::reference_wrapper<typename Container::value_type const>(*i);
 }
 
 template <typename Container>
-std::expected<typename Container::value_type*, StarException> RandomSource::randFrom(Container& container) {
+std::expected<std::reference_wrapper<typename Container::value_type>, StarException> RandomSource::randFrom(Container& container) {
   if (container.empty())
     return std::unexpected(RandomException("Empty container in randFrom"));
 
   auto i = container.begin();
   std::advance(i, randUInt(container.size() - 1));
-  return std::addressof(*i);
+  return std::reference_wrapper<typename Container::value_type>(*i);
 }
 
 template <typename Container>
-std::expected<typename Container::value_type const*, StarException> RandomService::randFrom(Container const& container) {
+std::expected<std::reference_wrapper<typename Container::value_type const>, StarException> RandomService::randFrom(Container const& container) {
   if (container.empty())
     return std::unexpected(RandomException("Empty container in randFrom"));
 
   auto i = container.begin();
   std::advance(i, randUInt(container.size() - 1));
-  return std::addressof(*i);
+  return std::reference_wrapper<typename Container::value_type const>(*i);
 }
 
 template <typename Container>
-std::expected<typename Container::value_type*, StarException> RandomService::randFrom(Container& container) {
+std::expected<std::reference_wrapper<typename Container::value_type>, StarException> RandomService::randFrom(Container& container) {
   if (container.empty())
     return std::unexpected(RandomException("Empty container in randFrom"));
 
   auto i = container.begin();
   std::advance(i, randUInt(container.size() - 1));
-  return std::addressof(*i);
+  return std::reference_wrapper<typename Container::value_type>(*i);
 }
 
 template <typename Container>

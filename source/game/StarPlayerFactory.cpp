@@ -147,38 +147,38 @@ std::expected<std::shared_ptr<PlayerConfig>, StarException> PlayerConfig::create
     return std::unexpected(std::move(bounds.error()));
   config->metaBoundBox = *bounds;
   for (auto const& field : {
-      std::pair{"movementParameters", &config->movementParameters},
-      std::pair{"zeroGMovementParameters", &config->zeroGMovementParameters},
-      std::pair{"statusControllerSettings", &config->statusControllerSettings},
-      std::pair{"companionsConfig", &config->companionsConfig},
-      std::pair{"deploymentConfig", &config->deploymentConfig}}) {
+      std::pair{std::string_view{"movementParameters"}, std::ref(config->movementParameters)},
+      std::pair{std::string_view{"zeroGMovementParameters"}, std::ref(config->zeroGMovementParameters)},
+      std::pair{std::string_view{"statusControllerSettings"}, std::ref(config->statusControllerSettings)},
+      std::pair{std::string_view{"companionsConfig"}, std::ref(config->companionsConfig)},
+      std::pair{std::string_view{"deploymentConfig"}, std::ref(config->deploymentConfig)}}) {
     auto value = json.get(field.first);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *field.second = std::move(*value);
+    field.second.get() = std::move(*value);
   }
   for (auto const& field : {
-      std::pair{"footstepTiming", &config->footstepTiming},
-      std::pair{"underwaterMinWaterLevel", &config->underwaterMinWaterLevel},
-      std::pair{"teleportInTime", &config->teleportInTime},
-      std::pair{"teleportOutTime", &config->teleportOutTime},
-      std::pair{"deployInTime", &config->deployInTime},
-      std::pair{"deployOutTime", &config->deployOutTime}}) {
+      std::pair{std::string_view{"footstepTiming"}, std::ref(config->footstepTiming)},
+      std::pair{std::string_view{"underwaterMinWaterLevel"}, std::ref(config->underwaterMinWaterLevel)},
+      std::pair{std::string_view{"teleportInTime"}, std::ref(config->teleportInTime)},
+      std::pair{std::string_view{"teleportOutTime"}, std::ref(config->teleportOutTime)},
+      std::pair{std::string_view{"deployInTime"}, std::ref(config->deployInTime)},
+      std::pair{std::string_view{"deployOutTime"}, std::ref(config->deployOutTime)}}) {
     auto value = json.getFloat(field.first);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *field.second = *value;
+    field.second.get() = *value;
   }
   for (auto const& field : {
-      std::pair{"footstepSensor", &config->footstepSensor},
-      std::pair{"underwaterSensor", &config->underwaterSensor}}) {
+      std::pair{std::string_view{"footstepSensor"}, std::ref(config->footstepSensor)},
+      std::pair{std::string_view{"underwaterSensor"}, std::ref(config->underwaterSensor)}}) {
     auto value = json.get(field.first);
     if (!value)
       return std::unexpected(std::move(value.error()));
     auto vector = jsonToVec2F(*value);
     if (!vector)
       return std::unexpected(std::move(vector.error()));
-    *field.second = *vector;
+    field.second.get() = *vector;
   }
   auto splashConfig = json.get("splashConfig");
   if (!splashConfig)
@@ -188,12 +188,12 @@ std::expected<std::shared_ptr<PlayerConfig>, StarException> PlayerConfig::create
     return std::unexpected(std::move(splash.error()));
   config->splashConfig = std::move(*splash);
   for (auto const& field : {
-      std::pair{"effectsAnimator", &config->effectsAnimator},
-      std::pair{"bodyMaterialKind", &config->bodyMaterialKind}}) {
+      std::pair{std::string_view{"effectsAnimator"}, std::ref(config->effectsAnimator)},
+      std::pair{std::string_view{"bodyMaterialKind"}, std::ref(config->bodyMaterialKind)}}) {
     auto value = json.getString(field.first);
     if (!value)
       return std::unexpected(std::move(value.error()));
-    *field.second = std::move(*value);
+    field.second.get() = std::move(*value);
   }
   auto contextConfig = json.get("genericScriptContexts");
   if (!contextConfig)

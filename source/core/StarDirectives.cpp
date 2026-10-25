@@ -54,7 +54,7 @@ Directives::Shared::Shared() {}
 Directives::Shared::Shared(List<Entry>&& givenEntries, String&& givenString) {
   entries = std::move(givenEntries);
   string = std::move(givenString);
-  hash = string.empty() ? 0 : xxHash3(string.utf8Ptr(), string.utf8Size());
+  hash = string.empty() ? 0 : xxHash3(std::span<char const>(string.utf8()));
 }
 
 Directives::Directives() {}
@@ -67,8 +67,8 @@ Directives::Directives(String&& directives) {
   parse(std::move(directives));
 }
 
-Directives::Directives(const char* directives) {
-  parse(directives);
+Directives::Directives(std::string_view directives) {
+  parse(String(directives));
 }
 
 Directives::Directives(Directives&& directives) noexcept {
@@ -99,11 +99,11 @@ Directives& Directives::operator=(String&& s) {
   return *this;
 }
 
-Directives& Directives::operator=(const char* s) {
+Directives& Directives::operator=(std::string_view s) {
   if (m_shared && m_shared->string.utf8().compare(s) == 0)
     return *this;
 
-  parse(s);
+  parse(String(s));
   return *this;
 }
 
@@ -178,11 +178,11 @@ String Directives::string() const {
     return m_shared->string;
 }
 
-String const* Directives::stringPtr() const {
+std::optional<std::reference_wrapper<String const>> Directives::maybeString() const {
   if (!m_shared)
-    return nullptr;
+    return std::nullopt;
   else
-    return &m_shared->string;
+    return std::cref(m_shared->string);
 }
 
 
@@ -228,8 +228,8 @@ bool Directives::equals(Directives const& other) const {
 }
 
 bool Directives::equals(String const& string) const {
-  auto directiveString = stringPtr();
-  return directiveString ? string == *directiveString : string.empty();
+  auto directiveString = maybeString();
+  return directiveString ? string == directiveString->get() : string.empty();
 }
 
 bool Directives::operator==(Directives const& other) const {
@@ -248,20 +248,20 @@ bool Directives::operator!=(String const& string) const {
   return !equals(string);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, Directives& directives) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Directives& directives) {
   String string;
   auto read = ds.read(string);
   if (!read)
     return std::unexpected(std::move(read.error()));
   directives.parse(std::move(string));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream & ds, Directives const& directives) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream & ds, Directives const& directives) {
   auto written = ds.write(directives.string());
   if (!written)
     return std::unexpected(std::move(written.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 bool operator==(Directives const& d1, Directives const& d2) {
@@ -364,8 +364,8 @@ std::expected<void, StarException> DirectivesGroup::applyExistingImage(Image& im
   bool first = true;
   return forEach([&](Directives::Entry const& entry, Directives const& directives) -> std::expected<void, StarException> {
     ImageOperation const& operation = entry.loadOperation(*directives.m_shared);
-    if (auto error = std::get_if<ErrorImageOperation>(&operation))
-      return std::unexpected(error->cause);
+    if (std::holds_alternative<ErrorImageOperation>(operation))
+      return std::unexpected(std::get<ErrorImageOperation>(operation).cause);
     if (!first && entry.begin != 0 && std::holds_alternative<NullImageOperation>(operation))
       return std::unexpected(DirectivesException::format("Invalid image operation: {}", entry.string(*directives.m_shared)));
     auto processed = processImageOperation(operation, image, refCallback);
@@ -380,7 +380,7 @@ std::size_t DirectivesGroup::hash() const {
   XXHash3 hasher;
   for (auto& directives : m_directives) {
     std::size_t hash = directives.hash();
-    hasher.push((const char*)&hash, sizeof(hash));
+    hasher.push({reinterpret_cast<char const*>(&hash), sizeof(hash)});
   }
 
   return hasher.digest();
@@ -398,20 +398,20 @@ bool operator!=(DirectivesGroup const& a, DirectivesGroup const& b) {
   return !a.compare(b);
 }
 
-std::expected<DataStream*, StarException> operator>>(DataStream& ds, DirectivesGroup& directivesGroup) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, DirectivesGroup& directivesGroup) {
   String string;
   auto read = ds.read(string);
   if (!read)
     return std::unexpected(std::move(read.error()));
   directivesGroup = DirectivesGroup(std::move(string));
-  return &ds;
+  return std::ref(ds);
 }
 
-std::expected<DataStream*, StarException> operator<<(DataStream& ds, DirectivesGroup const& directivesGroup) {
+std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, DirectivesGroup const& directivesGroup) {
   auto written = ds.write(directivesGroup.toString());
   if (!written)
     return std::unexpected(std::move(written.error()));
-  return &ds;
+  return std::ref(ds);
 }
 
 std::size_t hash<DirectivesGroup>::operator()(DirectivesGroup const& s) const {

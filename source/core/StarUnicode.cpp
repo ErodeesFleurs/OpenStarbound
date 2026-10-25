@@ -116,7 +116,7 @@ std::expected<Utf32Type, StarException> hexStringToUtf32(std::string const& hex,
     return std::unexpected(UnicodeException("Codepoint size is too big in hexStringToUtf32"));
   std::uint32_t point = 0;
   for (std::size_t i = 0; i != bytes->size(); ++i)
-    point = (point << 8) | static_cast<unsigned char>(bytes->ptr()[i]);
+    point = (point << 8) | static_cast<unsigned char>(bytes->span()[i]);
   if (previous && isUtf16LeadSurrogate(*previous)) return utf32FromUtf16SurrogatePair(*previous, static_cast<Utf32Type>(point));
   return static_cast<Utf32Type>(point);
 }

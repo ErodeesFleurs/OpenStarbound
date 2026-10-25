@@ -77,7 +77,7 @@ ImageWidget::ImageWidget(GuiContext& context) : Widget(context) {
 std::expected<void, StarException> ImageWidget::renderImpl() {
   auto screenPos = screenPosition();
   for (auto const& drawable : m_drawables) {
-    auto result = context()->drawDrawable(drawable, Vec2F(screenPos) * context()->interfaceScale() + Vec2F(m_offset), context()->interfaceScale(), Vec4B::filled(255));
+    auto result = context().drawDrawable(drawable, Vec2F(screenPos) * context().interfaceScale() + Vec2F(m_offset), context().interfaceScale(), Vec4B::filled(255));
     if (!result) return std::unexpected(std::move(result.error()));
   }
   return {};
@@ -90,7 +90,7 @@ bool ImageWidget::interactive() const {
 std::expected<void, StarException> ImageWidget::setImage(String const& image) {
   if (image.empty())
     return setDrawables({});
-  auto metadata = context()->root().imageMetadataDatabase();
+  auto metadata = context().root().imageMetadataDatabase();
   if (!metadata) return std::unexpected(std::move(metadata.error()));
   auto drawable = Drawable::makeImage(**metadata, image, 1.0f, false, Vec2F());
   if (!drawable) return std::unexpected(std::move(drawable.error()));
@@ -174,7 +174,7 @@ std::expected<void, StarException> ImageWidget::transformDrawables() {
   if (m_rotation != 0)
     Drawable::rotateAll(m_drawables, m_rotation);
 
-  auto metadata = context()->root().imageMetadataDatabase();
+  auto metadata = context().root().imageMetadataDatabase();
   if (!metadata) return std::unexpected(std::move(metadata.error()));
   // Centered drawables are pre-centered around 0,0.
   if (m_centered) {

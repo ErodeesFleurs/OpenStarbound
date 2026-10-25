@@ -185,9 +185,9 @@ std::expected<bool, StarException> UniverseConnection::sendAll(unsigned timeout)
     if (std::chrono::steady_clock::now() >= deadline || !m_packetSocket->isOpen())
       return false;
 
-    auto* socket = m_packetSocket.get();
+    auto& socket = *m_packetSocket;
     locker.unlock();
-    auto waited = socket->waitForData(true, deadline);
+    auto waited = socket.waitForData(true, deadline);
     locker.lock();
     if (!waited)
       return std::unexpected(std::move(waited.error()));
@@ -228,19 +228,19 @@ std::expected<bool, StarException> UniverseConnection::receiveAny(unsigned timeo
     if (std::chrono::steady_clock::now() >= deadline || !m_packetSocket->isOpen())
       return false;
 
-    auto* socket = m_packetSocket.get();
+    auto& socket = *m_packetSocket;
     locker.unlock();
-    auto waited = socket->waitForData(false, deadline);
+    auto waited = socket.waitForData(false, deadline);
     locker.lock();
     if (!waited)
       return std::unexpected(std::move(waited.error()));
   }
 }
 
-std::expected<PacketSocket*, StarException> UniverseConnection::packetSocket() {
+std::expected<std::reference_wrapper<PacketSocket>, StarException> UniverseConnection::packetSocket() {
   if (!m_packetSocket)
     return std::unexpected(UniverseConnectionException("Connection has no packet socket"));
-  return m_packetSocket.get();
+  return std::ref(*m_packetSocket);
 }
 
 std::optional<PacketStats> UniverseConnection::incomingStats() const {
@@ -276,12 +276,12 @@ std::expected<void, StarException> UniverseConnectionServer::initialize() {
   m_workerStats.resize(m_numWorkerThreads);
   m_processingThreads.reserve(m_numWorkerThreads);
   for (std::size_t i = 0; i < m_numWorkerThreads; ++i) {
-    auto thread = Thread::invoke(strf("UniverseConnectionServer::worker_{}", i), [this, i]() -> std::expected<void, StarException> {
-      auto processed = processConnections(i);
+    auto thread = Thread::invoke(strf("UniverseConnectionServer::worker_{}", i), [&server = *this, i]() -> std::expected<void, StarException> {
+      auto processed = server.processConnections(i);
       if (!processed) {
-        std::unique_lock connectionsLocker(m_connectionsMutex, std::defer_lock);
+        std::unique_lock connectionsLocker(server.m_connectionsMutex, std::defer_lock);
         lockWithDiagnostics(connectionsLocker);
-        for (auto& p : m_connections[i]) {
+        for (auto& p : server.m_connections[i]) {
           std::lock_guard connectionLocker(p.second->mutex);
           if (p.second->packetSocket)
             p.second->packetSocket->close();
@@ -343,7 +343,7 @@ std::expected<void, StarException> UniverseConnectionServer::processConnections(
       if (!p.second->receiveQueue.empty()) {
         auto toReceive = List<std::shared_ptr<Packet>>::from(take(p.second->receiveQueue));
         connectionLocker.unlock();
-        auto received = m_packetReceiver(this, p.first, std::move(toReceive));
+        auto received = m_packetReceiver(*this, p.first, std::move(toReceive));
         if (!received) {
           connectionLocker.lock();
           if (p.second->packetSocket)

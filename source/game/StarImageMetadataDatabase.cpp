@@ -55,11 +55,11 @@ ImageMetadataDatabase::ImageMetadataDatabase(Root& root)
 
 std::expected<Vec2U, StarException> ImageMetadataDatabase::imageSize(AssetPath const& path) const {
   std::unique_lock locker(m_mutex);
-  auto cached = m_sizeCache.ptr(path);
+  auto cached = m_sizeCache.maybeRef(path);
   if (!cached)
     return std::unexpected(std::move(cached.error()));
   if (*cached)
-    return **cached;
+    return (*cached)->get();
   locker.unlock();
   auto size = calculateImageSize(path);
   if (!size)
@@ -75,23 +75,23 @@ std::expected<List<Vec2I>, StarException> ImageMetadataDatabase::imageSpaces(Ass
   SpacesEntry key = std::make_tuple(path, Vec2I::round(position), fillLimit, flip);
 
   std::unique_lock locker(m_mutex);
-  auto cached = m_spacesCache.ptr(key);
+  auto cached = m_spacesCache.maybeRef(key);
   if (!cached)
     return std::unexpected(std::move(cached.error()));
   if (*cached)
-    return **cached;
+    return (*cached)->get();
 
   auto filteredPath = filterProcessing(path);
   SpacesEntry filteredKey = std::make_tuple(filteredPath, Vec2I::round(position), fillLimit, flip);
 
-  auto filteredCached = m_spacesCache.ptr(filteredKey);
+  auto filteredCached = m_spacesCache.maybeRef(filteredKey);
   if (!filteredCached)
     return std::unexpected(std::move(filteredCached.error()));
   if (*filteredCached) {
-    auto stored = m_spacesCache.set(key, **filteredCached);
+    auto stored = m_spacesCache.set(key, (*filteredCached)->get());
     if (!stored)
       return std::unexpected(std::move(stored.error()));
-    return **filteredCached;
+    return (*filteredCached)->get();
   }
 
   locker.unlock();
@@ -154,21 +154,21 @@ std::expected<List<Vec2I>, StarException> ImageMetadataDatabase::imageSpaces(Ass
 std::expected<RectU, StarException> ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
   std::unique_lock locker(m_mutex);
   
-  auto cached = m_regionCache.ptr(path);
+  auto cached = m_regionCache.maybeRef(path);
   if (!cached)
     return std::unexpected(std::move(cached.error()));
   if (*cached)
-    return **cached;
+    return (*cached)->get();
 
   auto filteredPath = filterProcessing(path);
-  auto filteredCached = m_regionCache.ptr(filteredPath);
+  auto filteredCached = m_regionCache.maybeRef(filteredPath);
   if (!filteredCached)
     return std::unexpected(std::move(filteredCached.error()));
   if (*filteredCached) {
-    auto stored = m_regionCache.set(path, **filteredCached);
+    auto stored = m_regionCache.set(path, (*filteredCached)->get());
     if (!stored)
       return std::unexpected(std::move(stored.error()));
-    return **filteredCached;
+    return (*filteredCached)->get();
   }
 
   locker.unlock();
@@ -257,11 +257,11 @@ std::expected<Vec2U, StarException> ImageMetadataDatabase::calculateImageSize(As
       return fallback();
   } else {
     std::unique_lock locker(m_mutex);
-    auto size = m_sizeCache.ptr(path.basePath);
+    auto size = m_sizeCache.maybeRef(path.basePath);
     if (!size)
       return std::unexpected(std::move(size.error()));
     if (*size) {
-      imageSize = **size;
+      imageSize = (*size)->get();
     } else {
       locker.unlock();
       auto file = (*assets)->openFile(path.basePath);

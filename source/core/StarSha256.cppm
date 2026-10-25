@@ -18,12 +18,12 @@ class Sha256Hasher {
 public:
   Sha256Hasher();
 
-  void push(char const* data, std::size_t length);
+  void push(std::span<char const> data);
   void push(String const& data);
   void push(ByteArray const& data);
 
   // Produces 32 bytes
-  void compute(char* hashDestination);
+  void compute(std::span<char, 32> hashDestination);
   ByteArray compute();
 
 private:
@@ -32,9 +32,9 @@ private:
 };
 
 // Sha256 must, obviously, have 32 bytes available in the destination.
-void sha256(char const* source, std::size_t length, char* hashDestination);
+void sha256(std::span<char const> source, std::span<char, 32> hashDestination);
 
-ByteArray sha256(char const* source, std::size_t length);
+ByteArray sha256(std::span<char const> source);
 
 void sha256(ByteArray const& in, ByteArray& out);
 void sha256(String const& in, ByteArray& out);
@@ -149,18 +149,18 @@ static constexpr std::uint32_t shaGamma1(std::uint32_t x) noexcept {
 }
 
 // compress 512-bits
-static void sha_compress(sha_state* md) {
+static void sha_compress(sha_state& md) {
   std::uint32_t S[8], W[64], t0, t1;
   int i;
 
   /* copy state into S */
   for (i = 0; i < 8; i++)
-    S[i] = md->state[i];
+    S[i] = md.state[i];
 
   /* copy the state into 512-bits into W[0..15] */
   for (i = 0; i < 16; i++)
-    W[i] = (((std::uint32_t)md->buf[(4 * i) + 0]) << 24) | (((std::uint32_t)md->buf[(4 * i) + 1]) << 16)
-        | (((std::uint32_t)md->buf[(4 * i) + 2]) << 8) | (((std::uint32_t)md->buf[(4 * i) + 3]));
+    W[i] = (((std::uint32_t)md.buf[(4 * i) + 0]) << 24) | (((std::uint32_t)md.buf[(4 * i) + 1]) << 16)
+        | (((std::uint32_t)md.buf[(4 * i) + 2]) << 8) | (((std::uint32_t)md.buf[(4 * i) + 3]));
 
   /* fill W[16..63] */
   for (i = 16; i < 64; i++)
@@ -182,136 +182,136 @@ static void sha_compress(sha_state* md) {
 
   /* feedback */
   for (i = 0; i < 8; i++)
-    md->state[i] += S[i];
+    md.state[i] += S[i];
 }
 
 // init the SHA state
-static void sha_init(sha_state* md) {
-  md->curlen = md->length = 0;
-  md->state[0] = 0x6A09E667U;
-  md->state[1] = 0xBB67AE85U;
-  md->state[2] = 0x3C6EF372U;
-  md->state[3] = 0xA54FF53AU;
-  md->state[4] = 0x510E527FU;
-  md->state[5] = 0x9B05688CU;
-  md->state[6] = 0x1F83D9ABU;
-  md->state[7] = 0x5BE0CD19U;
+static void sha_init(sha_state& md) {
+  md.curlen = md.length = 0;
+  md.state[0] = 0x6A09E667U;
+  md.state[1] = 0xBB67AE85U;
+  md.state[2] = 0x3C6EF372U;
+  md.state[3] = 0xA54FF53AU;
+  md.state[4] = 0x510E527FU;
+  md.state[5] = 0x9B05688CU;
+  md.state[6] = 0x1F83D9ABU;
+  md.state[7] = 0x5BE0CD19U;
 }
 
-static void sha_process(sha_state* md, std::uint8_t* buf, int len) {
+static void sha_process(sha_state& md, std::uint8_t const* buf, int len) {
   while (len--) {
     /* copy byte */
-    md->buf[md->curlen++] = *buf++;
+    md.buf[md.curlen++] = *buf++;
 
     /* is 64 bytes full? */
-    if (md->curlen == 64) {
+    if (md.curlen == 64) {
       sha_compress(md);
-      md->length += 512;
-      md->curlen = 0;
+      md.length += 512;
+      md.curlen = 0;
     }
   }
 }
 
-static void sha_done(sha_state* md, std::uint8_t* hash) {
+static void sha_done(sha_state& md, std::uint8_t* hash) {
   int i;
 
   /* increase the length of the message */
-  md->length += md->curlen * 8;
+  md.length += md.curlen * 8;
 
   /* append the '1' bit */
-  md->buf[md->curlen++] = 0x80;
+  md.buf[md.curlen++] = 0x80;
 
   /* if the length is currently above 56 bytes we append zeros then compress.
     Then we can fall back to padding zeros and length encoding like normal. */
 
-  if (md->curlen > 56) {
-    for (; md->curlen < 64;)
-      md->buf[md->curlen++] = 0;
+  if (md.curlen > 56) {
+    for (; md.curlen < 64;)
+      md.buf[md.curlen++] = 0;
     sha_compress(md);
-    md->curlen = 0;
+    md.curlen = 0;
   }
 
   /* pad upto 56 bytes of zeroes */
-  for (; md->curlen < 56;)
-    md->buf[md->curlen++] = 0;
+  for (; md.curlen < 56;)
+    md.buf[md.curlen++] = 0;
 
   /* since all messages are under 2^32 bits we mark the top bits zero */
   for (i = 56; i < 60; i++)
-    md->buf[i] = 0;
+    md.buf[i] = 0;
 
   /* append length */
   for (i = 60; i < 64; i++)
-    md->buf[i] = (md->length >> ((63 - i) * 8)) & 255;
+    md.buf[i] = (md.length >> ((63 - i) * 8)) & 255;
   sha_compress(md);
 
   /* copy output */
   for (i = 0; i < 32; i++)
-    hash[i] = (md->state[i >> 2] >> (((3 - i) & 3) << 3)) & 255;
+    hash[i] = (md.state[i >> 2] >> (((3 - i) & 3) << 3)) & 255;
 }
 
 Sha256Hasher::Sha256Hasher() {
   m_finished = false;
-  sha_init(&m_state);
+  sha_init(m_state);
 }
 
-void Sha256Hasher::push(char const* data, std::size_t length) {
+void Sha256Hasher::push(std::span<char const> data) {
   if (m_finished) {
-    sha_init(&m_state);
+    sha_init(m_state);
     m_finished = false;
   }
 
-  sha_process(&m_state, (std::uint8_t*)data, length);
+  sha_process(m_state, reinterpret_cast<std::uint8_t const*>(data.data()), data.size());
 }
 
 void Sha256Hasher::push(String const& data) {
-  push(data.utf8Ptr(), data.utf8Size());
+  push(std::span<char const>(data.utf8()));
 }
 
 void Sha256Hasher::push(ByteArray const& data) {
-  push(data.ptr(), data.size());
+  push(data.span());
 }
 
 ByteArray Sha256Hasher::compute() {
   ByteArray dest(32, 0);
-  sha_done(&m_state, (std::uint8_t*)dest.ptr());
+  sha_done(m_state, reinterpret_cast<std::uint8_t*>(dest.span().data()));
   m_finished = true;
   return dest;
 }
 
-void Sha256Hasher::compute(char* hashDestination) {
-  sha_done(&m_state, (std::uint8_t*)hashDestination);
+void Sha256Hasher::compute(std::span<char, 32> hashDestination) {
+  sha_done(m_state, reinterpret_cast<std::uint8_t*>(hashDestination.data()));
   m_finished = true;
 }
 
-void sha256(char const* source, std::size_t length, char* hashDestination) {
+void sha256(std::span<char const> source, std::span<char, 32> hashDestination) {
   sha_state state;
-  sha_init(&state);
-  sha_process(&state, (std::uint8_t*)source, length);
-  sha_done(&state, (std::uint8_t*)hashDestination);
+  sha_init(state);
+  sha_process(state, reinterpret_cast<std::uint8_t const*>(source.data()), source.size());
+  sha_done(state, reinterpret_cast<std::uint8_t*>(hashDestination.data()));
 }
 
-ByteArray sha256(char const* source, std::size_t length) {
+ByteArray sha256(std::span<char const> source) {
   ByteArray dest(32, 0);
-  sha256(source, length, dest.ptr());
+  sha256(source, dest.span().first<32>());
   return dest;
 }
 
 void sha256(ByteArray const& in, ByteArray& out) {
   out.resize(32, 0);
-  sha256(in.ptr(), in.size(), out.ptr());
+  sha256(in.span(), out.span().first<32>());
 }
 
 void sha256(String const& in, ByteArray& out) {
   out.resize(32, 0);
-  sha256(in.utf8Ptr(), in.utf8Size(), out.ptr());
+  sha256(std::span<char const>(in.utf8()), out.span().first<32>());
 }
 
 ByteArray sha256(ByteArray const& in) {
-  return sha256(in.ptr(), in.size());
+  return sha256(in.span());
 }
 
 ByteArray sha256(String const& in) {
-  return sha256(in.utf8Ptr(), in.utf8Size());
+  return sha256(std::span<char const>(in.utf8()));
 }
 
 }

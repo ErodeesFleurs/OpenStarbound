@@ -15,7 +15,7 @@ import star.thread;
 namespace Star {
 
 struct LightmapExceptionTag {
-  static constexpr char const* name() { return "LightmapException"; }
+  static constexpr std::string_view name() { return "LightmapException"; }
 };
 using LightmapException = StarError<LightmapExceptionTag, StarException>;
 
@@ -41,7 +41,8 @@ public:
   Vec2U size() const;
   unsigned width() const;
   unsigned height() const;
-  float* data();
+  std::span<float> data();
+  std::span<float const> data() const;
 
 private:
   std::size_t len() const;
@@ -54,36 +55,36 @@ private:
 inline std::expected<void, StarException> Lightmap::set(unsigned x, unsigned y, float v) {
   if (x >= m_width || y >= m_height)
     return std::unexpected(LightmapException(strf("[{}, {}] out of range in Lightmap::set", x, y)));
-  float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
-  ptr[0] = ptr[1] = ptr[2] = v;
+  auto pixels = data().subspan(y * m_width * 3 + x * 3, 3);
+  pixels[0] = pixels[1] = pixels[2] = v;
   return {};
 }
 
 inline std::expected<void, StarException> Lightmap::set(unsigned x, unsigned y, Vec3F const& v) {
   if (x >= m_width || y >= m_height)
     return std::unexpected(LightmapException(strf("[{}, {}] out of range in Lightmap::set", x, y)));
-  float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
-  ptr[0] = v.x();
-  ptr[1] = v.y();
-  ptr[2] = v.z();
+  auto pixels = data().subspan(y * m_width * 3 + x * 3, 3);
+  pixels[0] = v.x();
+  pixels[1] = v.y();
+  pixels[2] = v.z();
   return {};
 }
 
 inline std::expected<void, StarException> Lightmap::add(unsigned x, unsigned y, Vec3F const& v) {
   if (x >= m_width || y >= m_height)
     return std::unexpected(LightmapException(strf("[{}, {}] out of range in Lightmap::add", x, y)));
-  float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
-  ptr[0] += v.x();
-  ptr[1] += v.y();
-  ptr[2] += v.z();
+  auto pixels = data().subspan(y * m_width * 3 + x * 3, 3);
+  pixels[0] += v.x();
+  pixels[1] += v.y();
+  pixels[2] += v.z();
   return {};
 }
 
 inline std::expected<Vec3F, StarException> Lightmap::get(unsigned x, unsigned y) const {
   if (x >= m_width || y >= m_height)
     return std::unexpected(LightmapException(strf("[{}, {}] out of range in Lightmap::get", x, y)));
-  float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
-  return Vec3F(ptr[0], ptr[1], ptr[2]);
+  auto pixels = data().subspan(y * m_width * 3 + x * 3, 3);
+  return Vec3F(pixels[0], pixels[1], pixels[2]);
 }
 
 
@@ -103,8 +104,12 @@ inline unsigned Lightmap::height() const {
   return m_height;
 }
 
-inline float* Lightmap::data() {
-  return m_data.get();
+inline std::span<float> Lightmap::data() {
+  return {m_data.get(), len()};
+}
+
+inline std::span<float const> Lightmap::data() const {
+  return {m_data.get(), len()};
 }
 
 inline std::size_t Lightmap::len() const {
@@ -170,7 +175,7 @@ public:
   RectI calculationRegion() const;
 
   void setCell(Vec2I const& position, Cell const& cell);
-  void setCellColumn(Vec2I const& position, Cell const* cells, std::size_t count);
+  void setCellColumn(Vec2I const& position, std::span<Cell const> cells);
 
   void addSpreadLight(Vec2F const& position, float light);
   void addPointLight(Vec2F const& position, float light, float beam, float beamAngle, float beamAmbience);
@@ -190,9 +195,9 @@ inline std::size_t CellularLightingCalculator::baseIndexFor(Vec2I const& positio
 
 inline void CellularLightingCalculator::setCellIndex(std::size_t cellIndex, Vec3F const& light, bool obstacle) {
   if (m_monochrome)
-    m_lightArray.rightPtr()->cellAtIndex(cellIndex) = ScalarCellularLightArray::Cell{light.sum() / 3, obstacle};
+    m_lightArray.rightRef().cellAtIndex(cellIndex) = ScalarCellularLightArray::Cell{light.sum() / 3, obstacle};
   else
-    m_lightArray.leftPtr()->cellAtIndex(cellIndex) = ColoredCellularLightArray::Cell{light, obstacle};
+    m_lightArray.leftRef().cellAtIndex(cellIndex) = ColoredCellularLightArray::Cell{light, obstacle};
 }
 
 }

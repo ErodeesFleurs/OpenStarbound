@@ -30,7 +30,7 @@ public:
   explicit LuaScriptMovement(LuaBaseComponent& host) : m_host(host) {}
   LuaScriptMovement(LuaScriptMovement const&) = delete;
   LuaScriptMovement& operator=(LuaScriptMovement const&) = delete;
-  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController* controller);
+  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController& controller);
   [[nodiscard]] std::expected<void, StarException> removeActorMovementCallbacks();
   bool autoClearControls() const;
   void setAutoClearControls(bool enabled);
@@ -42,7 +42,7 @@ public:
 private:
   LuaBaseComponent& m_host;
   void clearControls();
-  ActorMovementController* m_movementController = nullptr;
+  std::optional<std::reference_wrapper<ActorMovementController>> m_movementController;
   bool m_autoClearControls = true;
   float m_controlRotation = 0.0f;
   Vec2F m_controlAcceleration;
@@ -63,151 +63,149 @@ private:
   std::optional<std::pair<Vec2F, bool>> m_pathMoveResult;
 };
 
-[[nodiscard]] inline std::expected<void, StarException> LuaScriptMovement::addActorMovementCallbacks(ActorMovementController* controller) {
-  if (!controller)
-    return removeActorMovementCallbacks();
+[[nodiscard]] inline std::expected<void, StarException> LuaScriptMovement::addActorMovementCallbacks(ActorMovementController& controller) {
   auto built = LuaBindings::makeMovementControllerCallbacks(controller);
   if (!built)
     return std::unexpected(std::move(built.error()));
   auto callbacks = std::move(*built);
   callbacks.removeCallback("setVelocity");
-  if (auto result = callbacks.registerCallback("setVelocity", [this](Vec2F const& velocity) {
-    m_resetPathMove = true;
-    m_movementController->setVelocity(velocity);
+  if (auto result = callbacks.registerCallback("setVelocity", [&self = *this](Vec2F const& velocity) {
+    self.m_resetPathMove = true;
+    self.m_movementController->get().setVelocity(velocity);
   }); !result)
     return std::unexpected(std::move(result.error()));
   callbacks.removeCallback("setXVelocity");
-  if (auto result = callbacks.registerCallback("setXVelocity", [this](float velocity) {
-    m_resetPathMove = true;
-    m_movementController->setXVelocity(velocity);
+  if (auto result = callbacks.registerCallback("setXVelocity", [&self = *this](float velocity) {
+    self.m_resetPathMove = true;
+    self.m_movementController->get().setXVelocity(velocity);
   }); !result)
     return std::unexpected(std::move(result.error()));
   callbacks.removeCallback("setYVelocity");
-  if (auto result = callbacks.registerCallback("setYVelocity", [this](float velocity) {
-    m_resetPathMove = true;
-    m_movementController->setYVelocity(velocity);
+  if (auto result = callbacks.registerCallback("setYVelocity", [&self = *this](float velocity) {
+    self.m_resetPathMove = true;
+    self.m_movementController->get().setYVelocity(velocity);
   }); !result)
     return std::unexpected(std::move(result.error()));
   callbacks.removeCallback("addMomentum");
-  if (auto result = callbacks.registerCallback("addMomentum", [this](Vec2F const& momentum) {
-    m_resetPathMove = true;
-    m_movementController->addMomentum(momentum);
+  if (auto result = callbacks.registerCallback("addMomentum", [&self = *this](Vec2F const& momentum) {
+    self.m_resetPathMove = true;
+    self.m_movementController->get().addMomentum(momentum);
   }); !result)
     return std::unexpected(std::move(result.error()));
   callbacks.removeCallback("setRotation");
-  if (auto result = callbacks.registerCallback("setRotation", [this](float rotation) {
-    m_resetPathMove = true;
-    m_movementController->setRotation(rotation);
+  if (auto result = callbacks.registerCallback("setRotation", [&self = *this](float rotation) {
+    self.m_resetPathMove = true;
+    self.m_movementController->get().setRotation(rotation);
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("setAnchorState", [this](EntityId entity, std::size_t position) {
-    return m_movementController->setAnchorState({entity, position});
+  if (auto result = callbacks.registerCallback("setAnchorState", [&self = *this](EntityId entity, std::size_t position) {
+    return self.m_movementController->get().setAnchorState({entity, position});
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("resetAnchorState", [this]() { return m_movementController->resetAnchorState(); }); !result)
+  if (auto result = callbacks.registerCallback("resetAnchorState", [&self = *this]() { return self.m_movementController->get().resetAnchorState(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("anchorState", [this]() {
-    if (auto state = m_movementController->anchorState())
+  if (auto result = callbacks.registerCallback("anchorState", [&self = *this]() {
+    if (auto state = self.m_movementController->get().anchorState())
       return LuaVariadic<LuaValue>{LuaInt(state->entityId), LuaInt(state->positionIndex)};
     return LuaVariadic<LuaValue>{};
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("baseParameters", [this]() { return m_movementController->baseParameters(); }); !result)
+  if (auto result = callbacks.registerCallback("baseParameters", [&self = *this]() { return self.m_movementController->get().baseParameters(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("walking", [this]() { return m_movementController->walking(); }); !result)
+  if (auto result = callbacks.registerCallback("walking", [&self = *this]() { return self.m_movementController->get().walking(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("running", [this]() { return m_movementController->running(); }); !result)
+  if (auto result = callbacks.registerCallback("running", [&self = *this]() { return self.m_movementController->get().running(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("movingDirection", [this]() { return numericalDirection(m_movementController->movingDirection()); }); !result)
+  if (auto result = callbacks.registerCallback("movingDirection", [&self = *this]() { return numericalDirection(self.m_movementController->get().movingDirection()); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("facingDirection", [this]() { return numericalDirection(m_movementController->facingDirection()); }); !result)
+  if (auto result = callbacks.registerCallback("facingDirection", [&self = *this]() { return numericalDirection(self.m_movementController->get().facingDirection()); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("crouching", [this]() { return m_movementController->crouching(); }); !result)
+  if (auto result = callbacks.registerCallback("crouching", [&self = *this]() { return self.m_movementController->get().crouching(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("flying", [this]() { return m_movementController->flying(); }); !result)
+  if (auto result = callbacks.registerCallback("flying", [&self = *this]() { return self.m_movementController->get().flying(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("falling", [this]() { return m_movementController->falling(); }); !result)
+  if (auto result = callbacks.registerCallback("falling", [&self = *this]() { return self.m_movementController->get().falling(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("canJump", [this]() { return m_movementController->canJump(); }); !result)
+  if (auto result = callbacks.registerCallback("canJump", [&self = *this]() { return self.m_movementController->get().canJump(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("jumping", [this]() { return m_movementController->jumping(); }); !result)
+  if (auto result = callbacks.registerCallback("jumping", [&self = *this]() { return self.m_movementController->get().jumping(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("groundMovement", [this]() { return m_movementController->groundMovement(); }); !result)
+  if (auto result = callbacks.registerCallback("groundMovement", [&self = *this]() { return self.m_movementController->get().groundMovement(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("liquidMovement", [this]() { return m_movementController->liquidMovement(); }); !result)
+  if (auto result = callbacks.registerCallback("liquidMovement", [&self = *this]() { return self.m_movementController->get().liquidMovement(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlRotation", [this](float rotation) { m_controlRotation += rotation; }); !result)
+  if (auto result = callbacks.registerCallback("controlRotation", [&self = *this](float rotation) { self.m_controlRotation += rotation; }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlAcceleration", [this](Vec2F const& acceleration) { m_controlAcceleration += acceleration; }); !result)
+  if (auto result = callbacks.registerCallback("controlAcceleration", [&self = *this](Vec2F const& acceleration) { self.m_controlAcceleration += acceleration; }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlForce", [this](Vec2F const& force) { m_controlForce += force; }); !result)
+  if (auto result = callbacks.registerCallback("controlForce", [&self = *this](Vec2F const& force) { self.m_controlForce += force; }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlApproachVelocity", [this](Vec2F const& velocity, float force) {
-    m_controlApproachVelocity.emplace(velocity, force);
+  if (auto result = callbacks.registerCallback("controlApproachVelocity", [&self = *this](Vec2F const& velocity, float force) {
+    self.m_controlApproachVelocity.emplace(velocity, force);
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlApproachVelocityAlongAngle", [this](float angle, float velocity, float force, bool positive) {
-    m_controlApproachVelocityAlongAngle.emplace(angle, velocity, force, positive);
+  if (auto result = callbacks.registerCallback("controlApproachVelocityAlongAngle", [&self = *this](float angle, float velocity, float force, bool positive) {
+    self.m_controlApproachVelocityAlongAngle.emplace(angle, velocity, force, positive);
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlApproachXVelocity", [this](float velocity, float force) {
-    m_controlApproachVelocityAlongAngle.emplace(0.0f, velocity, force, false);
+  if (auto result = callbacks.registerCallback("controlApproachXVelocity", [&self = *this](float velocity, float force) {
+    self.m_controlApproachVelocityAlongAngle.emplace(0.0f, velocity, force, false);
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlApproachYVelocity", [this](float velocity, float force) {
-    m_controlApproachVelocityAlongAngle.emplace(std::numbers::pi / 2.0f, velocity, force, false);
+  if (auto result = callbacks.registerCallback("controlApproachYVelocity", [&self = *this](float velocity, float force) {
+    self.m_controlApproachVelocityAlongAngle.emplace(std::numbers::pi / 2.0f, velocity, force, false);
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlParameters", [this](ActorMovementParameters const& parameters) {
-    m_controlParameters = m_controlParameters.value_or(ActorMovementParameters{}).merge(parameters);
+  if (auto result = callbacks.registerCallback("controlParameters", [&self = *this](ActorMovementParameters const& parameters) {
+    self.m_controlParameters = self.m_controlParameters.value_or(ActorMovementParameters{}).merge(parameters);
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlModifiers", [this](ActorMovementModifiers const& modifiers) {
-    m_controlModifiers = m_controlModifiers.value_or(ActorMovementModifiers{}).combine(modifiers);
+  if (auto result = callbacks.registerCallback("controlModifiers", [&self = *this](ActorMovementModifiers const& modifiers) {
+    self.m_controlModifiers = self.m_controlModifiers.value_or(ActorMovementModifiers{}).combine(modifiers);
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlMove", [this](std::optional<float> const& direction, std::optional<bool> const& run) {
+  if (auto result = callbacks.registerCallback("controlMove", [&self = *this](std::optional<float> const& direction, std::optional<bool> const& run) {
     if (auto value = directionOf(direction.value_or(float{})))
-      m_controlMove.emplace(*value, run.value_or(true));
+      self.m_controlMove.emplace(*value, run.value_or(true));
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlFace", [this](std::optional<float> const& direction) {
+  if (auto result = callbacks.registerCallback("controlFace", [&self = *this](std::optional<float> const& direction) {
     if (auto value = directionOf(direction.value_or(float{})))
-      m_controlFace = *value;
+      self.m_controlFace = *value;
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlDown", [this]() { m_controlDown = true; }); !result)
+  if (auto result = callbacks.registerCallback("controlDown", [&self = *this]() { self.m_controlDown = true; }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlCrouch", [this]() { m_controlCrouch = true; }); !result)
+  if (auto result = callbacks.registerCallback("controlCrouch", [&self = *this]() { self.m_controlCrouch = true; }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlJump", [this](bool jump) { m_controlJump = jump; }); !result)
+  if (auto result = callbacks.registerCallback("controlJump", [&self = *this](bool jump) { self.m_controlJump = jump; }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlHoldJump", [this]() { m_controlHoldJump = true; }); !result)
+  if (auto result = callbacks.registerCallback("controlHoldJump", [&self = *this]() { self.m_controlHoldJump = true; }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlFly", [this](Vec2F const& velocity) { m_controlFly = velocity; }); !result)
+  if (auto result = callbacks.registerCallback("controlFly", [&self = *this](Vec2F const& velocity) { self.m_controlFly = velocity; }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("controlPathMove", [this](Vec2F const& position, std::optional<bool> run, std::optional<PlatformerAStar::Parameters> parameters) -> std::expected<std::optional<bool>, StarException> {
-    if (m_pathMoveResult && m_pathMoveResult->first == position)
-      return std::exchange(m_pathMoveResult, std::nullopt).transform([](auto const& result) { return result.second; });
-    m_pathMoveResult.reset();
-    auto result = m_movementController->pathMove(position, run.value_or(false), parameters);
+  if (auto result = callbacks.registerCallback("controlPathMove", [&self = *this](Vec2F const& position, std::optional<bool> run, std::optional<PlatformerAStar::Parameters> parameters) -> std::expected<std::optional<bool>, StarException> {
+    if (self.m_pathMoveResult && self.m_pathMoveResult->first == position)
+      return std::exchange(self.m_pathMoveResult, std::nullopt).transform([](auto const& result) { return result.second; });
+    self.m_pathMoveResult.reset();
+    auto result = self.m_movementController->get().pathMove(position, run.value_or(false), parameters);
     if (!result)
       return std::unexpected(std::move(result.error()));
     if (!*result)
-      m_controlPathMove = std::pair<Vec2F, bool>(position, run.value_or(false));
+      self.m_controlPathMove = std::pair<Vec2F, bool>(position, run.value_or(false));
     return result->transform([](auto const& value) { return value.second; });
   }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallback("pathfinding", [this]() { return m_movementController->pathfinding(); }); !result)
+  if (auto result = callbacks.registerCallback("pathfinding", [&self = *this]() { return self.m_movementController->get().pathfinding(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<bool>("autoClearControls", std::bind_front(&LuaScriptMovement::autoClearControls, this)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<bool>("autoClearControls", std::bind_front(&LuaScriptMovement::autoClearControls, std::ref(*this))); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", std::bind_front(&LuaScriptMovement::setAutoClearControls, this)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", std::bind_front(&LuaScriptMovement::setAutoClearControls, std::ref(*this))); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<void>("clearControls", std::bind_front(&LuaScriptMovement::clearControls, this)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<void>("clearControls", std::bind_front(&LuaScriptMovement::clearControls, std::ref(*this))); !result)
     return std::unexpected(std::move(result.error()));
   auto previous = m_movementController;
-  m_movementController = controller;
+  m_movementController = std::ref(controller);
   if (auto added = m_host.addCallbacks("mcontroller", std::move(callbacks)); !added) {
     m_movementController = previous;
     return std::unexpected(std::move(added.error()));
@@ -219,7 +217,7 @@ private:
   auto removed = m_host.removeCallbacks("mcontroller");
   if (!removed)
     return std::unexpected(std::move(removed.error()));
-  m_movementController = nullptr;
+  m_movementController.reset();
   return {};
 }
 
@@ -230,35 +228,35 @@ inline void LuaScriptMovement::setAutoClearControls(bool enabled) { m_autoClearC
 [[nodiscard]] inline std::expected<void, StarException> LuaScriptMovement::performControls() {
   if (!m_movementController)
     return {};
-  m_movementController->controlRotation(m_controlRotation);
-  m_movementController->controlAcceleration(m_controlAcceleration);
-  m_movementController->controlForce(m_controlForce);
+  m_movementController->get().controlRotation(m_controlRotation);
+  m_movementController->get().controlAcceleration(m_controlAcceleration);
+  m_movementController->get().controlForce(m_controlForce);
   if (m_controlApproachVelocity)
-    std::apply(std::bind_front(&ActorMovementController::controlApproachVelocity, m_movementController), *m_controlApproachVelocity);
+    std::apply(std::bind_front(&ActorMovementController::controlApproachVelocity, *m_movementController), *m_controlApproachVelocity);
   if (m_controlApproachVelocityAlongAngle)
-    std::apply(std::bind_front(&ActorMovementController::controlApproachVelocityAlongAngle, m_movementController), *m_controlApproachVelocityAlongAngle);
+    std::apply(std::bind_front(&ActorMovementController::controlApproachVelocityAlongAngle, *m_movementController), *m_controlApproachVelocityAlongAngle);
   if (m_controlParameters)
-    m_movementController->controlParameters(*m_controlParameters);
+    m_movementController->get().controlParameters(*m_controlParameters);
   if (m_controlModifiers)
-    m_movementController->controlModifiers(*m_controlModifiers);
+    m_movementController->get().controlModifiers(*m_controlModifiers);
   if (m_controlMove)
-    std::apply(std::bind_front(&ActorMovementController::controlMove, m_movementController), *m_controlMove);
+    std::apply(std::bind_front(&ActorMovementController::controlMove, *m_movementController), *m_controlMove);
   if (m_controlFace)
-    m_movementController->controlFace(*m_controlFace);
+    m_movementController->get().controlFace(*m_controlFace);
   if (m_controlDown)
-    m_movementController->controlDown();
+    m_movementController->get().controlDown();
   if (m_controlCrouch)
-    m_movementController->controlCrouch();
+    m_movementController->get().controlCrouch();
   if (m_controlJump)
-    m_movementController->controlJump(*m_controlJump);
-  if (m_controlHoldJump && !m_movementController->onGround())
-    m_movementController->controlJump();
+    m_movementController->get().controlJump(*m_controlJump);
+  if (m_controlHoldJump && !m_movementController->get().onGround())
+    m_movementController->get().controlJump();
   if (m_controlFly)
-    m_movementController->controlFly(*m_controlFly);
+    m_movementController->get().controlFly(*m_controlFly);
   if (m_resetPathMove)
     m_controlPathMove.reset();
   if (m_controlPathMove && !m_pathMoveResult) {
-    auto result = m_movementController->controlPathMove(m_controlPathMove->first, m_controlPathMove->second);
+    auto result = m_movementController->get().controlPathMove(m_controlPathMove->first, m_controlPathMove->second);
     if (!result)
       return std::unexpected(std::move(result.error()));
     m_pathMoveResult = std::move(*result);
@@ -292,7 +290,7 @@ class LuaActorScript final : public LuaBaseComponent {
 public:
   explicit LuaActorScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_storage(*this), m_messages(*this), m_movement(*this) {}
   ~LuaActorScript() override { m_update.destroy(); }
-  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> init(World& world) { return m_world.init(world); }
   [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
   unsigned updateDelta() const { return m_update.updateDelta(); }
   float updateDt(float dt) const { return m_update.updateDt(dt); }
@@ -319,7 +317,7 @@ public:
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleMessage(String const& message, bool localMessage, JsonArray const& args = {}) {
     return m_messages.handleMessage(message, localMessage, args);
   }
-  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController* controller) { return m_movement.addActorMovementCallbacks(controller); }
+  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController& controller) { return m_movement.addActorMovementCallbacks(controller); }
   [[nodiscard]] std::expected<void, StarException> removeActorMovementCallbacks() { return m_movement.removeActorMovementCallbacks(); }
   bool autoClearControls() const { return m_movement.autoClearControls(); }
   void setAutoClearControls(bool enabled) { m_movement.setAutoClearControls(enabled); }
@@ -365,7 +363,7 @@ class LuaActionScript final : public LuaBaseComponent {
 public:
   explicit LuaActionScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_storage(*this), m_messages(*this), m_movement(*this) {}
   ~LuaActionScript() override { m_update.destroy(); }
-  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> init(World& world) { return m_world.init(world); }
   [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
   unsigned updateDelta() const { return m_update.updateDelta(); }
   float updateDt(float dt) const { return m_update.updateDt(dt); }
@@ -392,7 +390,7 @@ public:
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleMessage(String const& message, bool localMessage, JsonArray const& args = {}) {
     return m_messages.handleMessage(message, localMessage, args);
   }
-  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController* controller) { return m_movement.addActorMovementCallbacks(controller); }
+  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController& controller) { return m_movement.addActorMovementCallbacks(controller); }
   [[nodiscard]] std::expected<void, StarException> removeActorMovementCallbacks() { return m_movement.removeActorMovementCallbacks(); }
   bool autoClearControls() const { return m_movement.autoClearControls(); }
   void setAutoClearControls(bool enabled) { m_movement.setAutoClearControls(enabled); }
@@ -437,7 +435,7 @@ class LuaStatusScript final : public LuaBaseComponent {
 public:
   explicit LuaStatusScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_messages(*this), m_movement(*this) {}
   ~LuaStatusScript() override { m_update.destroy(); }
-  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> init(World& world) { return m_world.init(world); }
   [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
   unsigned updateDelta() const { return m_update.updateDelta(); }
   float updateDt(float dt) const { return m_update.updateDt(dt); }
@@ -462,7 +460,7 @@ public:
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleMessage(String const& message, bool localMessage, JsonArray const& args = {}) {
     return m_messages.handleMessage(message, localMessage, args);
   }
-  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController* controller) { return m_movement.addActorMovementCallbacks(controller); }
+  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController& controller) { return m_movement.addActorMovementCallbacks(controller); }
   [[nodiscard]] std::expected<void, StarException> removeActorMovementCallbacks() { return m_movement.removeActorMovementCallbacks(); }
   bool autoClearControls() const { return m_movement.autoClearControls(); }
   void setAutoClearControls(bool enabled) { m_movement.setAutoClearControls(enabled); }

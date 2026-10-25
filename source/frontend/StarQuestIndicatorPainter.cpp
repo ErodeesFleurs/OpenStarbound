@@ -158,7 +158,7 @@ import star.quest_manager;
 namespace Star {
 
 QuestIndicatorPainter::QuestIndicatorPainter(GuiContext& context, std::shared_ptr<UniverseClient> const& client)
-  : m_guiContext(&context) {
+  : m_guiContext(context) {
   m_client = client;
 }
 
@@ -193,19 +193,19 @@ std::expected<void, StarException> QuestIndicatorPainter::update(float dt, std::
     foundIndicators.insert(entity->entityId());
     Vec2F screenPos = camera.worldToScreen(indicator.worldPosition);
 
-    if (auto currentIndicator = m_indicators.ptr(entity->entityId())) {
-      currentIndicator->screenPos = screenPos;
-      if (currentIndicator->indicatorName == indicator.indicatorImage) {
-        currentIndicator->animation->update(dt);
+    if (auto currentIndicator = m_indicators.maybeRef(entity->entityId())) {
+      currentIndicator->get().screenPos = screenPos;
+      if (currentIndicator->get().indicatorName == indicator.indicatorImage) {
+        currentIndicator->get().animation->update(dt);
       } else {
-        auto animation = indicatorAnimation(m_guiContext->root(), indicator.indicatorImage);
+        auto animation = indicatorAnimation(m_guiContext.get().root(), indicator.indicatorImage);
         if (!animation)
           return std::unexpected(std::move(animation.error()));
-        currentIndicator->indicatorName = indicator.indicatorImage;
-        currentIndicator->animation = std::move(*animation);
+        currentIndicator->get().indicatorName = indicator.indicatorImage;
+        currentIndicator->get().animation = std::move(*animation);
       }
     } else {
-      auto animation = indicatorAnimation(m_guiContext->root(), indicator.indicatorImage);
+      auto animation = indicatorAnimation(m_guiContext.get().root(), indicator.indicatorImage);
       if (!animation)
         return std::unexpected(std::move(animation.error()));
       m_indicators[entity->entityId()] = Indicator{
@@ -227,7 +227,7 @@ std::expected<Drawable, StarException> QuestIndicatorPainter::Indicator::render(
 }
 
 std::expected<void, StarException> QuestIndicatorPainter::render() {
-  auto& context = *m_guiContext;
+  auto& context = m_guiContext.get();
 
   for (auto const& indicator : m_indicators | std::views::values) {
     auto drawable = indicator.render(m_camera.pixelRatio());

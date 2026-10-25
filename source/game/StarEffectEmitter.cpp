@@ -49,7 +49,7 @@ namespace Star {
 
 std::expected<std::shared_ptr<EffectEmitter>, StarException> EffectEmitter::create(Root& root) {
   auto emitter = std::shared_ptr<EffectEmitter>(new EffectEmitter(root));
-  auto registered = emitter->addNetElement(&emitter->m_activeSources);
+  auto registered = emitter->addNetElement(emitter->m_activeSources);
   if (!registered)
     return std::unexpected(std::move(registered.error()));
   return emitter;
@@ -119,7 +119,7 @@ void EffectEmitter::reset() {
   m_activeSources.set({});
 }
 
-std::expected<void, StarException> EffectEmitter::render(RenderCallback* renderCallback) {
+std::expected<void, StarException> EffectEmitter::render(RenderCallback& renderCallback) {
   m_renders = true;
   if (m_sources.empty())
     return {};
@@ -145,16 +145,16 @@ std::expected<void, StarException> EffectEmitter::render(RenderCallback* renderC
       }
       particle->velocity += m_baseVelocity;
       particle->finalVelocity += m_baseVelocity;
-      particle->position += **position;
-      auto added = renderCallback->addParticle(*particle);
+      particle->position += position->get();
+      auto added = renderCallback.addParticle(*particle);
       if (!added)
         return std::unexpected(std::move(added.error()));
     }
-    auto sounds = source->sounds(**position);
+    auto sounds = source->sounds(position->get());
     if (!sounds)
       return std::unexpected(std::move(sounds.error()));
     for (auto& sound : *sounds) {
-      auto added = renderCallback->addAudio(sound);
+      auto added = renderCallback.addAudio(sound);
       if (!added)
         return std::unexpected(std::move(added.error()));
     }

@@ -8,7 +8,7 @@ import star.logging;
 namespace Star {
 
 struct RpcPromiseExceptionTag {
-  static constexpr char const* name() { return "RpcPromiseException"; }
+  static constexpr std::string_view name() { return "RpcPromiseException"; }
 };
 using RpcPromiseException = StarError<RpcPromiseExceptionTag, StarException>;
 
@@ -137,10 +137,10 @@ private:
     RpcPromise<SourceResult, Error> other;
   };
 
-  [[nodiscard]] std::expected<State*, StarException> state() const {
+  [[nodiscard]] std::expected<std::reference_wrapper<State>, StarException> state() const {
     if (!m_state)
       return std::unexpected(RpcPromiseException("Cannot query an empty RpcPromise"));
-    return m_state.get();
+    return std::ref(*m_state);
   }
 
   std::shared_ptr<State> m_state;
@@ -253,13 +253,13 @@ template <typename Result, typename Error>
   auto currentState = state();
   if (!currentState)
     return std::unexpected(std::move(currentState.error()));
-  auto& val = **currentState;
+  auto& val = currentState->get();
   std::lock_guard lock(val.mutex);
   auto polled = val.poll();
   if (!polled)
     return std::unexpected(std::move(polled.error()));
-  if (auto chained = std::get_if<Chained>(&val.outcome))
-    return chained->promise.finished();
+  if (std::holds_alternative<Chained>(val.outcome))
+    return std::get<Chained>(val.outcome).promise.finished();
   return std::holds_alternative<Fulfilled>(val.outcome) || std::holds_alternative<Failed>(val.outcome);
 }
 
@@ -268,13 +268,13 @@ template <typename Result, typename Error>
   auto currentState = state();
   if (!currentState)
     return std::unexpected(std::move(currentState.error()));
-  auto& val = **currentState;
+  auto& val = currentState->get();
   std::lock_guard lock(val.mutex);
   auto polled = val.poll();
   if (!polled)
     return std::unexpected(std::move(polled.error()));
-  if (auto chained = std::get_if<Chained>(&val.outcome))
-    return chained->promise.succeeded();
+  if (std::holds_alternative<Chained>(val.outcome))
+    return std::get<Chained>(val.outcome).promise.succeeded();
   return std::holds_alternative<Fulfilled>(val.outcome);
 }
 
@@ -283,13 +283,13 @@ template <typename Result, typename Error>
   auto currentState = state();
   if (!currentState)
     return std::unexpected(std::move(currentState.error()));
-  auto& val = **currentState;
+  auto& val = currentState->get();
   std::lock_guard lock(val.mutex);
   auto polled = val.poll();
   if (!polled)
     return std::unexpected(std::move(polled.error()));
-  if (auto chained = std::get_if<Chained>(&val.outcome))
-    return chained->promise.failed();
+  if (std::holds_alternative<Chained>(val.outcome))
+    return std::get<Chained>(val.outcome).promise.failed();
   return std::holds_alternative<Failed>(val.outcome);
 }
 
@@ -298,15 +298,15 @@ template <typename Result, typename Error>
   auto currentState = state();
   if (!currentState)
     return std::unexpected(std::move(currentState.error()));
-  auto& val = **currentState;
+  auto& val = currentState->get();
   std::lock_guard lock(val.mutex);
   auto polled = val.poll();
   if (!polled)
     return std::unexpected(std::move(polled.error()));
-  if (auto chained = std::get_if<Chained>(&val.outcome))
-    return chained->promise.result();
-  if (auto fulfilled = std::get_if<Fulfilled>(&val.outcome))
-    return std::optional<Result>(std::in_place, fulfilled->value);
+  if (std::holds_alternative<Chained>(val.outcome))
+    return std::get<Chained>(val.outcome).promise.result();
+  if (std::holds_alternative<Fulfilled>(val.outcome))
+    return std::optional<Result>(std::in_place, std::get<Fulfilled>(val.outcome).value);
   return std::optional<Result>{};
 }
 
@@ -315,15 +315,15 @@ template <typename Result, typename Error>
   auto currentState = state();
   if (!currentState)
     return std::unexpected(std::move(currentState.error()));
-  auto& val = **currentState;
+  auto& val = currentState->get();
   std::lock_guard lock(val.mutex);
   auto polled = val.poll();
   if (!polled)
     return std::unexpected(std::move(polled.error()));
-  if (auto chained = std::get_if<Chained>(&val.outcome))
-    return chained->promise.error();
-  if (auto failed = std::get_if<Failed>(&val.outcome))
-    return std::optional<Error>(std::in_place, failed->value);
+  if (std::holds_alternative<Chained>(val.outcome))
+    return std::get<Chained>(val.outcome).promise.error();
+  if (std::holds_alternative<Failed>(val.outcome))
+    return std::optional<Error>(std::in_place, std::get<Failed>(val.outcome).value);
   return std::optional<Error>{};
 }
 

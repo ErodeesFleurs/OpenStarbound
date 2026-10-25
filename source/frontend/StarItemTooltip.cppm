@@ -246,7 +246,7 @@ std::expected<void, StarException> ItemTooltipBuilder::buildItemDescriptionInner
   auto jsonResult782 = assets->json(tooltipKind);
   if (!jsonResult782)
     return std::unexpected(std::move(jsonResult782.error()));
-  auto constructResult783 = reader.construct(std::move(*jsonResult782), container.get());
+  auto constructResult783 = reader.construct(std::move(*jsonResult782), *container);
   if (!constructResult783)
     return std::unexpected(std::move(constructResult783.error()));
 
@@ -276,7 +276,7 @@ std::expected<void, StarException> ItemTooltipBuilder::buildItemDescriptionInner
   auto getRightResult789 = (*enumResult788).getRight(item->rarity());
   if (!getRightResult789)
     return std::unexpected(std::move(getRightResult789.error()));
-  auto titleCaseResult790 = (**getRightResult789).titleCase();
+  auto titleCaseResult790 = getRightResult789->get().titleCase();
   if (!titleCaseResult790)
     return std::unexpected(std::move(titleCaseResult790.error()));
   auto setLabelResult791 = container->setLabel("rarityLabel", std::move(*titleCaseResult790));
@@ -671,12 +671,12 @@ std::expected<void, StarException> ItemTooltipBuilder::buildItemDescriptionInner
 
 std::expected<void, StarException> ItemTooltipBuilder::describePersistentEffect(
     GuiContext& context, std::shared_ptr<ListWidget> const& container, PersistentStatusEffect const& effect) {
-  if (auto uniqueStatusEffect = std::get_if<UniqueStatusEffect>(&effect)) {
+  if (std::holds_alternative<UniqueStatusEffect>(effect)) {
     auto statusEffectDatabaseResult866 = context.root().statusEffectDatabase();
     if (!statusEffectDatabaseResult866)
       return std::unexpected(std::move(statusEffectDatabaseResult866.error()));
     auto statusEffectDatabase = std::move(*statusEffectDatabaseResult866);
-    auto uniqueEffectConfigResult867 = statusEffectDatabase->uniqueEffectConfig(*uniqueStatusEffect);
+    auto uniqueEffectConfigResult867 = statusEffectDatabase->uniqueEffectConfig(std::get<UniqueStatusEffect>(effect));
     if (!uniqueEffectConfigResult867)
       return std::unexpected(std::move(uniqueEffectConfigResult867.error()));
     auto effectConfig = std::move(*uniqueEffectConfigResult867);
@@ -695,7 +695,8 @@ std::expected<void, StarException> ItemTooltipBuilder::describePersistentEffect(
       if (!setImageResult871)
         return std::unexpected(std::move(setImageResult871.error()));
     }
-  } else if (auto modifierEffect = std::get_if<StatModifier>(&effect)) {
+  } else if (std::holds_alternative<StatModifier>(effect)) {
+    auto const& modifierEffect = std::get<StatModifier>(effect);
     auto assetsResult872 = context.root().assets();
     if (!assetsResult872)
       return std::unexpected(std::move(assetsResult872.error()));
@@ -703,9 +704,10 @@ std::expected<void, StarException> ItemTooltipBuilder::describePersistentEffect(
     if (!jsonResult873)
       return std::unexpected(std::move(jsonResult873.error()));
     auto statsConfig = std::move(*jsonResult873);
-    if (auto baseMultiplier = std::get_if<StatBaseMultiplier>(modifierEffect)) {
+    if (std::holds_alternative<StatBaseMultiplier>(modifierEffect)) {
+      auto const& baseMultiplier = std::get<StatBaseMultiplier>(modifierEffect);
       {
-        auto containsResult874 = statsConfig.contains(baseMultiplier->statName);
+        auto containsResult874 = statsConfig.contains(baseMultiplier.statName);
         if (!containsResult874)
           return std::unexpected(std::move(containsResult874.error()));
         if (std::move(*containsResult874)) {
@@ -716,7 +718,7 @@ std::expected<void, StarException> ItemTooltipBuilder::describePersistentEffect(
           auto fetchChildResult876 = listItem->fetchChild<ImageWidget>("statusImage");
           if (!fetchChildResult876)
             return std::unexpected(std::move(fetchChildResult876.error()));
-          auto getResult877 = statsConfig.get(baseMultiplier->statName);
+          auto getResult877 = statsConfig.get(baseMultiplier.statName);
           if (!getResult877)
             return std::unexpected(std::move(getResult877.error()));
           auto getStringResult878 = std::move(*getResult877).getString("icon");
@@ -726,14 +728,15 @@ std::expected<void, StarException> ItemTooltipBuilder::describePersistentEffect(
                       ->setImage(std::move(*getStringResult878));
           if (!setImageResult879)
             return std::unexpected(std::move(setImageResult879.error()));
-          auto setLabelResult880 = listItem->setLabel("statusLabel", strf("{:.1f}%", (baseMultiplier->baseMultiplier - 1) * 100));
+          auto setLabelResult880 = listItem->setLabel("statusLabel", strf("{:.1f}%", (baseMultiplier.baseMultiplier - 1) * 100));
           if (!setLabelResult880)
             return std::unexpected(std::move(setLabelResult880.error()));
         }
       }
-    } else if (auto valueModifier = std::get_if<StatValueModifier>(modifierEffect)) {
+    } else if (std::holds_alternative<StatValueModifier>(modifierEffect)) {
+      auto const& valueModifier = std::get<StatValueModifier>(modifierEffect);
       {
-        auto containsResult881 = statsConfig.contains(valueModifier->statName);
+        auto containsResult881 = statsConfig.contains(valueModifier.statName);
         if (!containsResult881)
           return std::unexpected(std::move(containsResult881.error()));
         if (std::move(*containsResult881)) {
@@ -744,7 +747,7 @@ std::expected<void, StarException> ItemTooltipBuilder::describePersistentEffect(
           auto fetchChildResult883 = listItem->fetchChild<ImageWidget>("statusImage");
           if (!fetchChildResult883)
             return std::unexpected(std::move(fetchChildResult883.error()));
-          auto getResult884 = statsConfig.get(valueModifier->statName);
+          auto getResult884 = statsConfig.get(valueModifier.statName);
           if (!getResult884)
             return std::unexpected(std::move(getResult884.error()));
           auto getStringResult885 = std::move(*getResult884).getString("icon");
@@ -754,14 +757,15 @@ std::expected<void, StarException> ItemTooltipBuilder::describePersistentEffect(
                       ->setImage(std::move(*getStringResult885));
           if (!setImageResult886)
             return std::unexpected(std::move(setImageResult886.error()));
-          auto setLabelResult887 = listItem->setLabel("statusLabel", strf("{}{:.2f}", valueModifier->value < 0 ? "-" : "", valueModifier->value));
+          auto setLabelResult887 = listItem->setLabel("statusLabel", strf("{}{:.2f}", valueModifier.value < 0 ? "-" : "", valueModifier.value));
           if (!setLabelResult887)
             return std::unexpected(std::move(setLabelResult887.error()));
         }
       }
-    } else if (auto effectiveMultiplier = std::get_if<StatEffectiveMultiplier>(modifierEffect)) {
+    } else if (std::holds_alternative<StatEffectiveMultiplier>(modifierEffect)) {
+      auto const& effectiveMultiplier = std::get<StatEffectiveMultiplier>(modifierEffect);
       {
-        auto containsResult888 = statsConfig.contains(effectiveMultiplier->statName);
+        auto containsResult888 = statsConfig.contains(effectiveMultiplier.statName);
         if (!containsResult888)
           return std::unexpected(std::move(containsResult888.error()));
         if (std::move(*containsResult888)) {
@@ -772,7 +776,7 @@ std::expected<void, StarException> ItemTooltipBuilder::describePersistentEffect(
           auto fetchChildResult890 = listItem->fetchChild<ImageWidget>("statusImage");
           if (!fetchChildResult890)
             return std::unexpected(std::move(fetchChildResult890.error()));
-          auto getResult891 = statsConfig.get(effectiveMultiplier->statName);
+          auto getResult891 = statsConfig.get(effectiveMultiplier.statName);
           if (!getResult891)
             return std::unexpected(std::move(getResult891.error()));
           auto getStringResult892 = std::move(*getResult891).getString("icon");
@@ -782,7 +786,7 @@ std::expected<void, StarException> ItemTooltipBuilder::describePersistentEffect(
                       ->setImage(std::move(*getStringResult892));
           if (!setImageResult893)
             return std::unexpected(std::move(setImageResult893.error()));
-          auto setLabelResult894 = listItem->setLabel("statusLabel", strf("{:.1f}%", (effectiveMultiplier->effectiveMultiplier - 1) * 100));
+          auto setLabelResult894 = listItem->setLabel("statusLabel", strf("{:.1f}%", (effectiveMultiplier.effectiveMultiplier - 1) * 100));
           if (!setLabelResult894)
             return std::unexpected(std::move(setLabelResult894.error()));
         }

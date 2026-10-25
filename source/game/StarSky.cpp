@@ -78,25 +78,25 @@ std::expected<std::shared_ptr<Sky>, StarException> Sky::create(Root& root) {
   auto sky = std::shared_ptr<Sky>(new Sky(root));
   auto settings = sky->skyParametersUpdated();
   if (!settings) return std::unexpected(std::move(settings.error()));
-  auto element0 = sky->m_netGroup.addNetElement(&sky->m_skyParametersNetState);
+  auto element0 = sky->m_netGroup.addNetElement(sky->m_skyParametersNetState);
   if (!element0) return std::unexpected(std::move(element0.error()));
-  auto element1 = sky->m_netGroup.addNetElement(&sky->m_skyTypeNetState);
+  auto element1 = sky->m_netGroup.addNetElement(sky->m_skyTypeNetState);
   if (!element1) return std::unexpected(std::move(element1.error()));
-  auto element2 = sky->m_netGroup.addNetElement(&sky->m_timeNetState);
+  auto element2 = sky->m_netGroup.addNetElement(sky->m_timeNetState);
   if (!element2) return std::unexpected(std::move(element2.error()));
-  auto element3 = sky->m_netGroup.addNetElement(&sky->m_flyingTypeNetState);
+  auto element3 = sky->m_netGroup.addNetElement(sky->m_flyingTypeNetState);
   if (!element3) return std::unexpected(std::move(element3.error()));
-  auto element4 = sky->m_netGroup.addNetElement(&sky->m_enterHyperspaceNetState);
+  auto element4 = sky->m_netGroup.addNetElement(sky->m_enterHyperspaceNetState);
   if (!element4) return std::unexpected(std::move(element4.error()));
-  auto element5 = sky->m_netGroup.addNetElement(&sky->m_startInWarpNetState);
+  auto element5 = sky->m_netGroup.addNetElement(sky->m_startInWarpNetState);
   if (!element5) return std::unexpected(std::move(element5.error()));
-  auto element6 = sky->m_netGroup.addNetElement(&sky->m_worldMoveNetState);
+  auto element6 = sky->m_netGroup.addNetElement(sky->m_worldMoveNetState);
   if (!element6) return std::unexpected(std::move(element6.error()));
-  auto element7 = sky->m_netGroup.addNetElement(&sky->m_starMoveNetState);
+  auto element7 = sky->m_netGroup.addNetElement(sky->m_starMoveNetState);
   if (!element7) return std::unexpected(std::move(element7.error()));
-  auto element8 = sky->m_netGroup.addNetElement(&sky->m_warpPhaseNetState);
+  auto element8 = sky->m_netGroup.addNetElement(sky->m_warpPhaseNetState);
   if (!element8) return std::unexpected(std::move(element8.error()));
-  auto element9 = sky->m_netGroup.addNetElement(&sky->m_flyingTimerNetState);
+  auto element9 = sky->m_netGroup.addNetElement(sky->m_flyingTimerNetState);
   if (!element9) return std::unexpected(std::move(element9.error()));
   return sky;
 }
@@ -212,9 +212,9 @@ std::expected<void, StarException> Sky::update(double dt) {
     m_flyingTimer += dt;
 
     if (m_flyingType == FlyingType::Disembarking) {
-      auto path = m_settings.getArray(m_skyParameters.skyType == SkyType::Space ? "spaceDisembarkPath" : "disembarkPath");
+      auto path = m_settings.getArray(m_skyParameters.skyType == SkyType::Space ? String("spaceDisembarkPath") : String("disembarkPath"));
       if (!path) return std::unexpected(std::move(path.error()));
-      auto origin = m_settings.get(m_skyParameters.skyType == SkyType::Space ? "spaceDisembarkOrigin" : "disembarkOrigin");
+      auto origin = m_settings.get(m_skyParameters.skyType == SkyType::Space ? String("spaceDisembarkOrigin") : String("disembarkOrigin"));
       if (!origin) return std::unexpected(std::move(origin.error()));
       auto finished = controlledMovement(*path, *origin, m_flyingTimer);
       if (!finished) return std::unexpected(std::move(finished.error()));
@@ -222,9 +222,9 @@ std::expected<void, StarException> Sky::update(double dt) {
         m_flyingType = FlyingType::Warp;
       }
     } else if (m_flyingType == FlyingType::Arriving) {
-      auto path = m_settings.getArray(m_skyParameters.skyType == SkyType::Space ? "spaceArrivalPath" : "arrivalPath");
+      auto path = m_settings.getArray(m_skyParameters.skyType == SkyType::Space ? String("spaceArrivalPath") : String("arrivalPath"));
       if (!path) return std::unexpected(std::move(path.error()));
-      auto origin = m_settings.get(m_skyParameters.skyType == SkyType::Space ? "spaceArrivalOrigin" : "arrivalOrigin");
+      auto origin = m_settings.get(m_skyParameters.skyType == SkyType::Space ? String("spaceArrivalOrigin") : String("arrivalOrigin"));
       if (!origin) return std::unexpected(std::move(origin.error()));
       auto finished = controlledMovement(*path, *origin, m_flyingTimer);
       if (!finished) return std::unexpected(std::move(finished.error()));
@@ -497,7 +497,7 @@ Color Sky::environmentLight() const {
     return Color::Black;
 
   if (m_skyParameters.skyColoring.isLeft()) {
-    auto const& skyColoring = *m_skyParameters.skyColoring.leftPtr();
+    auto const& skyColoring = m_skyParameters.skyColoring.leftRef();
 
     Array<Vec4F, 4> colors;
     colors[0] = skyColoring.morningLightColor.toRgbaF();
@@ -507,20 +507,20 @@ Color Sky::environmentLight() const {
 
     return Color::rgbaf(listInterpolate2(colors, dayCycle(), SinWeightOperator<float>(), BoundMode::Wrap));
   } else {
-    return *m_skyParameters.skyColoring.rightPtr();
+    return m_skyParameters.skyColoring.rightRef();
   }
 }
 
 Color Sky::mainSkyColor() const {
   if (m_skyParameters.skyColoring.isLeft())
-    return m_skyParameters.skyColoring.leftPtr()->mainColor;
+    return m_skyParameters.skyColoring.leftRef().mainColor;
 
   return Color::Black;
 }
 
 std::pair<Color, Color> Sky::skyRectColors() const {
   if (m_skyParameters.skyColoring.isLeft()) {
-    auto const& skyColoring = *m_skyParameters.skyColoring.leftPtr();
+    auto const& skyColoring = m_skyParameters.skyColoring.leftRef();
 
     Array<Vec4F, 4> topColorList;
     topColorList[0] = skyColoring.morningColors.first.toRgbaF();
@@ -684,7 +684,7 @@ std::expected<void, StarException> Sky::exitHyperspace() {
   setType(SkyType::Orbital);
 
   m_sentSFX = false;
-  auto origin = m_settings.getObject(m_skyParameters.skyType == SkyType::Space ? "spaceArrivalOrigin" : "arrivalOrigin");
+  auto origin = m_settings.getObject(m_skyParameters.skyType == SkyType::Space ? String("spaceArrivalOrigin") : String("arrivalOrigin"));
   if (!origin) return std::unexpected(std::move(origin.error()));
   Json originMap = *origin;
   auto offset = originMap.get("offset");

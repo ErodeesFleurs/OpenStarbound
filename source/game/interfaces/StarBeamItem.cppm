@@ -98,7 +98,7 @@ public:
   virtual ~BeamItem() = default;
 
   [[nodiscard]]
-  virtual std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  virtual std::expected<void, StarException> init(ToolUserEntity& owner, ToolHand hand) override;
   [[nodiscard]]
   virtual std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
@@ -159,7 +159,7 @@ protected:
   CSplineF m_beamCurve;
 
 private:
-  Root* m_beamRoot;
+  std::reference_wrapper<Root> m_beamRoot;
 };
 
 }

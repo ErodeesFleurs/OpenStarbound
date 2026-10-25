@@ -15,7 +15,7 @@ class Root;
 class Plant;
 
 struct PlantDatabaseExceptionTag {
-  static constexpr char const* name() { return "PlantDatabaseException"; }
+  static constexpr std::string_view name() { return "PlantDatabaseException"; }
 };
 using PlantDatabaseException = StarError<PlantDatabaseExceptionTag, StarException>;
 

@@ -88,14 +88,14 @@ std::expected<std::shared_ptr<SliderBarWidget>, StarException> SliderBarWidget::
 }
 
 std::expected<void, StarException> SliderBarWidget::initialize(String const& grid, bool showSpinner) {
-  auto image = ImageWidget::create(*context(), grid);
+  auto image = ImageWidget::create(context(), grid);
   if (!image)
     return std::unexpected(std::move(image.error()));
   m_grid = *image;
-  auto assets = context()->root().assets();
+  auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
-  auto metadata = context()->root().imageMetadataDatabase();
+  auto metadata = context().root().imageMetadataDatabase();
   if (!metadata)
     return std::unexpected(std::move(metadata.error()));
   auto config = (*assets)->json("/interface.config:slider");
@@ -104,7 +104,7 @@ std::expected<void, StarException> SliderBarWidget::initialize(String const& gri
   auto jogImage = config->getString("jog");
   if (!jogImage)
     return std::unexpected(std::move(jogImage.error()));
-  auto jog = ButtonWidget::create(*context());
+  auto jog = ButtonWidget::create(context());
   if (!jog)
     return std::unexpected(std::move(jog.error()));
   m_jog = *jog;
@@ -113,9 +113,17 @@ std::expected<void, StarException> SliderBarWidget::initialize(String const& gri
     return std::unexpected(std::move(images.error()));
   m_jog->setPressedOffset({0, 0});
   if (showSpinner) {
-    GuiReader reader(*context());
-    reader.registerCallback("spinner.down", [this](Widget*) { return leftCallback(); });
-    reader.registerCallback("spinner.up", [this](Widget*) { return rightCallback(); });
+    GuiReader reader(context());
+    reader.registerCallback("spinner.down", [owner = std::weak_ptr<SliderBarWidget>(as<SliderBarWidget>(shared_from_this()))](Widget&) -> std::expected<void, StarException> {
+      auto slider = owner.lock();
+      if (!slider) return std::unexpected(GuiException("Slider callback target no longer exists"));
+      return slider->leftCallback();
+    });
+    reader.registerCallback("spinner.up", [owner = std::weak_ptr<SliderBarWidget>(as<SliderBarWidget>(shared_from_this()))](Widget&) -> std::expected<void, StarException> {
+      auto slider = owner.lock();
+      if (!slider) return std::unexpected(GuiException("Slider callback target no longer exists"));
+      return slider->rightCallback();
+    });
     auto leftBase = config->getString("leftBase");
     if (!leftBase)
       return std::unexpected(std::move(leftBase.error()));
@@ -143,7 +151,7 @@ std::expected<void, StarException> SliderBarWidget::initialize(String const& gri
         {"leftBase", *leftBase}, {"leftHover", *leftHover},
         {"rightBase", *rightBase}, {"rightHover", *rightHover},
         {"position", JsonArray{0, 0}}, {"upOffset", rightOffset}}}};
-    auto constructed = reader.construct(spinner, this);
+    auto constructed = reader.construct(spinner, *this);
     if (!constructed)
       return std::unexpected(std::move(constructed.error()));
     m_grid->setPosition(Vec2I(gridOffset, 0));
@@ -198,7 +206,7 @@ std::expected<void, StarException> SliderBarWidget::setVal(int val, bool callbac
   m_val = clamp(m_val, m_low, m_high);
 
   if (doCallback)
-    return m_callback(this);
+    return m_callback(*this);
   return {};
 }
 
@@ -256,18 +264,18 @@ std::expected<bool, StarException> SliderBarWidget::sendEvent(InputEvent const& 
 
   if (m_enabled) {
     if (std::holds_alternative<MouseButtonDownEvent>(event)) {
-      if (m_jog->inMember(*context()->mousePosition(event))) {
+      if (m_jog->inMember(*context().mousePosition(event))) {
         auto focused = focus();
         if (!focused)
           return std::unexpected(std::move(focused.error()));
-        m_jogDragPos = *context()->mousePosition(event) - screenPosition();
+        m_jogDragPos = *context().mousePosition(event) - screenPosition();
         m_jogDragActive = true;
       }
     }
 
     if (std::holds_alternative<MouseMoveEvent>(event)) {
       if (m_jogDragActive)
-        m_jogDragPos = *context()->mousePosition(event) - screenPosition();
+        m_jogDragPos = *context().mousePosition(event) - screenPosition();
     }
   }
 

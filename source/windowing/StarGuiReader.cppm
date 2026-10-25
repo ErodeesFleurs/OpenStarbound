@@ -48,7 +48,7 @@ import star.widget_parsing;
 namespace Star {
 
 struct GUIBuilderExceptionTag {
-  static constexpr char const* name() { return "GUIBuilderException"; }
+  static constexpr std::string_view name() { return "GUIBuilderException"; }
 };
 using GUIBuilderException = StarError<GUIBuilderExceptionTag, StarException>;
 

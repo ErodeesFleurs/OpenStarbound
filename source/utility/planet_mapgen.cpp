@@ -119,15 +119,15 @@ static std::expected<void, StarException> run(int argc, char** argv) {
       return std::unexpected(std::move(celestialDatabase.error()));
 
     std::optional<CelestialCoordinate> coordinate;
-    if (auto coordinateOption = options.parameters.ptr("coordinate"); coordinateOption && !coordinateOption->empty()) {
-      auto parsed = CelestialCoordinate::create(Json((*coordinateOption)[0]));
+    if (auto coordinateOption = options.parameters.maybeRef("coordinate"); coordinateOption && !coordinateOption->get().empty()) {
+      auto parsed = CelestialCoordinate::create(Json(coordinateOption->get()[0]));
       if (!parsed)
         return std::unexpected(std::move(parsed.error()));
       coordinate = std::move(*parsed);
     } else {
       std::optional<std::uint64_t> seed;
-      if (auto seedOption = options.parameters.ptr("coordseed"); seedOption && !seedOption->empty()) {
-        auto parsed = lexicalCast<std::uint64_t>((*seedOption)[0]);
+      if (auto seedOption = options.parameters.maybeRef("coordseed"); seedOption && !seedOption->get().empty()) {
+        auto parsed = lexicalCast<std::uint64_t>(seedOption->get()[0]);
         if (!parsed)
           return std::unexpected(std::move(parsed.error()));
         seed = *parsed;
@@ -147,8 +147,8 @@ static std::expected<void, StarException> run(int argc, char** argv) {
     auto& worldTemplate = **createdTemplate;
     auto size = worldTemplate.size();
 
-    if (auto sizeOption = options.parameters.ptr("size"); sizeOption && !sizeOption->empty()) {
-      auto components = (*sizeOption)[0].split(",");
+    if (auto sizeOption = options.parameters.maybeRef("size"); sizeOption && !sizeOption->get().empty()) {
+      auto components = sizeOption->get()[0].split(",");
       if (!components)
         return std::unexpected(std::move(components.error()));
       auto widthText = components->at(0);
@@ -157,10 +157,10 @@ static std::expected<void, StarException> run(int argc, char** argv) {
       auto heightText = components->at(1);
       if (!heightText)
         return std::unexpected(std::move(heightText.error()));
-      auto width = lexicalCast<unsigned>(**widthText);
+      auto width = lexicalCast<unsigned>(widthText->get());
       if (!width)
         return std::unexpected(std::move(width.error()));
-      auto height = lexicalCast<unsigned>(**heightText);
+      auto height = lexicalCast<unsigned>(heightText->get());
       if (!height)
         return std::unexpected(std::move(height.error()));
       size = Vec2U(*width, *height).piecewiseClamp(Vec2U(0, 0), size);
@@ -194,7 +194,7 @@ static std::expected<void, StarException> run(int argc, char** argv) {
             return std::unexpected(std::move(weightings.error()));
           for (auto const& weighting : *weightings) {
             Color mixColor = Color::rgb(128, 0, 0);
-            mixColor.setHue(staticRandomFloat((std::uint64_t)weighting.region));
+            mixColor.setHue(staticRandomFloat(reinterpret_cast<std::uintptr_t>(std::addressof(weighting.region.get()))));
             color = Color::rgbaf(color.toRgbaF() + mixColor.toRgbaF() * weighting.weight);
           }
           auto written = outputImage->set(x, y, color.toRgb());

@@ -267,14 +267,14 @@ import star.client_context;
 import star.algorithm;
 namespace Star {
 
-char const* const AdditionalAssetsSettings = R"JSON(
+constexpr char AdditionalAssetsSettings[] = R"JSON(
     {
       "missingImage" : "/assetmissing.png",
       "missingAudio" : "/assetmissing.wav"
     }
   )JSON";
 
-char const* const AdditionalDefaultConfiguration = R"JSON(
+constexpr char AdditionalDefaultConfiguration[] = R"JSON(
     {
       "configurationVersion" : {
         "client" : 8
@@ -425,12 +425,13 @@ std::expected<void, StarException> ClientApplication::shutdown() {
   if (m_httpSession)
     remember(m_httpSession->stop());
   if (m_player)
-    m_player->setInput(nullptr);
+    m_player->setInput(std::nullopt);
+  // Lua uninit may still invoke the interface and camera callbacks.
+  if (m_universeClient)
+    remember(m_universeClient->disconnect());
   if (m_mainInterface)
     remember(m_mainInterface->close());
   m_mainInterface.reset();
-  if (m_universeClient)
-    remember(m_universeClient->disconnect());
   if (m_universeServer) {
     remember(m_universeServer->close());
     m_universeServer.reset();
@@ -448,11 +449,11 @@ std::expected<void, StarException> ClientApplication::shutdown() {
   m_cinematicOverlay.reset();
   m_errorScreen.reset();
   if (m_guiContext)
-    m_guiContext->setTileDrawer(nullptr);
+    m_guiContext->setTileDrawer(std::nullopt);
   if (m_mainMixer) {
-    m_mainMixer->setVoice(nullptr);
+    m_mainMixer->setVoice(std::nullopt);
     m_mainMixer->setUniverseClient({});
-    m_mainMixer->setWorldPainter({});
+    m_mainMixer->setWorldPainter(std::nullopt);
   }
   m_worldPainter.reset();
   m_voice.reset();
@@ -546,7 +547,7 @@ std::expected<void, StarException> ClientApplication::applicationInit(std::share
   if (!mods)
     return std::unexpected(std::move(mods.error()));
   AudioFormat audioFormat = appController->enableAudio();
-  m_mainMixer = std::make_shared<MainMixer>(*m_root, audioFormat.sampleRate, audioFormat.channels);
+  m_mainMixer = std::make_unique<MainMixer>(*m_root, audioFormat.sampleRate, audioFormat.channels);
   m_mainMixer->setVolume(0.5);
   auto painter = WorldPainter::create(*m_root);
   if (!painter)
@@ -566,7 +567,7 @@ std::expected<void, StarException> ClientApplication::applicationInit(std::share
   m_voice = std::move(*voice);
   m_guiContext->bindInput(*m_input);
   m_guiContext->bindVoice(*m_voice);
-  m_mainMixer->setVoice(m_voice.get());
+  m_mainMixer->setVoice(optionalRef(m_voice));
   auto assetsResult = m_root->assets();
   if (!assetsResult)
     return std::unexpected(std::move(assetsResult.error()));
@@ -632,7 +633,7 @@ std::expected<void, StarException> ClientApplication::renderInit(std::shared_ptr
     return std::unexpected(std::move(reloaded.error()));
   m_reloadSubscription.disconnect();
   m_reloadSubscription = m_root->registerReloadListener(
-      m_reloadListener = std::make_shared<CallbackListener>([this] { return renderReload(); }));
+      m_reloadListener = std::make_shared<CallbackListener>([app = std::ref(*this)] { return app.get().renderReload(); }));
   auto configResult = m_root->configuration();
   if (!configResult)
     return std::unexpected(std::move(configResult.error()));
@@ -731,15 +732,17 @@ std::expected<void, StarException> ClientApplication::windowChanged(WindowMode w
 }
 
 std::expected<void, StarException> ClientApplication::processInput(InputEvent const& event) {
-  if (auto keyDown = std::get_if<KeyDownEvent>(&event)) {
-    m_heldKeyEvents.append(*keyDown);
-    m_edgeKeyEvents.append(*keyDown);
-  } else if (auto keyUp = std::get_if<KeyUpEvent>(&event)) {
+  if (std::holds_alternative<KeyDownEvent>(event)) {
+    auto const& keyDown = std::get<KeyDownEvent>(event);
+    m_heldKeyEvents.append(keyDown);
+    m_edgeKeyEvents.append(keyDown);
+  } else if (std::holds_alternative<KeyUpEvent>(event)) {
+    auto const& keyUp = std::get<KeyUpEvent>(event);
     eraseWhere(m_heldKeyEvents, [&](auto& keyEvent) {
-      return keyEvent.key == keyUp->key;
+      return keyEvent.key == keyUp.key;
     });
 
-    auto keyName = enumName<KeyNames>(keyUp->key);
+    auto keyName = enumName<KeyNames>(keyUp.key);
     if (!keyName)
       return std::unexpected(std::move(keyName.error()));
     auto modKey = maybeEnumValue<KeyModNames>(*keyName);
@@ -750,15 +753,16 @@ std::expected<void, StarException> ClientApplication::processInput(InputEvent co
         return KeyDownEvent{keyEvent.key, keyEvent.mods & ~**modKey};
       });
   }
-  else if (auto cAxis = std::get_if<ControllerAxisEvent>(&event)) {
-    if (cAxis->controllerAxis == ControllerAxis::LeftX)
-      m_controllerLeftStick[0] = cAxis->controllerAxisValue;
-    else if (cAxis->controllerAxis == ControllerAxis::LeftY)
-      m_controllerLeftStick[1] = cAxis->controllerAxisValue;
-    else if (cAxis->controllerAxis == ControllerAxis::RightX)
-      m_controllerRightStick[0] = cAxis->controllerAxisValue;
-    else if (cAxis->controllerAxis == ControllerAxis::RightY)
-      m_controllerRightStick[1] = cAxis->controllerAxisValue;
+  else if (std::holds_alternative<ControllerAxisEvent>(event)) {
+    auto const& cAxis = std::get<ControllerAxisEvent>(event);
+    if (cAxis.controllerAxis == ControllerAxis::LeftX)
+      m_controllerLeftStick[0] = cAxis.controllerAxisValue;
+    else if (cAxis.controllerAxis == ControllerAxis::LeftY)
+      m_controllerLeftStick[1] = cAxis.controllerAxisValue;
+    else if (cAxis.controllerAxis == ControllerAxis::RightX)
+      m_controllerRightStick[0] = cAxis.controllerAxisValue;
+    else if (cAxis.controllerAxis == ControllerAxis::RightY)
+      m_controllerRightStick[1] = cAxis.controllerAxisValue;
   }
 
   bool processed = false;
@@ -798,8 +802,8 @@ std::expected<void, StarException> ClientApplication::update() {
     if (auto service = app->p2pNetworkingService()) {
       auto join = service->pullPendingJoin();
       if (!std::holds_alternative<std::monostate>(join)) {
-        if (auto peer = std::get_if<P2PNetworkingPeerId>(&join))
-          m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{std::move(*peer), {}, {}, false};
+        if (std::holds_alternative<P2PNetworkingPeerId>(join))
+          m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{std::move(std::get<P2PNetworkingPeerId>(join)), {}, {}, false};
         else
           m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{std::move(std::get<HostAddressWithPort>(join)), {}, {}, false};
         join.emplace<0>();
@@ -936,7 +940,7 @@ std::expected<void, StarException> ClientApplication::render() {
 
       auto paintStart = Time::monotonicMicroseconds();
       auto painted = m_worldPainter->render(m_renderData, [&]() -> std::expected<bool, StarException> {
-        return worldClient->waitForLighting(&m_renderData);
+        return worldClient->waitForLighting(std::ref(m_renderData));
       });
       if (!painted)
         return std::unexpected(std::move(painted.error()));
@@ -946,7 +950,7 @@ std::expected<void, StarException> ClientApplication::render() {
       auto size = Vec2F(renderer->screenSize());
       auto quad = renderFlatRect(RectF::withSize(size / -2, size), Vec4B::filled(0), 0.0f);
       for (auto& layer : m_postProcessLayers) {
-        if (layer.group ? layer.group->enabled : true) {
+        if (!layer.group || layer.group->get().enabled) {
           for (unsigned i = 0; i < layer.passes; i++) {
             for (auto& effect : layer.effects) {
               auto switched = renderer->switchEffectConfig(effect);
@@ -979,17 +983,17 @@ std::expected<void, StarException> ClientApplication::render() {
   return {};
 }
 
-std::expected<void, StarException> ClientApplication::getAudioData(std::int16_t* sampleData, std::size_t frameCount) {
+std::expected<void, StarException> ClientApplication::getAudioData(std::span<std::int16_t> sampleData, std::size_t frameCount) {
   if (!m_mainMixer)
     return {};
-  return m_mainMixer->read(sampleData, frameCount, [&](std::int16_t* buffer, std::size_t frames, unsigned channels) -> std::expected<void, StarException> {
+  return m_mainMixer->read(sampleData, frameCount, [&](std::span<std::int16_t> buffer, std::size_t frames, unsigned channels) -> std::expected<void, StarException> {
     if (m_voice)
       m_voice->mix(buffer, frames, channels);
     return {};
   });
 }
 
-auto postProcessGroupsRoot = "postProcessGroups";
+constexpr char postProcessGroupsRoot[] = "postProcessGroups";
 
 std::expected<void, StarException> ClientApplication::renderReload() {
   auto assetsResult = m_root->assets();
@@ -1026,7 +1030,7 @@ std::expected<void, StarException> ClientApplication::renderReload() {
         auto bytes = assets->bytes(relative);
         if (!bytes)
           return std::unexpected(std::move(bytes.error()));
-        *shader = std::string((*bytes)->ptr(), (*bytes)->size());
+        *shader = std::string((*bytes)->begin(), (*bytes)->end());
       }
       shaders[entry.first] = std::move(*shader);
     }
@@ -1092,7 +1096,7 @@ std::expected<void, StarException> ClientApplication::renderReload() {
       if (!loadedEffect)
         return std::unexpected(std::move(loadedEffect.error()));
     }
-    PostProcessGroup* group = nullptr;
+    std::optional<std::reference_wrapper<PostProcessGroup>> group;
     auto groupName = layer.optString("group");
     if (!groupName)
       return std::unexpected(std::move(groupName.error()));
@@ -1122,17 +1126,17 @@ std::expected<void, StarException> ClientApplication::setPostProcessLayerPasses(
   auto index = m_labelledPostProcessLayers.get(layer);
   if (!index)
     return std::unexpected(std::move(index.error()));
-  auto found = m_postProcessLayers.at(**index);
+  auto found = m_postProcessLayers.at(index->get());
   if (!found)
     return std::unexpected(std::move(found.error()));
-  (*found)->passes = passes;
+  found->get().passes = passes;
   return {};
 }
 std::expected<void, StarException> ClientApplication::setPostProcessGroupEnabled(String const& group, bool const& enabled, std::optional<bool> const& save) {
   auto found = m_postProcessGroups.get(group);
   if (!found)
     return std::unexpected(std::move(found.error()));
-  (*found)->enabled = enabled;
+  found->get().enabled = enabled;
   if (save.value_or(false)) {
     auto config = m_root->configuration();
     if (!config)
@@ -1145,7 +1149,7 @@ std::expected<bool, StarException> ClientApplication::postProcessGroupEnabled(St
   auto found = m_postProcessGroups.get(group);
   if (!found)
     return std::unexpected(std::move(found.error()));
-  return (*found)->enabled;
+  return found->get().enabled;
 }
 
 std::expected<Json, StarException> ClientApplication::postProcessGroups() {
@@ -1164,14 +1168,14 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
     app->quit();
   if (newState == MainAppState::Mods || newState == MainAppState::Splash) {
     auto cinematic = m_root->assets().and_then([&](auto assets) {
-      return assets->json(newState == MainAppState::Mods ? "/cinematics/mods/modloading.cinematic" : "/cinematics/splash.cinematic");
+      return assets->json(newState == MainAppState::Mods ? std::string_view("/cinematics/mods/modloading.cinematic") : std::string_view("/cinematics/splash.cinematic"));
     });
     if (!cinematic)
       return std::unexpected(std::move(cinematic.error()));
     if (auto loaded = m_cinematicOverlay->load(*cinematic); !loaded)
       return std::unexpected(std::move(loaded.error()));
     if (newState == MainAppState::Splash) {
-      auto loader = Thread::invoke("Async root loader", [this] { return m_root->fullyLoad(); });
+      auto loader = Thread::invoke("Async root loader", [root = std::ref(*m_root)] { return root.get().fullyLoad(); });
       if (!loader)
         return std::unexpected(std::move(loader.error()));
       m_rootLoader = std::move(*loader);
@@ -1198,7 +1202,7 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
     if (m_httpSession)
       m_httpSession->clearHttpTrustRequestCallback();
     if (m_player)
-      m_player->setInput(nullptr);
+      m_player->setInput(std::nullopt);
     if (m_mainInterface)
       remember(m_mainInterface->close());
     m_mainInterface.reset();
@@ -1258,15 +1262,15 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
     if (!http)
       return std::unexpected(std::move(http.error()));
     m_httpSession = std::move(*http);
-    if (auto r = install("universe", LuaBindings::makeUniverseClientCallbacks(*m_root, m_universeClient.get())); !r)
+    if (auto r = install("universe", LuaBindings::makeUniverseClientCallbacks(*m_root, *m_universeClient)); !r)
       return std::unexpected(std::move(r.error()));
     if (auto r = install("input", LuaBindings::makeInputCallbacks(*m_input)); !r)
       return std::unexpected(std::move(r.error()));
     if (auto r = install("voice", LuaBindings::makeVoiceCallbacks(*m_voice)); !r)
       return std::unexpected(std::move(r.error()));
-    if (auto r = install("camera", LuaBindings::makeCameraCallbacks(*m_root, &m_worldPainter->camera())); !r)
+    if (auto r = install("camera", LuaBindings::makeCameraCallbacks(*m_root, m_worldPainter->camera())); !r)
       return std::unexpected(std::move(r.error()));
-    if (auto r = install("renderer", LuaBindings::makeRenderingCallbacks(this)); !r)
+    if (auto r = install("renderer", LuaBindings::makeRenderingCallbacks(*this)); !r)
       return std::unexpected(std::move(r.error()));
     auto config = m_root->configuration();
     if (!config)
@@ -1289,13 +1293,13 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
     if (auto r = install("http", LuaBindings::makeHttpCallbacks(m_httpSession, httpEnabled->value_or(false))); !r)
       return std::unexpected(std::move(r.error()));
     auto heldScriptPanes = std::make_shared<List<MainInterface::ScriptPaneInfo>>();
-    m_universeClient->playerReloadPreCallback() = [this, heldScriptPanes](bool resetInterface) -> std::expected<void, StarException> {
+    m_universeClient->playerReloadPreCallback() = [app = std::ref(*this), heldScriptPanes](bool resetInterface) -> std::expected<void, StarException> {
       if (!resetInterface)
         return {};
-      return m_mainInterface->takeScriptPanes(*heldScriptPanes);
+      return app.get().m_mainInterface->takeScriptPanes(*heldScriptPanes);
     };
-    m_universeClient->playerReloadCallback() = [this, heldScriptPanes](bool resetInterface) -> std::expected<void, StarException> {
-      auto inventory = m_mainInterface->paneManager()->registeredPane<InventoryPane>(MainInterfacePanes::Inventory);
+    m_universeClient->playerReloadCallback() = [app = std::ref(*this), heldScriptPanes](bool resetInterface) -> std::expected<void, StarException> {
+      auto inventory = app.get().m_mainInterface->paneManager().registeredPane<InventoryPane>(MainInterfacePanes::Inventory);
       if (!inventory)
         return std::unexpected(std::move(inventory.error()));
       if (*inventory) {
@@ -1304,7 +1308,7 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
           return std::unexpected(std::move(cleared.error()));
       }
       if (resetInterface) {
-        auto revived = m_mainInterface->reviveScriptPanes(*heldScriptPanes);
+        auto revived = app.get().m_mainInterface->reviveScriptPanes(*heldScriptPanes);
         if (!revived)
           return std::unexpected(std::move(revived.error()));
         heldScriptPanes->clear();
@@ -1368,7 +1372,7 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
       if (!m_player)
         return setError("Error loading player!");
     }
-    m_player->setInput(m_input.get());
+    m_player->setInput(optionalRef(m_input));
     m_mainMixer->setUniverseClient(m_universeClient);
     if (auto r = m_universeClient->setMainPlayer(m_player); !r)
       return std::unexpected(std::move(r.error()));
@@ -1400,10 +1404,11 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
       if (!pending)
         return std::unexpected(std::move(pending.error()));
       std::unique_ptr<PacketSocket> packetSocket;
-      if (auto address = std::get_if<HostAddressWithPort>(&pending->server)) {
-        auto socket = TcpSocket::connectTo(*address).and_then([&](auto tcp) { return TcpPacketSocket::open(m_root->logger(), std::move(tcp)); });
+      if (std::holds_alternative<HostAddressWithPort>(pending->server)) {
+        auto const& address = std::get<HostAddressWithPort>(pending->server);
+        auto socket = TcpSocket::connectTo(address).and_then([&](auto tcp) { return TcpPacketSocket::open(m_root->logger(), std::move(tcp)); });
         if (!socket)
-          return setError(strf("Join failed! Error connecting to '{}'", *address), ExceptionDiagnostic(socket.error()));
+          return setError(strf("Join failed! Error connecting to '{}'", address), ExceptionDiagnostic(socket.error()));
         packetSocket = std::move(*socket);
       } else if (auto service = app->p2pNetworkingService()) {
         auto peer = service->connectToPeer(std::get<P2PNetworkingPeerId>(pending->server));
@@ -1425,8 +1430,8 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
         return setError("Join failed", ExceptionDiagnostic(connected.error()));
       if (*connected)
         return setError(**connected);
-      if (auto address = std::get_if<HostAddressWithPort>(&pending->server))
-        m_currentRemoteJoin = *address;
+      if (std::holds_alternative<HostAddressWithPort>(pending->server))
+        m_currentRemoteJoin = std::get<HostAddressWithPort>(pending->server);
       else
         m_currentRemoteJoin.reset();
     } else {
@@ -1455,19 +1460,19 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
     if (!createdInterface)
       return std::unexpected(std::move(createdInterface.error()));
     m_mainInterface = std::move(*createdInterface);
-    if (auto r = install("interface", LuaBindings::makeInterfaceCallbacks(m_mainInterface.get())); !r)
+    if (auto r = install("interface", LuaBindings::makeInterfaceCallbacks(*m_mainInterface)); !r)
       return std::unexpected(std::move(r.error()));
-    if (auto r = install("chat", LuaBindings::makeChatCallbacks(m_mainInterface.get(), m_universeClient.get())); !r)
+    if (auto r = install("chat", LuaBindings::makeChatCallbacks(*m_mainInterface, *m_universeClient)); !r)
       return std::unexpected(std::move(r.error()));
-    if (auto r = install("celestial", LuaBindings::makeCelestialCallbacks(*m_root, m_universeClient.get())); !r)
+    if (auto r = install("celestial", LuaBindings::makeCelestialCallbacks(*m_root, *m_universeClient)); !r)
       return std::unexpected(std::move(r.error()));
-    if (auto r = install("team", LuaBindings::makeTeamClientCallbacks(m_universeClient->teamClient().get())); !r)
+    if (auto r = install("team", LuaBindings::makeTeamClientCallbacks(*m_universeClient->teamClient())); !r)
       return std::unexpected(std::move(r.error()));
-    if (auto r = install("world", LuaBindings::makeWorldCallbacks(*m_root, m_universeClient->worldClient().get())); !r)
+    if (auto r = install("world", LuaBindings::makeWorldCallbacks(*m_root, *m_universeClient->worldClient())); !r)
       return std::unexpected(std::move(r.error()));
-    m_httpSession->setHttpTrustRequestCallback([session = std::weak_ptr<LuaHttpSession>(m_httpSession), mainInterface = m_mainInterface.get()](String const& domain) -> std::expected<void, StarException> {
-      auto manager = mainInterface->paneManager();
-      auto dialog = manager->registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
+    m_httpSession->setHttpTrustRequestCallback([session = std::weak_ptr<LuaHttpSession>(m_httpSession), mainInterface = std::ref(*m_mainInterface)](String const& domain) -> std::expected<void, StarException> {
+      auto& manager = mainInterface.get().paneManager();
+      auto dialog = manager.registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
       if (!dialog)
         return std::unexpected(std::move(dialog.error()));
       auto displayed = (*dialog)->displayRequest(domain, [session, domain](HttpTrustReply reply, bool) -> std::expected<void, StarException> {
@@ -1477,7 +1482,7 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
       });
       if (!displayed)
         return std::unexpected(std::move(displayed.error()));
-      auto shown = manager->displayRegisteredPane(MainInterfacePanes::HttpTrustDialog);
+      auto shown = manager.displayRegisteredPane(MainInterfacePanes::HttpTrustDialog);
       if (!shown)
         return std::unexpected(std::move(shown.error()));
       return {};
@@ -1486,7 +1491,7 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
       return std::unexpected(std::move(r.error()));
     if (auto r = m_universeClient->startLuaScripts(); !r)
       return std::unexpected(std::move(r.error()));
-    m_mainMixer->setWorldPainter(m_worldPainter);
+    m_mainMixer->setWorldPainter(optionalRef(m_worldPainter));
     if (auto renderer = Application::renderer()) {
       if (auto r = m_worldPainter->renderInit(renderer); !r)
         return std::unexpected(std::move(r.error()));
@@ -1503,12 +1508,13 @@ std::expected<void, StarException> ClientApplication::setError(String const& err
   auto reset = m_titleScreen->resetState();
   auto changed = changeState(MainAppState::Title);
   std::optional<StarException> failure;
-  for (auto result : std::array{&logged, &displayed, &reset, &changed}) {
-    if (!*result) {
+  for (auto const& reference : std::array{std::ref(logged), std::ref(displayed), std::ref(reset), std::ref(changed)}) {
+    auto& result = reference.get();
+    if (!result) {
       if (failure)
-        failure = failure->withContext(strf("Additional client recovery failure: {}", outputException(ExceptionDiagnostic(result->error()), true)));
+        failure = failure->withContext(strf("Additional client recovery failure: {}", outputException(ExceptionDiagnostic(result.error()), true)));
       else
-        failure = std::move(result->error());
+        failure = std::move(result.error());
     }
   }
   if (failure)
@@ -1522,12 +1528,13 @@ std::expected<void, StarException> ClientApplication::setError(String const& err
   auto reset = m_titleScreen->resetState();
   auto changed = changeState(MainAppState::Title);
   std::optional<StarException> failure;
-  for (auto result : std::array{&logged, &displayed, &reset, &changed}) {
-    if (!*result) {
+  for (auto const& reference : std::array{std::ref(logged), std::ref(displayed), std::ref(reset), std::ref(changed)}) {
+    auto& result = reference.get();
+    if (!result) {
       if (failure)
-        failure = failure->withContext(strf("Additional client recovery failure: {}", outputException(ExceptionDiagnostic(result->error()), true)));
+        failure = failure->withContext(strf("Additional client recovery failure: {}", outputException(ExceptionDiagnostic(result.error()), true)));
       else
-        failure = std::move(result->error());
+        failure = std::move(result.error());
     }
   }
   if (failure)
@@ -1692,7 +1699,7 @@ std::expected<void, StarException> ClientApplication::updateTitle(float dt) {
   bool inputActive = *active;
   m_input->setTextInputActive(inputActive);
   if (inputActive) {
-    auto widget = m_titleScreen->paneManager()->keyboardCapturedWidget();
+    auto widget = m_titleScreen->paneManager().keyboardCapturedWidget();
     if (!widget)
       return std::unexpected(std::move(widget.error()));
     auto area = (*widget)->keyboardCaptureArea();
@@ -1706,7 +1713,7 @@ std::expected<void, StarException> ClientApplication::updateTitle(float dt) {
 
   auto p2pNetworkingService = app->p2pNetworkingService();
   if (p2pNetworkingService) {
-    auto getStateString = [](TitleState state) -> const char* {
+    auto getStateString = [](TitleState state) -> std::string_view {
       switch (state) {
         case TitleState::Main:
           return "In Main Menu";
@@ -1845,15 +1852,13 @@ std::expected<void, StarException> ClientApplication::updateRunning(float dt) {
         if (tag == "worldName") {
           if (std::holds_alternative<ClientShipWorldId>(m_universeClient->clientContext()->playerWorldId()))
             return "Player Ship";
-          else if (WorldTemplate const* worldTemplate = worldClient ? worldClient->currentTemplate().get() : nullptr) {
-            auto worldName = worldTemplate->worldName();
-            if (worldName.empty())
-              return "In World";
-            else
-              return Text::stripEscapeCodes(worldName);
-          }
-          else
+          auto worldTemplate = worldClient ? worldClient->currentTemplate() : nullptr;
+          if (!worldTemplate)
             return "Nowhere";
+          auto worldName = worldTemplate->worldName();
+          if (worldName.empty())
+            return "In World";
+          return Text::stripEscapeCodes(worldName);
         }
         return "";
       };
@@ -1886,7 +1891,7 @@ std::expected<void, StarException> ClientApplication::updateRunning(float dt) {
           return std::unexpected(std::move(details.error()));
         finalDetails = std::move(*details);
       }
-      if (auto activity = p2pNetworkingService->setActivityData("In Game", finalDetails.utf8Ptr(), m_timeSinceJoin, party); !activity)
+      if (auto activity = p2pNetworkingService->setActivityData("In Game", finalDetails.utf8(), m_timeSinceJoin, party); !activity)
         return std::unexpected(std::move(activity.error()));
     }
 
@@ -2013,17 +2018,17 @@ std::expected<void, StarException> ClientApplication::updateRunning(float dt) {
       return std::unexpected(std::move(voice.error()));
     bool needstoSendVoice = *voice;
 
-    auto checkDisconnection = [this]() -> std::expected<bool, StarException> {
-      if (!m_universeClient->isConnected()) {
-        m_cinematicOverlay->stop();
+    auto checkDisconnection = [app = std::ref(*this)]() -> std::expected<bool, StarException> {
+      if (!app.get().m_universeClient->isConnected()) {
+        app.get().m_cinematicOverlay->stop();
         String errMessage;
-        if (auto disconnectReason = m_universeClient->disconnectReason())
+        if (auto disconnectReason = app.get().m_universeClient->disconnectReason())
           errMessage = strf("You were disconnected from the server for the following reason:\n{}", *disconnectReason);
         else
           errMessage = "Client-server connection no longer valid!";
-        if (auto displayed = setError(errMessage); !displayed)
+        if (auto displayed = app.get().setError(errMessage); !displayed)
           return std::unexpected(std::move(displayed.error()));
-        if (auto changed = changeState(MainAppState::Title); !changed)
+        if (auto changed = app.get().changeState(MainAppState::Title); !changed)
           return std::unexpected(std::move(changed.error()));
         return true;
       }
@@ -2076,11 +2081,12 @@ std::expected<void, StarException> ClientApplication::updateRunning(float dt) {
 
       if (worldClient->inWorld()) {
         if (needstoSendVoice) {
-          auto signature = m_root->identity().sign(voiceData.ptr(), voiceData.size());
+          auto signature = m_root->identity().sign(voiceData.span());
           std::string broadcast("data\0voice\0", sizeof("data\0voice\0") - 1);
           broadcast.reserve((sizeof("data\0voice\0") - 1) + signature.size() + voiceData.size());
           broadcast.append(reinterpret_cast<char const*>(signature.data()), signature.size());
-          broadcast.append(voiceData.ptr(), voiceData.size());
+          auto voiceBytes = voiceData.span();
+          broadcast.append(voiceBytes.begin(), voiceBytes.end());
           worldClient->sendSecretBroadcast(broadcast, true, false); // Packet queueing is nonfallible.
         }
         if (auto mainPlayer = m_universeClient->mainPlayer()) {
@@ -2112,7 +2118,7 @@ std::expected<void, StarException> ClientApplication::updateRunning(float dt) {
     bool inputActive = *active;
     m_input->setTextInputActive(inputActive);
     if (inputActive) {
-      auto widget = m_mainInterface->paneManager()->keyboardCapturedWidget();
+      auto widget = m_mainInterface->paneManager().keyboardCapturedWidget();
       if (!widget)
         return std::unexpected(std::move(widget.error()));
       auto area = (*widget)->keyboardCaptureArea();
@@ -2286,7 +2292,7 @@ std::expected<void, StarException> ClientApplication::updateCamera(float dt) {
 
 int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   auto reportStartupFailure = [](std::string const& diagnostic) {
-    Star::EmergencyLog::log(Star::LogLevel::Error, diagnostic.c_str());
+    Star::EmergencyLog::log(Star::LogLevel::Error, diagnostic);
     auto text = Star::String(diagnostic).wstring();
     if (text) {
       MessageBoxW(nullptr, text->c_str(), L"OpenStarbound startup error", MB_OK | MB_ICONERROR);
@@ -2344,6 +2350,10 @@ int main(int argc, char** argv) {
     Star::EmergencyLog::error("Client native initialization failed: {}", Star::outputException(Star::ExceptionDiagnostic(nativeRuntime.error()), true));
     return 1;
   }
-  return Star::runMainApplication(std::make_unique<Star::ClientApplication>(), Star::StringList(argc, argv));
+  Star::StringList args;
+  args.reserve(argc);
+  for (int i = 0; i < argc; ++i)
+    args.append(Star::String(std::string_view(argv[i])));
+  return Star::runMainApplication(std::make_unique<Star::ClientApplication>(), args);
 }
 #endif

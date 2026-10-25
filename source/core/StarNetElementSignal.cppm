@@ -20,7 +20,7 @@ class NetElementSignal : public NetElement {
 public:
   NetElementSignal(std::size_t maxSignalQueue = 32);
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version = std::nullopt) override;
 
   [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -43,7 +43,7 @@ private:
   };
 
   std::size_t m_maxSignalQueue;
-  NetElementVersion const* m_netVersion = nullptr;
+  std::optional<std::reference_wrapper<NetElementVersion const>> m_netVersion = std::nullopt;
   bool m_netInterpolationEnabled = false;
   Deque<SignalEntry> m_signals;
   Deque<std::pair<float, Signal>> m_pendingSignals;
@@ -55,7 +55,7 @@ NetElementSignal<Signal>::NetElementSignal(std::size_t maxSignalQueue) {
 }
 
 template <typename Signal>
-void NetElementSignal<Signal>::initNetVersion(NetElementVersion const* version) {
+void NetElementSignal<Signal>::initNetVersion(std::optional<std::reference_wrapper<NetElementVersion const>> version) {
   m_netVersion = version;
   m_signals.clear();
 }
@@ -139,7 +139,7 @@ template <typename Signal>
 
 template <typename Signal>
 void NetElementSignal<Signal>::send(Signal signal) {
-  m_signals.append({m_netVersion ? m_netVersion->current() : 0, signal, false});
+  m_signals.append({m_netVersion ? m_netVersion->get().current() : 0, signal, false});
   while (m_signals.size() > m_maxSignalQueue)
     m_signals.pop_front();
 }

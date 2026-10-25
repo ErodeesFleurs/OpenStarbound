@@ -31,7 +31,7 @@ class Player;
 class Root;
 
 struct InventoryExceptionTag {
-  static constexpr char const* name() { return "InventoryException"; }
+  static constexpr std::string_view name() { return "InventoryException"; }
 };
 using InventoryException = StarError<InventoryExceptionTag, StarException>;
 
@@ -209,11 +209,11 @@ public:
   // tick.
   [[nodiscard]] std::expected<void, StarException> cleanup();
 
-  // The given player pointer must be valid for the lifetime of this inventory
-  void setPlayer(Player*);
+  // Nullable while unbound; the player clears this borrow before destruction.
+  void setPlayer(std::optional<std::reference_wrapper<Player>> player);
 
   // Empty network state with this inventory's original bag and action-bar schema.
-  [[nodiscard]] std::expected<PlayerInventory const*, StarException> blankInventory() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<PlayerInventory const>, StarException> blankInventory() const;
 
   [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
@@ -231,7 +231,7 @@ private:
 
   static void normalizeItem(std::shared_ptr<Item>& item);
   [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> retrieve(InventorySlot const& slot) const;
-  [[nodiscard]] std::expected<std::shared_ptr<Item>*, StarException> retrieveForMutation(InventorySlot const& slot);
+  [[nodiscard]] std::expected<std::reference_wrapper<std::shared_ptr<Item>>, StarException> retrieveForMutation(InventorySlot const& slot);
 
   void swapCustomBarLinks(InventorySlot a, InventorySlot b);
   [[nodiscard]] std::expected<void, StarException> autoAddToCustomBar(InventorySlot slot);
@@ -240,7 +240,7 @@ private:
   [[nodiscard]] std::expected<void, StarException> netElementsNeedStore() override;
 
   // Borrowed for this inventory's lifetime; resource lookups remain reload-aware.
-  Root* m_root;
+  Root& m_root;
   // Preserve the construction schema for the per-inventory empty network state.
   Json m_inventoryConfig;
   Json m_currenciesConfig;
@@ -270,7 +270,7 @@ private:
   List<std::shared_ptr<Item>> m_inventoryLoadOverflow;
   unsigned m_equipmentVisibilityMask;
 
-  Player* m_player;
+  std::optional<std::reference_wrapper<Player>> m_player;
 };
 
 }

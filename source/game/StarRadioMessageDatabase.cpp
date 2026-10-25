@@ -44,7 +44,7 @@ std::expected<std::shared_ptr<RadioMessageDatabase>, StarException> RadioMessage
   auto files = (*assets)->scanExtension("radiomessages");
   if (!files)
     return std::unexpected(std::move(files.error()));
-  for (auto const& assetFile : **files) {
+  for (auto const& assetFile : files->get()) {
     auto const& file = assetFile.string();
     auto loaded = [&]() -> std::expected<void, StarException> {
       auto messages = (*assets)->json(file);
@@ -70,8 +70,8 @@ std::expected<std::shared_ptr<RadioMessageDatabase>, StarException> RadioMessage
 }
 
 std::expected<RadioMessage, StarException> RadioMessageDatabase::radioMessage(String const& messageName) const {
-  if (auto message = m_radioMessages.ptr(messageName))
-    return *message;
+  if (auto message = m_radioMessages.maybeRef(messageName))
+    return message->get();
   return std::unexpected(RadioMessageDatabaseException(strf("Unknown radio message {}", messageName)));
 }
 
@@ -103,12 +103,12 @@ std::expected<RadioMessage, StarException> RadioMessageDatabase::createRadioMess
   auto typeName = mergedConfig.getString("type");
   if (!typeName)
     return std::unexpected(std::move(typeName.error()));
-  auto type = RadioMessageTypeNames->leftPtr(*typeName);
+  auto type = RadioMessageTypeNames->maybeLeftRef(*typeName);
   if (!type)
     return std::unexpected(std::move(type.error()));
   if (!*type)
     return std::unexpected(RadioMessageDatabaseException(strf("Unknown radio message type '{}'", *typeName)));
-  message.type = **type;
+  message.type = (*type)->get();
   // Mission messages may repeat when the mission is replayed.
   auto unique = message.type == RadioMessageType::Mission ? config.getBool("unique", false) : mergedConfig.getBool("unique");
   if (!unique)
@@ -156,7 +156,7 @@ std::expected<RadioMessage, StarException> RadioMessageDatabase::createRadioMess
   auto merger = withoutAi->eraseKey("speciesMessage");
   if (!merger)
     return std::unexpected(std::move(merger.error()));
-  for (auto const& key : {"speciesAiMessage", "speciesMessage"}) {
+  for (auto const& key : std::initializer_list<String>{"speciesAiMessage", "speciesMessage"}) {
     auto variants = mergedConfig.get(key, JsonObject()).and_then([](Json const& value) { return value.iterateObject(); });
     if (!variants)
       return std::unexpected(std::move(variants.error()));

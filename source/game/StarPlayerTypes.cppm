@@ -46,7 +46,7 @@ struct ShipUpgrades {
   [[nodiscard]] static std::expected<ShipUpgrades, StarException> create(Json config);
   Json toJson() const;
 
-  [[nodiscard]] std::expected<ShipUpgrades*, StarException> apply(Json const& upgrades);
+  [[nodiscard]] std::expected<std::reference_wrapper<ShipUpgrades>, StarException> apply(Json const& upgrades);
 
   bool operator==(ShipUpgrades const& rhs) const;
 
@@ -58,8 +58,8 @@ struct ShipUpgrades {
   StringSet capabilities;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ShipUpgrades& upgrades);
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ShipUpgrades const& upgrades);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, ShipUpgrades& upgrades);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, ShipUpgrades const& upgrades);
 
 }
 

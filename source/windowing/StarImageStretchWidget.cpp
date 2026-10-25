@@ -72,7 +72,7 @@ void ImageStretchWidget::setImageStretchSet(String const& beginImage, String con
 }
 
 std::expected<void, StarException> ImageStretchWidget::renderImpl() {
-  return context()->drawImageStretchSet(m_imageStretchSet, RectF(screenBoundRect()), m_direction);
+  return context().drawImageStretchSet(m_imageStretchSet, RectF(screenBoundRect()), m_direction);
 }
 
 }

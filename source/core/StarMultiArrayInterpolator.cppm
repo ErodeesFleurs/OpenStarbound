@@ -56,8 +56,8 @@ struct MultiArrayInterpolator2 {
     WeightList weights = weightFunction(offset[dim]);
 
     if (dim == Rank - 1) {
-      return weights[0] * array[std::span<std::size_t const, Rank>(minIndex.ptr(), Rank)] +
-        weights[1] * array[std::span<std::size_t const, Rank>(maxIndex.ptr(), Rank)];
+      return weights[0] * array[std::span<std::size_t const, Rank>(minIndex)] +
+        weights[1] * array[std::span<std::size_t const, Rank>(maxIndex)];
     } else {
       return
         weights[0] * interpolateSub(array, imin, imax, offset, minIndex, dim+1) +
@@ -126,10 +126,10 @@ struct MultiArrayInterpolator4 {
 
     if (dim == Rank - 1) {
       return
-        weights[0] * array[std::span<std::size_t const, Rank>(index0.ptr(), Rank)] +
-        weights[1] * array[std::span<std::size_t const, Rank>(index1.ptr(), Rank)] +
-        weights[2] * array[std::span<std::size_t const, Rank>(index2.ptr(), Rank)] +
-        weights[3] * array[std::span<std::size_t const, Rank>(index3.ptr(), Rank)];
+        weights[0] * array[std::span<std::size_t const, Rank>(index0)] +
+        weights[1] * array[std::span<std::size_t const, Rank>(index1)] +
+        weights[2] * array[std::span<std::size_t const, Rank>(index2)] +
+        weights[3] * array[std::span<std::size_t const, Rank>(index3)];
     } else {
       return
         weights[0] * interpolateSub(array, i0, i1, i2, i3, offset, index0, dim+1) +
@@ -194,14 +194,14 @@ struct MultiArrayPiecewiseInterpolator {
     auto const view = array.view();
 
     IndexList location = minIndex;
-    Element result = view[std::span<std::size_t const, Rank>(location.ptr(), Rank)];
+    Element result = view[std::span<std::size_t const, Rank>(location)];
     Element last = result;
     Element current;
 
     for (std::size_t i = 0; i < Rank; ++i) {
       auto const& pr = piecewiseRangeList[i];
       location[pr.dim] = maxIndex[pr.dim];
-      current = view[std::span<std::size_t const, Rank>(location.ptr(), Rank)];
+      current = view[std::span<std::size_t const, Rank>(location)];
 
       WeightList weights = weightFunction(pr.offset);
       result += last * (weights[0] - 1) + current * weights[1];

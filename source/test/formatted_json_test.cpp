@@ -134,8 +134,8 @@ TEST(FormattedJsonTest, Parsing) {
 List<String> keyOrder(FormattedJson const& json) {
   List<String> keys;
   for (JsonElement const& elem : json.elements()) {
-    if (auto key = std::get_if<ObjectKeyElement>(&elem))
-      keys.append(key->key);
+    if (std::holds_alternative<ObjectKeyElement>(elem))
+      keys.append(std::get<ObjectKeyElement>(elem).key);
   }
   return keys;
 }
@@ -308,7 +308,7 @@ TEST(FormattedJsonTest, ArrayInsertion) {
   auto result43 = json.insert(0, (*result218));
   ASSERT_TRUE(result43);
   json = (*result43);
-  char const* expected = R"JSON([
+  std::string_view expected = R"JSON([
     0,
     "01",
     23,
@@ -350,7 +350,7 @@ TEST(FormattedJsonTest, ObjectErase) {
   auto result50 = json.eraseKey("mmm");
   ASSERT_TRUE(result50);
   json = (*result50);
-  char const* expected = R"JSON({
+  std::string_view expected = R"JSON({
     "zzz": 123,
     "aaa": 789
   })JSON";
@@ -443,7 +443,7 @@ TEST(FormattedJsonTest, CommentPreservation) {
   auto result75 = json.eraseKey("hello");
   ASSERT_TRUE(result75);
   json = (*result75);
-  char const* expected = R"JSON({
+  std::string_view expected = R"JSON({
     // This is a comment
     "goodbye": 1,
     "world": 2
@@ -466,7 +466,7 @@ TEST(FormattedJsonTest, StylePreservation) {
   auto result78 = json.append("world", (*result223));
   ASSERT_TRUE(result78);
   json = (*result78);
-  char const* expected = R"JSON({
+  std::string_view expected = R"JSON({
 
     "hello"        :          1234,
 

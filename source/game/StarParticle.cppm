@@ -22,8 +22,8 @@ namespace Star {
 class Root;
 
 struct Particle {
-  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, Particle const& particle);
-  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, Particle& particle);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Particle const& particle);
+  friend std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Particle& particle);
 
   enum class Type {
     // Variance is basically a null type, used only for varying other particles
@@ -135,8 +135,8 @@ struct Particle {
   std::optional<Animation> animation;
 };
 
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Particle const& particle);
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Particle& particle);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Particle const& particle);
+[[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Particle& particle);
 
 typedef std::function<Particle()> ParticleVariantCreator;
 ParticleVariantCreator makeParticleVariantCreator(Root& root, Particle particle, Particle variance);

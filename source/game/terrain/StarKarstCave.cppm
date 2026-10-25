@@ -23,7 +23,7 @@ export namespace Star {
 
 class KarstCaveSelector : public TerrainSelector {
 public:
-  static char const* const Name;
+  static std::string_view const Name;
 
   [[nodiscard]] static std::expected<std::shared_ptr<KarstCaveSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters);
 private:
@@ -42,22 +42,22 @@ private:
   };
 
   struct Sector {
-    Sector(KarstCaveSelector const* parent, Vec2I sector) : parent(parent), sector(sector), values(square(parent->m_sectorSize)), m_maxValue(0) {}
-    [[nodiscard]] static std::expected<Sector, StarException> create(KarstCaveSelector const* parent, Vec2I sector);
+    Sector(KarstCaveSelector const& parent, Vec2I sector) : parent(parent), sector(sector), values(square(parent.m_sectorSize)), m_maxValue(0) {}
+    [[nodiscard]] static std::expected<Sector, StarException> create(KarstCaveSelector const& parent, Vec2I sector);
 
     float get(int x, int y);
 
     bool inside(int x, int y);
     void set(int x, int y, float value);
 
-    KarstCaveSelector const* parent;
+    std::reference_wrapper<KarstCaveSelector const> parent;
     Vec2I sector;
     List<float> values;
 
     float m_maxValue;
   };
 
-  [[nodiscard]] std::expected<LayerPerlins const*, StarException> layerPerlins(int y) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<LayerPerlins const>, StarException> layerPerlins(int y) const;
 
   int m_sectorSize;
   int m_layerResolution;
@@ -81,7 +81,7 @@ private:
 
 namespace Star {
 
-char const* const KarstCaveSelector::Name = "karstcave";
+std::string_view const KarstCaveSelector::Name = "karstcave";
 
 std::expected<std::shared_ptr<KarstCaveSelector>, StarException> KarstCaveSelector::create(Json const& config, TerrainSelectorParameters const& parameters) {
   auto result = std::make_shared<KarstCaveSelector>(ConstructionKey{}, config, parameters);
@@ -137,32 +137,32 @@ std::expected<std::shared_ptr<KarstCaveSelector>, StarException> KarstCaveSelect
 std::expected<float, StarException> KarstCaveSelector::get(int x, int y) const {
   Vec2I key = Vec2I(x - pmod(x, m_sectorSize), y - pmod(y, m_sectorSize));
   auto sector = m_sectorCache.get(key, [this](Vec2I const& key) {
-    return Sector::create(this, key);
+    return Sector::create(*this, key);
   });
   if (!sector)
     return std::unexpected(std::move(sector.error()));
-  return (*sector)->get(x, y);
+  return sector->get().get(x, y);
 }
 
-std::expected<KarstCaveSelector::Sector, StarException> KarstCaveSelector::Sector::create(KarstCaveSelector const* parent, Vec2I sector) {
+std::expected<KarstCaveSelector::Sector, StarException> KarstCaveSelector::Sector::create(KarstCaveSelector const& parent, Vec2I sector) {
   Sector result(parent, sector);
 
 
-  for (int y = sector[1] - parent->m_bufferHeight; y < sector[1] + parent->m_sectorSize + parent->m_bufferHeight; y++) {
-    float layerChance = parent->m_layerDensity * parent->m_layerResolution;
+  for (int y = sector[1] - parent.m_bufferHeight; y < sector[1] + parent.m_sectorSize + parent.m_bufferHeight; y++) {
+    float layerChance = parent.m_layerDensity * parent.m_layerResolution;
     // determine whether this layer has caves
-    if (y % parent->m_layerResolution == 0 && staticRandomFloat(parent->m_seed, y) <= layerChance) {
-      auto perlins = parent->layerPerlins(y);
+    if (y % parent.m_layerResolution == 0 && staticRandomFloat(parent.m_seed, y) <= layerChance) {
+      auto perlins = parent.layerPerlins(y);
       if (!perlins)
         return std::unexpected(std::move(perlins.error()));
-      LayerPerlins const& layerPerlins = **perlins;
+      LayerPerlins const& layerPerlins = perlins->get();
 
       // carve out cave layer
-      for (int x = sector[0]; x < sector[0] + parent->m_sectorSize; x++) {
+      for (int x = sector[0]; x < sector[0] + parent.m_sectorSize; x++) {
         // use wrapping noise
-        float noiseAngle = 2 * std::numbers::pi * x / parent->m_worldWidth;
-        float noiseX = (std::cos(noiseAngle) * parent->m_worldWidth) / (2 * std::numbers::pi);
-        float noiseY = (std::sin(noiseAngle) * parent->m_worldWidth) / (2 * std::numbers::pi);
+        float noiseAngle = 2 * std::numbers::pi * x / parent.m_worldWidth;
+        float noiseX = (std::cos(noiseAngle) * parent.m_worldWidth) / (2 * std::numbers::pi);
+        float noiseY = (std::sin(noiseAngle) * parent.m_worldWidth) / (2 * std::numbers::pi);
 
         // determine where caves be at
         auto caveDecision = layerPerlins.caveDecision.get(noiseX, noiseY);
@@ -170,8 +170,8 @@ std::expected<KarstCaveSelector::Sector, StarException> KarstCaveSelector::Secto
           return std::unexpected(std::move(caveDecision.error()));
         float isThereACaveHere = *caveDecision;
         if (isThereACaveHere > 0) {
-          float taperFactor = isThereACaveHere < parent->m_caveTaperPoint
-              ? std::sin((0.5 * std::numbers::pi * isThereACaveHere) / parent->m_caveTaperPoint)
+          float taperFactor = isThereACaveHere < parent.m_caveTaperPoint
+              ? std::sin((0.5 * std::numbers::pi * isThereACaveHere) / parent.m_caveTaperPoint)
               : 1.0f;
 
           auto layerHeight = layerPerlins.layerHeightVariation.get(noiseX, noiseY);
@@ -202,7 +202,7 @@ std::expected<KarstCaveSelector::Sector, StarException> KarstCaveSelector::Secto
 }
 
 float KarstCaveSelector::Sector::get(int x, int y) {
-  auto val = values[(x - sector[0]) + parent->m_sectorSize * (y - sector[1])];
+  auto val = values[(x - sector[0]) + parent.get().m_sectorSize * (y - sector[1])];
   if (val > 0)
     return val;
   else
@@ -211,19 +211,19 @@ float KarstCaveSelector::Sector::get(int x, int y) {
 
 bool KarstCaveSelector::Sector::inside(int x, int y) {
   int x_ = x - sector[0];
-  if (x_ < 0 || x_ >= parent->m_sectorSize)
+  if (x_ < 0 || x_ >= parent.get().m_sectorSize)
     return false;
   int y_ = y - sector[1];
-  if (y_ < 0 || y_ >= parent->m_sectorSize)
+  if (y_ < 0 || y_ >= parent.get().m_sectorSize)
     return false;
   return true;
 }
 
 void KarstCaveSelector::Sector::set(int x, int y, float value) {
-  values[(x - sector[0]) + parent->m_sectorSize * (y - sector[1])] = value;
+  values[(x - sector[0]) + parent.get().m_sectorSize * (y - sector[1])] = value;
 }
 
-std::expected<KarstCaveSelector::LayerPerlins const*, StarException> KarstCaveSelector::layerPerlins(int y) const {
+std::expected<std::reference_wrapper<KarstCaveSelector::LayerPerlins const>, StarException> KarstCaveSelector::layerPerlins(int y) const {
   auto result = m_layerPerlinsCache.get(y, [this](int y) -> std::expected<LayerPerlins, StarException> {
     auto decision = PerlinF::create(m_caveDecisionPerlinConfig, staticRandomU64(y, m_seed, "CaveDecision"));
     if (!decision)
@@ -241,7 +241,7 @@ std::expected<KarstCaveSelector::LayerPerlins const*, StarException> KarstCaveSe
   });
   if (!result)
     return std::unexpected(std::move(result.error()));
-  return *result;
+  return std::cref(result->get());
 }
 
 }

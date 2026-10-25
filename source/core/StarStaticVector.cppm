@@ -5,7 +5,7 @@ import star.format;
 namespace Star {
 
 struct StaticVectorSizeExceptionTag {
-  static constexpr char const* name() { return "StaticVectorSizeException"; }
+  static constexpr std::string_view name() { return "StaticVectorSizeException"; }
 };
 using StaticVectorSizeException = StarError<StaticVectorSizeExceptionTag, StarException>;
 
@@ -54,9 +54,9 @@ public:
   std::expected<void, StarException> resize(std::size_t size, Element const& e = Element());
 
   [[nodiscard]]
-  std::expected<Element*, StarException> at(std::size_t i);
+  std::expected<std::reference_wrapper<Element>, StarException> at(std::size_t i);
   [[nodiscard]]
-  std::expected<Element const*, StarException> at(std::size_t i) const;
+  std::expected<std::reference_wrapper<Element const>, StarException> at(std::size_t i) const;
 
   reference operator[](std::size_t i);
   const_reference operator[](std::size_t i) const;
@@ -242,17 +242,17 @@ std::expected<void, StarException> StaticVector<Element, MaxSize>::resize(std::s
 }
 
 template <typename Element, std::size_t MaxSize>
-auto StaticVector<Element, MaxSize>::at(std::size_t i) -> std::expected<Element*, StarException> {
+auto StaticVector<Element, MaxSize>::at(std::size_t i) -> std::expected<std::reference_wrapper<Element>, StarException> {
   if (i >= m_size)
     return std::unexpected(OutOfRangeException::format("out of range in StaticVector::at({})", i));
-  return ptr() + i;
+  return std::reference_wrapper<Element>(ptr()[i]);
 }
 
 template <typename Element, std::size_t MaxSize>
-auto StaticVector<Element, MaxSize>::at(std::size_t i) const -> std::expected<Element const*, StarException> {
+auto StaticVector<Element, MaxSize>::at(std::size_t i) const -> std::expected<std::reference_wrapper<Element const>, StarException> {
   if (i >= m_size)
     return std::unexpected(OutOfRangeException::format("out of range in StaticVector::at({})", i));
-  return ptr() + i;
+  return std::reference_wrapper<Element const>(ptr()[i]);
 }
 
 template <typename Element, std::size_t MaxSize>

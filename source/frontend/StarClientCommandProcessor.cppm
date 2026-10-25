@@ -66,7 +66,8 @@ class Quest;
 class ClientCommandProcessor {
 public:
   ClientCommandProcessor(GuiContext& context, std::shared_ptr<UniverseClient> universeClient, std::shared_ptr<Cinematic> cinematicOverlay,
-      MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands);
+      MainInterfacePaneManager& paneManager, StringMap<StringList> macroCommands);
+  void detachInterface() { m_paneManager.reset(); }
 
   [[nodiscard]] std::expected<StringList, StarException> handleCommand(String const& commandLine, bool userInput = false);
   [[nodiscard]] std::expected<StringList, StarException> updatePromises();
@@ -117,7 +118,7 @@ private:
   [[nodiscard]] std::expected<String, StarException> respawnInWorld(String const& argumentsString);
   [[nodiscard]] std::expected<String, StarException> render(String const& imagePath);
 
-  using BuiltinCommand = std::expected<String, StarException> (*)(ClientCommandProcessor&, String const&);
+  using BuiltinCommand = std::reference_wrapper<std::expected<String, StarException>(ClientCommandProcessor&, String const&)>;
   template <auto Command>
   [[nodiscard]] static std::expected<String, StarException> invokeBuiltin(ClientCommandProcessor& self, String const& arguments) {
     if constexpr (std::is_invocable_v<decltype(Command), ClientCommandProcessor&, String const&>) {
@@ -134,7 +135,7 @@ private:
 
   std::shared_ptr<UniverseClient> m_universeClient;
   std::shared_ptr<Cinematic> m_cinematicOverlay;
-  MainInterfacePaneManager* m_paneManager;
+  std::optional<std::reference_wrapper<MainInterfacePaneManager>> m_paneManager;
   StringMap<StringList> m_macroCommands;
   HashMap<Uuid,RpcPromise<Json>> m_commandPromises;
   ShellParser m_parser;

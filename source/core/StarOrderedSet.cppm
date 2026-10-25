@@ -81,8 +81,8 @@ public:
 
   void clear();
 
-  [[nodiscard]] std::expected<value_type const*, StarException> first() const;
-  [[nodiscard]] std::expected<value_type const*, StarException> last() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<value_type const>, StarException> first() const;
+  [[nodiscard]] std::expected<std::reference_wrapper<value_type const>, StarException> last() const;
 
   [[nodiscard]] std::expected<void, StarException> removeFirst();
   [[nodiscard]] std::expected<void, StarException> removeLast();
@@ -106,8 +106,8 @@ public:
 
   std::optional<std::size_t> indexOf(value_type const& v) const;
 
-  [[nodiscard]] std::expected<value_type const*, StarException> at(std::size_t i) const;
-  [[nodiscard]] std::expected<value_type const*, StarException> at(std::size_t i);
+  [[nodiscard]] std::expected<std::reference_wrapper<value_type const>, StarException> at(std::size_t i) const;
+  [[nodiscard]] std::expected<std::reference_wrapper<value_type const>, StarException> at(std::size_t i);
 
   OrderedSetWrapper intersection(OrderedSetWrapper const& s) const;
   OrderedSetWrapper difference(OrderedSetWrapper const& s) const;
@@ -185,7 +185,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::insert(value_type const&
   auto i = m_map.find(v);
   if (i == m_map.end()) {
     auto orderIt = m_order.insert(m_order.end(), v);
-    m_map.insert(typename MapType::value_type(std::cref(*orderIt), orderIt));
+    m_map.insert(typename MapType::value_type(std::reference_wrapper<value_type const>(*orderIt), orderIt));
     return {orderIt, true};
   }
   return {i->second, false};
@@ -211,7 +211,7 @@ bool OrderedSetWrapper<Map, Value, Allocator, Args...>::addBack(Value const& v) 
     return false;
   } else {
     iterator orderIt = m_order.insert(m_order.end(), v);
-    m_map.insert(typename MapType::value_type(std::cref(*orderIt), orderIt));
+    m_map.insert(typename MapType::value_type(std::reference_wrapper<value_type const>(*orderIt), orderIt));
     return true;
   }
 }
@@ -224,7 +224,7 @@ bool OrderedSetWrapper<Map, Value, Allocator, Args...>::addFront(Value const& v)
     return false;
   } else {
     iterator orderIt = m_order.insert(m_order.end(), v);
-    m_map.insert(typename MapType::value_type(std::cref(*orderIt), orderIt));
+    m_map.insert(typename MapType::value_type(std::reference_wrapper<value_type const>(*orderIt), orderIt));
     return true;
   }
 }
@@ -274,17 +274,17 @@ void OrderedSetWrapper<Map, Value, Allocator, Args...>::clear() {
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::first() const -> std::expected<value_type const*, StarException> {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::first() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
   if (empty())
     return std::unexpected(SetException("first() called on empty OrderedSet"));
-  return &*begin();
+  return std::reference_wrapper<value_type const>(*begin());
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::last() const -> std::expected<value_type const*, StarException> {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::last() const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
   if (empty())
     return std::unexpected(SetException("last() called on empty OrderedSet"));
-  return &*(std::prev(end()));
+  return std::reference_wrapper<value_type const>(*std::prev(end()));
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
@@ -386,16 +386,16 @@ std::optional<std::size_t> OrderedSetWrapper<Map, Value, Allocator, Args...>::in
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(std::size_t i) const -> std::expected<value_type const*, StarException> {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(std::size_t i) const -> std::expected<std::reference_wrapper<value_type const>, StarException> {
   if (i >= size())
     return std::unexpected(SetException("OrderedSet::at() index out of range"));
   auto it = begin();
   std::advance(it, i);
-  return &*it;
+  return std::reference_wrapper<value_type const>(*it);
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(std::size_t i) -> std::expected<value_type const*, StarException> {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(std::size_t i) -> std::expected<std::reference_wrapper<value_type const>, StarException> {
   return std::as_const(*this).at(i);
 }
 

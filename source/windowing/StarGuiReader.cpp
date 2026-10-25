@@ -59,28 +59,29 @@ import star.pane;
 namespace Star {
 
 GuiReader::GuiReader(GuiContext& context) : WidgetParser(context) {
-  m_constructors["background"] = [this](
-      String const& name, Json const& config) { return backgroundHandler(name, config); };
-  m_constructors["button"] = [this](String const& name, Json const& config) { return buttonHandler(name, config); };
-  m_constructors["itemslot"] = [this](String const& name, Json const& config) { return itemSlotHandler(name, config); };
-  m_constructors["itemgrid"] = [this](String const& name, Json const& config) { return itemGridHandler(name, config); };
-  m_constructors["list"] = [this](String const& name, Json const& config) { return listHandler(name, config); };
-  m_constructors["panefeature"] = [this](
-      String const& name, Json const& config) { return paneFeatureHandler(name, config); };
-  m_constructors["radioGroup"] = [this](
-      String const& name, Json const& config) { return radioGroupHandler(name, config); };
-  m_constructors["spinner"] = [this](String const& name, Json const& config) { return spinnerHandler(name, config); };
-  m_constructors["slider"] = [this](String const& name, Json const& config) { return sliderHandler(name, config); };
-  m_constructors["textbox"] = [this](String const& name, Json const& config) { return textboxHandler(name, config); };
-  m_constructors["title"] = [this](String const& name, Json const& config) { return titleHandler(name, config); };
-  m_constructors["stack"] = [this](String const& name, Json const& config) { return stackHandler(name, config); };
-  m_constructors["tabSet"] = [this](String const& name, Json const& config) { return tabSetHandler(name, config); };
-  m_constructors["scrollArea"] = [this](
-      String const& name, Json const& config) { return scrollAreaHandler(name, config); };
+  m_constructors["background"] = [&reader = *this](
+      String const& name, Json const& config) { return reader.backgroundHandler(name, config); };
+  m_constructors["button"] = [&reader = *this](String const& name, Json const& config) { return reader.buttonHandler(name, config); };
+  m_constructors["itemslot"] = [&reader = *this](String const& name, Json const& config) { return reader.itemSlotHandler(name, config); };
+  m_constructors["itemgrid"] = [&reader = *this](String const& name, Json const& config) { return reader.itemGridHandler(name, config); };
+  m_constructors["list"] = [&reader = *this](String const& name, Json const& config) { return reader.listHandler(name, config); };
+  m_constructors["panefeature"] = [&reader = *this](
+      String const& name, Json const& config) { return reader.paneFeatureHandler(name, config); };
+  m_constructors["radioGroup"] = [&reader = *this](
+      String const& name, Json const& config) { return reader.radioGroupHandler(name, config); };
+  m_constructors["spinner"] = [&reader = *this](String const& name, Json const& config) { return reader.spinnerHandler(name, config); };
+  m_constructors["slider"] = [&reader = *this](String const& name, Json const& config) { return reader.sliderHandler(name, config); };
+  m_constructors["textbox"] = [&reader = *this](String const& name, Json const& config) { return reader.textboxHandler(name, config); };
+  m_constructors["title"] = [&reader = *this](String const& name, Json const& config) { return reader.titleHandler(name, config); };
+  m_constructors["stack"] = [&reader = *this](String const& name, Json const& config) { return reader.stackHandler(name, config); };
+  m_constructors["tabSet"] = [&reader = *this](String const& name, Json const& config) { return reader.tabSetHandler(name, config); };
+  m_constructors["scrollArea"] = [&reader = *this](
+      String const& name, Json const& config) { return reader.scrollAreaHandler(name, config); };
 }
 
 std::expected<WidgetConstructResult, StarException> GuiReader::titleHandler(String const&, Json const& config) {
-  if (!m_pane)
+  auto pane = m_pane.lock();
+  if (!pane)
     return std::unexpected(StarException("Only Pane controls support the 'title' command"));
   auto title = config.getString("title", "");
   if (!title)
@@ -92,14 +93,14 @@ std::expected<WidgetConstructResult, StarException> GuiReader::titleHandler(Stri
   if (!iconConfig)
     return std::unexpected(std::move(iconConfig.error()));
   if (iconConfig->isNull()) {
-    m_pane->setTitleString(*title, *subtitle);
+    pane->setTitleString(*title, *subtitle);
   } else {
     auto icon = makeSingle("icon", *iconConfig);
     if (!icon)
       return std::unexpected(std::move(icon.error()));
     if (!*icon)
       return std::unexpected(WidgetParserException("Title specified an incompatible icon type"));
-    auto result = m_pane->setTitle(*icon, *title, *subtitle);
+    auto result = pane->setTitle(*icon, *title, *subtitle);
     if (!result)
       return std::unexpected(std::move(result.error()));
   }
@@ -107,7 +108,8 @@ std::expected<WidgetConstructResult, StarException> GuiReader::titleHandler(Stri
 }
 
 std::expected<WidgetConstructResult, StarException> GuiReader::paneFeatureHandler(String const&, Json const& config) {
-  if (!m_pane)
+  auto pane = m_pane.lock();
+  if (!pane)
     return std::unexpected(StarException("Only Pane controls support the 'panefeature' command"));
   auto anchorName = config.getString("anchor", "None");
   if (!anchorName)
@@ -117,7 +119,7 @@ std::expected<WidgetConstructResult, StarException> GuiReader::paneFeatureHandle
   auto anchor = PaneAnchorNames->getLeft(*anchorName);
   if (!anchor)
     return std::unexpected(std::move(anchor.error()));
-  m_pane->setAnchor(**anchor);
+  pane->setAnchor(anchor->get());
   auto hasOffset = config.contains("offset");
   if (!hasOffset)
     return std::unexpected(std::move(hasOffset.error()));
@@ -128,18 +130,19 @@ std::expected<WidgetConstructResult, StarException> GuiReader::paneFeatureHandle
     auto offset = jsonToVec2I(*offsetConfig);
     if (!offset)
       return std::unexpected(std::move(offset.error()));
-    m_pane->setAnchorOffset(*offset);
+    pane->setAnchorOffset(*offset);
   }
   auto positionLocked = config.getBool("positionLocked", false);
   if (!positionLocked)
     return std::unexpected(std::move(positionLocked.error()));
   if (*positionLocked)
-    m_pane->lockPosition();
+    pane->lockPosition();
   return WidgetConstructResult{};
 }
 
 std::expected<WidgetConstructResult, StarException> GuiReader::backgroundHandler(String const&, Json const& config) {
-  if (!m_pane)
+  auto pane = m_pane.lock();
+  if (!pane)
     return std::unexpected(StarException("Only Pane controls support the 'background' command"));
   auto header = config.getString("fileHeader", "");
   if (!header)
@@ -150,7 +153,7 @@ std::expected<WidgetConstructResult, StarException> GuiReader::backgroundHandler
   auto footer = config.getString("fileFooter", "");
   if (!footer)
     return std::unexpected(std::move(footer.error()));
-  auto result = m_pane->setBG(*header, *body, *footer);
+  auto result = pane->setBG(*header, *body, *footer);
   if (!result)
     return std::unexpected(std::move(result.error()));
   return WidgetConstructResult{};

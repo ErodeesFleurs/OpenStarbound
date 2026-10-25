@@ -67,7 +67,10 @@ public:
     return Star::typeName<ActionBar>();
   }
 
-  [[nodiscard]] static std::expected<std::shared_ptr<ActionBar>, StarException> create(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<Player> player);
+  [[nodiscard]] static std::expected<std::shared_ptr<ActionBar>, StarException> create(GuiContext& guiContext, MainInterfacePaneManager& paneManager, std::shared_ptr<Player> player);
+
+  // Dismissal is reversible; only owner teardown severs this dependency.
+  void detachInterface() noexcept { m_paneManager.reset(); }
 
   [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
   [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
@@ -77,8 +80,8 @@ public:
   [[nodiscard]] std::expected<std::optional<String>, StarException> cursorOverride(Vec2I const& screenPosition) override;
 
 private:
-  explicit ActionBar(GuiContext& guiContext);
-  [[nodiscard]] std::expected<void, StarException> initialize(MainInterfacePaneManager* paneManager, std::shared_ptr<Player> player);
+  ActionBar(GuiContext& guiContext, MainInterfacePaneManager& paneManager);
+  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<Player> player);
   struct CustomBarEntry {
     std::shared_ptr<ItemSlotWidget> left;
     std::shared_ptr<ItemSlotWidget> right;
@@ -91,7 +94,7 @@ private:
   [[nodiscard]] std::expected<void, StarException> essentialBarClick(std::uint8_t index);
   [[nodiscard]] std::expected<void, StarException> swapCustomBar();
 
-  MainInterfacePaneManager* m_paneManager;
+  std::optional<std::reference_wrapper<MainInterfacePaneManager>> m_paneManager;
   std::shared_ptr<Player> m_player;
   Json m_config;
 

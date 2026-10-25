@@ -71,58 +71,58 @@ struct SmallVectorLifetime {
 };
 
 struct CopyableVectorValue {
-  SmallVectorLifetime* state;
+  std::reference_wrapper<SmallVectorLifetime> state;
   int value;
 
-  CopyableVectorValue(SmallVectorLifetime& state, int value) : state(&state), value(value) {
+  CopyableVectorValue(SmallVectorLifetime& state, int value) : state(state), value(value) {
     ++state.alive;
   }
   CopyableVectorValue(CopyableVectorValue const& other) : state(other.state), value(other.value) {
-    ++state->copies;
-    ++state->alive;
+    ++state.get().copies;
+    ++state.get().alive;
   }
   CopyableVectorValue(CopyableVectorValue&& other) : state(other.state), value(other.value) {
-    ++state->moves;
+    ++state.get().moves;
     other.value = -1;
-    ++state->alive;
+    ++state.get().alive;
   }
   CopyableVectorValue& operator=(CopyableVectorValue const& other) {
-    ++state->copyAssignments;
+    ++state.get().copyAssignments;
     value = other.value;
     return *this;
   }
   CopyableVectorValue& operator=(CopyableVectorValue&& other) {
-    ++state->moveAssignments;
+    ++state.get().moveAssignments;
     value = std::exchange(other.value, -1);
     return *this;
   }
   ~CopyableVectorValue() {
-    ++state->destroyed;
-    --state->alive;
+    ++state.get().destroyed;
+    --state.get().alive;
   }
 };
 
 struct MoveOnlyVectorValue {
-  SmallVectorLifetime* state;
+  std::reference_wrapper<SmallVectorLifetime> state;
   int value;
 
-  MoveOnlyVectorValue(SmallVectorLifetime& state, int value) : state(&state), value(value) {
+  MoveOnlyVectorValue(SmallVectorLifetime& state, int value) : state(state), value(value) {
     ++state.alive;
   }
   MoveOnlyVectorValue(MoveOnlyVectorValue const&) = delete;
   MoveOnlyVectorValue(MoveOnlyVectorValue&& other) : state(other.state), value(other.value) {
-    ++state->moves;
+    ++state.get().moves;
     other.value = -1;
-    ++state->alive;
+    ++state.get().alive;
   }
   MoveOnlyVectorValue& operator=(MoveOnlyVectorValue&& other) {
-    ++state->moveAssignments;
+    ++state.get().moveAssignments;
     value = std::exchange(other.value, -1);
     return *this;
   }
   ~MoveOnlyVectorValue() {
-    ++state->destroyed;
-    --state->alive;
+    ++state.get().destroyed;
+    --state.get().alive;
   }
 };
 }
@@ -153,15 +153,15 @@ TEST(SmallVectorTest, ZeroCapacityAndOveralignedStorage) {
 
 TEST(SmallVectorTest, NothrowMoveIsPreferredToCopy) {
   struct Value {
-    int* moves;
-    int* copies;
+    std::reference_wrapper<int> moves;
+    std::reference_wrapper<int> copies;
 
-    explicit Value(int& moves, int& copies) : moves(&moves), copies(&copies) {}
+    explicit Value(int& moves, int& copies) : moves(moves), copies(copies) {}
     Value(Value const& other) : moves(other.moves), copies(other.copies) {
-      ++*copies;
+      ++copies.get();
     }
     Value(Value&& other) noexcept : moves(other.moves), copies(other.copies) {
-      ++*moves;
+      ++moves.get();
     }
   };
   int moves = 0;

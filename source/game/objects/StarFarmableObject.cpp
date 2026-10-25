@@ -229,12 +229,12 @@ std::expected<void, StarException> FarmableObject::update(float dt, std::uint64_
       return std::unexpected(std::move(currentWorldResult.error()));
     auto currentWorld = std::move(*currentWorldResult);
     if (m_nextStageTime == 0) {
-      m_nextStageTime = currentWorld->epochTime();
+      m_nextStageTime = currentWorld.get().epochTime();
       auto operation3 = enterStage(m_stage);
       if (!operation3)
         return std::unexpected(std::move(operation3.error()));
     }
-    while (!m_finalStage && currentWorld->epochTime() >= m_nextStageTime) {
+    while (!m_finalStage && currentWorld.get().epochTime() >= m_nextStageTime) {
       int lastStage = m_stage;
       auto operation4 = enterStage(m_stage + 1);
       if (!operation4)
@@ -242,7 +242,7 @@ std::expected<void, StarException> FarmableObject::update(float dt, std::uint64_
       if (m_stage == lastStage)
         break;
     }
-    auto operation5 = m_immersion.update(root().timing().timestep, std::bind(&Object::liquidFillLevel, this));
+    auto operation5 = m_immersion.update(root().timing().timestep, [this] { return liquidFillLevel(); });
     if (!operation5)
       return std::unexpected(std::move(operation5.error()));
     if (m_immersion.average() > m_maxImmersion || m_immersion.average() < m_minImmersion) {
@@ -296,7 +296,7 @@ std::expected<bool, StarException> FarmableObject::harvest() {
     if (!poolResult)
       return std::unexpected(std::move(poolResult.error()));
     auto pool = std::move(*poolResult);
-    auto levelResult = currentWorld->threatLevel();
+    auto levelResult = currentWorld.get().threatLevel();
     if (!levelResult)
       return std::unexpected(std::move(levelResult.error()));
     auto level = std::move(*levelResult);
@@ -309,7 +309,7 @@ std::expected<bool, StarException> FarmableObject::harvest() {
       if (!dropResult)
         return std::unexpected(std::move(dropResult.error()));
       auto drop = std::move(*dropResult);
-      auto operation8 = currentWorld->addEntity(drop);
+      auto operation8 = currentWorld.get().addEntity(drop);
       if (!operation8)
         return std::unexpected(std::move(operation8.error()));
     }
@@ -329,7 +329,7 @@ std::expected<bool, StarException> FarmableObject::harvest() {
     return std::unexpected(std::move(resetResult.error()));
   auto reset = std::move(*resetResult);
   if (reset) {
-    m_nextStageTime = currentWorld->epochTime();
+    m_nextStageTime = currentWorld.get().epochTime();
     auto resetStageResult = stage.getInt("resetToStage");
     if (!resetStageResult)
       return std::unexpected(std::move(resetStageResult.error()));
@@ -373,11 +373,11 @@ std::expected<void, StarException> FarmableObject::enterStage(int newStage) {
       auto wetToDryMods = std::move(*wetToDryModsResult);
       for (auto const& anchor : orientation->anchors) {
         auto pos = tilePosition() + anchor.position;
-        auto modNameResult = materials->modName(currentWorld->mod(pos, anchor.layer));
+        auto modNameResult = materials->modName(currentWorld.get().mod(pos, anchor.layer));
         if (!modNameResult)
           return std::unexpected(std::move(modNameResult.error()));
         auto modName = std::move(*modNameResult);
-        auto newModResult = wetToDryMods.optString(*modName);
+        auto newModResult = wetToDryMods.optString(modName.get());
         if (!newModResult)
           return std::unexpected(std::move(newModResult.error()));
         auto newMod = std::move(*newModResult);
@@ -386,7 +386,7 @@ std::expected<void, StarException> FarmableObject::enterStage(int newStage) {
           if (!modResult)
             return std::unexpected(std::move(modResult.error()));
           auto mod = std::move(*modResult);
-          auto operation12 = currentWorld->modifyTile(pos, PlaceMod{anchor.layer, mod, MaterialHue()}, true);
+          auto operation12 = currentWorld.get().modifyTile(pos, PlaceMod{anchor.layer, mod, MaterialHue()}, true);
           if (!operation12)
             return std::unexpected(std::move(operation12.error()));
         } else {
@@ -403,7 +403,7 @@ std::expected<void, StarException> FarmableObject::enterStage(int newStage) {
           if (!intervalResult)
             return std::unexpected(std::move(intervalResult.error()));
           auto interval = std::move(*intervalResult);
-          m_nextStageTime = currentWorld->epochTime() + interval;
+          m_nextStageTime = currentWorld.get().epochTime() + interval;
           return {};
         }
       }
@@ -477,7 +477,7 @@ std::expected<void, StarException> FarmableObject::enterStage(int newStage) {
     if (occupied || !rooted) {
       newStage = 0;
     } else {
-      currentWorld->timer(2.f / 60.f, [plant](World* world) -> std::expected<void, StarException> { return world->addEntity(plant); });
+      currentWorld.get().timer(2.f / 60.f, [plant](World& world) -> std::expected<void, StarException> { return world.addEntity(plant); });
       m_finalStage = true;
       return breakObject(true);
     }

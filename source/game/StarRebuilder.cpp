@@ -33,7 +33,7 @@ import star.rebuilder;
 
 namespace Star {
 
-std::expected<std::shared_ptr<Rebuilder>, StarException> Rebuilder::create(Root& root, String const& id, ItemDatabase const* itemCatalog) {
+std::expected<std::shared_ptr<Rebuilder>, StarException> Rebuilder::create(Root& root, String const& id, std::optional<std::reference_wrapper<ItemDatabase const>> itemCatalog) {
   auto rebuilder = std::shared_ptr<Rebuilder>(new Rebuilder());
   auto luaRoot = LuaRoot::create(root);
   if (!luaRoot)

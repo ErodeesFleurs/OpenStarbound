@@ -3,6 +3,7 @@ import star.format;
 import star.output_proxy;
 import star.file;
 import star.json;
+import star.string;
 
 import star.versioning_database;
 import star.native_runtime;
@@ -21,14 +22,14 @@ int main(int argc, char** argv) {
       return -1;
     }
 
-    auto versionedJson = VersionedJson::readFile(argv[1]);
+    auto versionedJson = VersionedJson::readFile(String(std::string_view(argv[1])));
     if (!versionedJson)
       return std::unexpected(std::move(versionedJson.error()));
     auto json = versionedJson->toJson();
     auto text = json.printJson(2);
     if (!text)
       return std::unexpected(std::move(text.error()));
-    auto written = File::writeFile(*text, argv[2]);
+    auto written = File::writeFile(*text, String(std::string_view(argv[2])));
     if (!written)
       return std::unexpected(std::move(written.error()));
     return 0;

@@ -19,7 +19,7 @@ namespace Star {
 class GuiContext;
 
 struct GuiExceptionTag {
-  static constexpr char const* name() { return "GuiException"; }
+  static constexpr std::string_view name() { return "GuiException"; }
 };
 using GuiException = StarError<GuiExceptionTag, StarException>;
 
@@ -32,9 +32,9 @@ enum class KeyboardCaptureMode {
   TextInput
 };
 
-typedef std::function<std::expected<void, StarException>(Widget*)> WidgetCallbackFunc;
+typedef std::function<std::expected<void, StarException>(Widget&)> WidgetCallbackFunc;
 
-class Widget {
+class Widget : public std::enable_shared_from_this<Widget> {
 public:
   Widget(GuiContext& context);
   virtual ~Widget();
@@ -54,7 +54,7 @@ public:
   [[nodiscard]] virtual std::expected<void, StarException> render(RectI const& region) final;
   [[nodiscard]] virtual std::expected<void, StarException> update(float dt);
 
-  GuiContext* context() const;
+  GuiContext& context() const;
 
   // Position of widget with drawing offset (useful for drawing)
   virtual Vec2I position() const;
@@ -97,15 +97,15 @@ public:
   [[nodiscard]] virtual std::expected<void, StarException> focus();
   [[nodiscard]] virtual std::expected<void, StarException> blur();
 
-  virtual Widget* parent() const;
-  virtual void setParent(Widget* parent);
+  virtual std::optional<std::reference_wrapper<Widget>> parent() const;
+  virtual void setParent(std::optional<std::reference_wrapper<Widget>> parent);
 
-  virtual Pane const* window() const;
-  virtual Pane* window();
+  virtual std::optional<std::reference_wrapper<Pane const>> window() const;
+  virtual std::optional<std::reference_wrapper<Pane>> window();
 
   [[nodiscard]] virtual std::expected<void, StarException> addChild(String const& name, std::shared_ptr<Widget> member);
   [[nodiscard]] virtual std::expected<void, StarException> addChildAt(String const& name, std::shared_ptr<Widget> member, std::size_t at);
-  virtual bool removeChild(Widget* member);
+  virtual bool removeChild(Widget& member);
   virtual bool removeChild(String const& name);
   virtual bool removeChildAt(std::size_t at);
   virtual std::shared_ptr<Widget> getChildAt(Vec2I const& pos);
@@ -120,7 +120,7 @@ public:
   template <typename WidgetType>
   [[nodiscard]] std::expected<std::shared_ptr<WidgetType>, StarException> findChild(String const& name);
 
-  std::shared_ptr<Widget> childPtr(Widget const* widget) const;
+  std::shared_ptr<Widget> childPtr(Widget const& widget) const;
 
   virtual std::size_t numChildren() const;
   [[nodiscard]] virtual std::expected<std::shared_ptr<Widget>, StarException> getChildNum(std::size_t num) const;
@@ -160,9 +160,11 @@ protected:
   virtual RectI getScissorRect() const;
   virtual RectI noScissor() const;
 
-  Widget* m_parent;
+  // The owning parent detaches children before removing its last owner or
+  // destroying itself; reparenting first removes the previous owner's child.
+  std::optional<std::reference_wrapper<Widget>> m_parent;
 
-  GuiContext* m_context;
+  GuiContext& m_context;
 
   bool m_visible;
   PolyF m_boundPoly;

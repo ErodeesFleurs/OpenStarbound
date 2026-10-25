@@ -215,29 +215,29 @@ import star.tech_database;
 import star.player_inventory;
 import star.player_companions;
 import star.statistics;
+import star.optional;
 
 namespace Star {
 
-InventoryPane::InventoryPane(GuiContext& guiContext) : Pane(guiContext) {}
+InventoryPane::InventoryPane(GuiContext& guiContext, MainInterface& parent) : Pane(guiContext), m_parent(parent) {}
 
-std::expected<std::shared_ptr<InventoryPane>, StarException> InventoryPane::create(GuiContext& guiContext, MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) {
-  auto pane = std::shared_ptr<InventoryPane>(new InventoryPane(guiContext));
+std::expected<std::shared_ptr<InventoryPane>, StarException> InventoryPane::create(GuiContext& guiContext, MainInterface& parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) {
+  auto pane = std::shared_ptr<InventoryPane>(new InventoryPane(guiContext, parent));
   auto base = pane->initializePane();
   if (!base)
     return std::unexpected(std::move(base.error()));
-  auto initialized = pane->initialize(parent, std::move(player), std::move(containerInteractor));
+  auto initialized = pane->initialize(std::move(player), std::move(containerInteractor));
   if (!initialized)
     return std::unexpected(std::move(initialized.error()));
   return pane;
 }
 
-std::expected<void, StarException> InventoryPane::initialize(MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) {
-  m_parent = parent;
+std::expected<void, StarException> InventoryPane::initialize(std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) {
   m_player = std::move(player);
   m_containerInteractor = std::move(containerInteractor);
 
-  GuiReader invWindowReader(*context());
-  auto assetsResult1 = context()->root().assets();
+  GuiReader invWindowReader(context());
+  auto assetsResult1 = context().root().assets();
   if (!assetsResult1)
     return std::unexpected(std::move(assetsResult1.error()));
   auto jsonResult2 = std::move(*assetsResult1)->json("/interface/windowconfig/playerinventory.config");
@@ -245,21 +245,24 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
     return std::unexpected(std::move(jsonResult2.error()));
   auto config = std::move(*jsonResult2);
 
-  auto leftClickCallback = [this](String const& bagType, Widget* widget)  -> std::expected<void, StarException> {
-    auto convertResult3 = convert<ItemGridWidget>(widget);
+  auto leftClickCallback = [this](String const& bagType, Widget& widget)  -> std::expected<void, StarException> {
+    if (!m_parent)
+      return std::unexpected(StarException("Inventory pane is detached from its interface"));
+    auto& parent = m_parent->get();
+    auto convertResult3 = rconvert<ItemGridWidget>(widget);
     if (!convertResult3)
       return std::unexpected(std::move(convertResult3.error()));
-    auto itemGrid = std::move(*convertResult3);
-    InventorySlot inventorySlot = BagSlot(bagType, itemGrid->selectedIndex());
+    auto& itemGrid = convertResult3->get();
+    InventorySlot inventorySlot = BagSlot(bagType, itemGrid.selectedIndex());
 
     auto inventory = m_player->inventory();
-    if (context()->shiftHeld()) {
+    if (context().shiftHeld()) {
       {
-        auto selectedItemResult4 = itemGrid->selectedItem();
+        auto selectedItemResult4 = itemGrid.selectedItem();
         if (!selectedItemResult4)
           return std::unexpected(std::move(selectedItemResult4.error()));
         if (auto sourceItem = std::move(*selectedItemResult4)) {
-          if (auto activeMerchantPane = m_parent->activeMerchantPane()) {
+          if (auto activeMerchantPane = parent.activeMerchantPane()) {
             auto takeSlotResult5 = inventory->takeSlot(inventorySlot);
             if (!takeSlotResult5)
               return std::unexpected(std::move(takeSlotResult5.error()));
@@ -284,7 +287,7 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
             m_containerSource = inventorySlot;
             m_expectingSwap = true;
           } else {
-            for (std::shared_ptr<Pane>& pane : m_parent->paneManager()->getAllPanes()) {
+            for (std::shared_ptr<Pane>& pane : parent.paneManager().getAllPanes()) {
               auto itemsAtResult10 = inventory->itemsAt(inventorySlot);
               if (!itemsAtResult10)
                 return std::unexpected(std::move(itemsAtResult10.error()));
@@ -319,9 +322,9 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
         return std::unexpected(std::move(itemsAtResult14.error()));
       if (std::shared_ptr<Item> slotItem = std::move(*itemsAtResult14)) {
         auto swapItem = inventory->swapSlotItem();
-        if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
-          std::uint64_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
-          if (context()->shiftHeld())
+        if (!swapItem || swapItem->empty() || swapItem->couldStack(optionalRef(slotItem))) {
+          std::uint64_t count = swapItem ? swapItem->couldStack(optionalRef(slotItem)) : slotItem->maxStack();
+          if (context().shiftHeld())
             count = std::max<std::uint64_t>(1, std::min<std::uint64_t>(count, slotItem->count() / 2));
           else
             count = 1;
@@ -332,7 +335,7 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
               return std::unexpected(std::move(takeResult15.error()));
             if (auto taken = std::move(*takeResult15)) {
               if (swapItem)
-                swapItem->stackWith(taken);
+                swapItem->stackWith(optionalRef(taken));
               else
                 {
                   auto setSwapSlotItemResult16 = inventory->setSwapSlotItem(taken);
@@ -358,8 +361,8 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
         }
       }
       else if (auto swapSlot = inventory->swapSlotItem()) {
-        if (auto es = std::get_if<EquipmentSlot>(&slot)) {
-          if (inventory->itemAllowedAsEquipment(swapSlot, *es))
+        if (std::holds_alternative<EquipmentSlot>(slot)) {
+          if (inventory->itemAllowedAsEquipment(swapSlot, std::get<EquipmentSlot>(slot)))
             {
               auto takeResult19 = swapSlot->take(1);
               if (!takeResult19)
@@ -376,9 +379,9 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
           auto setItemResult22 = inventory->setItem(slot, std::move(*takeResult21));
           if (!setItemResult22)
             return std::unexpected(std::move(setItemResult22.error()));
-        } else if (auto bs = std::get_if<BagSlot>(&slot)) {
+        } else if (std::holds_alternative<BagSlot>(slot)) {
           {
-            auto itemAllowedInBagResult23 = inventory->itemAllowedInBag(swapSlot, bs->first);
+            auto itemAllowedInBagResult23 = inventory->itemAllowedInBag(swapSlot, std::get<BagSlot>(slot).first);
             if (!itemAllowedInBagResult23)
               return std::unexpected(std::move(itemAllowedInBagResult23.error()));
             if (std::move(*itemAllowedInBagResult23))
@@ -399,11 +402,11 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
   return {};
 };
 
-  auto bagGridCallback = [rightClickCallback](String const& bagType, Widget* widget)  -> std::expected<void, StarException> {
-    auto convertResult26 = convert<ItemGridWidget>(widget);
+  auto bagGridCallback = [rightClickCallback](String const& bagType, Widget& widget)  -> std::expected<void, StarException> {
+    auto convertResult26 = rconvert<ItemGridWidget>(widget);
     if (!convertResult26)
       return std::unexpected(std::move(convertResult26.error()));
-    auto slot = BagSlot(bagType, std::move(*convertResult26)->selectedIndex());
+    auto slot = BagSlot(bagType, convertResult26->get().selectedIndex());
     auto rightClickCallbackResult27 = rightClickCallback(slot);
     if (!rightClickCallbackResult27)
       return std::unexpected(std::move(rightClickCallbackResult27.error()));
@@ -411,18 +414,18 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
   return {};
 };
 
-  auto middleClickCallback = [this](String const& bagType, Widget* widget)  -> std::expected<void, StarException> {
+  auto middleClickCallback = [this](String const& bagType, Widget& widget)  -> std::expected<void, StarException> {
     if (!m_player->inWorld()) 
       return {};
 
-    auto convertResult28 = convert<ItemGridWidget>(widget);
+    auto convertResult28 = rconvert<ItemGridWidget>(widget);
     if (!convertResult28)
       return std::unexpected(std::move(convertResult28.error()));
-    auto itemGrid = std::move(*convertResult28);
-    InventorySlot inventorySlot = BagSlot(bagType, itemGrid->selectedIndex());
+    auto& itemGrid = convertResult28->get();
+    InventorySlot inventorySlot = BagSlot(bagType, itemGrid.selectedIndex());
     auto inventory = m_player->inventory();
     {
-      auto selectedItemResult29 = itemGrid->selectedItem();
+      auto selectedItemResult29 = itemGrid.selectedItem();
       if (!selectedItemResult29)
         return std::unexpected(std::move(selectedItemResult29.error()));
       if (auto sourceItem = as<ObjectItem>(std::move(*selectedItemResult29))) {
@@ -440,7 +443,7 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
             auto getLeftResult33 = (*enumResult31).getLeft(std::move(*toStringResult32));
             if (!getLeftResult33)
               return std::unexpected(std::move(getLeftResult33.error()));
-            auto actionType = (**getLeftResult33);
+            auto actionType = getLeftResult33->get();
             if (actionType >= InteractActionType::OpenCraftingInterface && actionType <= InteractActionType::ScriptPane) {
               auto instanceValueResult34 = sourceItem->instanceValue("interactData", Json());
               if (!instanceValueResult34)
@@ -498,13 +501,13 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
     invWindowReader.registerCallback(itemGrid + ".middle", std::bind(middleClickCallback, name, std::placeholders::_1));
   }
 
-  invWindowReader.registerCallback("close", [this](Widget*)  -> std::expected<void, StarException> {
+  invWindowReader.registerCallback("close", [this](Widget&)  -> std::expected<void, StarException> {
       dismiss();
     
   return {};
 });
 
-  invWindowReader.registerCallback("sort", [this](Widget*)  -> std::expected<void, StarException> {
+  invWindowReader.registerCallback("sort", [this](Widget&)  -> std::expected<void, StarException> {
       auto condenseBagStacksResult44 = m_player->inventory()->condenseBagStacks(m_selectedTab);
       if (!condenseBagStacksResult44)
         return std::unexpected(std::move(condenseBagStacksResult44.error()));
@@ -520,11 +523,11 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
   return {};
 });
 
-  invWindowReader.registerCallback("gridModeSelector", [this](Widget* widget)  -> std::expected<void, StarException> {
-      auto convertResult47 = convert<ButtonWidget>(widget);
+  invWindowReader.registerCallback("gridModeSelector", [this](Widget& widget)  -> std::expected<void, StarException> {
+      auto convertResult47 = rconvert<ButtonWidget>(widget);
       if (!convertResult47)
         return std::unexpected(std::move(convertResult47.error()));
-      auto toStringResult48 = std::move(*convertResult47)->data().toString();
+      auto toStringResult48 = convertResult47->get().data().toString();
       if (!toStringResult48)
         return std::unexpected(std::move(toStringResult48.error()));
       auto selected = std::move(*toStringResult48);
@@ -539,8 +542,8 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
 });
 
   auto registerSlotCallbacks = [&](String name, InventorySlot slot)  -> std::expected<void, StarException> {
-    invWindowReader.registerCallback(name, [this, slot](Widget* paneObj)  -> std::expected<void, StarException> {
-        if (as<ItemSlotWidget>(paneObj))
+    invWindowReader.registerCallback(name, [this, slot](Widget& paneObj)  -> std::expected<void, StarException> {
+        if (asRef<ItemSlotWidget>(paneObj))
           {
             auto shiftSwapResult51 = m_player->inventory()->shiftSwap(slot);
             if (!shiftSwapResult51)
@@ -552,8 +555,8 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
       
   return {};
 });
-    invWindowReader.registerCallback(name + ".right", [slot, rightClickCallback](Widget* paneObj)  -> std::expected<void, StarException> {
-        if (as<ItemSlotWidget>(paneObj))
+    invWindowReader.registerCallback(name + ".right", [slot, rightClickCallback](Widget& paneObj)  -> std::expected<void, StarException> {
+        if (asRef<ItemSlotWidget>(paneObj))
           {
             auto rightClickCallbackResult52 = rightClickCallback(slot);
             if (!rightClickCallbackResult52)
@@ -578,7 +581,7 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
       auto registerSlotCallbacksResult54 = registerSlotCallbacks(p.second, slot);
       if (!registerSlotCallbacksResult54)
         return std::unexpected(std::move(registerSlotCallbacksResult54.error()));
-      invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget*)  -> std::expected<void, StarException> {
+      invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget&)  -> std::expected<void, StarException> {
         auto inventory = m_player->inventory();
         inventory->setEquipmentVisibility(slot, !inventory->equipmentVisibility(slot));
       
@@ -593,7 +596,7 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
   auto getResult56 = config.get("paneLayout");
   if (!getResult56)
     return std::unexpected(std::move(getResult56.error()));
-  auto constructResult57 = invWindowReader.construct(std::move(*getResult56), this);
+  auto constructResult57 = invWindowReader.construct(std::move(*getResult56), *this);
   if (!constructResult57)
     return std::unexpected(std::move(constructResult57.error()));
 
@@ -702,7 +705,7 @@ std::expected<void, StarException> InventoryPane::initialize(MainInterface* pare
   if (!setEntityResult80)
     return std::unexpected(std::move(setEntityResult80.error()));
 
-  auto createResult81 = PortraitWidget::create(*context(), m_player, PortraitMode::Bust);
+  auto createResult81 = PortraitWidget::create(context(), m_player, PortraitMode::Bust);
   if (!createResult81)
     return std::unexpected(std::move(createResult81.error()));
   auto portrait = std::move(*createResult81);
@@ -827,7 +830,7 @@ std::expected<std::shared_ptr<Pane>, StarException> InventoryPane::createTooltip
               return std::unexpected(std::move(optStringResult104.error()));
             if (auto text = std::move(*optStringResult104))
               {
-                auto buildTooltipResult105 = SimpleTooltipBuilder::buildTooltip(*context(), *text);
+                auto buildTooltipResult105 = SimpleTooltipBuilder::buildTooltip(context(), *text);
                 if (!buildTooltipResult105)
                   return std::unexpected(std::move(buildTooltipResult105.error()));
                 return std::move(*buildTooltipResult105);
@@ -846,13 +849,13 @@ std::expected<std::shared_ptr<Pane>, StarException> InventoryPane::createTooltip
   }
   if (item)
     {
-      auto buildItemTooltipResult107 = ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
+      auto buildItemTooltipResult107 = ItemTooltipBuilder::buildItemTooltip(context(), item, m_player);
       if (!buildItemTooltipResult107)
         return std::unexpected(std::move(buildItemTooltipResult107.error()));
       return std::move(*buildItemTooltipResult107);
     }
 
-  auto techDatabaseResult108 = context()->root().techDatabase();
+  auto techDatabaseResult108 = context().root().techDatabase();
   if (!techDatabaseResult108)
     return std::unexpected(std::move(techDatabaseResult108.error()));
   auto techDatabase = std::move(*techDatabaseResult108);
@@ -873,7 +876,7 @@ std::expected<std::shared_ptr<Pane>, StarException> InventoryPane::createTooltip
                   auto techResult111 = techDatabase->tech(*techModule);
                   if (!techResult111)
                     return std::unexpected(std::move(techResult111.error()));
-                  auto buildTooltipResult112 = SimpleTooltipBuilder::buildTooltip(*context(), std::move(*techResult111).description);
+                  auto buildTooltipResult112 = SimpleTooltipBuilder::buildTooltip(context(), std::move(*techResult111).description);
                   if (!buildTooltipResult112)
                     return std::unexpected(std::move(buildTooltipResult112.error()));
                   return std::move(*buildTooltipResult112);
@@ -896,7 +899,7 @@ std::expected<bool, StarException> InventoryPane::sendEvent(InputEvent const& ev
       return std::move(*sendEventResult113);
     }
 
-  if (auto mousePosition = Widget::context()->mousePosition(event)) {
+  if (auto mousePosition = Widget::context().mousePosition(event)) {
     bool displayingCosmetics = false;
     {
       auto const& enumResult114 = EquipmentSlotNames;
@@ -1008,7 +1011,7 @@ std::expected<void, StarException> InventoryPane::clearChangedSlots() {
 
 std::expected<void, StarException> InventoryPane::update(float dt) {
   auto inventory = m_player->inventory();
-  auto context = Widget::context();
+  auto& context = Widget::context();
 
   HashSet<std::shared_ptr<Item>> customBarItems;
   for (std::uint8_t i = 0; i < inventory->customBarIndexes(); ++i) {
@@ -1095,7 +1098,7 @@ std::expected<void, StarException> InventoryPane::update(float dt) {
     }
   }
 
-  auto techDatabaseResult136 = context->root().techDatabase();
+  auto techDatabaseResult136 = context.root().techDatabase();
   if (!techDatabaseResult136)
     return std::unexpected(std::move(techDatabaseResult136.error()));
   auto techDatabase = std::move(*techDatabaseResult136);
@@ -1164,7 +1167,7 @@ std::expected<void, StarException> InventoryPane::update(float dt) {
         itemWidget->showLinkIndicator(customBarItems.contains(itemWidget->item()));
       else
         {
-          auto warnResult147 = context->root().logger().warn("Could not find item widget {} in item grid {}!", i, p.first);
+          auto warnResult147 = context.root().logger().warn("Could not find item widget {} in item grid {}!", i, p.first);
           if (!warnResult147)
             return std::unexpected(std::move(warnResult147.error()));
           
@@ -1288,7 +1291,7 @@ std::expected<void, StarException> InventoryPane::update(float dt) {
       return std::unexpected(std::move(hideResult173.error()));
   }
 
-  auto assetsResult174 = context->root().assets();
+  auto assetsResult174 = context.root().assets();
   if (!assetsResult174)
     return std::unexpected(std::move(assetsResult174.error()));
   auto jsonResult175 = std::move(*assetsResult174)->json("/interface/windowconfig/playerinventory.config");
@@ -1301,7 +1304,7 @@ std::expected<void, StarException> InventoryPane::update(float dt) {
     auto firstResult176 = pets.first();
     if (!firstResult176)
       return std::unexpected(std::move(firstResult176.error()));
-    auto pet = (**firstResult176);
+    auto pet = firstResult176->get();
     auto fetchChildResult177 = fetchChild<ImageWidget>("companionSlot");
     if (!fetchChildResult177)
       return std::unexpected(std::move(fetchChildResult177.error()));
@@ -1455,30 +1458,30 @@ std::expected<void, StarException> InventoryPane::update(float dt) {
     float pitch = 1.f - ((float)item->count() / (float)item->maxStack()) * .2f;
     if (!m_currentSwapSlotItem || !item->matches(*m_currentSwapSlotItem, true))
       {
-        auto randFromResult210 = RandomSource(context->root().random().randu64()).randFrom(m_pickUpSounds);
+        auto randFromResult210 = RandomSource(context.root().random().randu64()).randFrom(m_pickUpSounds);
         if (!randFromResult210)
           return std::unexpected(std::move(randFromResult210.error()));
-        auto playAudioResult211 = context->playAudio((**randFromResult210), 0, 1.f, pitch);
+        auto playAudioResult211 = context.playAudio(randFromResult210->get(), 0, 1.f, pitch);
         if (!playAudioResult211)
           return std::unexpected(std::move(playAudioResult211.error()));
         
       }
     else if (item->count() > m_currentSwapSlotItem->count())
       {
-        auto randFromResult212 = RandomSource(context->root().random().randu64()).randFrom(m_someUpSounds);
+        auto randFromResult212 = RandomSource(context.root().random().randu64()).randFrom(m_someUpSounds);
         if (!randFromResult212)
           return std::unexpected(std::move(randFromResult212.error()));
-        auto playAudioResult213 = context->playAudio((**randFromResult212), 0, 1.f, pitch);
+        auto playAudioResult213 = context.playAudio(randFromResult212->get(), 0, 1.f, pitch);
         if (!playAudioResult213)
           return std::unexpected(std::move(playAudioResult213.error()));
         
       }
     else if (item->count() < m_currentSwapSlotItem->count())
       {
-        auto randFromResult214 = RandomSource(context->root().random().randu64()).randFrom(m_someDownSounds);
+        auto randFromResult214 = RandomSource(context.root().random().randu64()).randFrom(m_someDownSounds);
         if (!randFromResult214)
           return std::unexpected(std::move(randFromResult214.error()));
-        auto playAudioResult215 = context->playAudio((**randFromResult214), 0, 1.f, pitch);
+        auto playAudioResult215 = context.playAudio(randFromResult214->get(), 0, 1.f, pitch);
         if (!playAudioResult215)
           return std::unexpected(std::move(playAudioResult215.error()));
         
@@ -1488,10 +1491,10 @@ std::expected<void, StarException> InventoryPane::update(float dt) {
   } else {
     if (m_currentSwapSlotItem)
       {
-        auto randFromResult216 = RandomSource(context->root().random().randu64()).randFrom(m_putDownSounds);
+        auto randFromResult216 = RandomSource(context.root().random().randu64()).randFrom(m_putDownSounds);
         if (!randFromResult216)
           return std::unexpected(std::move(randFromResult216.error()));
-        auto playAudioResult217 = context->playAudio((**randFromResult216));
+        auto playAudioResult217 = context.playAudio(randFromResult216->get());
         if (!playAudioResult217)
           return std::unexpected(std::move(playAudioResult217.error()));
         
@@ -1531,7 +1534,7 @@ std::expected<void, StarException> InventoryPane::selectTab(String const& select
   auto tabs = std::move(*fetchChildResult222);
   for (auto button : tabs->buttons())
     {
-      auto toStringResult223 = button->data().toString();
+      auto toStringResult223 = button.get().data().toString();
       if (!toStringResult223)
         return std::unexpected(std::move(toStringResult223.error()));
       auto equalsIgnoreCaseResult224 = std::move(*toStringResult223).equalsIgnoreCase(m_tabButtonData[selected]);

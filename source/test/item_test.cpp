@@ -198,8 +198,8 @@ const GameTestRegistration itemComparison("ItemTest", "ItemComparison", [](GameT
   for (ItemDescriptor const& id : testItemDescriptors) {
     EXPECT_TRUE(testItem->matches(id));
     EXPECT_TRUE(testItemParams->matches(id));
-    EXPECT_TRUE(id.matches(testItem));
-    EXPECT_TRUE(id.matches(testItemParams));
+    EXPECT_TRUE(id.matches(*testItem));
+    EXPECT_TRUE(id.matches(*testItemParams));
     for (ItemDescriptor const& id2 : testItemDescriptors)
       EXPECT_TRUE(id.matches(id2));
     for (ItemDescriptor const& id2 : testItemDescriptorsParams)
@@ -208,23 +208,23 @@ const GameTestRegistration itemComparison("ItemTest", "ItemComparison", [](GameT
   for (ItemDescriptor const& id : testItemDescriptorsParams) {
     EXPECT_TRUE(testItem->matches(id));
     EXPECT_TRUE(testItemParams->matches(id));
-    EXPECT_TRUE(id.matches(testItem));
-    EXPECT_TRUE(id.matches(testItemParams));
+    EXPECT_TRUE(id.matches(*testItem));
+    EXPECT_TRUE(id.matches(*testItemParams));
     for (ItemDescriptor const& id2 : testItemDescriptors)
       EXPECT_TRUE(id.matches(id2));
     for (ItemDescriptor const& id2 : testItemDescriptorsParams)
       EXPECT_TRUE(id.matches(id2));
   }
-  EXPECT_TRUE(testItem->matches(testItemParams));
-  EXPECT_TRUE(testItemParams->matches(testItem));
+  EXPECT_TRUE(testItem->matches(*testItemParams));
+  EXPECT_TRUE(testItemParams->matches(*testItem));
 
   // comparisons WITH exactMatch: the parameterless descriptors match neither
   // item, and the descriptors carrying an item's own parameters match exactly.
   for (ItemDescriptor const& id : testItemDescriptors) {
     EXPECT_FALSE(testItem->matches(id, true));
     EXPECT_FALSE(testItemParams->matches(id, true));
-    EXPECT_FALSE(id.matches(testItem, true));
-    EXPECT_FALSE(id.matches(testItemParams, true));
+    EXPECT_FALSE(id.matches(*testItem, true));
+    EXPECT_FALSE(id.matches(*testItemParams, true));
     for (ItemDescriptor const& id2 : testItemDescriptors)
       EXPECT_TRUE(id.matches(id2, true));
     for (ItemDescriptor const& id2 : testItemExactDescriptors)
@@ -235,8 +235,8 @@ const GameTestRegistration itemComparison("ItemTest", "ItemComparison", [](GameT
   for (ItemDescriptor const& id : testItemExactDescriptors) {
     EXPECT_TRUE(testItem->matches(id, true));
     EXPECT_FALSE(testItemParams->matches(id, true));
-    EXPECT_TRUE(id.matches(testItem, true));
-    EXPECT_FALSE(id.matches(testItemParams, true));
+    EXPECT_TRUE(id.matches(*testItem, true));
+    EXPECT_FALSE(id.matches(*testItemParams, true));
     for (ItemDescriptor const& id2 : testItemDescriptors)
       EXPECT_FALSE(id.matches(id2, true));
     for (ItemDescriptor const& id2 : testItemExactDescriptors)
@@ -247,8 +247,8 @@ const GameTestRegistration itemComparison("ItemTest", "ItemComparison", [](GameT
   for (ItemDescriptor const& id : testItemParamsExactDescriptors) {
     EXPECT_FALSE(testItem->matches(id, true));
     EXPECT_TRUE(testItemParams->matches(id, true));
-    EXPECT_FALSE(id.matches(testItem, true));
-    EXPECT_TRUE(id.matches(testItemParams, true));
+    EXPECT_FALSE(id.matches(*testItem, true));
+    EXPECT_TRUE(id.matches(*testItemParams, true));
     for (ItemDescriptor const& id2 : testItemDescriptors)
       EXPECT_FALSE(id.matches(id2, true));
     for (ItemDescriptor const& id2 : testItemExactDescriptors)
@@ -256,8 +256,155 @@ const GameTestRegistration itemComparison("ItemTest", "ItemComparison", [](GameT
     for (ItemDescriptor const& id2 : testItemParamsExactDescriptors)
       EXPECT_TRUE(id.matches(id2, true));
   }
-  EXPECT_FALSE(testItem->matches(testItemParams, true));
-  EXPECT_FALSE(testItemParams->matches(testItem, true));
+  EXPECT_FALSE(testItem->matches(*testItemParams, true));
+  EXPECT_FALSE(testItemParams->matches(*testItem, true));
+});
+
+const GameTestRegistration itemStackingPreservesCountsAndNullSemantics("ItemTest", "ItemStackingPreservesCountsAndNullSemantics", [](GameTest& fixture) {
+  auto database = fixture.root().itemDatabase();
+  ASSERT_TRUE(database);
+  auto targetResult = inventoryTestItem(**database, "perfectlygenericitem", 4, JsonObject{{"maxStack", 5}});
+  auto sourceResult = inventoryTestItem(**database, "perfectlygenericitem", 3, JsonObject{{"maxStack", 5}});
+  auto differentResult = inventoryTestItem(**database, "perfectlygenericitem", 3,
+      JsonObject{{"maxStack", 5}, {"testParameter", "different"}});
+  ASSERT_TRUE(targetResult);
+  ASSERT_TRUE(sourceResult);
+  ASSERT_TRUE(differentResult);
+  auto target = std::move(*targetResult);
+  auto source = std::move(*sourceResult);
+  auto different = std::move(*differentResult);
+  ASSERT_TRUE(target);
+  ASSERT_TRUE(source);
+  ASSERT_TRUE(different);
+  ASSERT_EQ(target->maxStack(), 5u);
+
+  EXPECT_FALSE(target->stackableWith(std::nullopt));
+  EXPECT_EQ(target->couldStack(std::nullopt), 0u);
+  EXPECT_FALSE(target->stackWith(std::nullopt));
+  EXPECT_TRUE(Item::itemsEqual(std::nullopt, std::nullopt));
+  EXPECT_FALSE(Item::itemsEqual(std::cref(*target), std::nullopt));
+  EXPECT_FALSE(Item::itemsEqual(std::nullopt, std::cref(*target)));
+  EXPECT_TRUE(Item::itemsEqual(std::cref(*target), std::cref(*source)));
+  EXPECT_TRUE(target->matches(*different));
+  EXPECT_FALSE(target->matches(*different, true));
+  EXPECT_FALSE(target->stackableWith(std::cref(*different)));
+  EXPECT_EQ(target->couldStack(std::cref(*different)), 0u);
+  EXPECT_FALSE(target->stackWith(std::ref(*different)));
+  EXPECT_EQ(different->count(), 3u);
+  EXPECT_EQ(target->count(), 4u);
+
+  EXPECT_EQ(target->couldStack(std::cref(*source)), 1u);
+  EXPECT_TRUE(target->stackWith(std::ref(*source)));
+  EXPECT_EQ(target->count(), 5u);
+  EXPECT_EQ(source->count(), 2u);
+  EXPECT_EQ(target->couldStack(std::cref(*source)), 0u);
+  EXPECT_FALSE(target->stackWith(std::ref(*source)));
+  EXPECT_EQ(source->count(), 2u);
+
+  ASSERT_TRUE(target->consume(3));
+  EXPECT_EQ(target->couldStack(std::cref(*source)), 2u);
+  EXPECT_TRUE(target->stackWith(std::ref(*source)));
+  EXPECT_EQ(target->count(), 4u);
+  EXPECT_TRUE(source->empty());
+  EXPECT_FALSE(target->stackWith(std::ref(*source)));
+  EXPECT_EQ(target->count(), 4u);
+
+  // The source may alias the destination: consuming and adding must balance.
+  target->setCount(2);
+  EXPECT_TRUE(target->stackWith(std::ref(*target)));
+  EXPECT_EQ(target->count(), 2u);
+});
+
+const GameTestRegistration bagStackQueriesAndTransfersPreserveBehavior("ItemTest", "BagStackQueriesAndTransfersPreserveBehavior", [](GameTest& fixture) {
+  auto database = fixture.root().itemDatabase();
+  ASSERT_TRUE(database);
+  auto targetResult = inventoryTestItem(**database, "perfectlygenericitem", 4, JsonObject{{"maxStack", 5}});
+  auto blockerResult = inventoryTestItem(**database, "perfectlygenericitem", 5,
+      JsonObject{{"maxStack", 5}, {"testParameter", "different"}});
+  auto sourceResult = inventoryTestItem(**database, "perfectlygenericitem", 3, JsonObject{{"maxStack", 5}});
+  ASSERT_TRUE(targetResult);
+  ASSERT_TRUE(blockerResult);
+  ASSERT_TRUE(sourceResult);
+  auto target = std::move(*targetResult);
+  auto blocker = std::move(*blockerResult);
+  auto source = std::move(*sourceResult);
+  ASSERT_TRUE(target);
+  ASSERT_TRUE(blocker);
+  ASSERT_TRUE(source);
+  ItemBag bag(fixture.root(), 2);
+  ASSERT_TRUE(bag.setItem(0, target));
+  ASSERT_TRUE(bag.setItem(1, blocker));
+
+  EXPECT_EQ(bag.itemsCanFit(std::nullopt), 0u);
+  EXPECT_EQ(bag.itemsCanStack(std::nullopt), 0u);
+  auto nullFit = bag.itemsFitWhere(std::nullopt);
+  EXPECT_EQ(nullFit.leftover, 0u);
+  EXPECT_TRUE(nullFit.slots.empty());
+  auto fit = bag.itemsFitWhere(std::cref(*source));
+  EXPECT_EQ(fit.leftover, 2u);
+  EXPECT_EQ(fit.slots, List<std::size_t>({0}));
+  EXPECT_EQ(bag.itemsCanFit(std::cref(*source)), 1u);
+  EXPECT_EQ(bag.itemsCanStack(std::cref(*source)), 1u);
+  auto limitedFit = bag.itemsFitWhere(std::cref(*source), 2);
+  EXPECT_EQ(limitedFit.leftover, 1u);
+  EXPECT_EQ(limitedFit.slots, List<std::size_t>({0}));
+  auto zeroFit = bag.itemsFitWhere(std::cref(*source), 0);
+  EXPECT_EQ(zeroFit.leftover, 0u);
+  EXPECT_TRUE(zeroFit.slots.empty());
+  EXPECT_EQ(target->count(), 4u);
+  EXPECT_EQ(source->count(), 3u);
+  EXPECT_EQ(blocker->count(), 5u);
+
+  auto stacked = bag.stackItems(source);
+  ASSERT_TRUE(stacked);
+  EXPECT_EQ(*stacked, source);
+  EXPECT_EQ(source->count(), 2u);
+  EXPECT_EQ(target->count(), 5u);
+  auto put = bag.putItems(0, source);
+  ASSERT_TRUE(put);
+  EXPECT_EQ(*put, source);
+  EXPECT_EQ(source->count(), 2u);
+  auto swapped = bag.swapItems(0, source);
+  ASSERT_TRUE(swapped);
+  EXPECT_EQ(*swapped, target);
+  auto current = std::as_const(bag).at(0);
+  ASSERT_TRUE(current);
+  EXPECT_EQ(*current, source);
+  auto removed = bag.swapItems(0, {});
+  ASSERT_TRUE(removed);
+  EXPECT_EQ(*removed, source);
+  auto added = bag.addItems(target);
+  ASSERT_TRUE(added);
+  EXPECT_FALSE(*added);
+  current = std::as_const(bag).at(0);
+  ASSERT_TRUE(current);
+  EXPECT_EQ(*current, target);
+
+  // An externally exhausted stack is an empty slot, without query-time release.
+  ASSERT_TRUE(blocker->consume(5));
+  fit = bag.itemsFitWhere(std::cref(*source));
+  EXPECT_EQ(fit.leftover, 0u);
+  EXPECT_EQ(fit.slots, List<std::size_t>({1}));
+  EXPECT_EQ(bag.itemsCanFit(std::cref(*source)), 2u);
+  // A retained empty stack contributes capacity to the existing stacking query.
+  EXPECT_EQ(bag.itemsCanStack(std::cref(*source)), 2u);
+  blocker->setCount(1);
+  current = std::as_const(bag).at(1);
+  ASSERT_TRUE(current);
+  EXPECT_EQ(*current, blocker);
+  blocker->setCount(0);
+  added = bag.addItems(source);
+  ASSERT_TRUE(added);
+  EXPECT_FALSE(*added);
+  current = std::as_const(bag).at(1);
+  ASSERT_TRUE(current);
+  EXPECT_EQ(*current, source);
+  source->setCount(0);
+  EXPECT_EQ(bag.itemsCanFit(std::cref(*source)), 0u);
+  EXPECT_EQ(bag.itemsCanStack(std::cref(*source)), 0u);
+  auto emptyFit = bag.itemsFitWhere(std::cref(*source));
+  EXPECT_EQ(emptyFit.leftover, 0u);
+  EXPECT_TRUE(emptyFit.slots.empty());
 });
 
 const GameTestRegistration constructItems("ItemTest", "ConstructItems", [](GameTest& fixture) {
@@ -693,7 +840,7 @@ namespace {
 class ReadyCatalogErrorSink : public LogSink {
 public:
   ReadyCatalogErrorSink() { setLevel(LogLevel::Error); }
-  [[nodiscard]] std::expected<void, StarException> log(char const* message, LogLevel) override {
+  [[nodiscard]] std::expected<void, StarException> log(std::string_view message, LogLevel) override {
     ADD_FAILURE() << "Ready-catalog fixture logged an error: " << message;
     return {};
   }
@@ -734,7 +881,7 @@ const GameTestRegistration nestedReadyCatalog("ItemTest", "BuildersAndRebuilders
   Json humanConfig;
   auto speciesPaths = baseAssets->scanExtension("species");
   ASSERT_TRUE(speciesPaths);
-  for (auto const& assetPath : **speciesPaths) {
+  for (auto const& assetPath : speciesPaths->get()) {
     auto const& path = assetPath.string();
     auto config = baseAssets->json(path);
     ASSERT_TRUE(config);
@@ -750,7 +897,7 @@ const GameTestRegistration nestedReadyCatalog("ItemTest", "BuildersAndRebuilders
   Json npcConfig;
   auto npcPaths = baseAssets->scanExtension("npctype");
   ASSERT_TRUE(npcPaths);
-  for (auto const& assetPath : **npcPaths) {
+  for (auto const& assetPath : npcPaths->get()) {
     auto const& path = assetPath.string();
     auto config = baseAssets->json(path);
     ASSERT_TRUE(config);

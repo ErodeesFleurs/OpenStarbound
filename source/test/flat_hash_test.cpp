@@ -38,7 +38,7 @@ TEST(FlatHashMap, SinglePassInputPreservesEveryElement) {
   for (int key = 1; key <= 4; ++key) {
     auto value = values.at(key);
     ASSERT_TRUE(value);
-    EXPECT_EQ(**value, key * 2);
+    EXPECT_EQ(value->get(), key * 2);
   }
   std::istringstream setInput("1 2 3 4");
   FlatHashSet<int> keys(std::istream_iterator<int>(setInput), {});
@@ -72,7 +72,7 @@ TEST(FlatHashMap, TryEmplaceKeepsOwnershipOnDuplicate) {
   EXPECT_FALSE(candidate);
   auto stored = values.get(1);
   ASSERT_TRUE(stored);
-  EXPECT_EQ(***stored, 99);
+  EXPECT_EQ(*stored->get(), 99);
 
   StringMap<int> keyed;
   keyed.try_emplace("present", 1);
@@ -84,19 +84,19 @@ TEST(FlatHashMap, TryEmplaceKeepsOwnershipOnDuplicate) {
 }
 
 TEST(FlatHashMap, BorrowedLookupPreservesBytesAndCaseRules) {
-  String key("x\0中", 5);
+  String key(std::string_view("x\0中", 5));
   std::string bytes = "!" + key.utf8() + "?";
-  StringView query(bytes.data() + 1, key.utf8Size());
+  StringView query(std::string_view(bytes).substr(1, key.utf8Size()));
   StringMap<int> values{{key, 7}};
   StableStringMap<int> stable{{key, 8}};
   EXPECT_EQ(hash<String>{}(key), hash<String>{}(query));
   auto value = values.get(query);
   ASSERT_TRUE(value);
-  EXPECT_EQ(**value, 7);
+  EXPECT_EQ(value->get(), 7);
   auto stableValue = stable.get(query);
   ASSERT_TRUE(stableValue);
-  EXPECT_EQ(**stableValue, 8);
-  *values.ptr(query) = 9;
+  EXPECT_EQ(stableValue->get(), 8);
+  values.maybeRef(query)->get() = 9;
   EXPECT_EQ(values.value(query), 9);
   auto maybeValue = values.maybe(query);
   ASSERT_TRUE(maybeValue);
@@ -111,7 +111,7 @@ TEST(FlatHashMap, BorrowedLookupPreservesBytesAndCaseRules) {
   CaseInsensitiveStringMap<int> insensitive{{*insensitiveKey, 10}};
   auto insensitiveValue = insensitive.get(*insensitiveQuery);
   ASSERT_TRUE(insensitiveValue);
-  EXPECT_EQ(**insensitiveValue, 10);
+  EXPECT_EQ(insensitiveValue->get(), 10);
   EXPECT_EQ(Color::create(StringView("RED")), Color::Red);
 }
 
@@ -304,7 +304,7 @@ TEST(FlatHashMap, Random) {
     ASSERT_TRUE(testMap.insert(v).first->second == v.second);
     auto value = testMap.at(v.first);
     ASSERT_TRUE(value);
-    ASSERT_EQ(**value, v.second);
+    ASSERT_EQ(value->get(), v.second);
   }
 
   random.shuffle(values);
@@ -436,17 +436,17 @@ void expectMapOwnershipContract() {
   EXPECT_EQ(values.size(), 2u);
   auto borrowed = values.get(1);
   ASSERT_TRUE(borrowed);
-  EXPECT_EQ(**borrowed, 10);
+  EXPECT_EQ(borrowed->get(), 10);
   auto const& constValues = values;
-  static_assert(std::same_as<decltype(constValues.get(1)), std::expected<int const*, StarException>>);
-  static_assert(std::same_as<decltype(values.get(1)), std::expected<int*, StarException>>);
+  static_assert(std::same_as<decltype(constValues.get(1)), std::expected<std::reference_wrapper<int const>, StarException>>);
+  static_assert(std::same_as<decltype(values.get(1)), std::expected<std::reference_wrapper<int>, StarException>>);
   auto copied = values.maybe(1);
   auto keys = values.keys();
   auto snapshot = values.values();
   auto pairs = values.pairs();
   for (auto& value : values.valueView())
     ++value;
-  EXPECT_EQ(**borrowed, 11);
+  EXPECT_EQ(borrowed->get(), 11);
   ASSERT_TRUE(copied);
   EXPECT_EQ(*copied, 10);
   EXPECT_EQ(std::ranges::count(snapshot, 10), 1);
@@ -579,14 +579,14 @@ void expectSetOwnershipTransfer() {
 
 struct FallibleSetValue {
   int value;
-  std::vector<int>* visited;
+  std::reference_wrapper<std::vector<int>> visited;
   friend bool operator<(FallibleSetValue const& a, FallibleSetValue const& b) { return a.value < b.value; }
-  friend std::expected<std::ostream*, StarException> operator<<(std::ostream& stream, FallibleSetValue const& value) {
-    value.visited->push_back(value.value);
+  friend std::expected<std::reference_wrapper<std::ostream>, StarException> operator<<(std::ostream& stream, FallibleSetValue const& value) {
+    value.visited.get().push_back(value.value);
     if (value.value == 2)
       return std::unexpected(OutOfRangeException("first diagnostic error", false));
     stream << value.value;
-    return &stream;
+    return std::ref(stream);
   }
 };
 
@@ -600,12 +600,12 @@ TEST(MapComposition, OwnsStorageAndSeparatesBorrowedLookupFromSnapshots) {
 
 TEST(MapComposition, StableStorageKeepsBorrowedValuesAcrossRehash) {
   StableHashMap<int, int> values{{1, 10}};
-  int* borrowed = values.ptr(1);
+  auto borrowed = values.maybeRef(1);
   for (int key = 2; key < 200; ++key)
     values.set(key, key);
   values.reserve(1000);
-  EXPECT_EQ(values.ptr(1), borrowed);
-  EXPECT_EQ(*borrowed, 10);
+  EXPECT_EQ(std::addressof(values.maybeRef(1)->get()), std::addressof(borrowed->get()));
+  EXPECT_EQ(borrowed->get(), 10);
 }
 
 TEST(SetComposition, OrderedAndHashAlgebraPreserveMembership) {
@@ -635,10 +635,10 @@ TEST(SetComposition, TakeTransfersMoveOnlyValues) {
 
 TEST(MapComposition, CheckedDiagnosticStopsAtFirstValueError) {
   std::vector<int> visited;
-  Map<int, FallibleSetValue> values{{1, {1, &visited}}, {2, {2, &visited}}, {3, {3, &visited}}};
+  Map<int, FallibleSetValue> values{{1, {1, std::ref(visited)}}, {2, {2, std::ref(visited)}}, {3, {3, std::ref(visited)}}};
   std::ostringstream stream;
   auto printed = stream << values;
-  static_assert(std::same_as<decltype(printed), std::expected<std::ostream*, StarException>>);
+  static_assert(std::same_as<decltype(printed), std::expected<std::reference_wrapper<std::ostream>, StarException>>);
   ASSERT_FALSE(printed);
   EXPECT_TRUE(printed.error().is<OutOfRangeException>());
   EXPECT_EQ(visited, (std::vector<int>{1, 2}));
@@ -647,10 +647,10 @@ TEST(MapComposition, CheckedDiagnosticStopsAtFirstValueError) {
 
 TEST(SetComposition, CheckedDiagnosticStopsAtFirstElementError) {
   std::vector<int> visited;
-  Set<FallibleSetValue> values{{1, &visited}, {2, &visited}, {3, &visited}};
+  Set<FallibleSetValue> values{{1, std::ref(visited)}, {2, std::ref(visited)}, {3, std::ref(visited)}};
   std::ostringstream stream;
   auto printed = stream << values;
-  static_assert(std::same_as<decltype(printed), std::expected<std::ostream*, StarException>>);
+  static_assert(std::same_as<decltype(printed), std::expected<std::reference_wrapper<std::ostream>, StarException>>);
   ASSERT_FALSE(printed);
   EXPECT_TRUE(printed.error().is<OutOfRangeException>());
   EXPECT_EQ(visited, (std::vector<int>{1, 2}));
