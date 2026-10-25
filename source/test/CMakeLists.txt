@@ -19,6 +19,8 @@ set (star_core_tests_SOURCES
       host_address_test.cpp
       ref_ptr_test.cpp
       json_test.cpp
+      json_contract_test.cpp
+      json_path_patch_test.cpp
       flat_hash_test.cpp
       formatted_json_test.cpp
       line_test.cpp

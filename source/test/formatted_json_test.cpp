@@ -3,6 +3,7 @@ import star.json;
 import star.string;
 import star.list;
 import star.lexical_cast;
+import star.unicode;
 
 import star.formatted_json;
 import star.json_path;
@@ -736,4 +737,215 @@ TEST(FormattedJsonTest, NumberFormatPreservation) {
   auto result150 = (*result149).repr();
   ASSERT_TRUE(result150);
   EXPECT_EQ((*result150), "[1,0]");
+}
+
+TEST(FormattedJsonTest, LargeFlatContainersRetainValuesIndexesAndOldSnapshots) {
+  constexpr std::size_t Count = 4096;
+  for (bool object : {false, true}) {
+    std::string original = object ? "{" : "[";
+    std::string changed = original;
+    JsonArray array;
+    JsonObject entries;
+    for (std::size_t i = 0; i < Count; ++i) {
+      if (i) {
+        original += ',';
+        changed += ',';
+      }
+      auto key = std::format("k{:06}", i);
+      if (object) {
+        original += '"' + key + "\":";
+        changed += '"' + key + "\":";
+      }
+      original += std::to_string(i);
+      changed += i == Count / 2 ? "-0.00e+0" : std::to_string(i);
+      if (object)
+        entries[String(key)] = Json(i);
+      else
+        array.append(Json(i));
+    }
+    original += object ? '}' : ']';
+    changed += object ? '}' : ']';
+    Json expected = object ? Json(std::move(entries)) : Json(std::move(array));
+    auto parsed = FormattedJson::parse(String(original));
+    ASSERT_TRUE(parsed);
+    EXPECT_EQ(parsed->toJson(), expected);
+    auto oldSnapshot = *parsed;
+    auto oldSemantic = parsed->toJson();
+    auto replacement = FormattedJson::parse("-0.00e+0");
+    ASSERT_TRUE(replacement);
+    auto updated = object ? parsed->set("k002048", *replacement) : parsed->set(Count / 2, *replacement);
+    ASSERT_TRUE(updated);
+    auto size = updated->size();
+    ASSERT_TRUE(size);
+    EXPECT_EQ(*size, Count);
+    for (std::size_t i : {std::size_t(0), Count / 2, Count - 1}) {
+      auto key = String(std::format("k{:06}", i));
+      auto value = object ? updated->get(key) : updated->get(i);
+      ASSERT_TRUE(value);
+      auto integer = value->toJson().toInt();
+      ASSERT_TRUE(integer);
+      EXPECT_EQ(*integer, i == Count / 2 ? 0 : static_cast<std::int64_t>(i));
+    }
+    auto updatedText = updated->repr();
+    auto originalText = parsed->repr();
+    auto snapshotText = oldSnapshot.repr();
+    ASSERT_TRUE(updatedText);
+    ASSERT_TRUE(originalText);
+    ASSERT_TRUE(snapshotText);
+    EXPECT_EQ(*updatedText, String(changed));
+    EXPECT_EQ(*originalText, String(original));
+    EXPECT_EQ(*snapshotText, String(original));
+    EXPECT_EQ(oldSemantic, expected);
+    EXPECT_EQ(parsed->toJson(), expected);
+  }
+}
+
+TEST(FormattedJsonTest, DuplicateTokensKeepLastSemanticValueAndRebuildIndex) {
+  String original = R"({"dup":1.00,"dup":-0,"tail":[1e+2,2]})";
+  auto parsed = FormattedJson::parse(original);
+  ASSERT_TRUE(parsed);
+  auto oldSnapshot = *parsed;
+  auto value = parsed->get("dup");
+  ASSERT_TRUE(value);
+  auto spelling = value->repr();
+  ASSERT_TRUE(spelling);
+  EXPECT_EQ(*spelling, "-0");
+  auto semantic = parsed->toJson().getInt("dup");
+  ASSERT_TRUE(semantic);
+  EXPECT_EQ(*semantic, 0);
+  auto replacement = FormattedJson::parse("7.50");
+  ASSERT_TRUE(replacement);
+  auto updated = parsed->set("dup", *replacement);
+  ASSERT_TRUE(updated);
+  auto updatedText = updated->repr();
+  ASSERT_TRUE(updatedText);
+  EXPECT_EQ(*updatedText, R"({"dup":1.00,"dup":7.50,"tail":[1e+2,2]})");
+  auto erased = updated->eraseKey("dup");
+  ASSERT_TRUE(erased);
+  auto erasedText = erased->repr();
+  ASSERT_TRUE(erasedText);
+  EXPECT_EQ(*erasedText, R"({"dup":1.00,"tail":[1e+2,2]})");
+  auto revealed = erased->get("dup");
+  ASSERT_TRUE(revealed);
+  auto revealedText = revealed->repr();
+  ASSERT_TRUE(revealedText);
+  EXPECT_EQ(*revealedText, "1.00");
+  auto revealedNumber = erased->toJson().getDouble("dup");
+  ASSERT_TRUE(revealedNumber);
+  EXPECT_EQ(*revealedNumber, 1.0);
+  auto snapshotText = oldSnapshot.repr();
+  auto originalText = parsed->repr();
+  ASSERT_TRUE(snapshotText);
+  ASSERT_TRUE(originalText);
+  EXPECT_EQ(*snapshotText, original);
+  EXPECT_EQ(*originalText, original);
+}
+
+TEST(FormattedJsonTest, NestedUnicodeTriviaAndNumberSpellingSurviveRebuild) {
+  String original = "{ /* 日本語 🌟 */ \"値\": [ -0.00e+0, \"café🚀\" ] // end\n}";
+  auto parsed = FormattedJson::parse(original);
+  ASSERT_TRUE(parsed);
+  auto oldSnapshot = *parsed;
+  auto array = parsed->get("値");
+  ASSERT_TRUE(array);
+  std::string replacementBytes = "改行\n";
+  replacementBytes.push_back('\0');
+  replacementBytes += "尾";
+  auto replacement = FormattedJson::create(Json(String(replacementBytes)));
+  ASSERT_TRUE(replacement);
+  auto changedArray = array->set(std::size_t(1), *replacement);
+  ASSERT_TRUE(changedArray);
+  auto updated = parsed->set("値", *changedArray);
+  ASSERT_TRUE(updated);
+  auto output = updated->repr();
+  ASSERT_TRUE(output);
+  EXPECT_EQ(*output, "{ /* 日本語 🌟 */ \"値\": [ -0.00e+0, \"改行\\n\\u0000尾\" ] // end\n}");
+  Json expected = JsonObject{{"値", JsonArray{Json(-0.0), Json(String(replacementBytes))}}};
+  EXPECT_EQ(updated->toJson(), expected);
+  auto oldNumber = array->get(std::size_t(0));
+  ASSERT_TRUE(oldNumber);
+  auto numberSpelling = oldNumber->repr();
+  ASSERT_TRUE(numberSpelling);
+  EXPECT_EQ(*numberSpelling, "-0.00e+0");
+  auto oldOutput = oldSnapshot.repr();
+  auto originalOutput = parsed->repr();
+  ASSERT_TRUE(oldOutput);
+  ASSERT_TRUE(originalOutput);
+  EXPECT_EQ(*oldOutput, original);
+  EXPECT_EQ(*originalOutput, original);
+}
+
+TEST(FormattedJsonTest, CreateRetainsExactNestedValuesAndFloatingTags) {
+  Json input = JsonArray{JsonObject{{"value", Json(std::int64_t(9223372036854775807ll))}}, Json(1.0), "café"};
+  auto oldSnapshot = input;
+  auto created = FormattedJson::create(input);
+  ASSERT_TRUE(created);
+  auto output = created->repr();
+  ASSERT_TRUE(output);
+  EXPECT_EQ(*output, "[{\"value\":9223372036854775807},1,\"café\"]");
+  auto object = created->get(std::size_t(0));
+  auto floating = created->get(std::size_t(1));
+  ASSERT_TRUE(object);
+  ASSERT_TRUE(floating);
+  auto integer = object->toJson().getInt("value");
+  ASSERT_TRUE(integer);
+  EXPECT_EQ(*integer, std::int64_t(9223372036854775807ll));
+  EXPECT_EQ(floating->type(), Json::Type::Float);
+  auto replacement = FormattedJson::create(Json(2));
+  ASSERT_TRUE(replacement);
+  auto changed = created->set(std::size_t(1), *replacement);
+  ASSERT_TRUE(changed);
+  Json expectedInput = JsonArray{JsonObject{{"value", Json(std::int64_t(9223372036854775807ll))}}, Json(1.0), "café"};
+  EXPECT_EQ(input, expectedInput);
+  EXPECT_EQ(oldSnapshot, expectedInput);
+  EXPECT_EQ(created->toJson(), expectedInput);
+}
+
+TEST(FormattedJsonTest, Utf8WriterPreservesKeyQuirksAndValueNuls) {
+  std::string keyBytes = "é\"key";
+  keyBytes.push_back('\0');
+  keyBytes += "suffix";
+  String key(keyBytes);
+  String text(std::string("a\0b\n", 4));
+  auto created = FormattedJson::create(JsonObject{{key, Json(text)}});
+  ASSERT_TRUE(created);
+  auto output = created->repr();
+  ASSERT_TRUE(output);
+  // Historical object keys bypass escaping and stop at NUL; values do neither.
+  EXPECT_EQ(*output, R"({"é"key":"a\u0000b\n"})");
+  auto retrieved = created->get(key);
+  ASSERT_TRUE(retrieved);
+  auto value = retrieved->toJson().toString();
+  ASSERT_TRUE(value);
+  EXPECT_EQ(*value, text);
+}
+
+TEST(FormattedJsonTest, UnicodeAndOutputFailuresKeepTheirFirstError) {
+  std::string invalidKey = "key";
+  invalidKey.push_back('\0');
+  invalidKey.push_back(static_cast<char>(0xff));
+  auto invalidObject = FormattedJson::create(JsonObject{{String(invalidKey), Json(1)}});
+  ASSERT_FALSE(invalidObject);
+  EXPECT_TRUE(invalidObject.error().is<UnicodeException>());
+
+  std::string malformed = "{\"a\":,\"b\":\"";
+  malformed.push_back(static_cast<char>(0xff));
+  malformed += "\"}";
+  auto parsed = FormattedJson::parse(String(malformed));
+  ASSERT_FALSE(parsed);
+  EXPECT_TRUE(parsed.error().is<JsonParsingException>());
+  EXPECT_FALSE(parsed.error().is<UnicodeException>());
+
+  auto valid = FormattedJson::parse("[1]");
+  ASSERT_TRUE(valid);
+  std::ostream failed(nullptr);
+  auto outputFailure = Star::operator<<(failed, *valid);
+  ASSERT_FALSE(outputFailure);
+  EXPECT_TRUE(outputFailure.error().is<JsonException>());
+
+  auto invalidScalar = FormattedJson::create(Json(String(std::string(1, static_cast<char>(0xff)))));
+  ASSERT_TRUE(invalidScalar);
+  auto earlierFailure = Star::operator<<(failed, *invalidScalar);
+  ASSERT_FALSE(earlierFailure);
+  EXPECT_TRUE(earlierFailure.error().is<UnicodeException>());
 }

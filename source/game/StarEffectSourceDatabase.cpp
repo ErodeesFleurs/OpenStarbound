@@ -152,44 +152,55 @@ void EffectSource::tick(float dt) {
 }
 
 std::expected<List<String>, StarException> EffectSource::particles() {
-  auto pick = [&root = m_root](Json const& config, List<String>& particles) -> std::expected<void, StarException> {
-    auto options = config.toArray();
-    if (!options)
-      return std::unexpected(std::move(options.error()));
-    auto selected = jsonToStringList(root.random().randValueFrom(*options, JsonArray()));
-    if (!selected)
-      return std::unexpected(std::move(selected.error()));
-    particles.appendAll(*selected);
+  List<String> result;
+  auto pick = [&](std::size_t stage, auto&& loadConfig) -> std::expected<void, StarException> {
+    auto& choices = m_particleChoices[stage];
+    if (!choices) {
+      auto config = std::invoke(loadConfig);
+      if (!config)
+        return std::unexpected(std::move(config.error()));
+      auto options = config->arrayPtr();
+      if (!options)
+        return std::unexpected(std::move(options.error()));
+      auto initialized = std::make_unique<ParticleChoices>();
+      initialized->options = std::move(*options);
+      initialized->decoded.resize(initialized->options->size());
+      choices = std::move(initialized);
+    }
+    if (choices->options->empty())
+      return {};
+    // Match randValueFrom's single inclusive draw, including the one-option case.
+    auto index = static_cast<std::size_t>(m_root.random().randInt(choices->options->size() - 1));
+    auto& decoded = choices->decoded[index];
+    if (!decoded) {
+      auto selected = jsonToStringList((*choices->options)[index]);
+      if (!selected)
+        return std::unexpected(std::move(selected.error()));
+      decoded = std::move(*selected);
+    }
+    result.appendAll(*decoded);
     return {};
   };
-  List<String> result;
   if (m_initialTick) {
-    auto start = m_config.get("start", JsonObject());
-    if (!start)
-      return std::unexpected(std::move(start.error()));
-    auto config = start->get("particles", JsonArray());
-    if (!config)
-      return std::unexpected(std::move(config.error()));
-    auto selected = pick(*config, result);
+    auto selected = pick(0, [&] {
+      return m_config.get("start", JsonObject()).and_then([](Json config) {
+        return config.get("particles", JsonArray());
+      });
+    });
     if (!selected)
       return std::unexpected(std::move(selected.error()));
   }
   if (m_loopTick) {
-    auto config = m_config.get("particles", JsonArray());
-    if (!config)
-      return std::unexpected(std::move(config.error()));
-    auto selected = pick(*config, result);
+    auto selected = pick(1, [&] { return m_config.get("particles", JsonArray()); });
     if (!selected)
       return std::unexpected(std::move(selected.error()));
   }
   if (m_finalTick) {
-    auto stop = m_config.get("stop", JsonObject());
-    if (!stop)
-      return std::unexpected(std::move(stop.error()));
-    auto config = stop->get("particles", JsonArray());
-    if (!config)
-      return std::unexpected(std::move(config.error()));
-    auto selected = pick(*config, result);
+    auto selected = pick(2, [&] {
+      return m_config.get("stop", JsonObject()).and_then([](Json config) {
+        return config.get("particles", JsonArray());
+      });
+    });
     if (!selected)
       return std::unexpected(std::move(selected.error()));
   }

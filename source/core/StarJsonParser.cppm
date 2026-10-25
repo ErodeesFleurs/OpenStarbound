@@ -29,8 +29,9 @@ struct JsonStream {
     if (!text) return std::unexpected(std::move(text.error()));
     return putString(*text);
   }
-  virtual std::expected<void, StarException> putDouble(std::span<char32_t const>) = 0;
-  virtual std::expected<void, StarException> putInteger(std::span<char32_t const>) = 0;
+  // Numeric tokens are ASCII, borrowed through the synchronous callback.
+  virtual std::expected<void, StarException> putDouble(std::string_view) = 0;
+  virtual std::expected<void, StarException> putInteger(std::string_view) = 0;
   virtual std::expected<void, StarException> putBoolean(bool) = 0;
   virtual std::expected<void, StarException> putNull() = 0;
   virtual std::expected<void, StarException> putWhitespace(std::span<char32_t const>) = 0;
@@ -63,8 +64,7 @@ enum class JsonParseType : std::uint8_t {
 
 // Will parse JSON and output to a given JsonStream.  Parses an *extension* to
 // the JSON format that includes comments.
-template <typename InputIterator>
-class JsonParser {
+template <typename InputIterator, bool RetainWhitespace = true> class JsonParser {
 public:
   explicit JsonParser(JsonStream& stream) : m_stream(stream) {}
 
@@ -328,10 +328,10 @@ private:
   }
 
   std::expected<void, StarException> number(bool seq = false) {
-    CharArray buffer;
+    std::string buffer;
     bool isDouble = false;
     auto consume = [&]() -> std::expected<void, StarException> {
-      buffer += m_char;
+      buffer += static_cast<char>(m_char);
       return next();
     };
     if (m_char == '-') {
@@ -507,7 +507,8 @@ private:
   std::expected<void, StarException> white() {
     CharArray buffer;
     auto consume = [&]() -> std::expected<void, StarException> {
-      buffer += m_char;
+      if constexpr (RetainWhitespace)
+        buffer += m_char;
       return next();
     };
     while (m_current != m_end) {
@@ -550,8 +551,10 @@ private:
         break;
       }
     }
-    if (!buffer.empty())
-      return m_stream.putWhitespace(buffer);
+    if constexpr (RetainWhitespace) {
+      if (!buffer.empty())
+        return m_stream.putWhitespace(buffer);
+    }
     return {};
   }
 
@@ -657,16 +660,14 @@ public:
     }
     return write('"');
   }
-  std::expected<void, StarException> putDouble(std::span<char32_t const> s) override {
+  std::expected<void, StarException> putDouble(std::string_view s) override {
     auto r = startValue();
     if (!r) return std::unexpected(std::move(r.error()));
-    return text(s);
+    return asciiText(s);
   }
-  std::expected<void, StarException> putInteger(std::span<char32_t const> s) override { return putDouble(s); }
-  std::expected<void, StarException> putBoolean(bool b) override {
-    return putDouble(b ? std::span<char32_t const>(U"true", 4) : std::span<char32_t const>(U"false", 5));
-  }
-  std::expected<void, StarException> putNull() override { return putDouble(std::span<char32_t const>(U"null", 4)); }
+  std::expected<void, StarException> putInteger(std::string_view s) override { return putDouble(s); }
+  std::expected<void, StarException> putBoolean(bool b) override { return putDouble(b ? "true" : "false"); }
+  std::expected<void, StarException> putNull() override { return putDouble("null"); }
   std::expected<void, StarException> putWhitespace(std::span<char32_t const> s) override { return text(s); }
   std::expected<void, StarException> putColon() override {
     auto r = write(':');
@@ -725,6 +726,14 @@ private:
     for (std::size_t i = 0; i < s.size(); ++i) {
       auto r = write(s[i]);
       if (!r) return std::unexpected(std::move(r.error()));
+    }
+    return {};
+  }
+  std::expected<void, StarException> asciiText(std::string_view s) {
+    for (unsigned char c : s) {
+      auto r = write(c);
+      if (!r)
+        return std::unexpected(std::move(r.error()));
     }
     return {};
   }

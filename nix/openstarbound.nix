@@ -150,6 +150,7 @@ let
   ++ lib.optional (withTests && guiSupport) "frontend_tests"
   ++ lib.optionals withBenchmarks [
     "core_benchmarks"
+    "json_benchmarks"
     "game_benchmarks"
     "ownership_benchmarks"
     "performance_benchmarks"

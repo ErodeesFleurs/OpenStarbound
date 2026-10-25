@@ -35,11 +35,22 @@ namespace JsonPath {
 
   // Retrieves the portion of the Json document referred to by the given path.
   template <typename Jsonlike>
-  std::expected<Jsonlike, StarException> pathGet(Jsonlike base, PathParser parser, String const& path);
+  std::expected<Jsonlike, StarException> pathGet(Jsonlike const& base, PathParser parser, String const& path);
 
   // Missing or nontraversable locations are nullopt; malformed paths remain errors.
   template <typename Jsonlike>
-  std::expected<std::optional<Jsonlike>, StarException> pathFind(Jsonlike base, PathParser parser, String const& path);
+  std::expected<std::optional<Jsonlike>, StarException> pathFind(Jsonlike const& base, PathParser parser,
+                                                                 String const& path);
+
+  // Lexical borrows into a retained immutable document. Present null is not a miss.
+  std::expected<std::reference_wrapper<Json const>, StarException>
+  pathGetRef(Json const& base, PathParser const& parser, String const& path);
+  std::expected<std::reference_wrapper<Json const>, StarException>
+  pathGetRef(Json const&& base, PathParser const& parser, String const& path) = delete;
+  std::expected<std::optional<std::reference_wrapper<Json const>>, StarException>
+  pathFindRef(Json const& base, PathParser const& parser, String const& path);
+  std::expected<std::optional<std::reference_wrapper<Json const>>, StarException>
+  pathFindRef(Json const&& base, PathParser const& parser, String const& path) = delete;
 
   template <typename Jsonlike>
   using JsonOp = std::function<std::expected<Jsonlike, StarException>(Jsonlike const&, std::optional<String> const&)>;
@@ -80,7 +91,7 @@ namespace JsonPath {
 
   class Path {
   public:
-    Path(PathParser parser, String const& path) : m_parser(parser), m_path(path) {}
+    Path(PathParser parser, String const& path) : m_parser(std::move(parser)), m_path(path) {}
 
     template <typename Jsonlike>
     std::expected<Jsonlike, StarException> get(Jsonlike const& base) {
@@ -136,7 +147,14 @@ namespace JsonPath {
   };
 
   template <typename Jsonlike>
-  std::expected<Jsonlike, StarException> pathGet(Jsonlike value, PathParser parser, String const& path) {
+  std::expected<Jsonlike, StarException> pathGet(Jsonlike const& base, PathParser parser, String const& path) {
+    if constexpr (std::same_as<Jsonlike, Json>) {
+      auto value = pathGetRef(base, parser, path);
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      return value->get();
+    }
+    Jsonlike value = base;
     if (!parser)
       return std::unexpected(ParsingException("Cannot invoke an empty Json path parser"));
     String buffer;
@@ -180,7 +198,17 @@ namespace JsonPath {
 
   // Optional misses are normal results, not diagnostics to construct and discard.
   template <typename Jsonlike>
-  std::expected<std::optional<Jsonlike>, StarException> pathFind(Jsonlike value, PathParser parser, String const& path) {
+  std::expected<std::optional<Jsonlike>, StarException> pathFind(Jsonlike const& base, PathParser parser,
+                                                                 String const& path) {
+    if constexpr (std::same_as<Jsonlike, Json>) {
+      auto value = pathFindRef(base, parser, path);
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      if (*value)
+        return std::optional<Jsonlike>((*value)->get());
+      return std::optional<Jsonlike>{};
+    }
+    Jsonlike value = base;
     if (!parser)
       return std::unexpected(ParsingException("Cannot invoke an empty Json path parser"));
     String buffer;
@@ -223,9 +251,9 @@ namespace JsonPath {
   }
 
   template <typename Jsonlike>
-  std::expected<Jsonlike, StarException> pathApply(String& buffer,
-      Jsonlike const& value, PathParser parser, String const& path,
-      Utf8Cursor const current, JsonOp<Jsonlike> op) {
+  std::expected<Jsonlike, StarException> pathApply(String& buffer, Jsonlike const& value, PathParser const& parser,
+                                                   String const& path, Utf8Cursor const current,
+                                                   JsonOp<Jsonlike> const& op) {
     if (current.atEnd())
       return op(value, {});
     auto cursor = current;
@@ -261,15 +289,11 @@ namespace JsonPath {
       auto child = value.get(buffer);
       if (!child)
         return std::unexpected(std::move(child.error()));
+      String key = std::move(buffer);
       auto changed = pathApply(buffer, *child, parser, path, cursor, op);
       if (!changed)
         return std::unexpected(std::move(changed.error()));
-      cursor = current;
-      // Recursion reused the buffer; recover the current path component.
-      parsed = parser(buffer, path, cursor);
-      if (!parsed)
-        return std::unexpected(std::move(parsed.error()));
-      return value.set(buffer, std::move(*changed));
+      return value.set(std::move(key), std::move(*changed));
     }
     return std::unexpected(TraversalException::format("Tried to get key '{}' in non-object type in pathApply(\"{}\")", buffer, path));
   }
@@ -366,26 +390,28 @@ namespace JsonPath {
 export module star.json_path;
 
 export namespace Star::JsonPath {
-  using ::Star::JsonPath::TypeHint;
-  using ::Star::JsonPath::PathParser;
-  using ::Star::JsonPath::ParsingExceptionTag;
-  using ::Star::JsonPath::ParsingException;
-  using ::Star::JsonPath::TraversalExceptionTag;
-  using ::Star::JsonPath::TraversalException;
-  using ::Star::JsonPath::parsePointer;
-  using ::Star::JsonPath::parseQueryPath;
-  using ::Star::JsonPath::pathGet;
-  using ::Star::JsonPath::pathFind;
-  using ::Star::JsonPath::JsonOp;
-  using ::Star::JsonPath::pathApply;
-  using ::Star::JsonPath::pathSet;
-  using ::Star::JsonPath::pathRemove;
-  using ::Star::JsonPath::pathAdd;
-  using ::Star::JsonPath::EmptyPathOp;
-  using ::Star::JsonPath::ObjectOp;
-  using ::Star::JsonPath::ArrayOp;
-  using ::Star::JsonPath::genericObjectArrayOp;
-  using ::Star::JsonPath::Path;
-  using ::Star::JsonPath::Pointer;
-  using ::Star::JsonPath::QueryPath;
+using ::Star::JsonPath::ArrayOp;
+using ::Star::JsonPath::EmptyPathOp;
+using ::Star::JsonPath::genericObjectArrayOp;
+using ::Star::JsonPath::JsonOp;
+using ::Star::JsonPath::ObjectOp;
+using ::Star::JsonPath::parsePointer;
+using ::Star::JsonPath::parseQueryPath;
+using ::Star::JsonPath::ParsingException;
+using ::Star::JsonPath::ParsingExceptionTag;
+using ::Star::JsonPath::Path;
+using ::Star::JsonPath::pathAdd;
+using ::Star::JsonPath::pathApply;
+using ::Star::JsonPath::pathFind;
+using ::Star::JsonPath::pathFindRef;
+using ::Star::JsonPath::pathGet;
+using ::Star::JsonPath::pathGetRef;
+using ::Star::JsonPath::PathParser;
+using ::Star::JsonPath::pathRemove;
+using ::Star::JsonPath::pathSet;
+using ::Star::JsonPath::Pointer;
+using ::Star::JsonPath::QueryPath;
+using ::Star::JsonPath::TraversalException;
+using ::Star::JsonPath::TraversalExceptionTag;
+using ::Star::JsonPath::TypeHint;
 }

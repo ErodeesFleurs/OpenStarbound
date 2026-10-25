@@ -29,6 +29,7 @@ import star.game_test;
 import star.root;
 import star.random;
 import star.logging;
+import star.effect_source_database;
 
 #include "gtest/gtest.h"
 
@@ -268,6 +269,85 @@ const GameTestRegistration assetsConstAnimationCachesRefreshFramesAndParts("Asse
   ASSERT_TRUE(disabledPart);
   EXPECT_FALSE(disabledPart->get().activeState);
 });
+
+const GameTestRegistration
+  assetsAnimationTransformCenters("AssetsTest", "TransformCentersPreserveValidationAndRecovery", [](GameTest&) {
+    auto config = Json::parse(R"({"parts":{"body":{"properties":{"transforms":[["reset"],["scale",[2,3]]]}}}})");
+    ASSERT_TRUE(config);
+    auto animation = AnimatedPartSet::create(*config, 1);
+    ASSERT_TRUE(animation);
+    auto part = animation->activePart("body");
+    ASSERT_TRUE(part);
+    EXPECT_FLOAT_EQ(part->get().xScaleAnimation, 2);
+    EXPECT_FLOAT_EQ(part->get().yScaleAnimation, 3);
+    EXPECT_FLOAT_EQ(part->get().xTranslationAnimation, 0);
+    EXPECT_FLOAT_EQ(part->get().yTranslationAnimation, 0);
+    auto definition = animation->parts().get("body");
+    ASSERT_TRUE(definition);
+    definition->get().partProperties["transforms"] =
+      JsonArray{JsonArray{"reset"}, JsonArray{"scale", JsonArray{2, 3}, JsonArray{1, 2}}};
+    definition->get().partProperties["scalingCenter"] = JsonArray{"unused invalid coordinate"};
+    definition->get().activePartDirty = true;
+    auto explicitCenter = animation->activePart("body");
+    ASSERT_TRUE(explicitCenter);
+    EXPECT_FLOAT_EQ(explicitCenter->get().xTranslationAnimation, -1);
+    EXPECT_FLOAT_EQ(explicitCenter->get().yTranslationAnimation, -4);
+    // A supplied default's array type is still checked before using an explicit center.
+    definition->get().partProperties["scalingCenter"] = 7;
+    definition->get().activePartDirty = true;
+    auto invalidDefault = animation->activePart("body");
+    ASSERT_FALSE(invalidDefault);
+    EXPECT_TRUE(invalidDefault.error().is<JsonException>());
+    definition->get().partProperties["scalingCenter"] = JsonArray{0, 0};
+    definition->get().activePartDirty = true;
+    auto recovered = animation->activePart("body");
+    ASSERT_TRUE(recovered);
+    EXPECT_FLOAT_EQ(recovered->get().xTranslationAnimation, -1);
+    EXPECT_FLOAT_EQ(recovered->get().yTranslationAnimation, -4);
+  });
+
+const GameTestRegistration effectSourceParticleCache(
+  "EffectSourceTest", "LazyParticleChoicesRetainOwnedResultsAndStageErrors", [](GameTest& fixture) {
+    Json definition = JsonObject{{"duration", 1},
+                                 {"durationVariance", 0},
+                                 {"loops", true},
+                                 {"start", JsonObject{{"particles", JsonArray{JsonArray{"start-a", "start-b"}}}}},
+                                 {"particles", JsonArray{JsonArray{"loop"}}},
+                                 {"stop", JsonObject{{"particles", JsonArray{7}}}}};
+    auto source = EffectSource::create(fixture.root(), "private-cache-fixture", "normal", definition);
+    ASSERT_TRUE(source);
+    auto initial = (*source)->particles();
+    ASSERT_TRUE(initial);
+    EXPECT_EQ(*initial, (List<String>{"start-a", "start-b"}));
+    (*initial)[0] = "caller-owned change";
+    auto repeated = (*source)->particles();
+    ASSERT_TRUE(repeated);
+    EXPECT_EQ(*repeated, (List<String>{"start-a", "start-b"}));
+    (*source)->postRender();
+    (*source)->tick(2);
+    auto loop = (*source)->particles();
+    ASSERT_TRUE(loop);
+    EXPECT_EQ(*loop, (List<String>{"loop"}));
+    (*source)->postRender();
+    auto afterRender = (*source)->particles();
+    ASSERT_TRUE(afterRender);
+    EXPECT_EQ(*afterRender, List<String>{});
+    (*source)->stop();
+    (*source)->tick(0);
+    auto final = (*source)->particles();
+    ASSERT_FALSE(final);
+    EXPECT_TRUE(final.error().is<JsonException>());
+    auto repaired = definition.set("stop", JsonObject{{"particles", JsonArray{JsonArray{"stop"}}}});
+    ASSERT_TRUE(repaired);
+    auto replacement = EffectSource::create(fixture.root(), "private-cache-fixture", "normal", *repaired);
+    ASSERT_TRUE(replacement);
+    (*replacement)->postRender();
+    (*replacement)->stop();
+    (*replacement)->tick(0);
+    auto freshFinal = (*replacement)->particles();
+    ASSERT_TRUE(freshFinal);
+    EXPECT_EQ(*freshFinal, (List<String>{"stop"}));
+  });
 
 const GameTestRegistration assetsWavSignaturesAndPcmSamples("AssetsTest", "WavSignaturesAndPcmSamples", [](GameTest&) {
   std::array<unsigned char, 48> bytes = {

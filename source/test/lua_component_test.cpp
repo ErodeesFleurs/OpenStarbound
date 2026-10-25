@@ -353,4 +353,23 @@ const GameTestRegistration inputBindNames("InputNameSerialization", "BindJsonPre
   EXPECT_TRUE(invalidValue.error().is<MapException>());
 });
 
+const GameTestRegistration inputModifierPresence("InputNameSerialization",
+                                                 "ModifierPresencePreservesTypeErrorsAndPriority", [](GameTest&) {
+                                                   Json plain = JsonObject{{"type", "key"}, {"value", "A"}};
+                                                   auto nullModifiers = plain.set("mods", Json());
+                                                   ASSERT_TRUE(nullModifiers);
+                                                   for (Json const& config : JsonArray{plain, *nullModifiers}) {
+                                                     auto decoded = Input::bindFromJson(config);
+                                                     ASSERT_TRUE(decoded);
+                                                     ASSERT_TRUE(std::holds_alternative<Input::KeyBind>(*decoded));
+                                                     auto const& binding = std::get<Input::KeyBind>(*decoded);
+                                                     EXPECT_EQ(binding.mods, KeyMod::NoMod);
+                                                     EXPECT_EQ(binding.priority, 0);
+                                                   }
+                                                   auto badModifiers = plain.set("mods", JsonObject{});
+                                                   ASSERT_TRUE(badModifiers);
+                                                   auto invalid = Input::bindFromJson(*badModifiers);
+                                                   ASSERT_FALSE(invalid);
+                                                   EXPECT_TRUE(invalid.error().is<JsonException>());
+                                                 });
 }

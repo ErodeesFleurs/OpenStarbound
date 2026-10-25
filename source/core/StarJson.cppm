@@ -138,6 +138,16 @@ public:
   // Size of array / object type json
   std::expected<std::size_t, StarException> size() const;
 
+  // Synchronous borrows from this immutable owner. Missing entries are empty;
+  // present JSON null remains an engaged reference. Wrong container types fail.
+  // Keep the owner alive and unchanged for the entire lifetime of the result.
+  std::expected<std::optional<std::reference_wrapper<Json const>>, StarException> find(std::size_t index) const&;
+  std::expected<std::optional<std::reference_wrapper<Json const>>, StarException> find(String const& key) const&;
+  std::expected<std::optional<std::reference_wrapper<Json const>>, StarException>
+  find(std::size_t index) const&& = delete;
+  std::expected<std::optional<std::reference_wrapper<Json const>>, StarException>
+  find(String const& key) const&& = delete;
+
   // If this json is array type, get the value at the given index
   std::expected<Json, StarException> get(std::size_t index) const;
   std::expected<double, StarException> getDouble(std::size_t index) const;
@@ -149,8 +159,8 @@ public:
   std::expected<JsonArray, StarException> getArray(std::size_t index) const;
   std::expected<JsonObject, StarException> getObject(std::size_t index) const;
 
-  // These versions of get* return default value if the index is out of range,
-  // or if the value pointed to is null.
+  // Indexed defaults apply only out of range. Present null is returned by get;
+  // typed getters attempt conversion and report the ordinary null-type error.
   std::expected<Json, StarException> get(std::size_t index, Json def) const;
   std::expected<double, StarException> getDouble(std::size_t index, double def) const;
   std::expected<float, StarException> getFloat(std::size_t index, float def) const;
@@ -175,8 +185,8 @@ public:
   std::expected<JsonArray, StarException> getArray(String const& key) const;
   std::expected<JsonObject, StarException> getObject(String const& key) const;
 
-  // These versions of get* return the default if the key is missing or the
-  // value is null.
+  // Typed keyed getters return the default if missing or null. Untyped get
+  // returns a present null unchanged and uses the default only when missing.
   std::expected<Json, StarException> get(String const& key, Json def) const;
   std::expected<double, StarException> getDouble(String const& key, double def) const;
   std::expected<float, StarException> getFloat(String const& key, float def) const;
@@ -211,8 +221,8 @@ public:
   std::expected<JsonArray, StarException> queryArray(String const& path) const;
   std::expected<JsonObject, StarException> queryObject(String const& path) const;
 
-  // These versions of get* return defaults on missing / null keys anywhere in the
-  // query path.
+  // Defaults apply on missing/nontraversable paths. Typed queries also default
+  // on a terminal null; untyped query returns that present null unchanged.
   std::expected<Json, StarException> query(String const& path, Json def) const;
   std::expected<double, StarException> queryDouble(String const& path, double def) const;
   std::expected<float, StarException> queryFloat(String const& path, float def) const;
@@ -223,8 +233,8 @@ public:
   std::expected<JsonArray, StarException> queryArray(String const& path, JsonArray def) const;
   std::expected<JsonObject, StarException> queryObject(String const& path, JsonObject def) const;
 
-  // Returns none on on missing / null keys anywhere in the query path.  Will
-  // never return a null value, just an empty std::optional.
+  // Missing/nontraversable paths and terminal null produce an empty optional;
+  // malformed visited path components and terminal conversion errors fail.
   std::expected<std::optional<Json>, StarException> optQuery(String const& path) const;
   std::expected<std::optional<double>, StarException> optQueryDouble(String const& path) const;
   std::expected<std::optional<float>, StarException> optQueryFloat(String const& path) const;
@@ -280,6 +290,8 @@ public:
   // Does this Json not share its storage with any other Json?
   bool unique() const;
 
+  // Numeric hashes follow equality: integral floats use the exact int64 hash,
+  // including signed zero. Nonintegral floats retain their native hash bytes.
   void getHash(XXHash3& hasher) const;
 
 private:
@@ -287,9 +299,6 @@ private:
   friend Json jsonMergeNulling(Json const& base, Json const& merger);
   friend bool jsonPartialMatch(Json const& base, Json const& compare);
 
-  // Distinguish missing entries from present JSON null and conversion errors.
-  std::expected<std::optional<std::reference_wrapper<Json const>>, StarException> maybeRef(std::size_t index) const;
-  std::expected<std::optional<std::reference_wrapper<Json const>>, StarException> maybeRef(String const& key) const;
 
   std::variant<Empty, double, bool, std::int64_t, std::shared_ptr<String const>, std::shared_ptr<JsonArray const>, std::shared_ptr<JsonObject const>> m_data;
 };

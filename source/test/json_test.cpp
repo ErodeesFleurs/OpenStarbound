@@ -195,6 +195,82 @@ TEST(JsonTest, JsonParsingEdge) {
   EXPECT_TRUE(isValidJson(" {} "));
 }
 
+TEST(JsonTest, CommentHeavyParsingRetainsValuesAndUnicodeValidation) {
+  std::string text = "\xef\xbb\xbf";
+  for (unsigned i = 0; i < 256; ++i)
+    text += " \t/* 水😀\n ** nested-looking /* text */ // é\n";
+  text += R"JSON({
+    /* before key */ "values" /* before colon */ : /* before value */
+    [1 /* before comma */, // before next value
+     -2.5e+1, /* before null */ null],
+    "text": "水😀" // before closing object
+  } /* after document */)JSON";
+  auto parsed = Json::parseJson(String(text));
+  ASSERT_TRUE(parsed);
+  EXPECT_EQ(*parsed, (Json{JsonObject{{"values", JsonArray{1, -25.0, Json()}}, {"text", "水😀"}}}));
+
+  // Discarding comment text must still decode every visited codepoint.
+  auto invalid = Json::parseJson(String(std::string_view("[0] /*\xff*/", 9)));
+  ASSERT_FALSE(invalid);
+  EXPECT_TRUE(invalid.error().is<UnicodeException>());
+}
+
+TEST(JsonTest, CommentAndNumberFailuresRetainCodepointPositions) {
+  struct Failure {
+    std::string_view input;
+    std::string_view position;
+  };
+  for (auto const& failure :
+       std::array<Failure, 4>{Failure{"[\n /*水\n*/ 1,\n /x]", "4:3"}, Failure{"[\n /*水*/ 1,\n ]", "3:2"},
+                              Failure{"/*水\nabc", "2:4"}, Failure{"[\n 1e+,\n 2]", "2:5"}}) {
+    auto parsed = Json::parse(String(failure.input));
+    ASSERT_FALSE(parsed);
+    EXPECT_TRUE(parsed.error().is<JsonParsingException>());
+    auto diagnostic = printException(parsed.error(), false);
+    EXPECT_NE(diagnostic.find(strf("Error parsing json at {}", failure.position)), std::string::npos);
+  }
+}
+
+TEST(JsonTest, NumericParsingPreservesFullTokenRangeSemantics) {
+  // The existing lexical policy accepts fully consumed range errors: an
+  // overflowed integer keeps its value-initialized zero, not a clamped value.
+  for (std::string_view text :
+       std::array<std::string_view, 3>{"9223372036854775808", "-9223372036854775809",
+                                       "999999999999999999999999999999999999999999999999999999999999999999"}) {
+    auto parsed = Json::parse(String(text));
+    ASSERT_TRUE(parsed);
+    EXPECT_EQ(parsed->type(), Json::Type::Int);
+    auto value = parsed->toInt();
+    ASSERT_TRUE(value);
+    EXPECT_EQ(*value, 0);
+  }
+
+  // Pinned libc++ writes signed infinity/zero on floating range errors.
+  // Inspect the representation, not fast-math-sensitive floating predicates.
+  for (auto const& [text, bits] :
+       std::array<std::pair<std::string_view, std::uint64_t>, 6>{{{"1e99999", 0x7ff0000000000000},
+                                                                  {"-1e99999", 0xfff0000000000000},
+                                                                  {"1e-99999", 0x0000000000000000},
+                                                                  {"-1e-99999", 0x8000000000000000},
+                                                                  {"1.", 0x3ff0000000000000},
+                                                                  {"-0.", 0x8000000000000000}}}) {
+    auto parsed = Json::parse(String(text));
+    ASSERT_TRUE(parsed);
+    EXPECT_EQ(parsed->type(), Json::Type::Float);
+    auto value = parsed->toDouble();
+    ASSERT_TRUE(value);
+    std::uint64_t actual;
+    std::memcpy(&actual, &*value, sizeof(actual));
+    EXPECT_EQ(actual, bits);
+  }
+
+  for (std::string_view text : std::array<std::string_view, 5>{"1e", "1e+", "1.e-", "-", "-.0"}) {
+    auto parsed = Json::parse(String(text));
+    ASSERT_FALSE(parsed);
+    EXPECT_TRUE(parsed.error().is<JsonParsingException>());
+  }
+}
+
 TEST(JsonTest, LazyUtf8PreservesFirstError) {
   auto syntaxError = Json::parse(String(std::string_view("! \xff", 3)));
   ASSERT_FALSE(syntaxError);
@@ -205,6 +281,18 @@ TEST(JsonTest, LazyUtf8PreservesFirstError) {
   ASSERT_FALSE(decodeError);
   EXPECT_TRUE(decodeError.error().is<UnicodeException>());
   EXPECT_FALSE(decodeError.error().is<JsonParsingException>());
+
+  for (auto text : {std::string_view("/x \xff", 4), std::string_view("[1e+ \xff]", 7)}) {
+    auto firstError = Json::parse(String(text));
+    ASSERT_FALSE(firstError);
+    EXPECT_TRUE(firstError.error().is<JsonParsingException>());
+    EXPECT_FALSE(firstError.error().is<UnicodeException>());
+  }
+  // A malformed codepoint needed to finish the numeric token is visited
+  // before the builder can diagnose its incomplete exponent.
+  auto numericDecodeError = Json::parse(String(std::string_view("[1e+\xff]", 6)));
+  ASSERT_FALSE(numericDecodeError);
+  EXPECT_TRUE(numericDecodeError.error().is<UnicodeException>());
 
   auto valid = Json::parse(R"({"valid":true})");
   ASSERT_TRUE(valid);

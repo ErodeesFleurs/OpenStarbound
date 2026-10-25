@@ -5,6 +5,7 @@ import star.json;
 import star.json_extra;
 import star.ordered_map;
 import star.matrix3;
+import star.vector;
 import star.animated_part_set;
 import star.math_common;
 import star.interpolation;
@@ -462,23 +463,29 @@ std::expected<void, StarException> AnimatedPartSet::freshenActivePart(Part const
           if (*action == "reset") {
             mat = Mat3F::identity();
           } else if (*action == "translate") {
-            auto array = v.getArray(1);
-            if (!array) return std::unexpected(std::move(array.error()));
-            auto translation = jsonToVec2F(*array);
+            auto translation = v.get(1).and_then(jsonToVec2F);
             if (!translation) return std::unexpected(std::move(translation.error()));
             mat.translate(*translation);
           } else if (*action == "rotate" || *action == "rotateDegrees" || *action == "scale") {
-            auto centerJson = properties.maybe(*action == "scale" ? std::string_view("scalingCenter") : std::string_view("rotationCenter")).value_or(JsonArray({0, 0}));
-            auto defaultCenter = centerJson.toArray();
-            if (!defaultCenter) return std::unexpected(std::move(defaultCenter.error()));
-            auto centerArray = v.getArray(2, *defaultCenter);
-            if (!centerArray) return std::unexpected(std::move(centerArray.error()));
-            auto center = jsonToVec2F(*centerArray);
+            auto centerProperty = properties.maybeRef(*action == "scale" ? std::string_view("scalingCenter")
+                                                                         : std::string_view("rotationCenter"));
+            // Preserve validation of a supplied default even when an explicit center wins.
+            if (centerProperty) {
+              auto defaultCenter = centerProperty->get().arrayPtr();
+              if (!defaultCenter)
+                return std::unexpected(std::move(defaultCenter.error()));
+            }
+            auto centerValue = v.find(2);
+            if (!centerValue)
+              return std::unexpected(std::move(centerValue.error()));
+            std::expected<Vec2F, StarException> center = Vec2F();
+            if (*centerValue)
+              center = jsonToVec2F((*centerValue)->get());
+            else if (centerProperty)
+              center = jsonToVec2F(centerProperty->get());
             if (!center) return std::unexpected(std::move(center.error()));
             if (*action == "scale") {
-              auto array = v.getArray(1);
-              if (!array) return std::unexpected(std::move(array.error()));
-              auto scale = jsonToVec2F(*array);
+              auto scale = v.get(1).and_then(jsonToVec2F);
               if (!scale) return std::unexpected(std::move(scale.error()));
               mat.scale(*scale, *center);
             } else {

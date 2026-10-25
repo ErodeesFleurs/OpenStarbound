@@ -17,6 +17,7 @@ function(star_add_core_benchmark name)
 endfunction()
 
 star_add_core_benchmark(core_benchmarks)
+star_add_core_benchmark(json_benchmarks)
 star_add_core_benchmark(worker_benchmarks)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR MINGW)
   star_add_core_benchmark(allocator_benchmarks)

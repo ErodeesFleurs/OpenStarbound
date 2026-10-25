@@ -1084,11 +1084,11 @@ std::expected<void, StarException> ClientApplication::renderReload() {
   }
   m_postProcessLayers.clear();
   m_labelledPostProcessLayers.clear();
-  auto layers = assets->json("/client.config:postProcessLayers").and_then([](Json j) { return j.toArray(); });
+  auto layers = assets->json("/client.config:postProcessLayers").and_then([](Json j) { return j.iterateArray(); });
   if (!layers)
     return std::unexpected(std::move(layers.error()));
-  for (auto& layer : *layers) {
-    auto effects = layer.getArray("effects").and_then([](JsonArray j) { return jsonToStringList(j); });
+  for (auto const& layer : *layers) {
+    auto effects = layer.get("effects").and_then(jsonToStringList);
     if (!effects)
       return std::unexpected(std::move(effects.error()));
     for (auto& effect : *effects) {

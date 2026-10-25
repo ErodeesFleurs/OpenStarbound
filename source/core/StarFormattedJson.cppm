@@ -2,7 +2,6 @@ module;
 import star.format;
 import star.string;
 import star.list;
-import star.map;
 
 import std;
 
@@ -21,7 +20,7 @@ struct CommaElement;
 
 
 struct ValueElement {
-  ValueElement(FormattedJson const& json);
+  ValueElement(FormattedJson json);
 
   std::shared_ptr<FormattedJson> value;
 
@@ -115,22 +114,20 @@ public:
 private:
   friend class FormattedJsonBuilderStream;
 
-  static std::expected<FormattedJson, StarException> object(ElementList const& elements);
-  static std::expected<FormattedJson, StarException> array(ElementList const& elements);
+  class Builder;
+  static std::expected<FormattedJson, StarException> object(ElementList elements);
+  static std::expected<FormattedJson, StarException> array(ElementList elements);
 
   std::expected<FormattedJson, StarException> objectInsert(String const& key, FormattedJson const& value, ElementLocation loc) const;
-  std::expected<void, StarException> appendElement(JsonElement const& elem);
 
   std::expected<std::reference_wrapper<FormattedJson const>, StarException> getFormattedJson(ElementLocation loc) const;
-  std::expected<FormattedJson, StarException> formattedAs(String const& formatting) const;
 
   Json m_jsonValue;
   ElementList m_elements;
   // Used to preserve the formatting of numbers, i.e. -0 vs 0, 1.0 vs 1:
   std::optional<String> m_formatting;
 
-  std::optional<ElementLocation> m_lastKey, m_lastValue;
-  Map<String, std::pair<ElementLocation, ElementLocation>> m_objectEntryLocations;
+  StringMap<std::pair<ElementLocation, ElementLocation>> m_objectEntryLocations;
   List<ElementLocation> m_arrayElementLocations;
 };
 

@@ -119,4 +119,76 @@ std::expected<TypeHint, StarException> parseQueryPath(String& buffer, String con
   return hint;
 }
 
+namespace {
+
+template <bool Optional>
+std::expected<std::optional<std::reference_wrapper<Json const>>, StarException>
+findPath(Json const& base, PathParser const& parser, String const& path) {
+  if (!parser)
+    return std::unexpected(ParsingException("Cannot invoke an empty Json path parser"));
+  String buffer;
+  buffer.reserve(path.utf8Size());
+  Utf8Cursor cursor(path.utf8());
+  auto value = std::cref(base);
+  while (!cursor.atEnd()) {
+    auto parsed = parser(buffer, path, cursor);
+    if (!parsed)
+      return std::unexpected(std::move(parsed.error()));
+    if (value.get().type() == Json::Type::Array) {
+      if (buffer == "-") {
+        if constexpr (Optional)
+          return std::nullopt;
+        return std::unexpected(
+          TraversalException::format("Tried to get key '{}' in non-object type in pathGet(\"{}\")", buffer, path));
+      }
+      auto index = maybeLexicalCast<std::size_t>(buffer);
+      if (!index) {
+        if constexpr (Optional)
+          return std::nullopt;
+        return std::unexpected(
+          TraversalException::format("Cannot parse '{}' as index in pathGet(\"{}\")", buffer, path));
+      }
+      auto child = value.get().find(*index);
+      if (!child)
+        return std::unexpected(std::move(child.error()));
+      if (!*child) {
+        if constexpr (Optional)
+          return std::nullopt;
+        return std::unexpected(TraversalException::format("Index {} out of range in pathGet(\"{}\")", buffer, path));
+      }
+      value = **child;
+    } else if (value.get().type() == Json::Type::Object) {
+      auto child = value.get().find(buffer);
+      if (!child)
+        return std::unexpected(std::move(child.error()));
+      if (!*child) {
+        if constexpr (Optional)
+          return std::nullopt;
+        return std::unexpected(TraversalException::format("No such key '{}' in pathGet(\"{}\")", buffer, path));
+      }
+      value = **child;
+    } else {
+      if constexpr (Optional)
+        return std::nullopt;
+      return std::unexpected(
+        TraversalException::format("Tried to get key '{}' in non-object type in pathGet(\"{}\")", buffer, path));
+    }
+  }
+  return value;
+}
+
+}// namespace
+
+std::expected<std::reference_wrapper<Json const>, StarException> pathGetRef(Json const& base, PathParser const& parser,
+                                                                            String const& path) {
+  auto value = findPath<false>(base, parser, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return **value;
+}
+
+std::expected<std::optional<std::reference_wrapper<Json const>>, StarException>
+pathFindRef(Json const& base, PathParser const& parser, String const& path) {
+  return findPath<true>(base, parser, path);
+}
 }

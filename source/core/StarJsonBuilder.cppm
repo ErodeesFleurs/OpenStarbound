@@ -17,8 +17,8 @@ public:
   std::expected<void, StarException> beginArray() override;
   std::expected<void, StarException> endArray() override;
   std::expected<void, StarException> putString(std::span<char32_t const> s) override;
-  std::expected<void, StarException> putDouble(std::span<char32_t const> s) override;
-  std::expected<void, StarException> putInteger(std::span<char32_t const> s) override;
+  std::expected<void, StarException> putDouble(std::string_view s) override;
+  std::expected<void, StarException> putInteger(std::string_view s) override;
   std::expected<void, StarException> putBoolean(bool b) override;
   std::expected<void, StarException> putNull() override;
   std::expected<void, StarException> putWhitespace(std::span<char32_t const> s) override;
@@ -59,7 +59,9 @@ private:
 template <typename InputIterator, typename Stream = JsonBuilderStream, typename Jsonlike = Json>
 std::expected<Jsonlike, StarException> inputUtf32Json(InputIterator begin, InputIterator end, JsonParseType parseType) {
   Stream stream;
-  JsonParser<InputIterator> parser(stream);
+  // Only the ordinary DOM discards trivia. Custom streams keep the parser's
+  // historical whitespace callbacks, including subclasses of the DOM builder.
+  JsonParser<InputIterator, !std::is_same_v<Stream, JsonBuilderStream>> parser(stream);
   auto parsed = parser.parse(begin, end, parseType);
   if (!parsed) {
     if (parsed.error().template is<JsonParserException>())

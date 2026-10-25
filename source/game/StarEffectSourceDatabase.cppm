@@ -28,6 +28,11 @@ public:
 
 private:
   explicit EffectSource(Root& root) : m_root(root) {}
+  struct ParticleChoices {
+    std::shared_ptr<JsonArray const> options;
+    List<std::optional<StringList>> decoded;
+  };
+
   Root& m_root;
   String m_kind;
   Json m_config;
@@ -45,6 +50,8 @@ private:
   bool m_stop;
 
   List<std::shared_ptr<AudioInstance>> m_mainSounds;
+  // Each immutable stage is acquired lazily; only selected successful decodes are retained.
+  std::array<std::unique_ptr<ParticleChoices>, 3> m_particleChoices;
 };
 
 class EffectSourceConfig {

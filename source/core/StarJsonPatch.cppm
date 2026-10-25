@@ -33,15 +33,20 @@ namespace JsonPatching {
 }
 
 namespace Star {
+namespace {
+StarException patchFailure(StarException error, std::string_view context) {
+  if (error.is<JsonException>())
+    return JsonPatchException(strf("{} {}", context, error.what()), false);
+  return error;
+}
+}// namespace
+
 std::expected<Json, StarException> jsonPatch(Json const& base, JsonArray const& patch) {
   Json result = base;
   for (auto const& operation : patch) {
     auto applied = JsonPatching::applyOperation(result, operation);
-    if (!applied) {
-      if (applied.error().is<JsonException>())
-        return std::unexpected(JsonPatchException(strf("Could not apply patch to base. {}", applied.error().what()), false));
-      return std::unexpected(std::move(applied.error()));
-    }
+    if (!applied)
+      return std::unexpected(patchFailure(std::move(applied.error()), "Could not apply patch to base."));
     result = std::move(*applied);
   }
   return result;
@@ -72,18 +77,13 @@ namespace JsonPatching {
 
   std::expected<Json, StarException> applyOperation(Json const& base, Json const& op, std::optional<Json> const&) {
     auto operation = op.getString("op");
-    if (!operation) {
-      if (operation.error().is<JsonException>())
-        return std::unexpected(JsonPatchException(strf("Could not apply operation to base. {}", operation.error().what()), false));
-      return std::unexpected(std::move(operation.error()));
-    }
+    if (!operation)
+      return std::unexpected(patchFailure(std::move(operation.error()), "Could not apply operation to base."));
     auto function = std::ranges::find(functionMap, operation->utf8(), &OperationEntry::first);
     if (function == functionMap.end())
       return std::unexpected(JsonPatchException(strf("Invalid operation: {}", *operation), false));
-    auto applied = function->second(base, op);
-    if (!applied && applied.error().is<JsonException>())
-      return std::unexpected(JsonPatchException(strf("Could not apply operation to base. {}", applied.error().what()), false));
-    return applied;
+    return function->second(base, op).transform_error(
+      [](StarException error) { return patchFailure(std::move(error), "Could not apply operation to base."); });
   }
 
   std::expected<Json, StarException> applyTestOperation(Json const& base, Json const& op) {
@@ -168,13 +168,10 @@ namespace JsonPatching {
       return std::unexpected(std::move(index.error()));
     if (!*index)
       return base;
-    auto removed = pointer.remove(base);
-    if (!removed)
-      return std::unexpected(std::move(removed.error()));
     auto changed = searchable->eraseIndex(*index - 1);
     if (!changed)
       return std::unexpected(std::move(changed.error()));
-    return pointer.add(*removed, *changed);
+    return pointer.set(base, *changed);
   }
 
   std::expected<Json, StarException> applyAddOperation(Json const& base, Json const& op) {
@@ -201,13 +198,10 @@ namespace JsonPatching {
       return std::unexpected(std::move(index.error()));
     if (!*index)
       return base;
-    auto removed = pointer.remove(base);
-    if (!removed)
-      return std::unexpected(std::move(removed.error()));
     auto changed = searchable->insert(*index - 1, *value);
     if (!changed)
       return std::unexpected(std::move(changed.error()));
-    return pointer.add(*removed, *changed);
+    return pointer.set(base, *changed);
   }
 
   std::expected<Json, StarException> applyReplaceOperation(Json const& base, Json const& op) {
@@ -233,18 +227,26 @@ namespace JsonPatching {
         return std::unexpected(std::move(index.error()));
       if (!*index)
         return base;
-      auto removed = pointer.remove(base);
-      if (!removed)
-        return std::unexpected(std::move(removed.error()));
       auto changed = searchable->set(*index - 1, *value);
       if (!changed)
         return std::unexpected(std::move(changed.error()));
-      return pointer.add(*removed, *changed);
+      return pointer.set(base, *changed);
     }
-    auto removed = pointer.remove(base);
-    if (!removed)
-      return std::unexpected(std::move(removed.error()));
-    return pointer.add(*removed, *value);
+    return pointer.apply<Json>(
+      base, [&](Json const&) -> std::expected<Json, StarException> { return *value; },
+      [&](Json const& object, String const& key) -> std::expected<Json, StarException> {
+        auto present = object.find(key);
+        if (!present)
+          return std::unexpected(std::move(present.error()));
+        if (!*present)
+          return std::unexpected(JsonPath::TraversalException::format("Could not find \"{}\" to remove", key));
+        return object.set(key, *value);
+      },
+      [&](Json const& array, std::optional<std::size_t> index) -> std::expected<Json, StarException> {
+        if (!index)
+          return std::unexpected(JsonPath::TraversalException("Could not remove element after end of array"));
+        return array.set(*index, *value);
+      });
   }
 
   std::expected<Json, StarException> applyMoveOperation(Json const& base, Json const& op) {
@@ -353,10 +355,7 @@ namespace JsonPatching {
       auto changed = searchable->set(*index - 1, jsonMerge(*oldValue, *value));
       if (!changed)
         return std::unexpected(std::move(changed.error()));
-      auto removed = pointer.remove(base);
-      if (!removed)
-        return std::unexpected(std::move(removed.error()));
-      return pointer.add(*removed, *changed);
+      return pointer.set(base, *changed);
     }
     auto oldValue = pointer.get(base);
     if (!oldValue)
@@ -364,10 +363,7 @@ namespace JsonPatching {
     auto value = op.get("value");
     if (!value)
       return std::unexpected(std::move(value.error()));
-    auto removed = pointer.remove(base);
-    if (!removed)
-      return std::unexpected(std::move(removed.error()));
-    return pointer.add(*removed, jsonMerge(*oldValue, *value));
+    return pointer.set(base, jsonMerge(*oldValue, *value));
   }
 }
 }

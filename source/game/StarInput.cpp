@@ -80,11 +80,14 @@ Json keyModsToJson(KeyMod mod) {
 // Optional borrowed output for the calculated priority.
 [[nodiscard]] std::expected<KeyMod, StarException> keyModsFromJson(Json const& json, std::optional<std::reference_wrapper<std::uint8_t>> priority = std::nullopt) {
   KeyMod mod = KeyMod::NoMod;
-  if (!json.isType(Json::Type::Array))
+  if (json.isNull()) {
+    if (priority)
+      priority->get() = 0;
     return mod;
+  }
 
   std::uint8_t modPriority = 0;
-  auto array = json.toArray();
+  auto array = json.iterateArray();
   if (!array) return std::unexpected(std::move(array.error()));
   for (Json const& jMod : *array) {
     auto text = jMod.toString();
@@ -224,9 +227,9 @@ std::expected<Input::Bind, StarException> Input::bindFromJson(Json const& json) 
     if (!key) return std::unexpected(std::move(key.error()));
     if (!*key) return bind;
     keyBind.key = **key;
-    auto mods = json.getArray("mods", {});
+    auto mods = json.get("mods", Json());
     if (!mods) return std::unexpected(std::move(mods.error()));
-    auto parsed = keyModsFromJson(Json(*mods), std::ref(keyBind.priority));
+    auto parsed = keyModsFromJson(*mods, std::ref(keyBind.priority));
     if (!parsed) return std::unexpected(std::move(parsed.error()));
     keyBind.mods = *parsed;
     bind = std::move(keyBind);
@@ -237,9 +240,9 @@ std::expected<Input::Bind, StarException> Input::bindFromJson(Json const& json) 
     if (!button) return std::unexpected(std::move(button.error()));
     if (!*button) return bind;
     mouseBind.button = **button;
-    auto mods = json.getArray("mods", {});
+    auto mods = json.get("mods", Json());
     if (!mods) return std::unexpected(std::move(mods.error()));
-    auto parsed = keyModsFromJson(Json(*mods), std::ref(mouseBind.priority));
+    auto parsed = keyModsFromJson(*mods, std::ref(mouseBind.priority));
     if (!parsed) return std::unexpected(std::move(parsed.error()));
     mouseBind.mods = *parsed;
     bind = std::move(mouseBind);

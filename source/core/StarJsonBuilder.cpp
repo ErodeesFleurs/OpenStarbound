@@ -42,18 +42,14 @@ std::expected<void, StarException> JsonBuilderStream::putString(std::span<char32
   push(std::move(*value));
   return {};
 }
-std::expected<void, StarException> JsonBuilderStream::putDouble(std::span<char32_t const> s) {
-  auto text = String::create(std::u32string_view(s.data(), s.size()));
-  if (!text) return std::unexpected(std::move(text.error()));
-  auto value = lexicalCast<double>(*text);
+std::expected<void, StarException> JsonBuilderStream::putDouble(std::string_view s) {
+  auto value = lexicalCast<double>(s);
   if (!value) return std::unexpected(JsonParserException("bad double", ExceptionDiagnostic(value.error())));
   push(Json(*value));
   return {};
 }
-std::expected<void, StarException> JsonBuilderStream::putInteger(std::span<char32_t const> s) {
-  auto text = String::create(std::u32string_view(s.data(), s.size()));
-  if (!text) return std::unexpected(std::move(text.error()));
-  auto value = lexicalCast<long long>(*text);
+std::expected<void, StarException> JsonBuilderStream::putInteger(std::string_view s) {
+  auto value = lexicalCast<long long>(s);
   if (!value) return std::unexpected(JsonParserException("bad integer", ExceptionDiagnostic(value.error())));
   push(Json(*value));
   return {};
@@ -100,21 +96,21 @@ std::expected<void, StarException> JsonStreamer<Json>::toJsonStream(Json const& 
       // a sign, decimal point and e+/-ddd (24 characters); fixed form is no longer.
       static_assert(std::numeric_limits<double>::is_iec559 && std::numeric_limits<double>::digits == 53
           && std::numeric_limits<double>::max_exponent == 1024);
-      std::array<char32_t, 32> text;
+      std::array<char, 32> text;
       auto formatted = std::format_to_n(text.data(), text.size(), "{}", *value);
       if (formatted.size > static_cast<decltype(formatted.size)>(text.size()))
         return std::unexpected(JsonException("JSON floating-point formatting buffer exhausted"));
-      return stream.putDouble(std::span<char32_t const>(text.data(), static_cast<std::size_t>(formatted.size)));
+      return stream.putDouble(std::string_view(text.data(), static_cast<std::size_t>(formatted.size)));
     }
     case Json::Type::Int: {
       auto value = val.toInt();
       if (!value) return std::unexpected(std::move(value.error()));
       // digits10 excludes the final decimal digit; reserve that digit and a sign.
-      std::array<char32_t, std::numeric_limits<std::int64_t>::digits10 + 2> text;
+      std::array<char, std::numeric_limits<std::int64_t>::digits10 + 2> text;
       auto formatted = std::format_to_n(text.data(), text.size(), "{}", *value);
       if (formatted.size > static_cast<decltype(formatted.size)>(text.size()))
         return std::unexpected(JsonException("JSON integer formatting buffer exhausted"));
-      return stream.putInteger(std::span<char32_t const>(text.data(), static_cast<std::size_t>(formatted.size)));
+      return stream.putInteger(std::string_view(text.data(), static_cast<std::size_t>(formatted.size)));
     }
     case Json::Type::String: {
       auto value = val.stringPtr();

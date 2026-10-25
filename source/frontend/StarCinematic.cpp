@@ -297,7 +297,7 @@ std::expected<void, StarException> Cinematic::loadDefinition(Json const& definit
     if (!loopTime)
       return std::unexpected(std::move(loopTime.error()));
     panel->loopTime = *loopTime;
-    auto keyframes = panelDefinition.getArray("keyframes");
+    auto keyframes = panelDefinition.get("keyframes").and_then([](Json value) { return value.iterateArray(); });
     if (!keyframes)
       return std::unexpected(std::move(keyframes.error()));
     for (auto const& keyframeDefinition : *keyframes) {
@@ -306,63 +306,36 @@ std::expected<void, StarException> Cinematic::loadDefinition(Json const& definit
       if (!timecode)
         return std::unexpected(std::move(timecode.error()));
       keyframe.timecode = *timecode;
-      auto hasComplete = keyframeDefinition.contains("complete");
-      if (!hasComplete)
-        return std::unexpected(std::move(hasComplete.error()));
-      if (*hasComplete) {
-        auto complete = keyframeDefinition.getBool("complete");
-        if (!complete)
-          return std::unexpected(std::move(complete.error()));
-        keyframe.complete = *complete;
-      }
-      auto hasZoom = keyframeDefinition.contains("zoom");
-      if (!hasZoom)
-        return std::unexpected(std::move(hasZoom.error()));
-      if (*hasZoom) {
-        auto zoom = keyframeDefinition.getFloat("zoom");
-        if (!zoom)
-          return std::unexpected(std::move(zoom.error()));
-        keyframe.zoom = *zoom;
-      }
-      auto hasAlpha = keyframeDefinition.contains("alpha");
-      if (!hasAlpha)
-        return std::unexpected(std::move(hasAlpha.error()));
-      if (*hasAlpha) {
-        auto alpha = keyframeDefinition.getFloat("alpha");
-        if (!alpha)
-          return std::unexpected(std::move(alpha.error()));
-        keyframe.alpha = *alpha;
-      }
-      auto hasPosition = keyframeDefinition.contains("position");
-      if (!hasPosition)
-        return std::unexpected(std::move(hasPosition.error()));
-      if (*hasPosition) {
-        auto positionJson = keyframeDefinition.get("position");
-        if (!positionJson)
-          return std::unexpected(std::move(positionJson.error()));
-        auto position = jsonToVec2F(*positionJson);
-        if (!position)
-          return std::unexpected(std::move(position.error()));
-        keyframe.position = *position;
-      }
-      auto hasFrame = keyframeDefinition.contains("frame");
-      if (!hasFrame)
-        return std::unexpected(std::move(hasFrame.error()));
-      if (*hasFrame) {
-        auto frame = keyframeDefinition.getFloat("frame");
-        if (!frame)
-          return std::unexpected(std::move(frame.error()));
-        keyframe.frame = *frame;
-      }
-      auto hasTextPercentage = keyframeDefinition.contains("textPercentage");
-      if (!hasTextPercentage)
-        return std::unexpected(std::move(hasTextPercentage.error()));
-      if (*hasTextPercentage) {
-        auto textPercentage = keyframeDefinition.getFloat("textPercentage");
-        if (!textPercentage)
-          return std::unexpected(std::move(textPercentage.error()));
-        keyframe.textPercentage = *textPercentage;
-      }
+      auto assignIfPresent = [&](String const& name, auto& target, auto convert) -> std::expected<void, StarException> {
+        auto field = keyframeDefinition.find(name);
+        if (!field)
+          return std::unexpected(std::move(field.error()));
+        if (*field) {
+          auto value = std::invoke(convert, (*field)->get());
+          if (!value)
+            return std::unexpected(std::move(value.error()));
+          target = std::move(*value);
+        }
+        return {};
+      };
+      auto decoded = assignIfPresent("complete", keyframe.complete, &Json::toBool);
+      if (!decoded)
+        return std::unexpected(std::move(decoded.error()));
+      decoded = assignIfPresent("zoom", keyframe.zoom, &Json::toFloat);
+      if (!decoded)
+        return std::unexpected(std::move(decoded.error()));
+      decoded = assignIfPresent("alpha", keyframe.alpha, &Json::toFloat);
+      if (!decoded)
+        return std::unexpected(std::move(decoded.error()));
+      decoded = assignIfPresent("position", keyframe.position, jsonToVec2F);
+      if (!decoded)
+        return std::unexpected(std::move(decoded.error()));
+      decoded = assignIfPresent("frame", keyframe.frame, &Json::toFloat);
+      if (!decoded)
+        return std::unexpected(std::move(decoded.error()));
+      decoded = assignIfPresent("textPercentage", keyframe.textPercentage, &Json::toFloat);
+      if (!decoded)
+        return std::unexpected(std::move(decoded.error()));
       panel->keyFrames.append(std::move(keyframe));
       float endTimecode = panel->endTime > 0 ? std::min(panel->endTime, panel->startTime + *timecode) : panel->startTime + *timecode;
       m_completionTime = std::max(m_completionTime, endTimecode);

@@ -1100,11 +1100,11 @@ bool Assets::BytesData::shouldPersist() const {
 std::expected<FramesSpecification, StarException> Assets::parseFramesSpecification(Json const& frameConfig, String path) {
   FramesSpecification spec;
   spec.framesFile = std::move(path);
-  auto hasList = frameConfig.contains("frameList");
-  if (!hasList)
-    return std::unexpected(std::move(hasList.error()));
-  if (*hasList) {
-    auto list = frameConfig.getObject("frameList");
+  auto frameList = frameConfig.find("frameList");
+  if (!frameList)
+    return std::unexpected(std::move(frameList.error()));
+  if (*frameList) {
+    auto list = (*frameList)->get().iterateObject();
     if (!list)
       return std::unexpected(std::move(list.error()));
     for (auto const& pair : *list) {
@@ -1117,17 +1117,22 @@ std::expected<FramesSpecification, StarException> Assets::parseFramesSpecificati
       spec.frames[pair.first] = rect;
     }
   }
-  auto hasGrid = frameConfig.contains("frameGrid");
-  if (!hasGrid)
-    return std::unexpected(std::move(hasGrid.error()));
-  if (*hasGrid) {
-    auto gridResult = frameConfig.getObject("frameGrid");
+  auto frameGrid = frameConfig.find("frameGrid");
+  if (!frameGrid)
+    return std::unexpected(std::move(frameGrid.error()));
+  if (*frameGrid) {
+    auto gridResult = (*frameGrid)->get().objectPtr();
     if (!gridResult)
       return std::unexpected(std::move(gridResult.error()));
-    auto const& grid = *gridResult;
-    auto beginResult = jsonToVec2I(grid.value("begin", jsonFromVec2I(Vec2I())));
-    if (!beginResult)
-      return std::unexpected(std::move(beginResult.error()));
+    auto const& grid = **gridResult;
+    Vec2I beginValue{};
+    auto beginResult = grid.maybeRef("begin");
+    if (beginResult) {
+      auto parsedBegin = jsonToVec2I(beginResult->get());
+      if (!parsedBegin)
+        return std::unexpected(std::move(parsedBegin.error()));
+      beginValue = *parsedBegin;
+    }
     auto sizeConfig = grid.get("size");
     if (!sizeConfig)
       return std::unexpected(std::move(sizeConfig.error()));
@@ -1140,26 +1145,26 @@ std::expected<FramesSpecification, StarException> Assets::parseFramesSpecificati
     auto dimensionsResult = jsonToVec2I(dimensionsConfig->get());
     if (!dimensionsResult)
       return std::unexpected(std::move(dimensionsResult.error()));
-    Vec2U begin(*beginResult), size(*sizeResult), dimensions(*dimensionsResult);
+    Vec2U begin(beginValue), size(*sizeResult), dimensions(*dimensionsResult);
     if (dimensions[0] == 0 || dimensions[1] == 0)
       return std::unexpected(AssetException(strf("Image {} \"dimensions\" in frameGrid cannot be zero", spec.framesFile)));
     if (auto namesConfig = grid.maybeRef("names")) {
-      auto names = namesConfig->get().toArray();
+      auto names = namesConfig->get().arrayPtr();
       if (!names)
         return std::unexpected(std::move(names.error()));
-      for (std::size_t y = 0; y < names->size(); ++y) {
+      for (std::size_t y = 0; y < (*names)->size(); ++y) {
         if (y >= dimensions[1])
           return std::unexpected(AssetException(strf("Image {} row {} is out of bounds for y-dimension {}", spec.framesFile, y + 1, dimensions[1])));
-        auto const& rowConfig = (*names)[y];
+        auto const& rowConfig = (**names)[y];
         if (rowConfig.isNull())
           continue;
-        auto row = rowConfig.toArray();
+        auto row = rowConfig.arrayPtr();
         if (!row)
           return std::unexpected(std::move(row.error()));
-        for (std::size_t x = 0; x < row->size(); ++x) {
+        for (std::size_t x = 0; x < (*row)->size(); ++x) {
           if (x >= dimensions[0])
             return std::unexpected(AssetException(strf("Image {} column {} is out of bounds for x-dimension {}", spec.framesFile, x + 1, dimensions[0])));
-          auto const& frame = (*row)[x];
+          auto const& frame = (**row)[x];
           if (frame.isNull())
             continue;
           auto name = frame.toString();
