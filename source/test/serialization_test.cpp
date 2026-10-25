@@ -10,6 +10,7 @@ import star.byte_array;
 import star.multi_array;
 import star.bytes;
 import star.io_device;
+import star.data_stream;
 
 #include "gtest/gtest.h"
 
@@ -74,6 +75,44 @@ TEST(DataStreamTest, OrderedMapWireBytesAndDuplicateKeys) {
   auto value = decoded.get(7);
   ASSERT_TRUE(value);
   EXPECT_EQ(value->get(), 0x0b);
+}
+
+TEST(DataStreamTest, TupleFailureRetainsDecodedPrefixAndSkipsRemainingFields) {
+  DataStreamBuffer stream(ByteArray({"\x12\x34\x56", 3}));
+  std::tuple<std::uint8_t, std::uint32_t, std::uint8_t> decoded{0, 0xaabbccddu, 0xee};
+  auto read = stream >> decoded;
+  ASSERT_FALSE(read);
+  EXPECT_TRUE(read.error().is<IOException>());
+  EXPECT_EQ(std::get<0>(decoded), 0x12);
+  EXPECT_EQ(std::get<1>(decoded), 0xaabbccddu);
+  EXPECT_EQ(std::get<2>(decoded), 0xee);
+  auto position = stream.pos();
+  ASSERT_TRUE(position);
+  EXPECT_EQ(*position, 3u);
+}
+
+TEST(DataStreamTest, OptionalAndVariantCommitOnlyCompletePayloads) {
+  std::optional<std::uint32_t> optionalValue{0xaabbccddu};
+  DataStreamBuffer optionalStream(ByteArray({"\x01\x12\x34", 3}));
+  auto optionalRead = optionalStream >> optionalValue;
+  ASSERT_FALSE(optionalRead);
+  ASSERT_TRUE(optionalValue);
+  EXPECT_EQ(*optionalValue, 0xaabbccddu);
+
+  using Value = std::variant<std::monostate, std::uint16_t, std::uint32_t>;
+  Value variantValue(std::in_place_index<1>, 0xabcd);
+  DataStreamBuffer variantStream(ByteArray({"\x02\x12\x34", 3}));
+  auto variantRead = variantStream >> variantValue;
+  ASSERT_FALSE(variantRead);
+  ASSERT_EQ(variantValue.index(), 1u);
+  EXPECT_EQ(std::get<1>(variantValue), 0xabcd);
+
+  DataStreamBuffer invalidTag(ByteArray({"\x03", 1}));
+  auto invalidRead = invalidTag >> variantValue;
+  ASSERT_FALSE(invalidRead);
+  EXPECT_TRUE(invalidRead.error().is<DataStreamException>());
+  ASSERT_EQ(variantValue.index(), 1u);
+  EXPECT_EQ(std::get<1>(variantValue), 0xabcd);
 }
 
 TEST(DataStreamTest, OwnedBufferMovePreservesBytesCursorAndWireSettings) {

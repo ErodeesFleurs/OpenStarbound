@@ -5,7 +5,6 @@ import std;
 import star.string;
 import star.list;
 import star.json;
-import star.either;
 import star.strong_typedef;
 import star.data_stream;
 import star.id_map;
@@ -66,13 +65,24 @@ public:
   void tickSlave(float dt);
 
 private:
+  struct AbsoluteResourceValue {
+    float value;
+  };
+
+  struct ResourceMaximumFraction {
+    float fraction;
+  };
+
   StatCollection() = default;
   [[nodiscard]] std::expected<void, StarException> netElementsNeedLoad(bool full) override;
   [[nodiscard]] std::expected<void, StarException> netElementsNeedStore() override;
 
   StatSet m_stats;
-  // Left value is a raw value, right value is a percentage.
-  StringMap<Either<float, float>> m_defaultResourceValues;
+  // Config-only reset defaults: initialValue is absolute; initialPercentage is
+  // a fraction of the current maximum (1.0 means full), not a 0..100 percentage.
+  // Keep the configured, unclamped amount. Only actual values and locks are
+  // stored on disk or sent over the network, never these alternatives.
+  StringMap<std::variant<AbsoluteResourceValue, ResourceMaximumFraction>> m_defaultResourceValues;
 
   NetElementMap<StatModifierGroupId, List<StatModifier>> m_statModifiersNetState;
   StableStringMap<NetElementFloat> m_resourceValuesNetStates;

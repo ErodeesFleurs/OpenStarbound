@@ -1902,16 +1902,25 @@ std::expected<void, StarException> WorldClient::handleIncomingPackets(List<std::
         }
         
         {
-          auto result134 = entity->receiveMessage(entityMessagePacket->fromConnection, entityMessagePacket->message, entityMessagePacket->args);
-          if (!result134)
-            return std::unexpected(std::move(result134.error()));
-          if (auto response = (std::move(*result134))) {
-            if (std::holds_alternative<Json>(*response)) {
-              m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeRight(std::get<Json>(*response)), entityMessagePacket->uuid));
-            } else {
-              // delay the response until this promise is done
-              m_entityMessagePromises[entityMessagePacket->uuid] = std::get<RpcPromise<Json>>(*response);
-            }
+          auto responseResult = entity->receiveMessage(entityMessagePacket->fromConnection,
+                                                       entityMessagePacket->message, entityMessagePacket->args);
+          if (!responseResult)
+            return std::unexpected(std::move(responseResult.error()));
+          if (auto response = std::move(*responseResult)) {
+            struct QueueEntityResponse {
+              WorldClient& client;
+              Uuid const& uuid;
+
+              void operator()(Json& result) const {
+                client.m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeRight(result), uuid));
+              }
+
+              void operator()(RpcPromise<Json>& promise) const {
+                // Delay the response until this promise is done.
+                client.m_entityMessagePromises[uuid] = promise;
+              }
+            };
+            std::visit(QueueEntityResponse{*this, entityMessagePacket->uuid}, *response);
           } else {
             m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeLeft(String("Message not handled by entity")), entityMessagePacket->uuid));
           }
@@ -4046,20 +4055,21 @@ std::expected<RpcPromise<Json>, StarException> WorldClient::sendEntityMessage(st
   if (std::holds_alternative<EntityId>(entityId) && !entity && m_clientId == connectionForEntity(std::get<EntityId>(entityId))) {
     return RpcPromise<Json>::createFailed("Unknown entity");
   } else if (entity && entity->isMaster()) {
-    {
-      auto result309 = entity->receiveMessage(*m_clientId, message, args);
-      if (!result309)
-        return std::unexpected(std::move(result309.error()));
-      if (auto resp = (std::move(*result309))) {
-        if (std::holds_alternative<Json>(*resp)) {
-          return RpcPromise<Json>::createFulfilled(std::get<Json>(*resp));
-        } else {
-          return std::get<RpcPromise<Json>>(*resp);
-        }
-      } else {
-        return RpcPromise<Json>::createFailed("Message not handled by entity");
+    auto responseResult = entity->receiveMessage(*m_clientId, message, args);
+    if (!responseResult)
+      return std::unexpected(std::move(responseResult.error()));
+    auto response = std::move(*responseResult);
+    if (!response)
+      return RpcPromise<Json>::createFailed("Message not handled by entity");
+
+    struct ResponseToPromise {
+      std::expected<RpcPromise<Json>, StarException> operator()(Json& result) const {
+        return RpcPromise<Json>::createFulfilled(result);
       }
-    }
+
+      std::expected<RpcPromise<Json>, StarException> operator()(RpcPromise<Json>& promise) const { return promise; }
+    };
+    return std::visit(ResponseToPromise{}, *response);
   } else {
     auto pair = RpcPromise<Json>::createPair();
     Uuid uuid(this->root().random());

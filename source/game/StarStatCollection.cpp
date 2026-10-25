@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.json;
-import star.either;
 import star.strong_typedef;
 import star.data_stream;
 import star.id_map;
@@ -53,25 +52,26 @@ std::expected<std::shared_ptr<StatCollection>, StarException> StatCollection::cr
     if (*initialValue) {
       auto set = collection->m_stats.setResourceValue(resource.first, **initialValue);
       if (!set) return std::unexpected(std::move(set.error()));
-      collection->m_defaultResourceValues[resource.first] = makeLeft(**initialValue);
+      collection->m_defaultResourceValues[resource.first] = AbsoluteResourceValue{**initialValue};
     } else {
-      auto percentage = resource.second.optFloat("initialPercentage");
-      if (!percentage) return std::unexpected(std::move(percentage.error()));
-      if (*percentage) {
-        auto set = collection->m_stats.setResourcePercentage(resource.first, **percentage);
+      auto maximumFraction = resource.second.optFloat("initialPercentage");
+      if (!maximumFraction)
+        return std::unexpected(std::move(maximumFraction.error()));
+      if (*maximumFraction) {
+        auto set = collection->m_stats.setResourcePercentage(resource.first, **maximumFraction);
         if (!set) return std::unexpected(std::move(set.error()));
-        collection->m_defaultResourceValues[resource.first] = makeRight(**percentage);
+        collection->m_defaultResourceValues[resource.first] = ResourceMaximumFraction{**maximumFraction};
       } else {
         auto maximum = collection->m_stats.resourceMax(resource.first);
         if (!maximum) return std::unexpected(std::move(maximum.error()));
         if (!std::holds_alternative<std::monostate>(*maximum)) {
           auto set = collection->m_stats.setResourcePercentage(resource.first, 1.0f);
           if (!set) return std::unexpected(std::move(set.error()));
-          collection->m_defaultResourceValues[resource.first] = makeRight(1.0f);
+          collection->m_defaultResourceValues[resource.first] = ResourceMaximumFraction{1.0f};
         } else {
           auto set = collection->m_stats.setResourceValue(resource.first, 0.0f);
           if (!set) return std::unexpected(std::move(set.error()));
-          collection->m_defaultResourceValues[resource.first] = makeLeft(0.0f);
+          collection->m_defaultResourceValues[resource.first] = AbsoluteResourceValue{0.0f};
         }
       }
     }
@@ -155,18 +155,17 @@ std::expected<void, StarException> StatCollection::setResourceLocked(String cons
 std::expected<void, StarException> StatCollection::resetResource(String const& resourceName) {
   auto unlocked = m_stats.setResourceLocked(resourceName, false);
   if (!unlocked) return std::unexpected(std::move(unlocked.error()));
-  auto def = m_defaultResourceValues.get(resourceName);
-  if (!def) return std::unexpected(std::move(def.error()));
-  if (auto value = def->get().maybeLeftRef()) {
-    auto set = m_stats.setResourceValue(resourceName, value->get());
-    if (!set) return std::unexpected(std::move(set.error()));
-  } else {
-    auto percentage = def->get().right();
-    if (!percentage) return std::unexpected(std::move(percentage.error()));
-    auto set = m_stats.setResourcePercentage(resourceName, percentage->get());
-    if (!set) return std::unexpected(std::move(set.error()));
-  }
-  return {};
+  auto defaultValue = m_defaultResourceValues.get(resourceName);
+  if (!defaultValue)
+    return std::unexpected(std::move(defaultValue.error()));
+  return std::visit(
+    [&](auto const& initial) -> std::expected<void, StarException> {
+      if constexpr (std::is_same_v<std::decay_t<decltype(initial)>, AbsoluteResourceValue>)
+        return m_stats.setResourceValue(resourceName, initial.value).transform([](float) {});
+      else
+        return m_stats.setResourcePercentage(resourceName, initial.fraction).transform([](float) {});
+    },
+    defaultValue->get());
 }
 
 std::expected<void, StarException> StatCollection::resetAllResources() {

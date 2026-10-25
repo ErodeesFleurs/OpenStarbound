@@ -78,6 +78,10 @@ private:
   static StringList const ConfigKeys;
 
   [[nodiscard]] std::expected<void, StarException> initConfig();
+  enum class SettingUpdate { Staged, Live };
+  [[nodiscard]] std::expected<void, StarException> updateFloatSlider(String const& name, String const& key,
+                                                                     List<float> const& values, SettingUpdate update);
+  [[nodiscard]] std::expected<void, StarException> applyLiveSetting(String const& key, Json const& value);
   [[nodiscard]] std::expected<void, StarException> syncGui();
 
   [[nodiscard]] std::expected<void, StarException> apply();

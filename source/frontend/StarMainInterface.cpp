@@ -386,6 +386,23 @@ import star.quest_manager;
 
 namespace Star {
 
+namespace {
+
+template <typename T>
+std::expected<void, StarException> installPane(MainInterfacePaneManager& paneManager, MainInterfacePanes id,
+                                               PaneLayer layer, std::expected<std::shared_ptr<T>, StarException> pane,
+                                               std::shared_ptr<T>& destination,
+                                               PaneManager::DismissCallback dismissed = {}) {
+  if (!pane)
+    return std::unexpected(std::move(pane.error()));
+  if (auto registered = paneManager.registerPane(id, layer, *pane, std::move(dismissed)); !registered)
+    return std::unexpected(std::move(registered.error()));
+  destination = std::move(*pane);
+  return {};
+}
+
+}// namespace
+
 GuiMessage::GuiMessage() : message(), cooldown(), springState() {}
 
 GuiMessage::GuiMessage(String const& message, float cooldown, float spring)
@@ -419,16 +436,6 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
   if (auto initialized = m_paneManager.initialize(); !initialized)
     return std::unexpected(std::move(initialized.error()));
 
-  auto install = [this]<typename T>(MainInterfacePanes id, PaneLayer layer, std::expected<std::shared_ptr<T>, StarException> pane, std::shared_ptr<T>& destination, PaneManager::DismissCallback dismissed = {}) -> std::expected<void, StarException> {
-    if (!pane)
-      return std::unexpected(std::move(pane.error()));
-    auto registered = m_paneManager.registerPane(id, layer, *pane, std::move(dismissed));
-    if (!registered)
-      return std::unexpected(std::move(registered.error()));
-    destination = std::move(*pane);
-    return {};
-  };
-
   GuiReader itemSlotReader(context());
   auto slot = itemSlotReader.makeSingle("cursorItemSlot", m_config->cursorItemSlot);
   if (!slot)
@@ -443,32 +450,54 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
   m_debugMapClearTimer = GameTimer(m_config->debugMapClearTime);
   m_stickyTargetingTimer = GameTimer(m_config->monsterHealthBarTime);
 
-  auto inventoryDismissed = [this](std::shared_ptr<Pane> const&) -> std::expected<void, StarException> {
-    if (auto player = m_client->mainPlayer()) {
-      if (auto cleared = player->clearSwap(); !cleared)
-        return std::unexpected(std::move(cleared.error()));
+  if (auto initialized = initMainBarPanes(); !initialized)
+    return std::unexpected(std::move(initialized.error()));
+  if (auto initialized = initScriptAndHudPanes(std::move(painter)); !initialized)
+    return std::unexpected(std::move(initialized.error()));
+  if (auto initialized = initPlanetHud(); !initialized)
+    return std::unexpected(std::move(initialized.error()));
+  if (auto initialized = initCharacterSwap(); !initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return initWorldOverlays();
+}
+
+std::expected<void, StarException> MainInterface::handleInventoryDismissed() {
+  if (auto player = m_client->mainPlayer()) {
+    if (auto cleared = player->clearSwap(); !cleared)
+      return std::unexpected(std::move(cleared.error()));
+  }
+  if (m_containerPane) {
+    m_containerPane->dismiss();
+    m_containerPane.reset();
+    if (auto closed = m_containerInteractor->closeContainer(); !closed)
+      return std::unexpected(std::move(closed.error()));
+  }
+  for (EntityId id : m_interactionScriptPanes.keyView()) {
+    auto pane = as<ScriptPane>(m_interactionScriptPanes[id]);
+    if (m_paneManager.isDisplayed(pane)) {
+      auto withInventory = pane->openWithInventory();
+      if (!withInventory)
+        return std::unexpected(std::move(withInventory.error()));
+      if (*withInventory)
+        pane->dismiss();
     }
-    if (m_containerPane) {
-      m_containerPane->dismiss();
-      m_containerPane.reset();
-      if (auto closed = m_containerInteractor->closeContainer(); !closed)
-        return std::unexpected(std::move(closed.error()));
-    }
-    for (EntityId id : m_interactionScriptPanes.keyView()) {
-      auto pane = as<ScriptPane>(m_interactionScriptPanes[id]);
-      if (m_paneManager.isDisplayed(pane)) {
-        auto withInventory = pane->openWithInventory();
-        if (!withInventory)
-          return std::unexpected(std::move(withInventory.error()));
-        if (*withInventory)
-          pane->dismiss();
-      }
-    }
-    return {};
-  };
-  if (auto result = install(MainInterfacePanes::Inventory, PaneLayer::Window, InventoryPane::create(context(), *this, m_client->mainPlayer(), m_containerInteractor), m_inventoryWindow, inventoryDismissed); !result)
+  }
+  return {};
+}
+
+std::expected<void, StarException> MainInterface::initMainBarPanes() {
+  auto inventoryDismissed = [this](std::shared_ptr<Pane> const&) { return handleInventoryDismissed(); };
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::Inventory, PaneLayer::Window,
+                                InventoryPane::create(context(), *this, m_client->mainPlayer(), m_containerInteractor),
+                                m_inventoryWindow, inventoryDismissed);
+      !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = install(MainInterfacePanes::CraftingPlain, PaneLayer::Window, CraftingPane::create(context(), m_client->worldClient(), m_client->mainPlayer(), JsonObject{{"filter", JsonArray{"plain"}}}, m_client->mainPlayer()->entityId()), m_plainCraftingWindow); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::CraftingPlain, PaneLayer::Window,
+                                CraftingPane::create(context(), m_client->worldClient(), m_client->mainPlayer(),
+                                                     JsonObject{{"filter", JsonArray{"plain"}}},
+                                                     m_client->mainPlayer()->entityId()),
+                                m_plainCraftingWindow);
+      !result)
     return std::unexpected(std::move(result.error()));
   auto escape = createEscapeDialog();
   if (!escape)
@@ -480,30 +509,48 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
     return std::unexpected(std::move(songbook.error()));
   if (auto result = m_paneManager.registerPane(MainInterfacePanes::Songbook, PaneLayer::Window, *songbook); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = install(MainInterfacePanes::QuestLog, PaneLayer::Window, QuestLogInterface::create(context(), m_client->questManager(), m_client->mainPlayer(), m_cinematicOverlay, m_client), m_questLogInterface); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::QuestLog, PaneLayer::Window,
+                                QuestLogInterface::create(context(), m_client->questManager(), m_client->mainPlayer(),
+                                                          m_cinematicOverlay, m_client),
+                                m_questLogInterface);
+      !result)
     return std::unexpected(std::move(result.error()));
   auto ai = AiInterface::create(context(), m_client, m_cinematicOverlay);
   if (!ai)
     return std::unexpected(std::move(ai.error()));
   if (auto result = m_paneManager.registerPane(MainInterfacePanes::Ai, PaneLayer::Window, *ai); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = install(MainInterfacePanes::Codex, PaneLayer::Window, CodexInterface::create(context(), m_client->mainPlayer()), m_codexInterface); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::Codex, PaneLayer::Window,
+                                CodexInterface::create(context(), m_client->mainPlayer()), m_codexInterface);
+      !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = install(MainInterfacePanes::Options, PaneLayer::ModalWindow, OptionsMenu::create(context(), m_paneManager, m_client), m_optionsMenu); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::Options, PaneLayer::ModalWindow,
+                                OptionsMenu::create(context(), m_paneManager, m_client), m_optionsMenu);
+      !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = install(MainInterfacePanes::Popup, PaneLayer::Window, PopupInterface::create(context()), m_popupInterface); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::Popup, PaneLayer::Window,
+                                PopupInterface::create(context()), m_popupInterface);
+      !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = install(MainInterfacePanes::Confirmation, PaneLayer::ModalWindow, ConfirmationDialog::create(context()), m_confirmationDialog); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::Confirmation, PaneLayer::ModalWindow,
+                                ConfirmationDialog::create(context()), m_confirmationDialog);
+      !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = initHttpTrustDialog(); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = install(MainInterfacePanes::JoinRequest, PaneLayer::ModalWindow, JoinRequestDialog::create(context()), m_joinRequestDialog); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::JoinRequest, PaneLayer::ModalWindow,
+                                JoinRequestDialog::create(context()), m_joinRequestDialog);
+      !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = install(MainInterfacePanes::ActionBar, PaneLayer::Hud, ActionBar::create(context(), m_paneManager, m_client->mainPlayer()), m_actionBar); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::ActionBar, PaneLayer::Hud,
+                                ActionBar::create(context(), m_paneManager, m_client->mainPlayer()), m_actionBar);
+      !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = install(MainInterfacePanes::QuestTracker, PaneLayer::Hud, QuestTrackerPane::create(context()), m_questTracker); !result)
-    return std::unexpected(std::move(result.error()));
+  return installPane(m_paneManager, MainInterfacePanes::QuestTracker, PaneLayer::Hud,
+                     QuestTrackerPane::create(context()), m_questTracker);
+}
 
+std::expected<void, StarException> MainInterface::initScriptAndHudPanes(std::shared_ptr<WorldPainter> painter) {
   auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
@@ -513,7 +560,9 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
   auto mmUpgradeConfig = mmUpgrade->getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config");
   if (!mmUpgradeConfig)
     return std::unexpected(std::move(mmUpgradeConfig.error()));
-  if (auto result = install(MainInterfacePanes::MmUpgrade, PaneLayer::Window, ScriptPane::create(context(), m_client, *mmUpgradeConfig), m_mmUpgrade); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::MmUpgrade, PaneLayer::Window,
+                                ScriptPane::create(context(), m_client, *mmUpgradeConfig), m_mmUpgrade);
+      !result)
     return std::unexpected(std::move(result.error()));
   auto collections = (*assets)->json("/interface.config:mainBar.collections");
   if (!collections)
@@ -521,17 +570,27 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
   auto collectionConfig = collections->getString("scriptPane", "/interface/scripted/collections/collectionsgui.config");
   if (!collectionConfig)
     return std::unexpected(std::move(collectionConfig.error()));
-  if (auto result = install(MainInterfacePanes::Collections, PaneLayer::Window, ScriptPane::create(context(), m_client, *collectionConfig), m_collections); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::Collections, PaneLayer::Window,
+                                ScriptPane::create(context(), m_client, *collectionConfig), m_collections);
+      !result)
     return std::unexpected(std::move(result.error()));
   auto chatConfig = (*assets)->json("/interface/chat/chat.config");
   if (!chatConfig)
     return std::unexpected(std::move(chatConfig.error()));
-  if (auto result = install(MainInterfacePanes::Chat, PaneLayer::Hud, Chat::create(context(), m_client, *chatConfig), m_chat); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::Chat, PaneLayer::Hud,
+                                Chat::create(context(), m_client, *chatConfig), m_chat);
+      !result)
     return std::unexpected(std::move(result.error()));
   m_clientCommandProcessor = std::make_shared<ClientCommandProcessor>(context(), m_client, m_cinematicOverlay, m_paneManager, m_config->macroCommands);
-  if (auto result = install(MainInterfacePanes::RadioMessagePopup, PaneLayer::Hud, RadioMessagePopup::create(context()), m_radioMessagePopup); !result)
+  if (auto result = installPane(m_paneManager, MainInterfacePanes::RadioMessagePopup, PaneLayer::Hud,
+                                RadioMessagePopup::create(context()), m_radioMessagePopup);
+      !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = install(MainInterfacePanes::WireInterface, PaneLayer::World, WirePane::create(context(), m_client->worldClient(), m_client->mainPlayer(), std::move(painter)), m_wireInterface); !result)
+  if (auto result =
+        installPane(m_paneManager, MainInterfacePanes::WireInterface, PaneLayer::World,
+                    WirePane::create(context(), m_client->worldClient(), m_client->mainPlayer(), std::move(painter)),
+                    m_wireInterface);
+      !result)
     return std::unexpected(std::move(result.error()));
   m_client->mainPlayer()->setWireConnector(std::ref(*m_wireInterface));
 
@@ -544,9 +603,10 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
   auto status = StatusPane::create(context(), m_client);
   if (!status)
     return std::unexpected(std::move(status.error()));
-  if (auto result = m_paneManager.registerPane(MainInterfacePanes::StatusPane, PaneLayer::Hud, *status); !result)
-    return std::unexpected(std::move(result.error()));
+  return m_paneManager.registerPane(MainInterfacePanes::StatusPane, PaneLayer::Hud, *status);
+}
 
+std::expected<void, StarException> MainInterface::initPlanetHud() {
   auto planetName = Pane::create(context());
   if (!planetName)
     return std::unexpected(std::move(planetName.error()));
@@ -563,9 +623,10 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
   (*planetName)->setAnchor(PaneAnchor::Center);
   if (auto result = (*planetName)->addChild("planetText", m_planetText); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, *planetName); !result)
-    return std::unexpected(std::move(result.error()));
+  return m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, *planetName);
+}
 
+std::expected<void, StarException> MainInterface::initCharacterSwap() {
   auto selection = CharSelectionPane::create(context(), m_client->playerStorage(), []() -> std::expected<void, StarException> { return {}; },
     [this, lifetime = callbackStopToken()](std::shared_ptr<Player> mainPlayer) -> std::expected<void, StarException> {
       if (lifetime.stop_requested())
@@ -578,26 +639,24 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
       auto configuration = context().root().configuration();
       if (!configuration)
         return std::unexpected(std::move(configuration.error()));
-      auto moves = (*configuration)->get("characterSwapMovesToFront", false);
-      if (!moves)
-        return std::unexpected(std::move(moves.error()));
-      auto move = moves->toBool();
-      if (!move)
-        return std::unexpected(std::move(move.error()));
-      if (*move) {
+      auto moveToFrontConfig = (*configuration)->get("characterSwapMovesToFront", false);
+      if (!moveToFrontConfig)
+        return std::unexpected(std::move(moveToFrontConfig.error()));
+      auto moveToFront = moveToFrontConfig->toBool();
+      if (!moveToFront)
+        return std::unexpected(std::move(moveToFront.error()));
+      if (*moveToFront) {
         if (auto result = m_client->playerStorage()->moveToFront(*playerUuid); !result)
           return std::unexpected(std::move(result.error()));
       }
-      auto dismissConfig = (*configuration)->get("characterSwapDismisses", false);
-      if (!dismissConfig)
-        return std::unexpected(std::move(dismissConfig.error()));
-      auto dismiss = dismissConfig->toBool();
-      if (!dismiss)
-        return std::unexpected(std::move(dismiss.error()));
-      if (*dismiss) {
-        if (auto result = m_paneManager.dismissRegisteredPane(MainInterfacePanes::CharacterSwap); !result)
-          return std::unexpected(std::move(result.error()));
-      }
+      auto dismissAfterSwapConfig = (*configuration)->get("characterSwapDismisses", false);
+      if (!dismissAfterSwapConfig)
+        return std::unexpected(std::move(dismissAfterSwapConfig.error()));
+      auto dismissAfterSwap = dismissAfterSwapConfig->toBool();
+      if (!dismissAfterSwap)
+        return std::unexpected(std::move(dismissAfterSwap.error()));
+      if (*dismissAfterSwap)
+        return m_paneManager.dismissRegisteredPane(MainInterfacePanes::CharacterSwap).transform([](bool) {});
       return {};
     }, [](Uuid) -> std::expected<void, StarException> { return {}; });
   if (!selection)
@@ -622,17 +681,19 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
   auto configuration = context().root().configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));
-  auto dismissConfig = (*configuration)->get("characterSwapDismisses", false);
-  if (!dismissConfig)
-    return std::unexpected(std::move(dismissConfig.error()));
-  auto dismiss = dismissConfig->toBool();
-  if (!dismiss)
-    return std::unexpected(std::move(dismiss.error()));
-  (*toggleDismiss)->setChecked(*dismiss);
+  auto dismissAfterSwapConfig = (*configuration)->get("characterSwapDismisses", false);
+  if (!dismissAfterSwapConfig)
+    return std::unexpected(std::move(dismissAfterSwapConfig.error()));
+  auto dismissAfterSwap = dismissAfterSwapConfig->toBool();
+  if (!dismissAfterSwap)
+    return std::unexpected(std::move(dismissAfterSwap.error()));
+  (*toggleDismiss)->setChecked(*dismissAfterSwap);
   if (auto result = (*toggleDismiss)->setVisibility(true); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = m_paneManager.registerPane(MainInterfacePanes::CharacterSwap, PaneLayer::Window, charSelectionMenu); !result)
-    return std::unexpected(std::move(result.error()));
+  return m_paneManager.registerPane(MainInterfacePanes::CharacterSwap, PaneLayer::Window, charSelectionMenu);
+}
+
+std::expected<void, StarException> MainInterface::initWorldOverlays() {
   auto nameplates = NameplatePainter::create(context());
   if (!nameplates)
     return std::unexpected(std::move(nameplates.error()));

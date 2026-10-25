@@ -537,52 +537,24 @@ std::expected<void, StarException> CraftingPane::initialize(std::shared_ptr<Worl
 }
 
 std::expected<void, StarException> CraftingPane::displayed() {
-  auto displayedResult387 = Pane::displayed();
-  if (!displayedResult387)
-    return std::unexpected(std::move(displayedResult387.error()));
+  if (auto result = Pane::displayed(); !result)
+    return std::unexpected(std::move(result.error()));
 
   {
-    auto fetchChildResult388 = fetchChild<TextBoxWidget>("filter");
-    if (!fetchChildResult388)
-      return std::unexpected(std::move(fetchChildResult388.error()));
-    if (auto filterWidget = std::move(*fetchChildResult388)) {
-      auto setTextResult389 = filterWidget->setText("");
-      if (!setTextResult389)
-        return std::unexpected(std::move(setTextResult389.error()));
-      auto blurResult390 = filterWidget->blur();
-      if (!blurResult390)
-        return std::unexpected(std::move(blurResult390.error()));
+    auto filterWidget = fetchChild<TextBoxWidget>("filter");
+    if (!filterWidget)
+      return std::unexpected(std::move(filterWidget.error()));
+    if (*filterWidget) {
+      if (auto result = (*filterWidget)->setText(""); !result)
+        return std::unexpected(std::move(result.error()));
+      if (auto result = (*filterWidget)->blur(); !result)
+        return std::unexpected(std::move(result.error()));
     }
   }
 
-  auto updateAvailableRecipesResult391 = updateAvailableRecipes();
-  if (!updateAvailableRecipesResult391)
-    return std::unexpected(std::move(updateAvailableRecipesResult391.error()));
-
-  // unlock any recipes specified
-  {
-    auto optResult392 = m_settings.opt("initialRecipeUnlocks");
-    if (!optResult392)
-      return std::unexpected(std::move(optResult392.error()));
-    if (auto recipeUnlocks = std::move(*optResult392)) {
-      {
-        auto jsonToStringListResult393 = jsonToStringList(*recipeUnlocks);
-        if (!jsonToStringListResult393)
-          return std::unexpected(std::move(jsonToStringListResult393.error()));
-        for (String itemName : std::move(*jsonToStringListResult393))
-          {
-            auto createResult394 = ItemDescriptor::create(itemName);
-            if (!createResult394)
-              return std::unexpected(std::move(createResult394.error()));
-            auto addBlueprintResult395 = m_player->addBlueprint(std::move(*createResult394));
-            if (!addBlueprintResult395)
-              return std::unexpected(std::move(addBlueprintResult395.error()));
-            
-          }
-      }
-    }
-  }
-  return {};
+  if (auto result = updateAvailableRecipes(); !result)
+    return std::unexpected(std::move(result.error()));
+  return unlockConfiguredRecipes("initialRecipeUnlocks");
 }
 
 std::expected<void, StarException> CraftingPane::dismissed() {
@@ -628,62 +600,54 @@ EntityId CraftingPane::sourceEntityId() const {
   return m_sourceEntityId;
 }
 
-std::expected<void, StarException> CraftingPane::upgradeTable() {
-  if (m_sourceEntityId != NullEntityId) {
-    // Checks that the upgrade path exists
-    if (m_upgradeRecipe) {
-      {
-        bool condition401 = static_cast<bool>(m_player->isAdmin());
-        if (!condition401) {
-          auto availableItemsResult400 = m_player->inventory()->availableItems();
-          if (!availableItemsResult400)
-            return std::unexpected(std::move(availableItemsResult400.error()));
-          condition401 = static_cast<bool>(ItemDatabase::canMakeRecipe(*m_upgradeRecipe, std::move(*availableItemsResult400), m_player->inventory()->availableCurrencies()));
-        }
-        if (condition401) {
-          if (!m_player->isAdmin())
-            {
-              auto consumeIngredientsResult402 = consumeIngredients(*m_upgradeRecipe, 1);
-              if (!consumeIngredientsResult402)
-                return std::unexpected(std::move(consumeIngredientsResult402.error()));
-              
-            }
-  
-          // upgrade the old table
-          auto sendEntityMessageResult403 = m_worldClient->sendEntityMessage(m_sourceEntityId, "requestUpgrade");
-          if (!sendEntityMessageResult403)
-            return std::unexpected(std::move(sendEntityMessageResult403.error()));
-  
-          // unlock any recipes specified
-          {
-            auto optResult404 = m_settings.opt("upgradeRecipeUnlocks");
-            if (!optResult404)
-              return std::unexpected(std::move(optResult404.error()));
-            if (auto recipeUnlocks = std::move(*optResult404)) {
-              {
-                auto jsonToStringListResult405 = jsonToStringList(*recipeUnlocks);
-                if (!jsonToStringListResult405)
-                  return std::unexpected(std::move(jsonToStringListResult405.error()));
-                for (String itemName : std::move(*jsonToStringListResult405))
-                  {
-                    auto createResult406 = ItemDescriptor::create(itemName);
-                    if (!createResult406)
-                      return std::unexpected(std::move(createResult406.error()));
-                    auto addBlueprintResult407 = m_player->addBlueprint(std::move(*createResult406));
-                    if (!addBlueprintResult407)
-                      return std::unexpected(std::move(addBlueprintResult407.error()));
-                    
-                  }
-              }
-            }
-          }
-  
-          // this closes the interface window
-          dismiss();
-        }
-      }
-    }
+std::expected<void, StarException> CraftingPane::unlockConfiguredRecipes(String const& setting) {
+  auto recipeUnlocks = m_settings.opt(setting);
+  if (!recipeUnlocks)
+    return std::unexpected(std::move(recipeUnlocks.error()));
+  if (!*recipeUnlocks)
+    return {};
+
+  auto itemNames = jsonToStringList(**recipeUnlocks);
+  if (!itemNames)
+    return std::unexpected(std::move(itemNames.error()));
+  for (String const& itemName : *itemNames) {
+    auto descriptor = ItemDescriptor::create(itemName);
+    if (!descriptor)
+      return std::unexpected(std::move(descriptor.error()));
+    if (auto result = m_player->addBlueprint(std::move(*descriptor)); !result)
+      return std::unexpected(std::move(result.error()));
   }
+  return {};
+}
+
+std::expected<void, StarException> CraftingPane::upgradeTable() {
+  if (m_sourceEntityId == NullEntityId || !m_upgradeRecipe)
+    return {};
+
+  bool canUpgrade = m_player->isAdmin();
+  if (!canUpgrade) {
+    auto availableItems = m_player->inventory()->availableItems();
+    if (!availableItems)
+      return std::unexpected(std::move(availableItems.error()));
+    canUpgrade = ItemDatabase::canMakeRecipe(*m_upgradeRecipe, std::move(*availableItems),
+                                             m_player->inventory()->availableCurrencies());
+  }
+  if (!canUpgrade)
+    return {};
+
+  if (!m_player->isAdmin()) {
+    auto result = consumeIngredients(*m_upgradeRecipe, 1);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+
+  auto requestUpgrade = m_worldClient->sendEntityMessage(m_sourceEntityId, "requestUpgrade");
+  if (!requestUpgrade)
+    return std::unexpected(std::move(requestUpgrade.error()));
+  if (auto result = unlockConfiguredRecipes("upgradeRecipeUnlocks"); !result)
+    return std::unexpected(std::move(result.error()));
+
+  dismiss();
   return {};
 }
 

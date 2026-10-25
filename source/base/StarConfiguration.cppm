@@ -4,7 +4,6 @@ import std;
 import star.json;
 import star.string;
 import star.format;
-import star.version;
 
 namespace Star {
 

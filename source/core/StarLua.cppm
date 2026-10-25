@@ -1232,14 +1232,6 @@ namespace LuaDetail {
   inline LuaHandle::LuaHandle(LuaEnginePtr engine, int handleIndex)
     : reference(std::make_shared<LuaRegistryReference>(std::move(engine), handleIndex)) {}
 
-  template <typename T>
-  struct ExpectedValue { static constexpr bool expected = false; using Type = T; };
-  template <typename T>
-  struct ExpectedValue<std::expected<T, StarException>> {
-    static constexpr bool expected = true;
-    using Type = T;
-  };
-
   // Continuations retain converted handles and stop at the first error.
   template <typename... Types>
   struct ConvertedPack;
@@ -1355,23 +1347,24 @@ namespace LuaDetail {
   }
   template <typename Return, typename Function, typename... Args>
   [[nodiscard]] std::expected<LuaFunctionReturn, StarException> invokeWrapped(LuaEngine& engine, Function&& function, Args&&... args) {
-    using DeclaredReturn = typename ExpectedValue<std::remove_cvref_t<Return>>::Type;
+    using DeclaredReturn = typename AlgorithmResultInfo<std::remove_cvref_t<Return>>::Value;
     using ActualReturn = std::remove_cvref_t<std::invoke_result_t<Function, Args...>>;
+    using ActualResultInfo = AlgorithmResultInfo<ActualReturn>;
     if constexpr (std::is_void_v<ActualReturn>) {
       static_assert(std::is_void_v<DeclaredReturn>);
       std::invoke(std::forward<Function>(function), std::forward<Args>(args)...);
       return LuaFunctionReturn();
     } else {
       auto&& result = std::invoke(std::forward<Function>(function), std::forward<Args>(args)...);
-      if constexpr (ExpectedValue<ActualReturn>::expected) {
+      if constexpr (ActualResultInfo::Fallible) {
         if (!result)
           return std::unexpected(std::move(result.error()));
         // A declared void signature discards only the successful payload.
         if constexpr (std::is_void_v<DeclaredReturn>) {
           return LuaFunctionReturn();
         } else {
-          static_assert(!std::is_void_v<typename ExpectedValue<ActualReturn>::Type>);
-          if constexpr (std::is_same_v<DeclaredReturn, typename ExpectedValue<ActualReturn>::Type>)
+          static_assert(!std::is_void_v<typename ActualResultInfo::Value>);
+          if constexpr (std::is_same_v<DeclaredReturn, typename ActualResultInfo::Value>)
             return toWrappedReturn(engine, *result);
           else
             return toWrappedReturn(engine, static_cast<DeclaredReturn>(std::move(*result)));
@@ -1505,11 +1498,11 @@ namespace LuaDetail {
     if constexpr (std::is_void_v<Return>) {
       std::invoke(function, std::forward<Args>(args)...);
       return true;
-    } else if constexpr (ExpectedValue<Return>::expected) {
+    } else if constexpr (AlgorithmResultInfo<Return>::Fallible) {
       auto result = std::invoke(function, std::forward<Args>(args)...);
       if (!result)
         return std::unexpected(std::move(result.error()));
-      if constexpr (std::is_void_v<typename ExpectedValue<Return>::Type>)
+      if constexpr (std::is_void_v<typename AlgorithmResultInfo<Return>::Value>)
         return true;
       else
         return *result;

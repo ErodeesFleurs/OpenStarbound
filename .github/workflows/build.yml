@@ -36,6 +36,8 @@ on:
       - 'triplets/**'
       - 'ports/**'
       - 'scripts/ci/**'
+      - '.clang-format'
+      - 'scripts/format-source.sh'
       - '.github/workflows/build.yml'
     branches:
       - '*'
@@ -199,6 +201,16 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Check changed C++ lines
+        if: github.event_name == 'pull_request' && matrix.arch == 'x86_64'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          python3 -m venv "$RUNNER_TEMP/source-quality"
+          "$RUNNER_TEMP/source-quality/bin/pip" install 'clang-format==21.1.8'
+          CLANG_FORMAT="$RUNNER_TEMP/source-quality/bin/clang-format" scripts/format-source.sh --check --base "$BASE_SHA"
+
       - name: Install Packages
         run: |
           sudo apt-get update
@@ -217,7 +229,6 @@ jobs:
 
       - name: Install xclang 23.1.2.9
         run: cmake "-DXCLANG_INSTALL_DIR=$RUNNER_TEMP/xclang-23.1.2.9" -P scripts/ci/install-xclang.cmake
-
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
         id: runvcpkg

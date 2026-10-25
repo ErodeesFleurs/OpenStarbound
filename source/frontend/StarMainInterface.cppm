@@ -218,6 +218,12 @@ public:
 private:
   MainInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, WorldPainter& painter, std::shared_ptr<Cinematic> cinematicOverlay);
   [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<WorldPainter> painter);
+  [[nodiscard]] std::expected<void, StarException> initMainBarPanes();
+  [[nodiscard]] std::expected<void, StarException> initScriptAndHudPanes(std::shared_ptr<WorldPainter> painter);
+  [[nodiscard]] std::expected<void, StarException> initPlanetHud();
+  [[nodiscard]] std::expected<void, StarException> initCharacterSwap();
+  [[nodiscard]] std::expected<void, StarException> initWorldOverlays();
+  [[nodiscard]] std::expected<void, StarException> handleInventoryDismissed();
   [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createEscapeDialog();
   [[nodiscard]] std::expected<void, StarException> initHttpTrustDialog();
 

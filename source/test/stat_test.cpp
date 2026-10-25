@@ -5,7 +5,6 @@ import star.strong_typedef;
 import star.data_stream;
 import star.id_map;
 import star.status_types;
-import star.either;
 
 #include "gtest/gtest.h"
 import star.stat_collection;
@@ -97,4 +96,56 @@ TEST(StatTest, Set) {
   stats.removeStatModifierGroup(*nextId);
   EXPECT_TRUE(withinAmount(stats.statEffectiveValue("TempStat"), 0.0f, 0.0001f));
   EXPECT_FALSE(stats.isEffectiveStat("TempStat"));
+}
+
+TEST(StatTest, CollectionDefaultsPreserveAbsoluteValuesAndMaximumFractions) {
+  auto config = Json::parse(R"({
+    "stats": {"maximum": {"baseValue": 100}},
+    "resources": {
+      "absolute": {"maxStat": "maximum", "initialValue": 30, "initialPercentage": "not read"},
+      "clampedAbsolute": {"maxStat": "maximum", "initialValue": 150},
+      "fraction": {"maxStat": "maximum", "initialPercentage": 0.25},
+      "bounded": {"maxStat": "maximum"},
+      "unbounded": {},
+      "unboundedAbsolute": {"initialValue": 17},
+      "zeroAbsolute": {"maxStat": "maximum", "initialValue": 0, "initialPercentage": 1},
+      "zeroFraction": {"maxStat": "maximum", "initialPercentage": 0}
+    }
+  })");
+  ASSERT_TRUE(config);
+  auto collection = StatCollection::create(*config);
+  ASSERT_TRUE(collection);
+  auto& stats = **collection;
+
+  EXPECT_FLOAT_EQ(stats.resource("absolute"), 30.0f);
+  EXPECT_FLOAT_EQ(stats.resource("clampedAbsolute"), 100.0f);
+  EXPECT_FLOAT_EQ(stats.resource("fraction"), 25.0f);
+  EXPECT_FLOAT_EQ(stats.resource("bounded"), 100.0f);
+  EXPECT_FLOAT_EQ(stats.resource("unbounded"), 0.0f);
+  EXPECT_FLOAT_EQ(stats.resource("unboundedAbsolute"), 17.0f);
+  EXPECT_FLOAT_EQ(stats.resource("zeroAbsolute"), 0.0f);
+  EXPECT_FLOAT_EQ(stats.resource("zeroFraction"), 0.0f);
+
+  for (auto const& resource : stats.resourceNames()) {
+    ASSERT_TRUE(stats.setResource(resource, 7.0f));
+    ASSERT_TRUE(stats.setResourceLocked(resource, true));
+  }
+  ASSERT_TRUE(stats.addStatModifierGroup({StatBaseMultiplier{"maximum", 2.0f}}));
+  ASSERT_TRUE(stats.resetAllResources());
+
+  // Absolute defaults retain their original unclamped amounts; fractions and
+  // the implicit full default use the current maximum, not the initial one.
+  EXPECT_FLOAT_EQ(stats.resource("absolute"), 30.0f);
+  EXPECT_FLOAT_EQ(stats.resource("clampedAbsolute"), 150.0f);
+  EXPECT_FLOAT_EQ(stats.resource("fraction"), 50.0f);
+  EXPECT_FLOAT_EQ(stats.resource("bounded"), 200.0f);
+  EXPECT_FLOAT_EQ(stats.resource("unbounded"), 0.0f);
+  EXPECT_FLOAT_EQ(stats.resource("unboundedAbsolute"), 17.0f);
+  EXPECT_FLOAT_EQ(stats.resource("zeroAbsolute"), 0.0f);
+  EXPECT_FLOAT_EQ(stats.resource("zeroFraction"), 0.0f);
+  for (auto const& resource : stats.resourceNames()) {
+    auto locked = stats.resourceLocked(resource);
+    ASSERT_TRUE(locked);
+    EXPECT_FALSE(*locked);
+  }
 }

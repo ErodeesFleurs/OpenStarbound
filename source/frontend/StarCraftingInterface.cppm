@@ -78,6 +78,7 @@ private:
   explicit CraftingPane(GuiContext& guiContext);
   [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId);
   [[nodiscard]] std::expected<void, StarException> upgradeTable();
+  [[nodiscard]] std::expected<void, StarException> unlockConfiguredRecipes(String const& setting);
 
   [[nodiscard]] std::expected<List<ItemRecipe>, StarException> determineRecipes();
 

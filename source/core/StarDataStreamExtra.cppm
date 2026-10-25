@@ -38,11 +38,7 @@ struct DataStreamWriteFunctor {
   DataStream& ds;
   template <typename T>
   [[nodiscard]] std::expected<void, StarException> operator()(T const& t) const {
-    {
-      auto result = ds << t;
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
-    return {};
+    return ds.write(t);
   }
 };
 
@@ -50,14 +46,7 @@ struct DataStreamReadFunctor {
   DataStreamReadFunctor(DataStream& ds) : ds(ds) {}
 
   DataStream& ds;
-  template <typename T>
-  [[nodiscard]] std::expected<void, StarException> operator()(T& t) const {
-    {
-      auto result = ds >> t;
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
-    return {};
-  }
+  template <typename T> [[nodiscard]] std::expected<void, StarException> operator()(T& t) const { return ds.read(t); }
 };
 
 [[nodiscard]] inline std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Empty const&) {
@@ -70,39 +59,39 @@ struct DataStreamReadFunctor {
 
 template <typename ElementT, std::size_t SizeN>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Array<ElementT, SizeN> const& array) {
-  for (std::size_t i = 0; i < SizeN; ++i)
-    {
-      auto result = ds << array[i];
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
+  for (std::size_t i = 0; i < SizeN; ++i) {
+    auto result = ds << array[i];
+    if (!result)
+      return result;
+  }
   return std::ref(ds);
 }
 
 template <typename ElementT, std::size_t SizeN>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Array<ElementT, SizeN>& array) {
-  for (std::size_t i = 0; i < SizeN; ++i)
-    {
-      auto result = ds >> array[i];
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
+  for (std::size_t i = 0; i < SizeN; ++i) {
+    auto result = ds >> array[i];
+    if (!result)
+      return result;
+  }
   return std::ref(ds);
 }
 
 template <typename ElementT, std::size_t RankN>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, MultiArray<ElementT, RankN> const& array) {
   auto size = array.size();
-  for (std::size_t i = 0; i < RankN; ++i)
-    {
-      auto result = ds.writeVlqU(size[i]);
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
+  for (std::size_t i = 0; i < RankN; ++i) {
+    auto dimensionWritten = ds.writeVlqU(size[i]);
+    if (!dimensionWritten)
+      return std::unexpected(std::move(dimensionWritten.error()));
+  }
 
   std::size_t count = array.count();
-  for (std::size_t i = 0; i < count; ++i)
-    {
-      auto result = ds << array.atIndex(i);
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
+  for (std::size_t i = 0; i < count; ++i) {
+    auto result = ds << array.atIndex(i);
+    if (!result)
+      return result;
+  }
 
   return std::ref(ds);
 }
@@ -110,30 +99,26 @@ template <typename ElementT, std::size_t RankN>
 template <typename ElementT, std::size_t RankN>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, MultiArray<ElementT, RankN>& array) {
   typename MultiArray<ElementT, RankN>::SizeArray size;
-  for (std::size_t i = 0; i < RankN; ++i)
-    {
-      auto dimension = ds.readVlqU();
-      if (!dimension) return std::unexpected(std::move(dimension.error()));
-      size[i] = *dimension;
-    }
+  for (std::size_t i = 0; i < RankN; ++i) {
+    auto dimension = ds.readVlqU();
+    if (!dimension)
+      return std::unexpected(std::move(dimension.error()));
+    size[i] = *dimension;
+  }
 
   array.setSize(size);
   std::size_t count = array.count();
-  for (std::size_t i = 0; i < count; ++i)
-    {
-      auto result = ds >> array.atIndex(i);
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
+  for (std::size_t i = 0; i < count; ++i) {
+    auto result = ds >> array.atIndex(i);
+    if (!result)
+      return result;
+  }
 
   return std::ref(ds);
 }
 
 [[nodiscard]] inline std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Color const& color) {
-  {
-    auto result = ds << color.toRgbaF();
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds << color.toRgbaF();
 }
 
 [[nodiscard]] inline std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Color& color) {
@@ -145,250 +130,122 @@ template <typename ElementT, std::size_t RankN>
 
 template <typename First, typename Second>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, std::pair<First, Second> const& pair) {
-  {
-    auto result = ds << pair.first;
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  {
-    auto result = ds << pair.second;
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds << pair.first << pair.second;
 }
 
 template <typename First, typename Second>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, std::pair<First, Second>& pair) {
-  {
-    auto result = ds >> pair.first;
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  {
-    auto result = ds >> pair.second;
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds >> pair.first >> pair.second;
 }
 
 template <typename Element>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, std::shared_ptr<Element> const& ptr) {
-  {
-    auto result = ds.pwrite(ptr);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.pwrite(ptr).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename Element>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, std::shared_ptr<Element>& ptr) {
-  {
-    auto result = ds.pread(ptr);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.pread(ptr).transform([&ds] { return std::ref(ds); });
 }
 
 template <SequenceContainer Container>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Container const& list) {
-  {
-    auto result = ds.writeContainer(list);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.writeContainer(list).transform([&ds] { return std::ref(ds); });
 }
 
 template <SequenceContainer Container>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Container& list) {
-  {
-    auto result = ds.readContainer(list);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.readContainer(list).transform([&ds] { return std::ref(ds); });
 }
 
 template <SetContainer Container>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Container const& set) {
-  {
-    auto result = ds.writeContainer(set);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.writeContainer(set).transform([&ds] { return std::ref(ds); });
 }
 
 template <SetContainer Container>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Container& set) {
-  {
-    auto result = ds.readContainer(set);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.readContainer(set).transform([&ds] { return std::ref(ds); });
 }
 
 template <MapContainer Container>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Container const& map) {
-  {
-    auto result = ds.writeMapContainer(map);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.writeMapContainer(map).transform([&ds] { return std::ref(ds); });
 }
 
 template <MapContainer Container>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Container& map) {
-  {
-    auto result = ds.readMapContainer(map);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.readMapContainer(map).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename Key, typename Value, typename Compare, typename Allocator>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, OrderedMap<Key, Value, Compare, Allocator>& map) {
-  {
-    auto result = ds.readMapContainer(map);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.readMapContainer(map).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename Key, typename Value, typename Compare, typename Allocator>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, OrderedMap<Key, Value, Compare, Allocator> const& map) {
-  {
-    auto result = ds.writeMapContainer(map);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.writeMapContainer(map).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename Key, typename Value, typename Hash, typename Equals, typename Allocator>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, OrderedHashMap<Key, Value, Hash, Equals, Allocator>& map) {
-  {
-    auto result = ds.readMapContainer(map);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.readMapContainer(map).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename Key, typename Value, typename Hash, typename Equals, typename Allocator>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, OrderedHashMap<Key, Value, Hash, Equals, Allocator> const& map) {
-  {
-    auto result = ds.writeMapContainer(map);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.writeMapContainer(map).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename Value, typename Compare, typename Allocator>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, OrderedSet<Value, Compare, Allocator>& set) {
-  {
-    auto result = ds.readContainer(set);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.readContainer(set).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename Value, typename Compare, typename Allocator>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, OrderedSet<Value, Compare, Allocator> const& set) {
-  {
-    auto result = ds.writeContainer(set);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.writeContainer(set).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename Value, typename Hash, typename Equals, typename Allocator>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, OrderedHashSet<Value, Hash, Equals, Allocator>& set) {
-  {
-    auto result = ds.readContainer(set);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.readContainer(set).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename Value, typename Hash, typename Equals, typename Allocator>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, OrderedHashSet<Value, Hash, Equals, Allocator> const& set) {
-  {
-    auto result = ds.writeContainer(set);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.writeContainer(set).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename DataT>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Polygon<DataT> const& poly) {
-  {
-    auto result = ds.writeContainer(poly.vertexes());
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.writeContainer(poly.vertexes()).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename DataT>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Polygon<DataT>& poly) {
-  {
-    auto result = ds.readContainer(poly.vertexes());
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds.readContainer(poly.vertexes()).transform([&ds] { return std::ref(ds); });
 }
 
 template <typename DataT, std::size_t Dimensions>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Box<DataT, Dimensions> const& box) {
-  {
-    auto result = ds.write(box.min());
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  {
-    auto result = ds.write(box.max());
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds << box.min() << box.max();
 }
 
 template <typename DataT, std::size_t Dimensions>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Box<DataT, Dimensions>& box) {
-  {
-    auto result = ds.read(box.min());
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  {
-    auto result = ds.read(box.max());
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds >> box.min() >> box.max();
 }
 
 template <typename DataT>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Matrix3<DataT> const& mat3) {
-  {
-    auto result = ds.write(mat3[0]);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  {
-    auto result = ds.write(mat3[1]);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  {
-    auto result = ds.write(mat3[2]);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds << mat3[0] << mat3[1] << mat3[2];
 }
 
 template <typename DataT>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Matrix3<DataT>& mat3) {
-  {
-    auto result = ds.read(mat3[0]);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  {
-    auto result = ds.read(mat3[1]);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  {
-    auto result = ds.read(mat3[2]);
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds >> mat3[0] >> mat3[1] >> mat3[2];
 }
 
 // Variant payloads are decoded before construction.  Non-default-constructible
@@ -422,15 +279,14 @@ template <typename... Types>
     return std::unexpected(DataStreamException("Cannot serialize a valueless variant"));
   auto tag = ds.write<std::uint8_t>(static_cast<std::uint8_t>(value.index()));
   if (!tag) return std::unexpected(std::move(tag.error()));
-  auto result = std::visit([&ds] [[nodiscard]] (auto const& payload) -> std::expected<void, StarException> {
-    if constexpr (!std::is_same_v<std::remove_cvref_t<decltype(payload)>, std::monostate>) {
-      auto written = ds << payload;
-      if (!written) return std::unexpected(std::move(written.error()));
-    }
-    return {};
-  }, value);
-  if (!result) return std::unexpected(std::move(result.error()));
-  return std::ref(ds);
+  return std::visit(
+    [&ds] [[nodiscard]] (auto const& payload) -> std::expected<std::reference_wrapper<DataStream>, StarException> {
+      if constexpr (std::is_same_v<std::remove_cvref_t<decltype(payload)>, std::monostate>)
+        return std::ref(ds);
+      else
+        return ds << payload;
+    },
+    value);
 }
 
 template <typename... Types>
@@ -438,9 +294,7 @@ template <typename... Types>
   static_assert(sizeof...(Types) <= 255);
   auto tag = ds.read<std::uint8_t>();
   if (!tag) return std::unexpected(std::move(tag.error()));
-  auto result = detail::readVariantPayload(ds, value, *tag);
-  if (!result) return std::unexpected(std::move(result.error()));
-  return std::ref(ds);
+  return detail::readVariantPayload(ds, value, *tag).transform([&ds] { return std::ref(ds); });
 }
 
 // Optional payloads are committed only after decoding succeeds.
@@ -457,13 +311,15 @@ template <typename T, typename WriteFunction>
 
 template <typename T, typename ReadFunction>
 [[nodiscard]] std::expected<void, StarException> readOptional(DataStream& ds, std::optional<T>& maybe, ReadFunction&& readFunction) {
-  auto set = ds.read<bool>();
-  if (!set) return std::unexpected(std::move(set.error()));
-  if (*set) {
-    T t;
-    auto result = readFunction(ds, t);
-    if (!result) return std::unexpected(std::move(result.error()));
-    maybe.emplace(std::move(t));
+  auto present = ds.read<bool>();
+  if (!present)
+    return std::unexpected(std::move(present.error()));
+  if (*present) {
+    T payload;
+    auto decoded = readFunction(ds, payload);
+    if (!decoded)
+      return std::unexpected(std::move(decoded.error()));
+    maybe.emplace(std::move(payload));
   } else {
     maybe.reset();
   }
@@ -472,16 +328,16 @@ template <typename T, typename ReadFunction>
 
 template <typename T>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, std::optional<T> const& maybe) {
-  auto result = writeOptional(ds, maybe, [] [[nodiscard]] (DataStream& ds, T const& t) { return ds << t; });
-  if (!result) return std::unexpected(std::move(result.error()));
-  return std::ref(ds);
+  return writeOptional(ds, maybe, [] [[nodiscard]] (DataStream & ds, T const& payload) { return ds.write(payload); })
+    .transform([&ds] { return std::ref(ds); });
 }
 
 template <typename T>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, std::optional<T>& maybe) {
-  auto set = ds.read<bool>();
-  if (!set) return std::unexpected(std::move(set.error()));
-  if (*set) {
+  auto present = ds.read<bool>();
+  if (!present)
+    return std::unexpected(std::move(present.error()));
+  if (*present) {
     auto payload = ds.read<T>();
     if (!payload) return std::unexpected(std::move(payload.error()));
     maybe.emplace(std::move(*payload));
@@ -497,30 +353,18 @@ template <typename T>
 template <typename Left, typename Right>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Either<Left, Right> const& either) {
   if (either.isLeft()) {
-    {
-      auto result = ds.write<std::uint8_t>(1);
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
-    {
-      auto result = ds.write(either.leftRef());
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
+    auto tagWritten = ds.write<std::uint8_t>(1);
+    if (!tagWritten)
+      return std::unexpected(std::move(tagWritten.error()));
+    return ds << either.leftRef();
   } else if (either.isRight()) {
-    {
-      auto result = ds.write<std::uint8_t>(2);
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
-    {
-      auto result = ds.write(either.rightRef());
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
+    auto tagWritten = ds.write<std::uint8_t>(2);
+    if (!tagWritten)
+      return std::unexpected(std::move(tagWritten.error()));
+    return ds << either.rightRef();
   } else {
-    {
-      auto result = ds.write<std::uint8_t>(0);
-      if (!result) return std::unexpected(std::move(result.error()));
-    }
+    return ds.write<std::uint8_t>(0).transform([&ds] { return std::ref(ds); });
   }
-  return std::ref(ds);
 }
 
 template <typename Left, typename Right>
@@ -541,60 +385,42 @@ template <typename Left, typename Right>
 
 template <typename DataT, std::size_t Dimensions>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, Line<DataT, Dimensions> const& line) {
-  {
-    auto result = ds.write(line.min());
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  {
-    auto result = ds.write(line.max());
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds << line.min() << line.max();
 }
 
 template <typename DataT, std::size_t Dimensions>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Line<DataT, Dimensions>& line) {
-  {
-    auto result = ds.read(line.min());
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  {
-    auto result = ds.read(line.max());
-    if (!result) return std::unexpected(std::move(result.error()));
-  }
-  return std::ref(ds);
+  return ds >> line.min() >> line.max();
 }
 
 template <typename... T>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, std::tuple<T...>& t) {
-  auto result = std::apply([&ds] [[nodiscard]] (auto&... values) -> std::expected<void, StarException> {
-    std::expected<void, StarException> status;
-    auto readOne = [&] [[nodiscard]] (auto& value) -> std::expected<void, StarException> {
-      auto read = ds >> value;
-      if (!read) return std::unexpected(std::move(read.error()));
-      return {};
-    };
-    ((status = std::move(status).and_then([&] [[nodiscard]] () { return readOne(values); })), ...);
-    return status;
-  }, t);
-  if (!result) return std::unexpected(std::move(result.error()));
-  return std::ref(ds);
+  return std::apply(
+    [&ds] [[nodiscard]] (auto&... values) -> std::expected<std::reference_wrapper<DataStream>, StarException> {
+      std::expected<std::reference_wrapper<DataStream>, StarException> status = std::ref(ds);
+      auto readOne = [&](auto& value) {
+        if (status)
+          status = ds >> value;
+      };
+      (readOne(values), ...);
+      return status;
+    },
+    t);
 }
 
 template <typename... T>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(DataStream& ds, std::tuple<T...> const& t) {
-  auto result = std::apply([&ds] [[nodiscard]] (auto const&... values) -> std::expected<void, StarException> {
-    std::expected<void, StarException> status;
-    auto writeOne = [&] [[nodiscard]] (auto const& value) -> std::expected<void, StarException> {
-      auto written = ds << value;
-      if (!written) return std::unexpected(std::move(written.error()));
-      return {};
-    };
-    ((status = std::move(status).and_then([&] [[nodiscard]] () { return writeOne(values); })), ...);
-    return status;
-  }, t);
-  if (!result) return std::unexpected(std::move(result.error()));
-  return std::ref(ds);
+  return std::apply(
+    [&ds] [[nodiscard]] (auto const&... values) -> std::expected<std::reference_wrapper<DataStream>, StarException> {
+      std::expected<std::reference_wrapper<DataStream>, StarException> status = std::ref(ds);
+      auto writeOne = [&](auto const& value) {
+        if (status)
+          status = ds << value;
+      };
+      (writeOne(values), ...);
+      return status;
+    },
+    t);
 }
 
 }

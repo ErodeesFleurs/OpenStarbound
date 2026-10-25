@@ -133,13 +133,15 @@ private:
 template <typename Stream, typename T>
   requires std::same_as<Stream, std::expected<std::reference_wrapper<DataStream>, StarException>>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(Stream stream, T const& value) {
-  if (!stream) return std::unexpected(std::move(stream.error()));
+  if (!stream)
+    return stream;
   return stream->get() << value;
 }
 template <typename Stream, typename T>
   requires std::same_as<Stream, std::expected<std::reference_wrapper<DataStream>, StarException>>
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(Stream stream, T& value) {
-  if (!stream) return std::unexpected(std::move(stream.error()));
+  if (!stream)
+    return stream;
   return stream->get() >> value;
 }
 
@@ -163,15 +165,11 @@ template <typename T>
 }
 template <typename Data>
 [[nodiscard]] std::expected<void, StarException> DataStream::read(Data& data) {
-  auto result = *this >> data;
-  if (!result) return std::unexpected(std::move(result.error()));
-  return {};
+  return (*this >> data).transform([](auto) {});
 }
 template <typename Data>
 [[nodiscard]] std::expected<void, StarException> DataStream::write(Data const& data) {
-  auto result = *this << data;
-  if (!result) return std::unexpected(std::move(result.error()));
-  return {};
+  return (*this << data).transform([](auto) {});
 }
 template <typename ReadType, typename Data>
 [[nodiscard]] std::expected<void, StarException> DataStream::cread(Data& data) {

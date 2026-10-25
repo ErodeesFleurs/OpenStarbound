@@ -1161,11 +1161,27 @@ unsigned ClientApplication::framesSkipped() const {
 }
 
 std::expected<void, StarException> ClientApplication::changeState(MainAppState newState) {
-  MainAppState oldState = m_state;
+  auto oldState = m_state;
+  // Publish before any phase: callbacks and recovery observe the requested state.
   m_state = newState;
-  auto& app = appController();
   if (newState == MainAppState::Quit)
-    app->quit();
+    appController()->quit();
+  if (auto prepared = prepareStateCinematic(newState); !prepared)
+    return prepared;
+  if (auto tornDown = teardownTransition(oldState, newState); !tornDown)
+    return tornDown;
+  if (oldState < MainAppState::Title && newState >= MainAppState::Title) {
+    if (auto prepared = prepareTitleServices(); !prepared)
+      return prepared;
+  }
+  if (newState == MainAppState::Title)
+    return prepareTitleForm();
+  if (newState > MainAppState::Title)
+    return startSession(newState);
+  return {};
+}
+
+std::expected<void, StarException> ClientApplication::prepareStateCinematic(MainAppState newState) {
   if (newState == MainAppState::Mods || newState == MainAppState::Splash) {
     auto cinematic = m_root->assets().and_then([&](auto assets) {
       return assets->json(newState == MainAppState::Mods ? std::string_view("/cinematics/mods/modloading.cinematic") : std::string_view("/cinematics/splash.cinematic"));
@@ -1181,6 +1197,11 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
       m_rootLoader = std::move(*loader);
     }
   }
+  return {};
+}
+
+std::expected<void, StarException> ClientApplication::teardownTransition(MainAppState oldState, MainAppState newState) {
+  auto& app = appController();
   // Teardown must finish even when disconnect, persistence or server shutdown fails.
   std::optional<StarException> cleanupError;
   auto remember = [&](auto result) {
@@ -1233,313 +1254,389 @@ std::expected<void, StarException> ClientApplication::changeState(MainAppState n
   }
   if (cleanupError)
     return std::unexpected(std::move(*cleanupError));
+  return {};
+}
 
-  auto install = [&](String const& name, std::expected<LuaCallbacks, StarException> callbacks) -> std::expected<void, StarException> {
-    if (!callbacks)
-      return std::unexpected(std::move(callbacks.error()));
-    return m_universeClient->setLuaCallbacks(name, std::move(*callbacks));
-  };
-  if (oldState < MainAppState::Title && newState >= MainAppState::Title) {
-    if (m_rootLoader) {
-      auto loaded = m_rootLoader.finish();
-      if (!loaded)
-        return std::unexpected(std::move(loaded.error()));
-    }
-    m_cinematicOverlay->stop();
-    auto storage = PlayerStorage::create(*m_root, m_root->toStoragePath("player"));
-    if (!storage)
-      return std::unexpected(std::move(storage.error()));
-    m_playerStorage = std::move(*storage);
-    auto statistics = Statistics::create(*m_root, m_root->toStoragePath("player"), app->statisticsService());
-    if (!statistics)
-      return std::unexpected(std::move(statistics.error()));
-    m_statistics = std::move(*statistics);
-    auto client = UniverseClient::create(*m_root, m_playerStorage, m_statistics, m_root->toStoragePath("universeclient"));
-    if (!client)
-      return std::unexpected(std::move(client.error()));
-    m_universeClient = std::move(*client);
-    auto http = LuaHttpSession::create(*m_root);
-    if (!http)
-      return std::unexpected(std::move(http.error()));
-    m_httpSession = std::move(*http);
-    if (auto r = install("universe", LuaBindings::makeUniverseClientCallbacks(*m_root, *m_universeClient)); !r)
-      return std::unexpected(std::move(r.error()));
-    if (auto r = install("input", LuaBindings::makeInputCallbacks(*m_input)); !r)
-      return std::unexpected(std::move(r.error()));
-    if (auto r = install("voice", LuaBindings::makeVoiceCallbacks(*m_voice)); !r)
-      return std::unexpected(std::move(r.error()));
-    if (auto r = install("camera", LuaBindings::makeCameraCallbacks(*m_root, m_worldPainter->camera())); !r)
-      return std::unexpected(std::move(r.error()));
-    if (auto r = install("renderer", LuaBindings::makeRenderingCallbacks(*this)); !r)
-      return std::unexpected(std::move(r.error()));
-    auto config = m_root->configuration();
-    if (!config)
-      return std::unexpected(std::move(config.error()));
-    auto alwaysAllow = (*config)->getPath("safe.alwaysAllowClipboard");
-    if (!alwaysAllow)
-      return std::unexpected(std::move(alwaysAllow.error()));
-    bool allowClipboard = false;
-    if (*alwaysAllow) {
-      auto allowed = alwaysAllow->toBool();
-      if (!allowed)
-        return std::unexpected(std::move(allowed.error()));
-      allowClipboard = *allowed;
-    }
-    if (auto r = install("clipboard", LuaBindings::makeClipboardCallbacks(*m_input, *m_root, m_root->logger(), app, allowClipboard)); !r)
-      return std::unexpected(std::move(r.error()));
-    auto httpEnabled = (*config)->getPath("safe.luaHttp.enabled").and_then([](Json j) { return j.optBool(); });
-    if (!httpEnabled)
-      return std::unexpected(std::move(httpEnabled.error()));
-    if (auto r = install("http", LuaBindings::makeHttpCallbacks(m_httpSession, httpEnabled->value_or(false))); !r)
-      return std::unexpected(std::move(r.error()));
-    auto heldScriptPanes = std::make_shared<List<MainInterface::ScriptPaneInfo>>();
-    m_universeClient->playerReloadPreCallback() = [app = std::ref(*this), heldScriptPanes](bool resetInterface) -> std::expected<void, StarException> {
-      if (!resetInterface)
-        return {};
-      return app.get().m_mainInterface->takeScriptPanes(*heldScriptPanes);
-    };
-    m_universeClient->playerReloadCallback() = [app = std::ref(*this), heldScriptPanes](bool resetInterface) -> std::expected<void, StarException> {
-      auto inventory = app.get().m_mainInterface->paneManager().registeredPane<InventoryPane>(MainInterfacePanes::Inventory);
-      if (!inventory)
-        return std::unexpected(std::move(inventory.error()));
-      if (*inventory) {
-        auto cleared = (*inventory)->clearChangedSlots();
-        if (!cleared)
-          return std::unexpected(std::move(cleared.error()));
-      }
-      if (resetInterface) {
-        auto revived = app.get().m_mainInterface->reviveScriptPanes(*heldScriptPanes);
-        if (!revived)
-          return std::unexpected(std::move(revived.error()));
-        heldScriptPanes->clear();
-      }
+std::expected<void, StarException>
+ClientApplication::installLuaCallbacks(String const& name, std::expected<LuaCallbacks, StarException> callbacks) {
+  if (!callbacks)
+    return std::unexpected(std::move(callbacks.error()));
+  return m_universeClient->setLuaCallbacks(name, std::move(*callbacks));
+}
+
+std::expected<void, StarException> ClientApplication::prepareTitleServices() {
+  auto& app = appController();
+  if (m_rootLoader) {
+    auto loaded = m_rootLoader.finish();
+    if (!loaded)
+      return std::unexpected(std::move(loaded.error()));
+  }
+  m_cinematicOverlay->stop();
+  auto storage = PlayerStorage::create(*m_root, m_root->toStoragePath("player"));
+  if (!storage)
+    return std::unexpected(std::move(storage.error()));
+  m_playerStorage = std::move(*storage);
+  auto statistics = Statistics::create(*m_root, m_root->toStoragePath("player"), app->statisticsService());
+  if (!statistics)
+    return std::unexpected(std::move(statistics.error()));
+  m_statistics = std::move(*statistics);
+  auto client = UniverseClient::create(*m_root, m_playerStorage, m_statistics, m_root->toStoragePath("universeclient"));
+  if (!client)
+    return std::unexpected(std::move(client.error()));
+  m_universeClient = std::move(*client);
+  auto http = LuaHttpSession::create(*m_root);
+  if (!http)
+    return std::unexpected(std::move(http.error()));
+  m_httpSession = std::move(*http);
+  if (auto installed =
+        installLuaCallbacks("universe", LuaBindings::makeUniverseClientCallbacks(*m_root, *m_universeClient));
+      !installed)
+    return installed;
+  if (auto installed = installLuaCallbacks("input", LuaBindings::makeInputCallbacks(*m_input)); !installed)
+    return installed;
+  if (auto installed = installLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks(*m_voice)); !installed)
+    return installed;
+  if (auto installed =
+        installLuaCallbacks("camera", LuaBindings::makeCameraCallbacks(*m_root, m_worldPainter->camera()));
+      !installed)
+    return installed;
+  if (auto installed = installLuaCallbacks("renderer", LuaBindings::makeRenderingCallbacks(*this)); !installed)
+    return installed;
+  auto config = m_root->configuration();
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto alwaysAllow = (*config)->getPath("safe.alwaysAllowClipboard");
+  if (!alwaysAllow)
+    return std::unexpected(std::move(alwaysAllow.error()));
+  bool allowClipboard = false;
+  if (*alwaysAllow) {
+    auto allowed = alwaysAllow->toBool();
+    if (!allowed)
+      return std::unexpected(std::move(allowed.error()));
+    allowClipboard = *allowed;
+  }
+  if (auto installed = installLuaCallbacks(
+        "clipboard", LuaBindings::makeClipboardCallbacks(*m_input, *m_root, m_root->logger(), app, allowClipboard));
+      !installed)
+    return installed;
+  auto httpEnabled = (*config)->getPath("safe.luaHttp.enabled").and_then([](Json j) { return j.optBool(); });
+  if (!httpEnabled)
+    return std::unexpected(std::move(httpEnabled.error()));
+  if (auto installed =
+        installLuaCallbacks("http", LuaBindings::makeHttpCallbacks(m_httpSession, httpEnabled->value_or(false)));
+      !installed)
+    return installed;
+  installPlayerReloadCallbacks();
+  m_mainMixer->setUniverseClient(m_universeClient);
+  auto title = TitleScreen::create(*m_guiContext, m_playerStorage, m_mainMixer->mixer(), m_universeClient);
+  if (!title)
+    return std::unexpected(std::move(title.error()));
+  m_titleScreen = std::move(*title);
+  if (auto renderer = Application::renderer()) {
+    if (auto initialized = m_titleScreen->renderInit(renderer); !initialized)
+      return initialized;
+  }
+  return {};
+}
+
+void ClientApplication::installPlayerReloadCallbacks() {
+  auto heldScriptPanes = std::make_shared<List<MainInterface::ScriptPaneInfo>>();
+  m_universeClient->playerReloadPreCallback() =
+    [app = std::ref(*this), heldScriptPanes](bool resetInterface) -> std::expected<void, StarException> {
+    if (!resetInterface)
       return {};
-    };
-    m_mainMixer->setUniverseClient(m_universeClient);
-    auto title = TitleScreen::create(*m_guiContext, m_playerStorage, m_mainMixer->mixer(), m_universeClient);
-    if (!title)
-      return std::unexpected(std::move(title.error()));
-    m_titleScreen = std::move(*title);
-    if (auto renderer = Application::renderer()) {
-      if (auto r = m_titleScreen->renderInit(renderer); !r)
-        return std::unexpected(std::move(r.error()));
+    return app.get().m_mainInterface->takeScriptPanes(*heldScriptPanes);
+  };
+  m_universeClient->playerReloadCallback() =
+    [app = std::ref(*this), heldScriptPanes](bool resetInterface) -> std::expected<void, StarException> {
+    auto inventory =
+      app.get().m_mainInterface->paneManager().registeredPane<InventoryPane>(MainInterfacePanes::Inventory);
+    if (!inventory)
+      return std::unexpected(std::move(inventory.error()));
+    if (*inventory) {
+      auto cleared = (*inventory)->clearChangedSlots();
+      if (!cleared)
+        return cleared;
     }
+    if (resetInterface) {
+      auto revived = app.get().m_mainInterface->reviveScriptPanes(*heldScriptPanes);
+      if (!revived)
+        return revived;
+      heldScriptPanes->clear();
+    }
+    return {};
+  };
+}
+
+std::expected<void, StarException> ClientApplication::prepareTitleForm() {
+  auto config = m_root->configuration();
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  if (m_pendingMultiPlayerConnection
+      && std::holds_alternative<P2PNetworkingPeerId>(m_pendingMultiPlayerConnection->server))
+    return m_titleScreen->goToMultiPlayerSelectCharacter(true);
+  auto address = (*config)->getPath("title.multiPlayerAddress").and_then([](Json j) { return j.toString(); });
+  if (!address)
+    return std::unexpected(std::move(address.error()));
+  auto port = (*config)->getPath("title.multiPlayerPort").and_then([](Json j) { return j.toString(); });
+  if (!port)
+    return std::unexpected(std::move(port.error()));
+  if (m_pendingMultiPlayerConnection) {
+    auto const& pending = std::get<HostAddressWithPort>(m_pendingMultiPlayerConnection->server);
+    *address = toString(pending.address());
+    *port = toString(pending.port());
   }
-  if (newState == MainAppState::Title) {
-    auto config = m_root->configuration();
-    if (!config)
-      return std::unexpected(std::move(config.error()));
-    if (m_pendingMultiPlayerConnection && std::holds_alternative<P2PNetworkingPeerId>(m_pendingMultiPlayerConnection->server))
-      return m_titleScreen->goToMultiPlayerSelectCharacter(true);
-    auto address = (*config)->getPath("title.multiPlayerAddress").and_then([](Json j) { return j.toString(); });
-    if (!address)
-      return std::unexpected(std::move(address.error()));
-    auto port = (*config)->getPath("title.multiPlayerPort").and_then([](Json j) { return j.toString(); });
-    if (!port)
-      return std::unexpected(std::move(port.error()));
-    if (m_pendingMultiPlayerConnection) {
-      auto const& pending = std::get<HostAddressWithPort>(m_pendingMultiPlayerConnection->server);
-      *address = toString(pending.address());
-      *port = toString(pending.port());
-    }
-    if (auto r = m_titleScreen->setMultiPlayerAddress(*address); !r)
-      return std::unexpected(std::move(r.error()));
-    if (auto r = m_titleScreen->setMultiPlayerPort(*port); !r)
-      return std::unexpected(std::move(r.error()));
-    auto account = (*config)->getPath("title.multiPlayerAccount").and_then([](Json j) { return j.toString(); });
-    if (!account)
-      return std::unexpected(std::move(account.error()));
-    if (auto r = m_titleScreen->setMultiPlayerAccount(*account); !r)
-      return std::unexpected(std::move(r.error()));
-    auto legacy = (*config)->getPath("title.multiPlayerForceLegacy").and_then([](Json j) { return j.optBool(); });
-    if (!legacy)
-      return std::unexpected(std::move(legacy.error()));
-    if (auto r = m_titleScreen->setMultiPlayerForceLegacy(legacy->value_or(false)); !r)
-      return std::unexpected(std::move(r.error()));
-    if (m_pendingMultiPlayerConnection)
-      return m_titleScreen->goToMultiPlayerSelectCharacter(false);
+  if (auto updated = m_titleScreen->setMultiPlayerAddress(*address); !updated)
+    return updated;
+  if (auto updated = m_titleScreen->setMultiPlayerPort(*port); !updated)
+    return updated;
+  auto account = (*config)->getPath("title.multiPlayerAccount").and_then([](Json j) { return j.toString(); });
+  if (!account)
+    return std::unexpected(std::move(account.error()));
+  if (auto updated = m_titleScreen->setMultiPlayerAccount(*account); !updated)
+    return updated;
+  auto legacy = (*config)->getPath("title.multiPlayerForceLegacy").and_then([](Json j) { return j.optBool(); });
+  if (!legacy)
+    return std::unexpected(std::move(legacy.error()));
+  if (auto updated = m_titleScreen->setMultiPlayerForceLegacy(legacy->value_or(false)); !updated)
+    return updated;
+  if (m_pendingMultiPlayerConnection)
+    return m_titleScreen->goToMultiPlayerSelectCharacter(false);
+  return {};
+}
+
+std::expected<void, StarException> ClientApplication::startSession(MainAppState newState) {
+  auto activated = activateSessionPlayer();
+  if (!activated)
+    return std::unexpected(std::move(activated.error()));
+  if (!*activated)
+    return {};
+  // Keep this generation lease through connection and interface/Lua startup.
+  auto assets = m_root->assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto loading = (*assets)->json("/client.config:loadingCinematic").and_then([](Json j) { return j.toString(); });
+  if (!loading)
+    return std::unexpected(std::move(loading.error()));
+  auto cinematic = (*assets)->json(*loading);
+  if (!cinematic)
+    return std::unexpected(std::move(cinematic.error()));
+  if (auto loaded = m_cinematicOverlay->load(*cinematic); !loaded)
+    return loaded;
+  if (!m_player->log()->introComplete()) {
+    auto intro = (*assets)->json("/client.config:introCinematic").and_then([](Json j) { return j.toString(); });
+    if (!intro)
+      return std::unexpected(std::move(intro.error()));
+    if (auto pending =
+          m_player->setPendingCinematic(Json(intro->replaceTags(StringMap<String>{{"species", m_player->species()}})));
+        !pending)
+      return pending;
+  } else if (auto pending = m_player->setPendingCinematic(Json()); !pending) {
+    return pending;
   }
-  if (newState > MainAppState::Title) {
-    if (m_titleScreen->currentlySelectedPlayer()) {
-      m_player = m_titleScreen->currentlySelectedPlayer();
-    } else {
-      if (auto uuid = m_playerStorage->playerUuidAt(0)) {
-        auto player = m_playerStorage->loadPlayer(*uuid);
-        if (!player)
-          return std::unexpected(std::move(player.error()));
-        m_player = std::move(*player);
-      }
-      if (!m_player)
-        return setError("Error loading player!");
+  auto connected = newState == MainAppState::MultiPlayer ? connectMultiPlayer() : connectSinglePlayer();
+  if (!connected)
+    return std::unexpected(std::move(connected.error()));
+  if (!*connected)
+    return {};
+  return prepareSessionInterface();
+}
+
+std::expected<bool, StarException> ClientApplication::activateSessionPlayer() {
+  if (m_titleScreen->currentlySelectedPlayer()) {
+    m_player = m_titleScreen->currentlySelectedPlayer();
+  } else {
+    if (auto uuid = m_playerStorage->playerUuidAt(0)) {
+      auto player = m_playerStorage->loadPlayer(*uuid);
+      if (!player)
+        return std::unexpected(std::move(player.error()));
+      m_player = std::move(*player);
     }
-    m_player->setInput(optionalRef(m_input));
-    m_mainMixer->setUniverseClient(m_universeClient);
-    if (auto r = m_universeClient->setMainPlayer(m_player); !r)
-      return std::unexpected(std::move(r.error()));
-    m_cinematicOverlay->setPlayer(m_player);
-    m_timeSinceJoin = (std::int64_t)Time::millisecondsSinceEpoch() / 1000;
-    auto assets = m_root->assets();
-    if (!assets)
-      return std::unexpected(std::move(assets.error()));
-    auto loading = (*assets)->json("/client.config:loadingCinematic").and_then([](Json j) { return j.toString(); });
-    if (!loading)
-      return std::unexpected(std::move(loading.error()));
-    auto cinematic = (*assets)->json(*loading);
-    if (!cinematic)
-      return std::unexpected(std::move(cinematic.error()));
-    if (auto r = m_cinematicOverlay->load(*cinematic); !r)
-      return std::unexpected(std::move(r.error()));
-    if (!m_player->log()->introComplete()) {
-      auto intro = (*assets)->json("/client.config:introCinematic").and_then([](Json j) { return j.toString(); });
-      if (!intro)
-        return std::unexpected(std::move(intro.error()));
-      if (auto pending = m_player->setPendingCinematic(Json(intro->replaceTags(StringMap<String>{{"species", m_player->species()}}))); !pending)
-        return std::unexpected(std::move(pending.error()));
-    } else {
-      if (auto pending = m_player->setPendingCinematic(Json()); !pending)
-        return std::unexpected(std::move(pending.error()));
-    }
-    if (newState == MainAppState::MultiPlayer) {
-      auto pending = takeOptional(m_pendingMultiPlayerConnection);
-      if (!pending)
-        return std::unexpected(std::move(pending.error()));
-      std::unique_ptr<PacketSocket> packetSocket;
-      if (std::holds_alternative<HostAddressWithPort>(pending->server)) {
-        auto const& address = std::get<HostAddressWithPort>(pending->server);
-        auto socket = TcpSocket::connectTo(address).and_then([&](auto tcp) { return TcpPacketSocket::open(m_root->logger(), std::move(tcp)); });
+    if (!m_player)
+      return setError("Error loading player!").transform([] { return false; });
+  }
+  m_player->setInput(optionalRef(m_input));
+  m_mainMixer->setUniverseClient(m_universeClient);
+  if (auto activated = m_universeClient->setMainPlayer(m_player); !activated)
+    return std::unexpected(std::move(activated.error()));
+  m_cinematicOverlay->setPlayer(m_player);
+  m_timeSinceJoin = (std::int64_t)Time::millisecondsSinceEpoch() / 1000;
+  return true;
+}
+
+std::expected<bool, StarException> ClientApplication::connectMultiPlayer() {
+  auto pending = takeOptional(m_pendingMultiPlayerConnection);
+  if (!pending)
+    return std::unexpected(std::move(pending.error()));
+  std::unique_ptr<PacketSocket> packetSocket;
+  auto opened = std::visit(
+    [&]<typename Server>(Server const& server) -> std::expected<bool, StarException> {
+      if constexpr (std::same_as<Server, HostAddressWithPort>) {
+        auto socket = TcpSocket::connectTo(server).and_then(
+          [&](auto tcp) { return TcpPacketSocket::open(m_root->logger(), std::move(tcp)); });
         if (!socket)
-          return setError(strf("Join failed! Error connecting to '{}'", address), ExceptionDiagnostic(socket.error()));
+          return setError(strf("Join failed! Error connecting to '{}'", server), ExceptionDiagnostic(socket.error()))
+            .transform([] { return false; });
         packetSocket = std::move(*socket);
-      } else if (auto service = app->p2pNetworkingService()) {
-        auto peer = service->connectToPeer(std::get<P2PNetworkingPeerId>(pending->server));
-        if (!peer)
-          return setError("Cannot join peer", ExceptionDiagnostic(peer.error()));
-        auto socket = P2PPacketSocket::open(m_root->logger(), std::move(*peer));
-        if (!socket)
-          return setError("Cannot join peer", ExceptionDiagnostic(socket.error()));
-        packetSocket = std::move(*socket);
+      } else if constexpr (std::same_as<Server, P2PNetworkingPeerId>) {
+        if (auto service = appController()->p2pNetworkingService()) {
+          auto peer = service->connectToPeer(server);
+          if (!peer)
+            return setError("Cannot join peer", ExceptionDiagnostic(peer.error())).transform([] { return false; });
+          auto socket = P2PPacketSocket::open(m_root->logger(), std::move(*peer));
+          if (!socket)
+            return setError("Cannot join peer", ExceptionDiagnostic(socket.error())).transform([] { return false; });
+          packetSocket = std::move(*socket);
+        } else {
+          return setError("Internal error, no p2p networking service when joining p2p networking peer").transform([] {
+            return false;
+          });
+        }
       } else {
-        return setError("Internal error, no p2p networking service when joining p2p networking peer");
+        static_assert(std::same_as<Server, void>, "Unhandled multiplayer transport");
       }
-      auto mismatch = m_root->configuration().and_then([](auto c) { return c->get("allowAssetsMismatch"); })
-          .and_then([](Json j) { return j.toBool(); });
-      if (!mismatch)
-        return std::unexpected(std::move(mismatch.error()));
-      auto connected = m_universeClient->connect(UniverseConnection(std::move(packetSocket)), *mismatch, pending->account, pending->password, pending->forceLegacy);
-      if (!connected)
-        return setError("Join failed", ExceptionDiagnostic(connected.error()));
-      if (*connected)
-        return setError(**connected);
-      if (std::holds_alternative<HostAddressWithPort>(pending->server))
-        m_currentRemoteJoin = std::get<HostAddressWithPort>(pending->server);
-      else
-        m_currentRemoteJoin.reset();
-    } else {
-      if (!m_universeServer) {
-        auto server = UniverseServer::create(*m_root, m_root->toStoragePath("universe"), true);
-        if (!server)
-          return setError("Unable to start local server", ExceptionDiagnostic(server.error()));
-        m_universeServer = std::move(*server);
-        auto started = m_universeServer->start();
-        if (!started)
-          return setError("Unable to start local server", ExceptionDiagnostic(started.error()));
-      }
-      auto local = m_universeServer->addLocalClient();
-      if (!local)
-        return setError("Error connecting locally", ExceptionDiagnostic(local.error()));
-      auto connected = m_universeClient->connect(std::move(*local), "", "");
-      if (!connected)
-        return setError("Error connecting locally", ExceptionDiagnostic(connected.error()));
-      if (*connected)
-        return setError(strf("Error connecting locally: {}", **connected));
-    }
-    m_titleScreen->stopMusic();
-    if (auto r = m_universeClient->restartLua(); !r)
-      return std::unexpected(std::move(r.error()));
-    auto createdInterface = MainInterface::create(*m_guiContext, m_universeClient, m_worldPainter, m_cinematicOverlay);
-    if (!createdInterface)
-      return std::unexpected(std::move(createdInterface.error()));
-    m_mainInterface = std::move(*createdInterface);
-    if (auto r = install("interface", LuaBindings::makeInterfaceCallbacks(*m_mainInterface)); !r)
-      return std::unexpected(std::move(r.error()));
-    if (auto r = install("chat", LuaBindings::makeChatCallbacks(*m_mainInterface, *m_universeClient)); !r)
-      return std::unexpected(std::move(r.error()));
-    if (auto r = install("celestial", LuaBindings::makeCelestialCallbacks(*m_root, *m_universeClient)); !r)
-      return std::unexpected(std::move(r.error()));
-    if (auto r = install("team", LuaBindings::makeTeamClientCallbacks(*m_universeClient->teamClient())); !r)
-      return std::unexpected(std::move(r.error()));
-    if (auto r = install("world", LuaBindings::makeWorldCallbacks(*m_root, *m_universeClient->worldClient())); !r)
-      return std::unexpected(std::move(r.error()));
-    m_httpSession->setHttpTrustRequestCallback([session = std::weak_ptr<LuaHttpSession>(m_httpSession), mainInterface = std::ref(*m_mainInterface)](String const& domain) -> std::expected<void, StarException> {
+      return true;
+    },
+    pending->server);
+  if (!opened)
+    return opened;
+  if (!*opened)
+    return false;
+  auto mismatch = m_root->configuration()
+                    .and_then([](auto config) { return config->get("allowAssetsMismatch"); })
+                    .and_then([](Json json) { return json.toBool(); });
+  if (!mismatch)
+    return std::unexpected(std::move(mismatch.error()));
+  auto connected = m_universeClient->connect(UniverseConnection(std::move(packetSocket)), *mismatch, pending->account,
+                                             pending->password, pending->forceLegacy);
+  if (!connected)
+    return setError("Join failed", ExceptionDiagnostic(connected.error())).transform([] { return false; });
+  if (*connected)
+    return setError(**connected).transform([] { return false; });
+  if (std::holds_alternative<HostAddressWithPort>(pending->server))
+    m_currentRemoteJoin = std::get<HostAddressWithPort>(pending->server);
+  else
+    m_currentRemoteJoin.reset();
+  return true;
+}
+
+std::expected<bool, StarException> ClientApplication::connectSinglePlayer() {
+  if (!m_universeServer) {
+    auto server = UniverseServer::create(*m_root, m_root->toStoragePath("universe"), true);
+    if (!server)
+      return setError("Unable to start local server", ExceptionDiagnostic(server.error())).transform([] {
+        return false;
+      });
+    m_universeServer = std::move(*server);
+    auto started = m_universeServer->start();
+    if (!started)
+      return setError("Unable to start local server", ExceptionDiagnostic(started.error())).transform([] {
+        return false;
+      });
+  }
+  auto local = m_universeServer->addLocalClient();
+  if (!local)
+    return setError("Error connecting locally", ExceptionDiagnostic(local.error())).transform([] { return false; });
+  auto connected = m_universeClient->connect(std::move(*local), "", "");
+  if (!connected)
+    return setError("Error connecting locally", ExceptionDiagnostic(connected.error())).transform([] { return false; });
+  if (*connected)
+    return setError(strf("Error connecting locally: {}", **connected)).transform([] { return false; });
+  return true;
+}
+
+std::expected<void, StarException> ClientApplication::prepareSessionInterface() {
+  m_titleScreen->stopMusic();
+  if (auto restarted = m_universeClient->restartLua(); !restarted)
+    return restarted;
+  auto createdInterface = MainInterface::create(*m_guiContext, m_universeClient, m_worldPainter, m_cinematicOverlay);
+  if (!createdInterface)
+    return std::unexpected(std::move(createdInterface.error()));
+  m_mainInterface = std::move(*createdInterface);
+  if (auto installed = installLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(*m_mainInterface));
+      !installed)
+    return installed;
+  if (auto installed = installLuaCallbacks("chat", LuaBindings::makeChatCallbacks(*m_mainInterface, *m_universeClient));
+      !installed)
+    return installed;
+  if (auto installed =
+        installLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(*m_root, *m_universeClient));
+      !installed)
+    return installed;
+  if (auto installed =
+        installLuaCallbacks("team", LuaBindings::makeTeamClientCallbacks(*m_universeClient->teamClient()));
+      !installed)
+    return installed;
+  if (auto installed =
+        installLuaCallbacks("world", LuaBindings::makeWorldCallbacks(*m_root, *m_universeClient->worldClient()));
+      !installed)
+    return installed;
+  m_httpSession->setHttpTrustRequestCallback(
+    [session = std::weak_ptr<LuaHttpSession>(m_httpSession),
+     mainInterface = std::ref(*m_mainInterface)](String const& domain) -> std::expected<void, StarException> {
       auto& manager = mainInterface.get().paneManager();
       auto dialog = manager.registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
       if (!dialog)
         return std::unexpected(std::move(dialog.error()));
-      auto displayed = (*dialog)->displayRequest(domain, [session, domain](HttpTrustReply reply, bool) -> std::expected<void, StarException> {
-        if (auto owner = session.lock())
-          return owner->handleHttpTrustReply(domain, reply == HttpTrustReply::Allow);
-        return {};
-      });
+      auto displayed = (*dialog)->displayRequest(
+        domain, [session, domain](HttpTrustReply reply, bool) -> std::expected<void, StarException> {
+          if (auto owner = session.lock())
+            return owner->handleHttpTrustReply(domain, reply == HttpTrustReply::Allow);
+          return {};
+        });
       if (!displayed)
         return std::unexpected(std::move(displayed.error()));
-      auto shown = manager.displayRegisteredPane(MainInterfacePanes::HttpTrustDialog);
-      if (!shown)
-        return std::unexpected(std::move(shown.error()));
-      return {};
+      return manager.displayRegisteredPane(MainInterfacePanes::HttpTrustDialog).transform([](bool) {});
     });
-    if (auto r = m_mainInterface->displayDefaultPanes(); !r)
-      return std::unexpected(std::move(r.error()));
-    if (auto r = m_universeClient->startLuaScripts(); !r)
-      return std::unexpected(std::move(r.error()));
-    m_mainMixer->setWorldPainter(optionalRef(m_worldPainter));
-    if (auto renderer = Application::renderer()) {
-      if (auto r = m_worldPainter->renderInit(renderer); !r)
-        return std::unexpected(std::move(r.error()));
-      m_guiContext->setTileDrawer(m_worldPainter->tileDrawer());
+  if (auto displayed = m_mainInterface->displayDefaultPanes(); !displayed)
+    return displayed;
+  if (auto started = m_universeClient->startLuaScripts(); !started)
+    return started;
+  m_mainMixer->setWorldPainter(optionalRef(m_worldPainter));
+  if (auto renderer = Application::renderer()) {
+    if (auto initialized = m_worldPainter->renderInit(renderer); !initialized)
+      return initialized;
+    m_guiContext->setTileDrawer(m_worldPainter->tileDrawer());
+  }
+  return {};
+}
+
+std::expected<void, StarException> ClientApplication::recoverToTitle(std::expected<void, StarException> logged,
+                                                                     std::expected<void, StarException> displayed) {
+  // Always release live world/server resources, even if logging or the pane failed.
+  auto reset = m_titleScreen->resetState();
+  auto changed = changeState(MainAppState::Title);
+  std::optional<StarException> failure;
+  for (auto const& reference : std::array{std::ref(logged), std::ref(displayed), std::ref(reset), std::ref(changed)}) {
+    auto& result = reference.get();
+    if (!result) {
+      if (failure)
+        failure = failure->withContext(strf("Additional client recovery failure: {}", outputException(ExceptionDiagnostic(result.error()), true)));
+      else
+        failure = std::move(result.error());
     }
   }
+  if (failure)
+    return std::unexpected(std::move(*failure));
   return {};
 }
 
 std::expected<void, StarException> ClientApplication::setError(String const& error) {
   auto logged = m_root->logger().error("{}", error);
-  // Always restore the title and release live world/server resources, even if logging or the pane fails.
   auto displayed = m_errorScreen->setMessage(error);
-  auto reset = m_titleScreen->resetState();
-  auto changed = changeState(MainAppState::Title);
-  std::optional<StarException> failure;
-  for (auto const& reference : std::array{std::ref(logged), std::ref(displayed), std::ref(reset), std::ref(changed)}) {
-    auto& result = reference.get();
-    if (!result) {
-      if (failure)
-        failure = failure->withContext(strf("Additional client recovery failure: {}", outputException(ExceptionDiagnostic(result.error()), true)));
-      else
-        failure = std::move(result.error());
-    }
-  }
-  if (failure)
-    return std::unexpected(failure->withContext(error.utf8()));
-  return {};
+  auto recovered = recoverToTitle(std::move(logged), std::move(displayed));
+  if (!recovered)
+    return std::unexpected(recovered.error().withContext(error.utf8()));
+  return recovered;
 }
 
 std::expected<void, StarException> ClientApplication::setError(String const& error, ExceptionDiagnostic const& diagnostic) {
   auto logged = m_root->logger().error("{}\n{}", error, outputException(diagnostic, true));
   auto displayed = m_errorScreen->setMessage(strf("{}\n{}", error, outputException(diagnostic, false)));
-  auto reset = m_titleScreen->resetState();
-  auto changed = changeState(MainAppState::Title);
-  std::optional<StarException> failure;
-  for (auto const& reference : std::array{std::ref(logged), std::ref(displayed), std::ref(reset), std::ref(changed)}) {
-    auto& result = reference.get();
-    if (!result) {
-      if (failure)
-        failure = failure->withContext(strf("Additional client recovery failure: {}", outputException(ExceptionDiagnostic(result.error()), true)));
-      else
-        failure = std::move(result.error());
-    }
-  }
-  if (failure)
-    return std::unexpected(failure->withContext(strf("{}\n{}", error, outputException(diagnostic, true))));
-  return {};
+  auto recovered = recoverToTitle(std::move(logged), std::move(displayed));
+  if (!recovered)
+    return std::unexpected(recovered.error().withContext(strf("{}\n{}", error, outputException(diagnostic, true))));
+  return recovered;
 }
 
 std::expected<void, StarException> ClientApplication::loadMods() {

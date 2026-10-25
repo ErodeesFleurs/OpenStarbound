@@ -203,9 +203,7 @@ namespace AStar {
       if ((m_maxNodesToSearch && m_closedSet.size() > *m_maxNodesToSearch)
           || (m_openQueue.empty() && !m_earlyExploration)) {
         m_finished = true;
-        // Search failed. Either return the path to the closest node to the
-        // target,
-        // or return nothing.
+        // Search failed: retain the closest path only when requested.
         if (m_returnBestIfFailed) {
           double bestScore = std::numeric_limits<double>::max();
           std::optional<Node> bestNode;
@@ -214,10 +212,10 @@ namespace AStar {
             if (m_validateEnd && nodeMeta.cameFrom) {
               if (!*m_validateEnd)
                 return std::unexpected(StarException("AStar search requires a callable end validator"));
-              auto validEnd = (*m_validateEnd)(*nodeMeta.cameFrom);
-              if (!validEnd)
-                return std::unexpected(std::move(validEnd.error()));
-              if (!*validEnd)
+              auto endValidation = (*m_validateEnd)(*nodeMeta.cameFrom);
+              if (!endValidation)
+                return std::unexpected(std::move(endValidation.error()));
+              if (!*endValidation)
                 continue;
             }
             if (nodeMeta.score.hScore < bestScore) {
@@ -235,7 +233,7 @@ namespace AStar {
 
       if (maxExploreNodes) {
         if (*maxExploreNodes == 0)
-          return {};
+          return std::nullopt;
         --*maxExploreNodes;
       }
 
@@ -247,9 +245,7 @@ namespace AStar {
         currentScoredNode = m_openQueue.top();
         m_openQueue.pop();
         if (!m_openSet.remove(currentScoredNode.node))
-          // Duplicate entry in the queue due to this node's score being
-          // updated.
-          // Just ignore this node; we've already searched it.
+          // A score update left a duplicate queue entry; this node was searched.
           continue;
       }
 
@@ -258,10 +254,10 @@ namespace AStar {
 
       if (!m_goalReached)
         return std::unexpected(StarException("AStar search requires a goal callback"));
-      auto goalReached = m_goalReached(current);
-      if (!goalReached)
-        return std::unexpected(std::move(goalReached.error()));
-      if (*goalReached) {
+      auto goalDecision = m_goalReached(current);
+      if (!goalDecision)
+        return std::unexpected(std::move(goalDecision.error()));
+      if (*goalDecision) {
         m_finished = true;
         m_result = reconstructPath(current);
         return true;
@@ -272,9 +268,9 @@ namespace AStar {
       neighbors.clear();
       if (!m_getAdjacent)
         return std::unexpected(StarException("AStar search requires a neighbor callback"));
-      auto adjacent = m_getAdjacent(current, neighbors);
-      if (!adjacent)
-        return std::unexpected(std::move(adjacent.error()));
+      auto neighborsRead = m_getAdjacent(current, neighbors);
+      if (!neighborsRead)
+        return std::unexpected(std::move(neighborsRead.error()));
 
       for (Edge const& edge : neighbors) {
         if (m_closedSet.find(edge.target) != m_closedSet.end() || m_nodeMeta.contains(edge.target))
@@ -298,9 +294,8 @@ namespace AStar {
           if (m_maxFScore && targetScore.fScore > *m_maxFScore)
             continue;
 
-          // Early exploration optimization - no need to add things to the
-          // openQueue/openSet
-          // if they're at least as good as the current node.
+          // Explore immediately without queueing a node at least as good as
+          // the current one.
           if (targetScore.fScore <= currentScore.fScore) {
             if (!m_earlyExploration.has_value()) {
               m_earlyExploration = ScoredNode{targetScore, edge.target};
@@ -329,24 +324,24 @@ namespace AStar {
     auto started = start(std::move(startNode), std::move(goalNode));
     if (!started)
       return std::unexpected(std::move(started.error()));
-    auto explored = explore();
-    if (!explored)
-      return std::unexpected(std::move(explored.error()));
+    auto explorationStatus = explore();
+    if (!explorationStatus)
+      return std::unexpected(std::move(explorationStatus.error()));
     return std::cref(result());
   }
 
   template <class Edge, class Node>
   Path<Edge> Search<Edge, Node>::reconstructPath(Node currentNode) {
-    Path<Edge> res; // this will be backwards, we reverse it before returning it.
+    Path<Edge> path;
     while (m_nodeMeta.find(currentNode) != m_nodeMeta.end()) {
-      std::optional<Edge> currentEdge = m_nodeMeta[currentNode].cameFrom;
-      if (!currentEdge.has_value())
+      auto const& incomingEdge = m_nodeMeta[currentNode].cameFrom;
+      if (!incomingEdge)
         break;
-      res.append(*currentEdge);
-      currentNode = currentEdge->source;
+      path.append(*incomingEdge);
+      currentNode = incomingEdge->source;
     }
-    std::reverse(res.begin(), res.end());
-    return res;
+    std::reverse(path.begin(), path.end());
+    return path;
   }
 }
 

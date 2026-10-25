@@ -5,6 +5,8 @@ import star.output_proxy;
 
 namespace Star {
 
+// Recognize only the project's checked result, without changing payload or
+// reference semantics. Callable wrappers retain their own invocation policies.
 template <typename T>
 struct AlgorithmResultInfo {
   using Value = T;

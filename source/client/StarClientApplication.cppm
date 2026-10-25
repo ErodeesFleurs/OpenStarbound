@@ -34,6 +34,7 @@ class WorldPainter;
 class MainInterface;
 class UniverseServer;
 class LuaHttpSession;
+class LuaCallbacks;
 
 class ClientApplication : public Application {
 public:
@@ -95,6 +96,21 @@ private:
   [[nodiscard]] std::expected<void, StarException> renderReload();
 
   [[nodiscard]] std::expected<void, StarException> changeState(MainAppState newState);
+  [[nodiscard]] std::expected<void, StarException> prepareStateCinematic(MainAppState newState);
+  [[nodiscard]] std::expected<void, StarException> teardownTransition(MainAppState oldState, MainAppState newState);
+  [[nodiscard]] std::expected<void, StarException> prepareTitleServices();
+  void installPlayerReloadCallbacks();
+  [[nodiscard]] std::expected<void, StarException> prepareTitleForm();
+  [[nodiscard]] std::expected<void, StarException> startSession(MainAppState newState);
+  // False means setError completed recovery to the title, not a ready session.
+  [[nodiscard]] std::expected<bool, StarException> activateSessionPlayer();
+  [[nodiscard]] std::expected<bool, StarException> connectMultiPlayer();
+  [[nodiscard]] std::expected<bool, StarException> connectSinglePlayer();
+  [[nodiscard]] std::expected<void, StarException> prepareSessionInterface();
+  [[nodiscard]] std::expected<void, StarException>
+  installLuaCallbacks(String const& name, std::expected<LuaCallbacks, StarException> callbacks);
+  [[nodiscard]] std::expected<void, StarException> recoverToTitle(std::expected<void, StarException> logged,
+                                                                  std::expected<void, StarException> displayed);
   [[nodiscard]] std::expected<void, StarException> setError(String const& error);
   [[nodiscard]] std::expected<void, StarException> setError(String const& error, ExceptionDiagnostic const& e);
 

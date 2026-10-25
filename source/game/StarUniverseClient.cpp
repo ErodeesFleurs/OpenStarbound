@@ -748,9 +748,16 @@ std::expected<void, StarException> UniverseClient::update(float dt) {
       auto response = std::move(*responseResult);
       if (!response)
         return keeper->get().fail("Message not handled by universe");
-      if (std::holds_alternative<RpcPromise<Json>>(*response))
-        return keeper->get().chain(std::move(std::get<RpcPromise<Json>>(*response)));
-      return keeper->get().fulfill(std::get<Json>(*response));
+      struct DeliverResponseToKeeper {
+        RpcPromiseKeeper<Json>& keeper;
+
+        std::expected<void, StarException> operator()(RpcPromise<Json>& promise) const {
+          return keeper.chain(std::move(promise));
+        }
+
+        std::expected<void, StarException> operator()(Json& result) const { return keeper.fulfill(result); }
+      };
+      return std::visit(DeliverResponseToKeeper{keeper->get()}, *response);
     }();
     if (!delivered) {
       auto error = std::move(delivered.error());
@@ -1612,9 +1619,16 @@ std::expected<RpcPromise<Json>, StarException> UniverseClient::sendMainWorldMess
   auto response = std::move(*responseResult);
   if (!response)
     return RpcPromise<Json>::createFailed("Message not handled by world");
-  if (std::holds_alternative<RpcPromise<Json>>(*response))
-    return std::move(std::get<RpcPromise<Json>>(*response));
-  return RpcPromise<Json>::createFulfilled(std::get<Json>(*response));
+  struct ResponseToPromise {
+    std::expected<RpcPromise<Json>, StarException> operator()(RpcPromise<Json>& promise) const {
+      return std::move(promise);
+    }
+
+    std::expected<RpcPromise<Json>, StarException> operator()(Json& result) const {
+      return RpcPromise<Json>::createFulfilled(result);
+    }
+  };
+  return std::visit(ResponseToPromise{}, *response);
 }
 
 bool UniverseClient::paused() const {

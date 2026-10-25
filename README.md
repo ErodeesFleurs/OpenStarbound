@@ -160,8 +160,11 @@ Compare identical inputs/build flags on the same CPU, preferably A/B/B/A with re
 
 Project C++ uses named modules, `import std;` and `std::expected`, with RTTI and C++ exceptions disabled. Preserve the same static C++ runtime across dependencies.
 
+Name results by their domain meaning, not migration counters. Return identical result types directly; use short `transform`/`and_then` projections for pure conversions and explicit sequences for side effects. Preserve the first failure, partial mutations and codec field order. Keep module imports direct and minimal rather than adding umbrella exports.
+
 Containers own their storage; shared algorithms and codecs use `SequenceContainer`, `MapContainer` and `SetContainer` constraints. Use `keyView()`/`valueView()` for nonmutating map traversal and `std::span`/`std::mdspan` for contiguous borrowed data. Views must not outlive owners or invalidation; retain snapshots across mutation or callbacks, and materialize Lua arguments before invoking scripts.
 Reuse owned sequence buffers for nonfallible path conversion and sorting; keep resource-name ordering identical across network peers. Materialize serialized arrays only once. Lua profile export borrows call-tree entries while its detached engine remains alive.
+Resource reset defaults distinguish absolute values from fractions of the current maximum (`1.0` means full). Keep configured defaults unclamped; only actual values and locks enter disk/network state.
 
 `IODevice` byte transfers accept `std::span<char>`/`std::span<char const>`; pointer/count overloads are removed. Short-transfer, EOF, closed-device and absolute-position semantics are unchanged. JSON serialization borrows retained string storage and writes UTF-8 directly, preserving sink/encoding error order.
 
@@ -171,6 +174,7 @@ Prefer values or `unique_ptr` for exclusive ownership. Business code uses `T&`/`
 Client interface/configuration/helper objects and atlas management nodes are exclusive owners; preserve audio/HTTP/Lua shutdown barriers before releasing them. Root reloadable services, asset payloads, asynchronous completion state and escapable WirePane painter handles retain real shared ownership. Root staying alive does not pin a replaced service generation; `use_count()` is not a concurrency/exclusivity guarantee.
 
 Widget parents are borrowed; children and pane handles retain their actual owners. Escaping callbacks use weak owners, and serialized UI/Lua callbacks borrow the client interface behind its standard stop token. Terminal interface detachment requests cancellation and clears service bindings; ordinary pane dismissal must remain reversible.
+Client transitions and pane assembly use ordered domain phases; preserve service leases and teardown barriers across phase boundaries. Successful error recovery must stop session startup, not masquerade as a successful connection. Transport and message-response variants use exhaustive dispatch.
 
 Worker submissions retain concrete constrained callables until queue-boundary erasure; move-only and lvalue-callable work is supported. Client gameplay input snapshots held/edge actions only within a stable focus/configuration interval, never across frames. Radio scroll length is cached per message; bubble separation folds candidates without a filtered temporary list.
 
@@ -186,6 +190,14 @@ Hash text with explicit byte views. Literal adapters preserve first-NUL C-text s
 For clangd 23, run `nix develop -c bash scripts/ide/configure-clangd.sh`. Use `--experimental-modules-support`, `--compile-commands-dir=/absolute/path/to/OpenStarbound/build/clangd` and `--query-driver=/nix/store/*-xclang-wrapper-*/bin/clang++,/nix/store/*-xclang-wrapper-*/bin/clang`; set `LC_ALL=C` and `LANGUAGE=C`.
 
 Reuse compatible build trees for incremental work. Use separate native/cross checkouts and fresh trees after compiler, ABI or sanitizer changes; adjust parallelism to available memory.
+
+Changed-code checks use clang-format 21.1.8 with a 120-column limit, include `.cppm`, and reject newly added numbered result/condition temporaries. Only changed tracked C++ lines are formatted; the Linux x86-64 PR gate runs before dependency/compiler setup.
+
+```sh
+nix shell --inputs-from . nixpkgs#python3 nixpkgs#clang-tools --command scripts/format-source.sh --check
+```
+
+Use `--apply` to format or `--base <commit>` to compare a branch. This shell is for formatting only; project compilation still uses pinned xclang. Reuse already-imported result classification where semantics match; callable ownership/reference-adaptation policies remain independent.
 
 ## Community
 

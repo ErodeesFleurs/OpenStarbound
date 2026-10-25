@@ -2,10 +2,7 @@ import std;
 import star.format;
 import star.json;
 import star.string;
-import star.version;
 import star.configuration;
-import star.file;
-import star.logging;
 
 namespace Star {
 

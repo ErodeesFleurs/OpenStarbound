@@ -223,98 +223,71 @@ std::expected<std::shared_ptr<ActionBar>, StarException> ActionBar::create(GuiCo
 std::expected<void, StarException> ActionBar::initialize(std::shared_ptr<Player> player) {
   m_player = std::move(player);
 
-  auto assetsResult703 = context().root().assets();
-  if (!assetsResult703)
-    return std::unexpected(std::move(assetsResult703.error()));
-  auto assets = std::move(*assetsResult703);
+  auto assets = context().root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface/windowconfig/actionbar.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  m_config = std::move(*config);
 
-  auto jsonResult704 = assets->json("/interface/windowconfig/actionbar.config");
-  if (!jsonResult704)
-    return std::unexpected(std::move(jsonResult704.error()));
-  m_config = std::move(*jsonResult704);
-
-  auto getResult705 = m_config.get("actionBarSelectOffset");
-  if (!getResult705)
-    return std::unexpected(std::move(getResult705.error()));
-  auto jsonToVec2IResult706 = jsonToVec2I(std::move(*getResult705));
-  if (!jsonToVec2IResult706)
-    return std::unexpected(std::move(jsonToVec2IResult706.error()));
-  m_actionBarSelectOffset = std::move(*jsonToVec2IResult706);
-  auto getResult707 = m_config.get("sounds");
-  if (!getResult707)
-    return std::unexpected(std::move(getResult707.error()));
-  auto getResult708 = std::move(*getResult707).get("switch");
-  if (!getResult708)
-    return std::unexpected(std::move(getResult708.error()));
-  auto jsonToStringListResult709 = jsonToStringList(std::move(*getResult708));
-  if (!jsonToStringListResult709)
-    return std::unexpected(std::move(jsonToStringListResult709.error()));
-  m_switchSounds = std::move(*jsonToStringListResult709);
+  auto selectOffset = m_config.get("actionBarSelectOffset").and_then([](Json value) { return jsonToVec2I(value); });
+  if (!selectOffset)
+    return std::unexpected(std::move(selectOffset.error()));
+  m_actionBarSelectOffset = *selectOffset;
+  auto switchSounds =
+    m_config.get("sounds").and_then([](Json sounds) { return sounds.get("switch"); }).and_then([](Json sounds) {
+      return jsonToStringList(sounds);
+    });
+  if (!switchSounds)
+    return std::unexpected(std::move(switchSounds.error()));
+  m_switchSounds = std::move(*switchSounds);
 
   GuiReader reader(context());
-
   for (std::uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
-    reader.registerCallback(strf("customBar{}L", i + 1), std::bind(&ActionBar::customBarClick, this, i, true));
-    reader.registerCallback(strf("customBar{}R", i + 1), std::bind(&ActionBar::customBarClick, this, i, false));
+    reader.registerCallback(strf("customBar{}L", i + 1), [this, i](Widget&) { return customBarClick(i, true); });
+    reader.registerCallback(strf("customBar{}R", i + 1), [this, i](Widget&) { return customBarClick(i, false); });
+    reader.registerCallback(strf("customBar{}L.right", i + 1),
+                            [this, i](Widget&) { return customBarClickRight(i, true); });
+    reader.registerCallback(strf("customBar{}R.right", i + 1),
+                            [this, i](Widget&) { return customBarClickRight(i, false); });
+  }
+  for (std::uint8_t i = 0; i < EssentialItemCount; ++i)
+    reader.registerCallback(strf("essentialBar{}", i + 1), [this, i](Widget&) { return essentialBarClick(i); });
 
-    reader.registerCallback(strf("customBar{}L.right", i + 1), std::bind(&ActionBar::customBarClickRight, this, i, true));
-    reader.registerCallback(strf("customBar{}R.right", i + 1), std::bind(&ActionBar::customBarClickRight, this, i, false));
+  reader.registerCallback("pickupToActionBar", [this](Widget& widget) -> std::expected<void, StarException> {
+    auto button = rconvert<ButtonWidget>(widget);
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    auto configuration = context().root().configuration();
+    if (!configuration)
+      return std::unexpected(std::move(configuration.error()));
+    return (*configuration)->setPath("inventory.pickupToActionBar", button->get().isChecked());
+  });
+  reader.registerCallback("swapCustomBar", [this](Widget&) { return swapCustomBar(); });
+
+  auto configuration = context().root().configuration();
+  if (!configuration)
+    return std::unexpected(std::move(configuration.error()));
+  auto bottomBar =
+    (*configuration)->getPath("inventory.bottomActionBar").and_then([](Json value) { return value.optBool(); });
+  if (!bottomBar)
+    return std::unexpected(std::move(bottomBar.error()));
+  if (bottomBar->value_or(false)) {
+    auto bottomConfig = (*assets)->json("/interface/windowconfig/actionbarbottom.config");
+    if (!bottomConfig)
+      return std::unexpected(std::move(bottomConfig.error()));
+    m_config = jsonMerge(m_config, std::move(*bottomConfig));
   }
 
-  for (std::uint8_t i = 0; i < EssentialItemCount; ++i)
-    reader.registerCallback(strf("essentialBar{}", i + 1), std::bind(&ActionBar::essentialBarClick, this, i));
-
-  reader.registerCallback("pickupToActionBar", [this](Widget& widget)  -> std::expected<void, StarException> {
-      auto button = rconvert<ButtonWidget>(widget);
-      if (!button)
-        return std::unexpected(std::move(button.error()));
-      auto configurationResult710 = context().root().configuration();
-      if (!configurationResult710)
-        return std::unexpected(std::move(configurationResult710.error()));
-      auto setPathResult711 = std::move(*configurationResult710)->setPath("inventory.pickupToActionBar", button->get().isChecked());
-      if (!setPathResult711)
-        return std::unexpected(std::move(setPathResult711.error()));
-    
-  return {};
-});
-
-  reader.registerCallback("swapCustomBar", [this](Widget&)  -> std::expected<void, StarException> {
-      auto swapCustomBarResult712 = swapCustomBar();
-      if (!swapCustomBarResult712)
-        return std::unexpected(std::move(swapCustomBarResult712.error()));
-    
-  return {};
-});
-
-  auto configurationResult713 = context().root().configuration();
-  if (!configurationResult713)
-    return std::unexpected(std::move(configurationResult713.error()));
-  auto configuration = std::move(*configurationResult713);
-  auto getPathResult714 = configuration->getPath("inventory.bottomActionBar");
-  if (!getPathResult714)
-    return std::unexpected(std::move(getPathResult714.error()));
-  auto optBoolResult715 = std::move(*getPathResult714).optBool();
-  if (!optBoolResult715)
-    return std::unexpected(std::move(optBoolResult715.error()));
-  bool bottomBar = std::move(*optBoolResult715).value_or(false);
-  if (bottomBar)
-    {
-      auto jsonResult716 = assets->json("/interface/windowconfig/actionbarbottom.config");
-      if (!jsonResult716)
-        return std::unexpected(std::move(jsonResult716.error()));
-      m_config = jsonMerge(m_config, std::move(*jsonResult716));
-    }
-
-  auto getResult717 = m_config.get("paneLayout");
-  if (!getResult717)
-    return std::unexpected(std::move(getResult717.error()));
-  auto constructResult718 = reader.construct(std::move(*getResult717), *this);
-  if (!constructResult718)
-    return std::unexpected(std::move(constructResult718.error()));
-  if (bottomBar) {
+  auto layout = m_config.get("paneLayout");
+  if (!layout)
+    return std::unexpected(std::move(layout.error()));
+  if (auto constructed = reader.construct(*layout, *this); !constructed)
+    return std::unexpected(std::move(constructed.error()));
+  if (bottomBar->value_or(false)) {
     setAnchor(PaneAnchor::CenterBottom);
     m_anchorOffset[1] *= -1;
-
     if (!m_bgBody.empty())
       m_bgBody += "?flipy";
     if (!m_bgHeader.empty())
@@ -322,7 +295,6 @@ std::expected<void, StarException> ActionBar::initialize(std::shared_ptr<Player>
     if (!m_bgFooter.empty())
       m_bgFooter += "?flipy";
     std::swap(m_bgHeader, m_bgFooter);
-
     for (auto& child : m_members) {
       auto position = child->relativePosition();
       child->setPosition({position[0], m_bodySize[1] - position[1] - child->size()[1] + 1});
@@ -330,98 +302,67 @@ std::expected<void, StarException> ActionBar::initialize(std::shared_ptr<Player>
   }
 
   for (std::uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
-    auto fetchChildResult719 = fetchChild<ItemSlotWidget>(strf("customBar{}L", i + 1));
-    if (!fetchChildResult719)
-      return std::unexpected(std::move(fetchChildResult719.error()));
-    auto customBarLeft = std::move(*fetchChildResult719);
-    auto fetchChildResult720 = fetchChild<ItemSlotWidget>(strf("customBar{}R", i + 1));
-    if (!fetchChildResult720)
-      return std::unexpected(std::move(fetchChildResult720.error()));
-    auto customBarRight = std::move(*fetchChildResult720);
-    auto fetchChildResult721 = fetchChild<ImageWidget>(strf("customBar{}LOverlay", i + 1));
-    if (!fetchChildResult721)
-      return std::unexpected(std::move(fetchChildResult721.error()));
-    auto customBarLeftOverlay = std::move(*fetchChildResult721);
-    auto fetchChildResult722 = fetchChild<ImageWidget>(strf("customBar{}ROverlay", i + 1));
-    if (!fetchChildResult722)
-      return std::unexpected(std::move(fetchChildResult722.error()));
-    auto customBarRightOverlay = std::move(*fetchChildResult722);
-
-    auto getResult723 = m_config.get("countMidAnchor");
-    if (!getResult723)
-      return std::unexpected(std::move(getResult723.error()));
-    auto jsonToVec2FResult724 = jsonToVec2F(std::move(*getResult723));
-    if (!jsonToVec2FResult724)
-      return std::unexpected(std::move(jsonToVec2FResult724.error()));
-    TextPositioning countPosition = {std::move(*jsonToVec2FResult724), HorizontalAnchor::HMidAnchor};
-    customBarLeft->setCountPosition(countPosition);
-    customBarRight->setCountPosition(countPosition);
-
-    m_customBarWidgets.append({customBarLeft, customBarRight, customBarLeftOverlay, customBarRightOverlay});
+    auto left = fetchChild<ItemSlotWidget>(strf("customBar{}L", i + 1));
+    if (!left)
+      return std::unexpected(std::move(left.error()));
+    auto right = fetchChild<ItemSlotWidget>(strf("customBar{}R", i + 1));
+    if (!right)
+      return std::unexpected(std::move(right.error()));
+    auto leftOverlay = fetchChild<ImageWidget>(strf("customBar{}LOverlay", i + 1));
+    if (!leftOverlay)
+      return std::unexpected(std::move(leftOverlay.error()));
+    auto rightOverlay = fetchChild<ImageWidget>(strf("customBar{}ROverlay", i + 1));
+    if (!rightOverlay)
+      return std::unexpected(std::move(rightOverlay.error()));
+    auto countAnchor = m_config.get("countMidAnchor").and_then([](Json value) { return jsonToVec2F(value); });
+    if (!countAnchor)
+      return std::unexpected(std::move(countAnchor.error()));
+    TextPositioning countPosition = {*countAnchor, HorizontalAnchor::HMidAnchor};
+    (*left)->setCountPosition(countPosition);
+    (*right)->setCountPosition(countPosition);
+    m_customBarWidgets.append({*left, *right, *leftOverlay, *rightOverlay});
   }
-  auto fetchChildResult725 = fetchChild<ImageWidget>("customSelect");
-  if (!fetchChildResult725)
-    return std::unexpected(std::move(fetchChildResult725.error()));
-  m_customSelectedWidget = std::move(*fetchChildResult725);
+  auto customSelection = fetchChild<ImageWidget>("customSelect");
+  if (!customSelection)
+    return std::unexpected(std::move(customSelection.error()));
+  m_customSelectedWidget = std::move(*customSelection);
 
-  for (std::uint8_t i = 0; i < EssentialItemCount; ++i)
-    {
-      auto fetchChildResult726 = fetchChild<ItemSlotWidget>(strf("essentialBar{}", i + 1));
-      if (!fetchChildResult726)
-        return std::unexpected(std::move(fetchChildResult726.error()));
-      m_essentialBarWidgets.append(std::move(*fetchChildResult726));
-    }
-  auto fetchChildResult727 = fetchChild<ImageWidget>("essentialSelect");
-  if (!fetchChildResult727)
-    return std::unexpected(std::move(fetchChildResult727.error()));
-  m_essentialSelectedWidget = std::move(*fetchChildResult727);
-
-return {};
+  for (std::uint8_t i = 0; i < EssentialItemCount; ++i) {
+    auto slot = fetchChild<ItemSlotWidget>(strf("essentialBar{}", i + 1));
+    if (!slot)
+      return std::unexpected(std::move(slot.error()));
+    m_essentialBarWidgets.append(std::move(*slot));
+  }
+  auto essentialSelection = fetchChild<ImageWidget>("essentialSelect");
+  if (!essentialSelection)
+    return std::unexpected(std::move(essentialSelection.error()));
+  m_essentialSelectedWidget = std::move(*essentialSelection);
+  return {};
 }
 
 std::expected<std::shared_ptr<Pane>, StarException> ActionBar::createTooltip(Vec2I const& screenPosition) {
   std::shared_ptr<Item> item;
-  auto tryItemWidget = [&](std::shared_ptr<ItemSlotWidget> const& isw)  -> std::expected<void, StarException> {
-    if (isw->screenBoundRect().contains(screenPosition))
-      item = isw->item();
-  
-  return {};
-};
-
-  for (auto const& p : m_customBarWidgets) {
-    auto tryItemWidgetResult728 = tryItemWidget(p.left);
-    if (!tryItemWidgetResult728)
-      return std::unexpected(std::move(tryItemWidgetResult728.error()));
-    auto tryItemWidgetResult729 = tryItemWidget(p.right);
-    if (!tryItemWidgetResult729)
-      return std::unexpected(std::move(tryItemWidgetResult729.error()));
+  auto inspectSlot = [&](std::shared_ptr<ItemSlotWidget> const& widget) {
+    if (widget->screenBoundRect().contains(screenPosition))
+      item = widget->item();
+  };
+  for (auto const& widgets : m_customBarWidgets) {
+    inspectSlot(widgets.left);
+    inspectSlot(widgets.right);
   }
-
-  for (auto const& w : m_essentialBarWidgets)
-    {
-      auto tryItemWidgetResult730 = tryItemWidget(w);
-      if (!tryItemWidgetResult730)
-        return std::unexpected(std::move(tryItemWidgetResult730.error()));
-      
-    }
-
+  for (auto const& widget : m_essentialBarWidgets)
+    inspectSlot(widget);
   if (!item)
     return {};
-
-  auto buildItemTooltipResult731 = ItemTooltipBuilder::buildItemTooltip(context(), item, m_player);
-  if (!buildItemTooltipResult731)
-    return std::unexpected(std::move(buildItemTooltipResult731.error()));
-  return std::move(*buildItemTooltipResult731);
+  return ItemTooltipBuilder::buildItemTooltip(context(), item, m_player);
 }
 
 std::expected<bool, StarException> ActionBar::sendEvent(InputEvent const& event) {
-  {
-    auto sendEventResult732 = Pane::sendEvent(event);
-    if (!sendEventResult732)
-      return std::unexpected(std::move(sendEventResult732.error()));
-    if (std::move(*sendEventResult732))
-      return true;
-  }
+  auto handled = Pane::sendEvent(event);
+  if (!handled)
+    return std::unexpected(std::move(handled.error()));
+  if (*handled)
+    return true;
 
   auto inventory = m_player->inventory();
 
@@ -461,12 +402,11 @@ std::expected<bool, StarException> ActionBar::sendEvent(InputEvent const& event)
       abl = (CustomBarIndex)(index - EssentialItemCount);
 
     inventory->selectActionBarLocation(abl);
-    auto randFromResult733 = RandomSource(context().root().random().randu64()).randFrom(m_switchSounds);
-    if (!randFromResult733)
-      return std::unexpected(std::move(randFromResult733.error()));
-    auto playAudioResult734 = context().playAudio(randFromResult733->get());
-    if (!playAudioResult734)
-      return std::unexpected(std::move(playAudioResult734.error()));
+    auto switchSound = RandomSource(context().root().random().randu64()).randFrom(m_switchSounds);
+    if (!switchSound)
+      return std::unexpected(std::move(switchSound.error()));
+    if (auto played = context().playAudio(switchSound->get()); !played)
+      return std::unexpected(std::move(played.error()));
 
     return true;
   }
@@ -500,12 +440,8 @@ std::expected<bool, StarException> ActionBar::sendEvent(InputEvent const& event)
     }
 
     if (action == InterfaceAction::InterfaceChangeBarGroup)
-      {
-        auto swapCustomBarResult735 = swapCustomBar();
-        if (!swapCustomBarResult735)
-          return std::unexpected(std::move(swapCustomBarResult735.error()));
-        
-      }
+      if (auto swapped = swapCustomBar(); !swapped)
+        return std::unexpected(std::move(swapped.error()));
   }
 
   return false;
@@ -513,88 +449,61 @@ std::expected<bool, StarException> ActionBar::sendEvent(InputEvent const& event)
 
 std::expected<void, StarException> ActionBar::update(float) {
   auto inventory = m_player->inventory();
-  auto abl = inventory->selectedActionBarLocation();
-  if (std::holds_alternative<CustomBarIndex>(abl)) {
-    auto atResult736 = m_customBarWidgets.at(std::get<CustomBarIndex>(abl));
-    if (!atResult736)
-      return std::unexpected(std::move(atResult736.error()));
-    auto overlayLoc = atResult736->get().left->position();
-    m_customSelectedWidget->setPosition(overlayLoc + m_actionBarSelectOffset);
-    auto showResult737 = m_customSelectedWidget->show();
-    if (!showResult737)
-      return std::unexpected(std::move(showResult737.error()));
-    auto hideResult738 = m_essentialSelectedWidget->hide();
-    if (!hideResult738)
-      return std::unexpected(std::move(hideResult738.error()));
-  } else if (std::holds_alternative<EssentialItem>(abl)) {
-    auto atResult739 = m_essentialBarWidgets.at((std::size_t)std::get<EssentialItem>(abl));
-    if (!atResult739)
-      return std::unexpected(std::move(atResult739.error()));
-    auto overlayLoc = atResult739->get()->position();
-    m_essentialSelectedWidget->setPosition(overlayLoc + m_actionBarSelectOffset);
-    auto showResult740 = m_essentialSelectedWidget->show();
-    if (!showResult740)
-      return std::unexpected(std::move(showResult740.error()));
-    auto hideResult741 = m_customSelectedWidget->hide();
-    if (!hideResult741)
-      return std::unexpected(std::move(hideResult741.error()));
+  auto selection = inventory->selectedActionBarLocation();
+  if (std::holds_alternative<CustomBarIndex>(selection)) {
+    auto widgets = m_customBarWidgets.at(std::get<CustomBarIndex>(selection));
+    if (!widgets)
+      return std::unexpected(std::move(widgets.error()));
+    m_customSelectedWidget->setPosition(widgets->get().left->position() + m_actionBarSelectOffset);
+    if (auto shown = m_customSelectedWidget->show(); !shown)
+      return std::unexpected(std::move(shown.error()));
+    if (auto hidden = m_essentialSelectedWidget->hide(); !hidden)
+      return std::unexpected(std::move(hidden.error()));
+  } else if (std::holds_alternative<EssentialItem>(selection)) {
+    auto widget = m_essentialBarWidgets.at((std::size_t)std::get<EssentialItem>(selection));
+    if (!widget)
+      return std::unexpected(std::move(widget.error()));
+    m_essentialSelectedWidget->setPosition(widget->get()->position() + m_actionBarSelectOffset);
+    if (auto shown = m_essentialSelectedWidget->show(); !shown)
+      return std::unexpected(std::move(shown.error()));
+    if (auto hidden = m_customSelectedWidget->hide(); !hidden)
+      return std::unexpected(std::move(hidden.error()));
   } else {
-    auto hideResult742 = m_essentialSelectedWidget->hide();
-    if (!hideResult742)
-      return std::unexpected(std::move(hideResult742.error()));
-    auto hideResult743 = m_customSelectedWidget->hide();
-    if (!hideResult743)
-      return std::unexpected(std::move(hideResult743.error()));
+    if (auto hidden = m_essentialSelectedWidget->hide(); !hidden)
+      return std::unexpected(std::move(hidden.error()));
+    if (auto hidden = m_customSelectedWidget->hide(); !hidden)
+      return std::unexpected(std::move(hidden.error()));
   }
 
   for (std::uint8_t i = 0; i < EssentialItemCount; ++i)
     m_essentialBarWidgets[i]->setItem(inventory->essentialItem((EssentialItem)i));
 
   for (std::uint8_t i = 0; i < inventory->customBarIndexes(); ++i) {
-    // If there is no swap slot item being hovered over the custom bar, then
-    // simply set the left and right item widgets in the custom bar to the
-    // primary and secondary items.  If the primary item is two handed, the
-    // secondary item will be null and the primary hand item is drawn dimmed in
-    // the right hand slot.  If there IS a swap slot item being hovered over
-    // this spot in the custom bar, things are more complex.  Instead of
-    // showing what is currently in the custom bar, a preview of what WOULD
-    // happen when linking is shown, except both the left and right item
-    // widgets are always shown with no count and always dimmed to indicate
-    // that it is just a preview.
-
+    // Hovering a held item previews its link; two-handed items occupy both visible slots.
     std::shared_ptr<Item> primaryItem;
-    std::shared_ptr<Item> secondaryItem;
-
-    {
-      auto customBarPrimarySlotResult744 = inventory->customBarPrimarySlot(i);
-      if (!customBarPrimarySlotResult744)
-        return std::unexpected(std::move(customBarPrimarySlotResult744.error()));
-      if (auto slot = std::move(*customBarPrimarySlotResult744))
-        {
-          auto itemsAtResult745 = inventory->itemsAt(*slot);
-          if (!itemsAtResult745)
-            return std::unexpected(std::move(itemsAtResult745.error()));
-          primaryItem = std::move(*itemsAtResult745);
-        }
+    auto primarySlot = inventory->customBarPrimarySlot(i);
+    if (!primarySlot)
+      return std::unexpected(std::move(primarySlot.error()));
+    if (*primarySlot) {
+      auto item = inventory->itemsAt(**primarySlot);
+      if (!item)
+        return std::unexpected(std::move(item.error()));
+      primaryItem = std::move(*item);
     }
-
-    {
-      auto customBarSecondarySlotResult746 = inventory->customBarSecondarySlot(i);
-      if (!customBarSecondarySlotResult746)
-        return std::unexpected(std::move(customBarSecondarySlotResult746.error()));
-      if (auto slot = std::move(*customBarSecondarySlotResult746))
-        {
-          auto itemsAtResult747 = inventory->itemsAt(*slot);
-          if (!itemsAtResult747)
-            return std::unexpected(std::move(itemsAtResult747.error()));
-          secondaryItem = std::move(*itemsAtResult747);
-        }
+    std::shared_ptr<Item> secondaryItem;
+    auto secondarySlot = inventory->customBarSecondarySlot(i);
+    if (!secondarySlot)
+      return std::unexpected(std::move(secondarySlot.error()));
+    if (*secondarySlot) {
+      auto item = inventory->itemsAt(**secondarySlot);
+      if (!item)
+        return std::unexpected(std::move(item.error()));
+      secondaryItem = std::move(*item);
     }
 
     bool primaryPreview = false;
     bool secondaryPreview = false;
-
-    std::shared_ptr<Item> swapSlotItem = inventory->swapSlotItem();
+    auto swapSlotItem = inventory->swapSlotItem();
     if (swapSlotItem && m_customBarHover && m_customBarHover->first == i) {
       if (!m_customBarHover->second || swapSlotItem->twoHanded()) {
         if (!primaryItem && swapSlotItem == secondaryItem)
@@ -613,117 +522,72 @@ std::expected<void, StarException> ActionBar::update(float) {
 
     auto& widgets = m_customBarWidgets[i];
     widgets.left->setItem(primaryItem);
-    if (primaryPreview) {
-      widgets.left->showDurability(false);
-      widgets.left->showCount(false);
-      auto showResult748 = widgets.leftOverlay->show();
-      if (!showResult748)
-        return std::unexpected(std::move(showResult748.error()));
-    } else {
-      widgets.left->showDurability(true);
-      widgets.left->showCount(true);
-      auto hideResult749 = widgets.leftOverlay->hide();
-      if (!hideResult749)
-        return std::unexpected(std::move(hideResult749.error()));
-    }
+    widgets.left->showDurability(!primaryPreview);
+    widgets.left->showCount(!primaryPreview);
+    auto leftOverlay = primaryPreview ? widgets.leftOverlay->show() : widgets.leftOverlay->hide();
+    if (!leftOverlay)
+      return std::unexpected(std::move(leftOverlay.error()));
 
     if (itemSafeTwoHanded(primaryItem)) {
       widgets.right->setItem(primaryItem);
       widgets.right->showSecondaryIcon(true);
       widgets.right->showDurability(false);
       widgets.right->showCount(false);
-      if (primaryItem->hasSecondaryDrawables())
-        {
-          auto hideResult750 = widgets.rightOverlay->hide();
-          if (!hideResult750)
-            return std::unexpected(std::move(hideResult750.error()));
-          
-        }
-      else
-        {
-          auto showResult751 = widgets.rightOverlay->show();
-          if (!showResult751)
-            return std::unexpected(std::move(showResult751.error()));
-          
-        }
+      auto rightOverlay =
+        primaryItem->hasSecondaryDrawables() ? widgets.rightOverlay->hide() : widgets.rightOverlay->show();
+      if (!rightOverlay)
+        return std::unexpected(std::move(rightOverlay.error()));
     } else {
       widgets.right->showSecondaryIcon(false);
       widgets.right->setItem(secondaryItem);
-      if (secondaryPreview) {
-        widgets.right->showDurability(false);
-        widgets.right->showCount(false);
-        auto showResult752 = widgets.rightOverlay->show();
-        if (!showResult752)
-          return std::unexpected(std::move(showResult752.error()));
-      } else {
-        widgets.right->showDurability(true);
-        widgets.right->showCount(true);
-        auto hideResult753 = widgets.rightOverlay->hide();
-        if (!hideResult753)
-          return std::unexpected(std::move(hideResult753.error()));
-      }
+      widgets.right->showDurability(!secondaryPreview);
+      widgets.right->showCount(!secondaryPreview);
+      auto rightOverlay = secondaryPreview ? widgets.rightOverlay->show() : widgets.rightOverlay->hide();
+      if (!rightOverlay)
+        return std::unexpected(std::move(rightOverlay.error()));
     }
-
     widgets.left->setHighlightEnabled(!widgets.left->item() && swapSlotItem);
     widgets.right->setHighlightEnabled(!widgets.right->item() && swapSlotItem);
   }
 
-  auto fetchChildResult754 = fetchChild<ButtonWidget>("pickupToActionBar");
-  if (!fetchChildResult754)
-    return std::unexpected(std::move(fetchChildResult754.error()));
-  auto configurationResult755 = context().root().configuration();
-  if (!configurationResult755)
-    return std::unexpected(std::move(configurationResult755.error()));
-  auto getPathResult756 = std::move(*configurationResult755)->getPath("inventory.pickupToActionBar");
-  if (!getPathResult756)
-    return std::unexpected(std::move(getPathResult756.error()));
-  auto toBoolResult757 = std::move(*getPathResult756).toBool();
-  if (!toBoolResult757)
-    return std::unexpected(std::move(toBoolResult757.error()));
-  std::move(*fetchChildResult754)->setChecked(std::move(*toBoolResult757));
-  auto fetchChildResult758 = fetchChild<ButtonWidget>("swapCustomBar");
-  if (!fetchChildResult758)
-    return std::unexpected(std::move(fetchChildResult758.error()));
-  std::move(*fetchChildResult758)->setChecked(m_player->inventory()->customBarGroup() != 0);
-
-return {};
+  auto pickupButton = fetchChild<ButtonWidget>("pickupToActionBar");
+  if (!pickupButton)
+    return std::unexpected(std::move(pickupButton.error()));
+  auto configuration = context().root().configuration();
+  if (!configuration)
+    return std::unexpected(std::move(configuration.error()));
+  auto pickupEnabled =
+    (*configuration)->getPath("inventory.pickupToActionBar").and_then([](Json value) { return value.toBool(); });
+  if (!pickupEnabled)
+    return std::unexpected(std::move(pickupEnabled.error()));
+  (*pickupButton)->setChecked(*pickupEnabled);
+  auto swapButton = fetchChild<ButtonWidget>("swapCustomBar");
+  if (!swapButton)
+    return std::unexpected(std::move(swapButton.error()));
+  (*swapButton)->setChecked(m_player->inventory()->customBarGroup() != 0);
+  return {};
 }
 
 std::expected<std::optional<String>, StarException> ActionBar::cursorOverride(Vec2I const&) {
-  if (m_customBarHover && m_player->inventory()->swapSlotItem())
-    {
-      auto getStringResult759 = m_config.getString("linkCursor");
-      if (!getStringResult759)
-        return std::unexpected(std::move(getStringResult759.error()));
-      return std::move(*getStringResult759);
-    }
+  if (m_customBarHover && m_player->inventory()->swapSlotItem()) {
+    auto cursor = m_config.getString("linkCursor");
+    if (!cursor)
+      return std::unexpected(std::move(cursor.error()));
+    return std::move(*cursor);
+  }
   return {};
 }
 
 std::expected<void, StarException> ActionBar::customBarClick(std::uint8_t index, bool primary) {
   if (auto swapItem = m_player->inventory()->swapSlotItem()) {
-    if (primary || itemSafeTwoHanded(swapItem))
-      {
-        auto setCustomBarPrimarySlotResult760 = m_player->inventory()->setCustomBarPrimarySlot(index, InventorySlot(SwapSlot()));
-        if (!setCustomBarPrimarySlotResult760)
-          return std::unexpected(std::move(setCustomBarPrimarySlotResult760.error()));
-        
-      }
-    else
-      {
-        auto setCustomBarSecondarySlotResult761 = m_player->inventory()->setCustomBarSecondarySlot(index, InventorySlot(SwapSlot()));
-        if (!setCustomBarSecondarySlotResult761)
-          return std::unexpected(std::move(setCustomBarSecondarySlotResult761.error()));
-        
-      }
-
-    auto clearSwapResult762 = m_player->inventory()->clearSwap();
-    if (!clearSwapResult762)
-      return std::unexpected(std::move(clearSwapResult762.error()));
-
-  } else {
-    m_player->inventory()->selectActionBarLocation(index);
+    auto linked = primary || itemSafeTwoHanded(swapItem)
+      ? m_player->inventory()->setCustomBarPrimarySlot(index, InventorySlot(SwapSlot()))
+      : m_player->inventory()->setCustomBarSecondarySlot(index, InventorySlot(SwapSlot()));
+    if (!linked)
+      return std::unexpected(std::move(linked.error()));
+    return m_player->inventory()->clearSwap().transform([](bool) {});
   }
+  m_player->inventory()->selectActionBarLocation(index);
   return {};
 }
 
@@ -733,46 +597,27 @@ std::expected<void, StarException> ActionBar::customBarClickRight(std::uint8_t i
   auto inventoryDisplayed = m_paneManager->get().registeredPaneIsDisplayed(MainInterfacePanes::Inventory);
   if (!inventoryDisplayed)
     return std::unexpected(std::move(inventoryDisplayed.error()));
-  if (*inventoryDisplayed) {
-    auto inventory = m_player->inventory();
-    auto customBarPrimarySlotResult763 = inventory->customBarPrimarySlot(index);
-    if (!customBarPrimarySlotResult763)
-      return std::unexpected(std::move(customBarPrimarySlotResult763.error()));
-    auto primarySlot = std::move(*customBarPrimarySlotResult763);
-    auto customBarSecondarySlotResult764 = inventory->customBarSecondarySlot(index);
-    if (!customBarSecondarySlotResult764)
-      return std::unexpected(std::move(customBarSecondarySlotResult764.error()));
-    auto secondarySlot = std::move(*customBarSecondarySlotResult764);
+  if (!*inventoryDisplayed)
+    return {};
 
-    {
-      bool condition767 = static_cast<bool>(primary);
-      if (!condition767) {
-        bool condition766 = static_cast<bool>(primarySlot);
-        if (condition766) {
-          auto itemsAtResult765 = inventory->itemsAt(*primarySlot);
-          if (!itemsAtResult765)
-            return std::unexpected(std::move(itemsAtResult765.error()));
-          condition766 = static_cast<bool>(itemSafeTwoHanded(std::move(*itemsAtResult765)));
-        }
-        condition767 = static_cast<bool>((condition766));
-      }
-      if (condition767)
-        {
-          auto setCustomBarPrimarySlotResult768 = inventory->setCustomBarPrimarySlot(index, {});
-          if (!setCustomBarPrimarySlotResult768)
-            return std::unexpected(std::move(setCustomBarPrimarySlotResult768.error()));
-          
-        }
-      else
-        {
-          auto setCustomBarSecondarySlotResult769 = inventory->setCustomBarSecondarySlot(index, {});
-          if (!setCustomBarSecondarySlotResult769)
-            return std::unexpected(std::move(setCustomBarSecondarySlotResult769.error()));
-          
-        }
-    }
+  auto inventory = m_player->inventory();
+  auto primarySlot = inventory->customBarPrimarySlot(index);
+  if (!primarySlot)
+    return std::unexpected(std::move(primarySlot.error()));
+  // Validate both links before changing either, including the unused secondary value.
+  auto secondarySlot = inventory->customBarSecondarySlot(index);
+  if (!secondarySlot)
+    return std::unexpected(std::move(secondarySlot.error()));
+  bool clearPrimary = primary;
+  if (!clearPrimary && *primarySlot) {
+    auto item = inventory->itemsAt(**primarySlot);
+    if (!item)
+      return std::unexpected(std::move(item.error()));
+    clearPrimary = itemSafeTwoHanded(*item);
   }
-  return {};
+  if (clearPrimary)
+    return inventory->setCustomBarPrimarySlot(index, {});
+  return inventory->setCustomBarSecondarySlot(index, {});
 }
 
 std::expected<void, StarException> ActionBar::essentialBarClick(std::uint8_t index) {
