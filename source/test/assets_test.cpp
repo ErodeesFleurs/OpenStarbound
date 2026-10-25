@@ -444,6 +444,48 @@ const GameTestRegistration assetsShutdownWithQueuedImageDependencies("AssetsTest
   }
 });
 
+const GameTestRegistration
+  assetsQueuedLuaPatches("AssetsTest", "QueuedLuaPatchErrorsDoNotDiscardOtherResults", [](GameTest& fixture) {
+    auto directory = File::temporaryDirectory(fixture.root().random());
+    ASSERT_TRUE(directory);
+    auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directory)); });
+    ASSERT_TRUE(File::writeFile(String("[]"), File::relativeTo(*directory, "preload.config")));
+    ASSERT_TRUE(File::writeFile(String("{}"), File::relativeTo(*directory, "broken.json")));
+    ASSERT_TRUE(File::writeFile(String("function patch() error('deliberate patch failure') end"),
+                                File::relativeTo(*directory, "broken.json.patch.lua")));
+    StringList paths{"/broken.json"};
+    for (unsigned i = 0; i != 32; ++i) {
+      auto name = strf("queued{}.json", i);
+      ASSERT_TRUE(File::writeFile(String(strf("{{\"index\":{}}}", i)), File::relativeTo(*directory, name)));
+      ASSERT_TRUE(File::writeFile(String(R"lua(function patch(asset)
+      local garbage = {}
+      for i = 1, 128 do
+        local node = {value = i}
+        node.self = node
+        garbage[i] = node
+      end
+      asset.result = asset.index + garbage[128].value
+      return asset
+    end)lua"),
+                                  File::relativeTo(*directory, name + ".patch.lua")));
+      paths.append("/" + name);
+    }
+    Assets::Settings settings{};
+    settings.workerPoolSize = 4;
+    settings.assetTimeToLive = 600;
+    Logger logger;
+    auto assets = Assets::create(logger, fixture.root().random(), fixture.root().logMap(), settings, {*directory});
+    ASSERT_TRUE(assets);
+    ASSERT_TRUE((*assets)->queueJsons(paths));
+    EXPECT_FALSE((*assets)->json("/broken.json"));
+    for (unsigned i = 0; i != 32; ++i) {
+      auto result = (*assets)->json(paths[i + 1]);
+      ASSERT_TRUE(result);
+      EXPECT_EQ(*result, Json(JsonObject{{"index", i}, {"result", i + 128}}));
+    }
+    EXPECT_FALSE((*assets)->json("/broken.json"));
+  });
+
 const GameTestRegistration pngRoundTripPreservesPixelsAndMetadata("ImageTest", "PngRoundTripPreservesPixelsAndMetadata", [](GameTest& fixture) {
   for (auto format : {PixelFormat::RGB24, PixelFormat::RGBA32}) {
     auto image = pngTestImage(format);

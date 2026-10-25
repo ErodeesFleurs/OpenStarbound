@@ -250,6 +250,9 @@ protected:
   Root& root() const;
 
 private:
+  // The collision benchmark invokes the production solver without a substitute world.
+  friend struct MovementCollisionBenchmarkAccess;
+
   struct CollisionResult {
     Vec2F movement;
     Vec2F correction;
@@ -279,8 +282,9 @@ private:
   static CollisionKind maxOrNullCollision(CollisionKind a, CollisionKind b);
   static CollisionResult collisionMove(List<CollisionPoly>& collisionPolys, PolyF const& body, Vec2F const& movement,
       bool ignorePlatforms, bool enableSurfaceSlopeCorrection, float maximumCorrection, float maximumPlatformCorrection, Vec2F sortCenter, float dt);
-  static CollisionSeparation collisionSeparate(List<CollisionPoly>& collisionPolys, PolyF const& poly,
-      bool ignorePlatforms, float maximumPlatformCorrection, Vec2F const& sortCenter, bool upward, float separationTolerance);
+  static CollisionSeparation collisionSeparate(List<CollisionPoly> const& collisionPolys, PolyF const& poly,
+                                               bool ignorePlatforms, float maximumPlatformCorrection, bool upward,
+                                               float separationTolerance);
 
   [[nodiscard]] std::expected<void, StarException> updateParameters(MovementParameters parameters);
   void updatePositionInterpolators();

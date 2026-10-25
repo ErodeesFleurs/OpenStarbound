@@ -1,0 +1,323 @@
+#include <benchmark/benchmark.h>
+
+import std;
+import star.assets;
+import star.cellular_lighting;
+import star.format;
+import star.json;
+import star.liquid_types;
+import star.liquids_database;
+import star.material_database;
+import star.material_types;
+import star.performance_benchmarks;
+import star.rect;
+import star.root;
+import star.string;
+import star.tile_sector_array;
+import star.vector;
+import star.worker_pool;
+import star.world_client;
+import star.world_tiles;
+
+namespace Star {
+namespace {
+
+struct MaterialSample {
+  MaterialId id;
+  bool foregroundTransparent;
+  bool backgroundTransparent;
+};
+
+struct LightingFixture {
+  std::shared_ptr<MaterialDatabase const> materials;
+  std::shared_ptr<LiquidsDatabase const> liquids;
+  Json parameters;
+  ClientTileSectorArray tiles{{384, 192}};
+  WorkerPool callerWorkers{"Lighting benchmark caller"};
+  Vec3F environment{0.19f, 0.23f, 0.31f};
+  float underground = 42.0f;
+};
+
+std::expected<std::shared_ptr<LightingFixture>, StarException> prepareLighting(Root& root) {
+  auto materials = root.materialDatabase();
+  if (!materials)
+    return std::unexpected(std::move(materials.error()));
+  auto liquids = root.liquidsDatabase();
+  if (!liquids)
+    return std::unexpected(std::move(liquids.error()));
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto parameters = (*assets)->json("/lighting.config:lighting");
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  auto additive = parameters->set("pointAdditive", true);
+  if (!additive)
+    return std::unexpected(std::move(additive.error()));
+
+  auto fixture = std::make_shared<LightingFixture>();
+  fixture->materials = std::move(*materials);
+  fixture->liquids = std::move(*liquids);
+  fixture->parameters = std::move(*additive);
+  std::vector<MaterialSample> samples;
+  std::vector<MaterialSample> radiantSamples;
+  auto names = fixture->materials->materialNames();
+  std::ranges::sort(names);
+  for (auto const& name : names) {
+    auto id = fixture->materials->materialId(name);
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    if (!isRealMaterial(*id))
+      continue;
+    auto foreground = fixture->materials->foregroundLightTransparent(*id);
+    if (!foreground)
+      return std::unexpected(std::move(foreground.error()));
+    auto background = fixture->materials->backgroundLightTransparent(*id);
+    if (!background)
+      return std::unexpected(std::move(background.error()));
+    MaterialSample sample{*id, *foreground, *background};
+    samples.push_back(sample);
+    if (fixture->materials->radiantLight(*id, NoModId).max() > 0.0f)
+      radiantSamples.push_back(sample);
+  }
+  std::vector<ModId> mods{NoModId};
+  auto modNames = fixture->materials->modNames();
+  std::ranges::sort(modNames);
+  for (auto const& name : modNames) {
+    auto id = fixture->materials->modId(name);
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    mods.push_back(*id);
+  }
+  std::vector<LiquidId> liquidIds;
+  auto liquidNames = fixture->liquids->liquidNames();
+  std::ranges::sort(liquidNames);
+  for (auto const& name : liquidNames) {
+    auto id = fixture->liquids->liquidId(name);
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    if (*id != EmptyLiquidId)
+      liquidIds.push_back(*id);
+  }
+  if (samples.empty() || radiantSamples.empty() || liquidIds.empty())
+    return std::unexpected(StarException("Lighting benchmarks need real materials, radiant materials and liquids"));
+
+  auto sectors = fixture->tiles.validSectorsFor(RectI(0, 0, 384, 192));
+  if (!sectors)
+    return std::unexpected(std::move(sectors.error()));
+  for (auto const& sector : *sectors) {
+    // Keep genuine unloaded-sector gaps, including near the wrapping boundary.
+    if ((sector[0] * 3 + sector[1]) % 11 != 0)
+      fixture->tiles.loadDefaultSector(sector);
+  }
+  auto filled = fixture->tiles.tileEval(
+    RectI(0, 0, 384, 192), [&](Vec2I const& pos, ClientTile& tile) -> std::expected<void, StarException> {
+      unsigned key = static_cast<unsigned>(pos[0] * 73 + pos[1] * 151);
+      auto const& foreground =
+        key % 17 == 0 ? radiantSamples[(key / 17) % radiantSamples.size()] : samples[key % samples.size()];
+      auto const& background = samples[(key / 7) % samples.size()];
+      tile.foreground = key % 5 < 2 ? foreground.id : EmptyMaterialId;
+      tile.foregroundMod = key % 7 == 0 ? mods[(key / 7) % mods.size()] : NoModId;
+      tile.background = key % 3 == 0 ? background.id : EmptyMaterialId;
+      tile.backgroundMod = key % 13 == 0 ? mods[(key / 13) % mods.size()] : NoModId;
+      tile.foregroundLightTransparent = tile.foreground == EmptyMaterialId || foreground.foregroundTransparent;
+      tile.backgroundLightTransparent = tile.background == EmptyMaterialId || background.backgroundTransparent;
+      // Dynamic object collision can make otherwise transparent foreground opaque.
+      if (pos[0] % 31 == 0 && pos[1] % 13 != 0)
+        tile.foregroundLightTransparent = false;
+      tile.foregroundHueShift = static_cast<MaterialHue>(key);
+      tile.backgroundHueShift = static_cast<MaterialHue>(key / 3);
+      tile.liquid =
+        key % 9 == 0 ? LiquidLevel(liquidIds[(key / 9) % liquidIds.size()], (key % 5) * 0.25f) : LiquidLevel();
+      return {};
+    });
+  if (!filled)
+    return std::unexpected(std::move(filled.error()));
+  return fixture;
+}
+
+// Independent, serial tile-level oracle. In particular unloaded and vertically
+// out-of-world cells retain begin()'s zero values rather than gathering defaults.
+std::expected<void, StarException> gatherReference(LightingFixture const& fixture,
+                                                   CellularLightingCalculator& calculator) {
+  auto region = calculator.calculationRegion();
+  for (int x = region.xMin(); x < region.xMax(); ++x) {
+    for (int y = region.yMin(); y < region.yMax(); ++y) {
+      Vec2I position{x, y};
+      if (y < 0 || y >= static_cast<int>(fixture.tiles.size()[1]) || !fixture.tiles.tileLoaded(position))
+        continue;
+      auto const& tile = fixture.tiles.tile(position);
+      Vec3F light;
+      if (tile.foreground != EmptyMaterialId || tile.foregroundMod != NoModId)
+        light += fixture.materials->radiantLight(tile.foreground, tile.foregroundMod);
+      if (tile.liquid.liquid != EmptyLiquidId && tile.liquid.level != 0.0f)
+        light += fixture.liquids->radiantLight(tile.liquid);
+      if (tile.foregroundLightTransparent) {
+        if (tile.background != EmptyMaterialId || tile.backgroundMod != NoModId)
+          light += fixture.materials->radiantLight(tile.background, tile.backgroundMod);
+        if (tile.backgroundLightTransparent && y > fixture.underground)
+          light += fixture.environment;
+      }
+      calculator.setCellIndex(calculator.baseIndexFor(position), light, !tile.foregroundLightTransparent);
+    }
+  }
+  return {};
+}
+
+void addFixtureLights(CellularLightingCalculator& calculator, RectI const& query, int sourceKind) {
+  // Fractional positions, beams, hybrid lights and sources just outside the
+  // query exercise the production border/obstacle paths as well as interiors.
+  for (unsigned i = 0; i < 20; ++i) {
+    Vec2F position{query.xMin() - 2.25f + (i * 37 % (query.width() + 4)),
+                   query.yMin() - 1.5f + (i * 23 % (query.height() + 4))};
+    Vec3F color{0.21f + (i % 3) * 0.31f, 0.17f + (i % 5) * 0.14f, 0.11f + (i % 7) * 0.11f};
+    if (sourceKind == 0 || (sourceKind == 2 && i % 3 == 0))
+      calculator.addSpreadLight(position, color);
+    else if (sourceKind == 2 && i % 3 == 2) {
+      calculator.addSpreadLight(position, color * 0.85f);
+      calculator.addPointLight(position, color, 0.7f, i * 0.37f, 0.15f, true);
+    } else
+      calculator.addPointLight(position, color, i % 2 == 0 ? 0.0f : 1.4f, i * 0.37f, 0.1f);
+  }
+}
+
+bool sameLightmap(Lightmap const& output, std::vector<float> const& reference, RectI const& query) {
+  return output.size() == Vec2U(query.size()) && output.data().size() == reference.size()
+    && std::memcmp(output.data().data(), reference.data(), output.data().size_bytes()) == 0;
+}
+
+std::uint64_t lightDigest(std::span<float const> values) {
+  std::uint64_t digest = 14695981039346656037ull;
+  for (float value : values) {
+    for (auto byte : std::bit_cast<std::array<unsigned char, sizeof(float)>>(value)) {
+      digest ^= byte;
+      digest *= 1099511628211ull;
+    }
+  }
+  return digest;
+}
+
+enum class LightingWork { Gather, Propagate, GatherAndPropagate };
+
+void lightingBenchmark(benchmark::State& state, PerformanceBenchmarkSession& session, LightingFixture& fixture,
+                       bool monochrome, bool edge, int sourceKind, bool caller, LightingWork work) {
+  auto rootWorkers = session.root.workers();
+  if (!rootWorkers) {
+    session.fail(state, rootWorkers.error());
+    return;
+  }
+  WorkerPool& workers = caller ? fixture.callerWorkers : rootWorkers->get();
+  RectI query = RectI::withSize(edge ? Vec2I{-12, -6} : Vec2I{73, 51},
+                                Vec2I{static_cast<int>(state.range(0)), static_cast<int>(state.range(1))});
+  CellularLightingCalculator calculator(monochrome);
+  auto configured = calculator.setParameters(fixture.parameters);
+  if (!configured) {
+    session.fail(state, configured.error());
+    return;
+  }
+  calculator.begin(query);
+  auto referenceGathered = gatherReference(fixture, calculator);
+  if (!referenceGathered) {
+    session.fail(state, referenceGathered.error());
+    return;
+  }
+  addFixtureLights(calculator, query, sourceKind);
+  Lightmap output;
+  auto referenceCalculated = calculator.calculate(output);
+  if (!referenceCalculated) {
+    session.fail(state, referenceCalculated.error());
+    return;
+  }
+  std::vector<float> reference(output.data().begin(), output.data().end());
+  state.SetLabel(std::format("snapshot={:016x}; loaded={}; workers={}", lightDigest(reference),
+                             fixture.tiles.loadedSectorCount(), workers.getWorkerCount()));
+  auto gather = [&]() {
+    return gatherClientLightingTiles(calculator, fixture.tiles, workers, *fixture.materials, *fixture.liquids,
+                                     fixture.environment, fixture.underground);
+  };
+  auto calculationRegion = calculator.calculationRegion();
+  state.counters["gather_cells"] = calculationRegion.width() * calculationRegion.height();
+  for (auto _ : state) {
+    (void)_;
+    state.PauseTiming();
+    calculator.begin(query);
+    if (work == LightingWork::Propagate) {
+      auto gathered = gather();
+      if (!gathered) {
+        session.fail(state, gathered.error());
+        break;
+      }
+      addFixtureLights(calculator, query, sourceKind);
+    }
+    state.ResumeTiming();
+    if (work != LightingWork::Propagate) {
+      auto gathered = gather();
+      if (!gathered) {
+        session.fail(state, gathered.error());
+        break;
+      }
+    }
+    if (work == LightingWork::Gather)
+      state.PauseTiming();
+    if (work != LightingWork::Propagate)
+      addFixtureLights(calculator, query, sourceKind);
+    auto calculated = calculator.calculate(output);
+    if (!calculated) {
+      session.fail(state, calculated.error());
+      break;
+    }
+    if (work != LightingWork::Gather)
+      state.PauseTiming();
+    if (!sameLightmap(output, reference, query)) {
+      session.fail(state, "Lighting output differs from the serial tile snapshot");
+      break;
+    }
+    benchmark::DoNotOptimize(output.data().data());
+    state.ResumeTiming();
+  }
+  state.SetItemsProcessed(state.iterations() * query.width() * query.height());
+}
+
+}// namespace
+
+std::expected<void, StarException> registerLightingPerformanceBenchmarks(PerformanceBenchmarkSession& session) {
+  auto fixture = prepareLighting(session.root);
+  if (!fixture)
+    return std::unexpected(std::move(fixture.error()));
+  for (bool monochrome : {false, true}) {
+    for (bool edge : {false, true}) {
+      for (bool caller : {false, true}) {
+        auto name = std::format("Lighting/Gather/{}/{}/{}", monochrome ? "Monochrome" : "Colored",
+                                edge ? "WrapEdge" : "Interior", caller ? "Caller" : "Workers");
+        benchmark::RegisterBenchmark(name.c_str(),
+                                     [&, fixture = *fixture, monochrome, edge, caller](benchmark::State& state) {
+                                       lightingBenchmark(state, session, *fixture, monochrome, edge, 2, caller,
+                                                         LightingWork::Gather);
+                                     })
+          ->Args({32, 24})
+          ->Args({160, 96})
+          ->UseRealTime();
+      }
+      for (int sourceKind : {0, 1, 2}) {
+        for (LightingWork work : {LightingWork::Propagate, LightingWork::GatherAndPropagate}) {
+          auto name =
+            std::format("Lighting/{}/{}/{}/{}", work == LightingWork::Propagate ? "Propagate" : "GatherAndPropagate",
+                        monochrome ? "Monochrome" : "Colored", edge ? "WrapEdge" : "Interior",
+                        sourceKind == 0     ? "Spread"
+                          : sourceKind == 1 ? "Point"
+                                            : "Mixed");
+          benchmark::RegisterBenchmark(
+            name.c_str(),
+            [&, fixture = *fixture, monochrome, edge, sourceKind, work](benchmark::State& state) {
+              lightingBenchmark(state, session, *fixture, monochrome, edge, sourceKind, false, work);
+            })
+            ->Args({160, 96})
+            ->UseRealTime();
+        }
+      }
+    }
+  }
+  return {};
+}
+
+}// namespace Star

@@ -1081,6 +1081,11 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
   if (body.isNull())
     return {movement, Vec2F(), {}, false, false, Vec2F(1, 0), CollisionKind::None};
 
+  // The center and candidate positions stay fixed through all separation passes.
+  // Cache their distances, but not an unstable sort's permutation of equal keys.
+  for (auto& cp : collisionPolys)
+    cp.sortDistance = vmagSquared(cp.sortPosition - sortCenter);
+
   PolyF translatedBody = body;
   translatedBody.translate(movement);
   PolyF checkBody = translatedBody;
@@ -1089,10 +1094,33 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
   std::optional<MovingCollisionId> surfaceMovingCollisionId;
 
   CollisionSeparation separation = {};
+  bool firstSeparation = true;
+  std::optional<bool> repeatSort;
+  auto separate = [&](bool platformsIgnored, bool upward) {
+    bool sortRequired = std::exchange(firstSeparation, false);
+    if (!sortRequired) {
+      // Only inspect the sorted keys if a second pass is actually needed.
+      // Strictly increasing keys have exactly one order. Ties and unordered
+      // comparisons must retain every legacy sort, including its tie reshuffle:
+      // contact corrections, moving-platform identity and ground slope use it.
+      if (!repeatSort.has_value()) {
+        repeatSort = std::adjacent_find(collisionPolys.begin(), collisionPolys.end(),
+                                        [](auto const& a, auto const& b) { return !(a.sortDistance < b.sortDistance); })
+          != collisionPolys.end();
+      }
+      sortRequired = *repeatSort;
+    }
+    if (sortRequired) {
+      std::sort(collisionPolys.begin(), collisionPolys.end(),
+                [](auto const& a, auto const& b) { return a.sortDistance < b.sortDistance; });
+    }
+    return collisionSeparate(collisionPolys, checkBody, platformsIgnored, maximumPlatformCorrection, upward,
+                             separationTolerance);
+  };
 
   if (enableSurfaceSlopeCorrection) {
     // First try separating with our ground sliding cheat.
-    separation = collisionSeparate(collisionPolys, checkBody, ignorePlatforms, maximumPlatformCorrection, sortCenter, true, separationTolerance);
+    separation = separate(ignorePlatforms, true);
     totalCorrection += separation.correction;
     checkBody.translate(separation.correction);
     maxCollided = maxOrNullCollision(maxCollided, separation.collisionKind);
@@ -1119,8 +1147,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
     checkBody = translatedBody;
     totalCorrection = Vec2F();
     for (std::size_t i = 0; i < MaximumSeparationLoops; ++i) {
-      separation = collisionSeparate(collisionPolys, checkBody, ignorePlatforms,
-          maximumPlatformCorrection, sortCenter, false, separationTolerance);
+      separation = separate(ignorePlatforms, false);
       totalCorrection += separation.correction;
       checkBody.translate(separation.correction);
       maxCollided = maxOrNullCollision(maxCollided, separation.collisionKind);
@@ -1142,7 +1169,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
     checkBody = body;
     totalCorrection = -movement;
     for (std::size_t i = 0; i < MaximumSeparationLoops; ++i) {
-      separation = collisionSeparate(collisionPolys, checkBody, true, maximumPlatformCorrection, sortCenter, false, separationTolerance);
+      separation = separate(true, false);
       totalCorrection += separation.correction;
       checkBody.translate(separation.correction);
       maxCollided = maxOrNullCollision(maxCollided, separation.collisionKind);
@@ -1209,19 +1236,14 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
   }
 }
 
-MovementController::CollisionSeparation MovementController::collisionSeparate(List<CollisionPoly>& collisionPolys, PolyF const& poly,
-    bool ignorePlatforms, float maximumPlatformCorrection, Vec2F const& sortCenter, bool upward, float separationTolerance) {
+MovementController::CollisionSeparation MovementController::collisionSeparate(List<CollisionPoly> const& collisionPolys,
+                                                                              PolyF const& poly, bool ignorePlatforms,
+                                                                              float maximumPlatformCorrection,
+                                                                              bool upward, float separationTolerance) {
 
   CollisionSeparation separation = {};
   separation.collisionKind = CollisionKind::None;
   bool intersects = false;
-
-  for (auto& cp : collisionPolys)
-    cp.sortDistance = vmagSquared(cp.sortPosition - sortCenter);
-
-  std::sort(collisionPolys.begin(), collisionPolys.end(), [](auto const& a, auto const& b) {
-      return a.sortDistance < b.sortDistance;
-    });
 
   PolyF::IntersectResult intersectResult;
   PolyF correctedPoly = poly;

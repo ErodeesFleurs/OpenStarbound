@@ -862,6 +862,7 @@ public:
       m_renderTicker.reset();
       bool quit = false;
       while (true) {
+        auto frameStart = Time::monotonicMicroseconds();
         if (auto error = takeAudioError())
           return std::unexpected(std::move(*error));
         if (auto result = cleanup(); !result)
@@ -886,6 +887,7 @@ public:
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
 
+        auto updateStart = Time::monotonicMicroseconds();
         int updatesBehind = std::max<int>(std::round(m_updateTicker.ticksBehind()), 1);
         updatesBehind = std::min<int>(updatesBehind, m_maxFrameSkip + 1);
         for (int i = 0; i < updatesBehind; ++i) {
@@ -899,18 +901,23 @@ public:
           m_updateRate = m_updateTicker.tick();
         }
 
+        auto renderStart = Time::monotonicMicroseconds();
         if (auto result = m_renderer->startFrame(); !result)
           return std::unexpected(std::move(result.error()));
         if (auto result = m_application->render(); !result)
           return std::unexpected(std::move(result.error()));
+        auto finishStart = Time::monotonicMicroseconds();
         if (auto result = m_renderer->finishFrame(); !result)
           return std::unexpected(std::move(result.error()));
 
+        auto guiStart = Time::monotonicMicroseconds();
         ImGui::Render();
         imguiFrameActive = false;
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        auto presentStart = Time::monotonicMicroseconds();
         SDL_GL_SwapWindow(m_sdlWindow.get());
         m_renderRate = m_renderTicker.tick();
+        auto presentEnd = Time::monotonicMicroseconds();
 
         if (m_quitRequested) {
           if (auto result = m_application->logger().info("Application: quit requested"); !result)
@@ -927,12 +934,21 @@ public:
         if (quit) {
           if (auto result = m_application->logger().info("Application: quitting..."); !result)
             return std::unexpected(std::move(result.error()));
-          break;
         }
 
-        std::int64_t spareMilliseconds = std::round(m_updateTicker.spareTime() * 1000);
-        if (spareMilliseconds > 0)
-          Thread::sleepPrecise(spareMilliseconds);
+        auto throttleStart = Time::monotonicMicroseconds();
+        if (!quit) {
+          std::int64_t spareMilliseconds = std::round(m_updateTicker.spareTime() * 1000);
+          if (spareMilliseconds > 0)
+            Thread::sleepPrecise(spareMilliseconds);
+        }
+        auto frameEnd = Time::monotonicMicroseconds();
+        m_application->recordFrameTimings({updateStart - frameStart, renderStart - updateStart,
+                                           finishStart - renderStart, guiStart - finishStart, presentStart - guiStart,
+                                           presentEnd - presentStart, quit ? 0 : frameEnd - throttleStart,
+                                           frameEnd - frameStart, static_cast<unsigned>(updatesBehind)});
+        if (quit)
+          break;
       }
       return {};
     }();

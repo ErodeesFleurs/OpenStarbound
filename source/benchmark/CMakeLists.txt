@@ -63,6 +63,25 @@ target_link_libraries(ownership_benchmarks PRIVATE
   $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 set_target_properties(ownership_benchmarks PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
+add_library(star_performance_benchmark_support STATIC)
+target_sources(star_performance_benchmark_support PUBLIC FILE_SET CXX_MODULES
+  FILES StarPerformanceBenchmarks.cppm)
+target_link_libraries(star_performance_benchmark_support PUBLIC
+  benchmark::benchmark star_game_modules star_base_modules star_build_config)
+set_target_properties(star_performance_benchmark_support PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
+add_executable(performance_benchmarks performance_benchmarks.cpp
+  collision_performance.cpp lighting_performance.cpp network_performance.cpp
+  liquid_performance.cpp assets_performance.cpp
+  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>)
+target_include_directories(performance_benchmarks PRIVATE
+  ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_BASE_INCLUDES}
+  ${STAR_PLATFORM_INCLUDES} ${STAR_GAME_INCLUDES})
+target_link_libraries(performance_benchmarks PRIVATE
+  star_performance_benchmark_support star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
+set_target_properties(performance_benchmarks PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
 if(STAR_BUILD_GUI)
   add_executable(frontend_benchmarks frontend_benchmarks.cpp
     $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>)
@@ -75,4 +94,19 @@ if(STAR_BUILD_GUI)
     $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>
     $<LINK_ONLY:star_application_dependencies> $<LINK_ONLY:star_voice_dependencies>)
   set_target_properties(frontend_benchmarks PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
+  add_executable(tile_performance_benchmarks tile_performance.cpp
+    $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>)
+  if(STAR_ENABLE_DISCORD_INTEGRATION)
+    target_sources(tile_performance_benchmarks PRIVATE $<TARGET_OBJECTS:star_application>)
+  endif()
+  target_include_directories(tile_performance_benchmarks PRIVATE
+    ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES} ${STAR_GAME_INCLUDES} ${STAR_APPLICATION_INCLUDES}
+    ${STAR_RENDERING_INCLUDES} ${STAR_WINDOWING_INCLUDES} ${STAR_FRONTEND_INCLUDES})
+  target_link_libraries(tile_performance_benchmarks PRIVATE
+    star_performance_benchmark_support star_rendering_modules star_application_modules star_build_config
+    $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>
+    $<LINK_ONLY:star_application_dependencies> $<LINK_ONLY:star_voice_dependencies>)
+  set_target_properties(tile_performance_benchmarks PROPERTIES CXX_SCAN_FOR_MODULES ON)
 endif()

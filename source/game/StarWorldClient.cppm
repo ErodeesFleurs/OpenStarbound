@@ -128,6 +128,17 @@ class ClientContext;
 class PlayerStorage;
 struct OverheadBar;
 
+class MaterialDatabase;
+class LiquidsDatabase;
+
+// Gather a stable client tile snapshot into the calculator's current region.
+// The caller excludes tile mutation until all borrowed parallel work completes.
+// Wrapped tile images are retained even when the calculation spans a full world.
+[[nodiscard]] std::expected<void, StarException>
+gatherClientLightingTiles(CellularLightingCalculator& calculator, ClientTileSectorArray& tiles, WorkerPool& workers,
+                          MaterialDatabase const& materials, LiquidsDatabase const& liquids,
+                          Vec3F const& environmentLight, float undergroundLevel);
+
 struct WorldClientExceptionTag {
   static constexpr std::string_view name() { return "WorldClientException"; }
 };
@@ -542,21 +553,22 @@ export module star.world_client;
 
 export namespace Star {
   using ::Star::Biome;
-  using ::Star::WorldTemplate;
-  using ::Star::Sky;
-  using ::Star::Parallax;
-  using ::Star::LuaRoot;
-  using ::Star::DamageManager;
-  using ::Star::EntityMap;
-  using ::Star::ParticleManager;
-  using ::Star::WorldClient;
-  using ::Star::UniverseClient;
-  using ::Star::Player;
-  using ::Star::Item;
   using ::Star::CelestialLog;
   using ::Star::ClientContext;
-  using ::Star::PlayerStorage;
+  using ::Star::DamageManager;
+  using ::Star::EntityMap;
+  using ::Star::gatherClientLightingTiles;
+  using ::Star::Item;
+  using ::Star::LuaRoot;
   using ::Star::OverheadBar;
-  using ::Star::WorldClientExceptionTag;
+  using ::Star::Parallax;
+  using ::Star::ParticleManager;
+  using ::Star::Player;
+  using ::Star::PlayerStorage;
+  using ::Star::Sky;
+  using ::Star::UniverseClient;
+  using ::Star::WorldClient;
   using ::Star::WorldClientException;
+  using ::Star::WorldClientExceptionTag;
+  using ::Star::WorldTemplate;
 }

@@ -26,6 +26,18 @@ enum class WindowMode {
 
 class Application {
 public:
+  struct FrameTimings {
+    std::int64_t events = 0;
+    std::int64_t updates = 0;
+    std::int64_t render = 0;
+    std::int64_t finish = 0;
+    std::int64_t gui = 0;
+    std::int64_t present = 0;
+    std::int64_t throttle = 0;
+    std::int64_t total = 0;
+    unsigned updateCount = 0;
+  };
+
   virtual ~Application() = default;
 
   // Called once on application startup, before any other methods.
@@ -69,10 +81,15 @@ public:
 
   std::shared_ptr<ApplicationController> const& appController() const;
   std::shared_ptr<Renderer> const& renderer() const;
+  // Previous completed frame, in wall-clock microseconds. Render/present are
+  // CPU submission/wait durations, not GPU execution timers. Main thread only.
+  FrameTimings const& frameTimings() const { return m_frameTimings; }
+  void recordFrameTimings(FrameTimings timings) { m_frameTimings = timings; }
 
 private:
   std::shared_ptr<ApplicationController> m_appController;
   std::shared_ptr<Renderer> m_renderer;
+  FrameTimings m_frameTimings;
 };
 
 inline std::shared_ptr<ApplicationController> const& Application::appController() const {

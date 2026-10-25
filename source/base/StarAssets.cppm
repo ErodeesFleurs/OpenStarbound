@@ -320,6 +320,8 @@ public:
   void cleanup();
 
 private:
+  friend struct AssetWorkerBenchmarkAccess;
+
   explicit Assets(Logger& logger);
   [[nodiscard]] std::expected<void, StarException> initialize(RandomService& random, LogMap& logMap, Settings settings, StringList assetSources);
 

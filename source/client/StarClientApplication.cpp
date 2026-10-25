@@ -2260,6 +2260,15 @@ std::expected<void, StarException> ClientApplication::updateRunning(float dt) {
     float fps = app->renderFps();
     m_root->logMap().set("client_render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / app->renderFps()) * 1000.0f));
     m_root->logMap().set("client_update_rate", strf("{:4.2f}Hz", app->updateRate()));
+    if (m_mainInterface->isDebugDisplayed()) {
+      auto const& frame = frameTimings();
+      m_root->logMap().set("client_frame_previous",
+                           strf("{}us; events={}us; updates={}us/{}; throttle={}us", frame.total, frame.events,
+                                frame.updates, frame.updateCount, frame.throttle));
+      m_root->logMap().set("client_frame_submission",
+                           strf("render={}us; finish={}us; ImGui={}us; present={}us (CPU, not GPU)", frame.render,
+                                frame.finish, frame.gui, frame.present));
+    }
     m_root->logMap().set("player_pos", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->position()[0], m_player->position()[1]));
     m_root->logMap().set("player_vel", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->velocity()[0], m_player->velocity()[1]));
     m_root->logMap().set("player_aim", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", aimPosition[0], aimPosition[1]));

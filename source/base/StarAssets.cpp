@@ -1274,23 +1274,7 @@ std::expected<std::shared_ptr<Assets::AssetData>, StarException> Assets::getAsse
 
 std::expected<void, StarException> Assets::workerMain() {
   while (true) {
-    // Do not hold the asset mutex while collecting Lua garbage.
-    std::expected<void, StarException> collected;
-    {
-      std::unique_lock luaLocker(m_luaMutex, std::defer_lock);
-      lockWithDiagnostics(luaLocker);
-      collected = asRef<LuaEngine>(*m_luaEngine)->get().collectGarbage();
-    }
-
     std::unique_lock assetsLocker(m_assetsMutex);
-    if (!collected) {
-      if (!m_workerError)
-        m_workerError = collected.error();
-      m_stopThreads = true;
-      m_assetsQueued.notify_all();
-      m_assetsDone.notify_all();
-      return std::unexpected(std::move(collected.error()));
-    }
     if (m_stopThreads)
       break;
 
@@ -1308,8 +1292,34 @@ std::expected<void, StarException> Assets::workerMain() {
     }
 
     if (queuePriority != QueuePriority::Load && queuePriority != QueuePriority::PostProcess) {
-      // Nothing in the queue that needs work
-      m_assetsQueued.wait(assetsLocker);
+      // Automatic Lua GC remains enabled during load bursts. Collect fully
+      // only before sleeping, rather than rescanning every live patch context
+      // before every asset (including assets which do not execute Lua).
+      assetsLocker.unlock();
+      std::expected<void, StarException> collected;
+      {
+        std::unique_lock luaLocker(m_luaMutex, std::defer_lock);
+        lockWithDiagnostics(luaLocker);
+        collected = asRef<LuaEngine>(*m_luaEngine)->get().collectGarbage();
+      }
+      assetsLocker.lock();
+      if (!collected) {
+        if (!m_workerError)
+          m_workerError = collected.error();
+        m_stopThreads = true;
+        m_assetsQueued.notify_all();
+        m_assetsDone.notify_all();
+        return std::unexpected(std::move(collected.error()));
+      }
+      // Queueing and shutdown can happen while the asset mutex is released.
+      m_assetsQueued.wait(assetsLocker, [&] {
+        if (m_stopThreads)
+          return true;
+        for (auto const& entry : m_queue)
+          if (entry.second == QueuePriority::Load || entry.second == QueuePriority::PostProcess)
+            return true;
+        return false;
+      });
       continue;
     }
 

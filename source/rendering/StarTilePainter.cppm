@@ -119,6 +119,8 @@ public:
   void cleanup();
 
 private:
+  friend struct TilePainterPerformanceAccess;
+
   TilePainter(Root& root, std::shared_ptr<Renderer> renderer);
 
   typedef std::uint64_t QuadZLevel;
@@ -148,13 +150,15 @@ private:
   // RenderChunkSize results in the coordinate of the lower left most tile in
   // the render chunk.
 
-  [[nodiscard]] std::expected<ChunkHash, StarException> terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
-  [[nodiscard]] std::expected<ChunkHash, StarException> liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
+  [[nodiscard]] std::expected<std::pair<ChunkHash, ChunkHash>, StarException>
+  chunkHashes(WorldRenderData const& renderData, Vec2I chunkIndex);
 
   [[nodiscard]] std::expected<void, StarException> renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer);
 
-  [[nodiscard]] std::expected<std::shared_ptr<TerrainChunk const>, StarException> getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex);
-  [[nodiscard]] std::expected<std::shared_ptr<LiquidChunk const>, StarException> getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex);
+  [[nodiscard]] std::expected<std::shared_ptr<TerrainChunk const>, StarException>
+  getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex, ChunkHash hash);
+  [[nodiscard]] std::expected<std::shared_ptr<LiquidChunk const>, StarException>
+  getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex, ChunkHash hash);
 
   [[nodiscard]] std::expected<bool, StarException> produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
       TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData);
@@ -176,6 +180,8 @@ private:
 
   List<std::shared_ptr<TerrainChunk const>> m_pendingTerrainChunks;
   List<std::shared_ptr<LiquidChunk const>> m_pendingLiquidChunks;
+  List<std::shared_ptr<TerrainChunk const>> m_setupTerrainChunks;
+  List<std::shared_ptr<LiquidChunk const>> m_setupLiquidChunks;
 
   std::optional<Vec2F> m_lastCameraCenter;
   Vec2F m_cameraPan;

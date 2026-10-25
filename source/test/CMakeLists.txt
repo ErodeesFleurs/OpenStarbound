@@ -83,10 +83,12 @@ set (star_game_tests_SOURCES
       assets_test.cpp
       biome_placement_test.cpp
       function_test.cpp
+      lighting_test.cpp
       item_test.cpp
       liquid_types_test.cpp
       lua_component_test.cpp
       material_types_test.cpp
+      movement_controller_test.cpp
       root_test.cpp
       server_test.cpp
       spawn_test.cpp

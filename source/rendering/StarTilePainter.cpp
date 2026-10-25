@@ -103,8 +103,9 @@ TilePainter::TilePainter(Root& root, std::shared_ptr<Renderer> renderer)
     m_terrainChunkCache(root.random()),
     m_liquidChunkCache(root.random()) {
   constexpr std::size_t hashWidth = RenderChunkSize + 2 * MaterialRenderProfileMaxNeighborDistance;
-  m_terrainHashBuffer.reserve(hashWidth * hashWidth * offsetof(RenderTile, liquidId));
-  m_liquidHashBuffer.reserve(hashWidth * hashWidth * (sizeof(RenderTile::liquidId) + sizeof(RenderTile::liquidLevel)));
+  m_terrainHashBuffer.resize(hashWidth * hashWidth * offsetof(RenderTile, liquidId));
+  m_liquidHashBuffer.resize(hashWidth * hashWidth
+                            * (sizeof(RenderTile::liquidId) + sizeof(RenderTile::liquidLevel) + 1));
 }
 
 std::expected<std::shared_ptr<TilePainter>, StarException> TilePainter::create(Root& root, std::shared_ptr<Renderer> renderer) {
@@ -206,26 +207,36 @@ std::expected<void, StarException> TilePainter::setup(WorldCamera const& camera,
   RectI chunkRange = RectI::integral(RectF(camera.worldTileRect().padded(1)).scaled(1.0f / RenderChunkSize));
 
   std::size_t chunks = chunkRange.volume();
-  List<std::shared_ptr<TerrainChunk const>> terrainChunks(chunks);
-  List<std::shared_ptr<LiquidChunk const>> liquidChunks(chunks);
+  m_setupTerrainChunks.resize(chunks);
+  m_setupLiquidChunks.resize(chunks);
 
-  std::size_t i = 0;
-  for (int x = chunkRange.xMin(); x < chunkRange.xMax(); ++x) {
-    for (int y = chunkRange.yMin(); y < chunkRange.yMax(); ++y) {
-      std::size_t index = i++;
-      auto terrain = getTerrainChunk(renderData, {x, y});
-      if (!terrain)
-        return std::unexpected(std::move(terrain.error()));
-      auto liquid = getLiquidChunk(renderData, {x, y});
-      if (!liquid)
-        return std::unexpected(std::move(liquid.error()));
-      terrainChunks[index] = std::move(*terrain);
-      liquidChunks[index] = std::move(*liquid);
+  // Keep the previous pending frame intact on failure, but retain the staging
+  // storage between frames instead of allocating two lists on every cache hit.
+  auto prepared = [&]() -> std::expected<void, StarException> {
+    std::size_t i = 0;
+    for (int x = chunkRange.xMin(); x < chunkRange.xMax(); ++x) {
+      for (int y = chunkRange.yMin(); y < chunkRange.yMax(); ++y) {
+        std::size_t index = i++;
+        auto hashes = chunkHashes(renderData, {x, y});
+        if (!hashes)
+          return std::unexpected(std::move(hashes.error()));
+        auto terrain = getTerrainChunk(renderData, {x, y}, hashes->first);
+        if (!terrain)
+          return std::unexpected(std::move(terrain.error()));
+        auto liquid = getLiquidChunk(renderData, {x, y}, hashes->second);
+        if (!liquid)
+          return std::unexpected(std::move(liquid.error()));
+        m_setupTerrainChunks[index] = std::move(*terrain);
+        m_setupLiquidChunks[index] = std::move(*liquid);
+      }
     }
-  }
-  m_pendingTerrainChunks = std::move(terrainChunks);
-  m_pendingLiquidChunks = std::move(liquidChunks);
-  return {};
+    m_pendingTerrainChunks.swap(m_setupTerrainChunks);
+    m_pendingLiquidChunks.swap(m_setupLiquidChunks);
+    return {};
+  }();
+  m_setupTerrainChunks.clear();
+  m_setupLiquidChunks.clear();
+  return prepared;
 }
 
 std::expected<void, StarException> TilePainter::renderBackground(WorldCamera const& camera) {
@@ -273,37 +284,31 @@ std::size_t TilePainter::TextureKeyHash::operator()(TextureKey const& key) const
     return hashOf(static_cast<std::uint8_t>(key.index()), std::get<AssetTextureKey>(key));
 }
 
-std::expected<TilePainter::ChunkHash, StarException> TilePainter::terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
-  auto& buffer = m_terrainHashBuffer;
-  buffer.clear();
+std::expected<std::pair<TilePainter::ChunkHash, TilePainter::ChunkHash>, StarException>
+TilePainter::chunkHashes(WorldRenderData const& renderData, Vec2I chunkIndex) {
+  constexpr std::size_t terrainBytes = offsetof(RenderTile, liquidId);
+  constexpr std::size_t liquidBytes = sizeof(RenderTile::liquidId) + sizeof(RenderTile::liquidLevel);
+  auto terrainBuffer = m_terrainHashBuffer.span();
+  auto liquidBuffer = m_liquidHashBuffer.span();
+  std::size_t terrainOffset = 0;
+  std::size_t liquidOffset = 0;
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
-  auto traversed = forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) -> std::expected<void, StarException> {
-    //renderTile.hashPushTerrain(hasher);
-    buffer.append(std::span<char const>(reinterpret_cast<char const*>(&renderTile), offsetof(RenderTile, liquidId)));
-    return {};
-  });
+  auto traversed = forEachRenderTile(
+    renderData, tileRange, [&](Vec2I const&, RenderTile const& tile) -> std::expected<void, StarException> {
+      // Preserve terrain bytes and traversal order exactly. Both fixed-capacity
+      // scratch buffers are sized at construction; no per-tile growth is needed.
+      std::memcpy(terrainBuffer.subspan(terrainOffset, terrainBytes).data(), &tile, terrainBytes);
+      terrainOffset += terrainBytes;
+      std::memcpy(liquidBuffer.subspan(liquidOffset, liquidBytes).data(), &tile.liquidId, liquidBytes);
+      liquidOffset += liquidBytes;
+      // Liquid geometry depends on whether the tile immediately below is empty.
+      // Include only that foreground property, not material identity/mod/hue.
+      liquidBuffer[liquidOffset++] = tile.foreground == EmptyMaterialId;
+      return {};
+    });
   if (!traversed)
     return std::unexpected(std::move(traversed.error()));
-
-  //return hasher.digest();
-  return xxHash3(buffer);
-}
-
-std::expected<TilePainter::ChunkHash, StarException> TilePainter::liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
-  auto& buffer = m_liquidHashBuffer;
-  RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
-  buffer.clear();
-
-  auto traversed = forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) -> std::expected<void, StarException> {
-    //renderTile.hashPushLiquid(hasher);
-    buffer.append(std::span<char const>(reinterpret_cast<char const*>(&renderTile.liquidId), sizeof(renderTile.liquidId) + sizeof(renderTile.liquidLevel)));
-    return {};
-  });
-  if (!traversed)
-    return std::unexpected(std::move(traversed.error()));
-
-  //return hasher.digest();
-  return xxHash3(buffer);
+  return std::pair{xxHash3(terrainBuffer.first(terrainOffset)), xxHash3(liquidBuffer.first(liquidOffset))};
 }
 
 std::expected<void, StarException> TilePainter::renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer) {
@@ -331,11 +336,9 @@ std::expected<void, StarException> TilePainter::renderTerrainChunks(WorldCamera 
   return m_renderer->flush();
 }
 
-std::expected<std::shared_ptr<TilePainter::TerrainChunk const>, StarException> TilePainter::getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex) {
-  auto hash = terrainChunkHash(renderData, chunkIndex);
-  if (!hash)
-    return std::unexpected(std::move(hash.error()));
-  std::pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, *hash};
+std::expected<std::shared_ptr<TilePainter::TerrainChunk const>, StarException>
+TilePainter::getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex, ChunkHash hash) {
+  std::pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, hash};
   auto cached = m_terrainChunkCache.get(chunkKey, [&](auto const&) -> std::expected<std::shared_ptr<TerrainChunk const>, StarException> {
       HashMap<TerrainLayer, HashMap<QuadZLevel, List<RenderPrimitive>>> terrainPrimitives;
 
@@ -377,11 +380,9 @@ std::expected<std::shared_ptr<TilePainter::TerrainChunk const>, StarException> T
   return cached->get();
 }
 
-std::expected<std::shared_ptr<TilePainter::LiquidChunk const>, StarException> TilePainter::getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex) {
-  auto hash = liquidChunkHash(renderData, chunkIndex);
-  if (!hash)
-    return std::unexpected(std::move(hash.error()));
-  std::pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, *hash};
+std::expected<std::shared_ptr<TilePainter::LiquidChunk const>, StarException>
+TilePainter::getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex, ChunkHash hash) {
+  std::pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, hash};
   auto cached = m_liquidChunkCache.get(chunkKey, [&](auto const&) -> std::expected<std::shared_ptr<LiquidChunk const>, StarException> {
       HashMap<LiquidId, List<RenderPrimitive>> liquidPrimitives;
 

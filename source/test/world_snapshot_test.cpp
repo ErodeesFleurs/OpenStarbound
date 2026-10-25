@@ -118,7 +118,7 @@ import star.projectile_database;
 import star.material_database;
 import star.world_structure;
 import star.world_template;
-
+import star.entity_factory;
 
 #include "gtest/gtest.h"
 
@@ -554,3 +554,147 @@ const GameTestRegistration firstContactTriggersCollisionActionOnce("ProjectileAc
   }
   EXPECT_EQ(world->material(ground, TileLayer::Foreground), *dirt);
 });
+
+const GameTestRegistration clientSnapshotsRetainPresenceAcrossCameraTransitions(
+  "WorldSnapshot", "ClientSnapshotsRetainPresenceAcrossCameraTransitions", [](GameTest& fixture) {
+    auto& root = fixture.root();
+    auto storage = File::ephemeralFile(root.random());
+    ASSERT_TRUE(storage) << storage.error().what();
+    auto created = WorldServer::create(root, Vec2U(2048, 2048), *storage);
+    ASSERT_TRUE(created) << created.error().what();
+    auto world = *created;
+    auto close = finally([&] { EXPECT_TRUE(world->close()); });
+    world->setSpawningEnabled(false);
+    ASSERT_TRUE(world->setFidelity(WorldServerFidelity::High));
+    ASSERT_TRUE(world->generateRegion(RectI(896, 896, 1728, 1152)));
+    auto database = root.projectileDatabase();
+    ASSERT_TRUE(database) << database.error().what();
+    auto parameters = Json::parse(R"({
+    "timeToLive":3600,"power":0,"onlyHitTerrain":true,
+    "scripts":[],"periodicActions":[],"actionOnCollide":[],
+    "actionOnReap":[],"actionOnHit":[],"actionOnTimeout":[],
+    "movementSettings":{"collisionEnabled":false,"gravityEnabled":false}
+  })");
+    ASSERT_TRUE(parameters) << parameters.error().what();
+    auto anchor = (*database)->createProjectile("grenade", *parameters);
+    ASSERT_TRUE(anchor) << anchor.error().what();
+    (*anchor)->setInitialPosition(Vec2F(1000, 1000));
+    (*anchor)->setInitialVelocity(Vec2F());
+    ASSERT_TRUE(world->addEntity(*anchor));
+    auto target = (*database)->createProjectile("grenade", *parameters);
+    ASSERT_TRUE(target) << target.error().what();
+    (*target)->setInitialPosition(Vec2F(1100, 1000));
+    (*target)->setInitialVelocity(Vec2F());
+    ASSERT_TRUE(world->addEntity(*target));
+    auto factory = root.entityFactory();
+    ASSERT_TRUE(factory) << factory.error().what();
+    std::array<std::shared_ptr<WorldClientState>, 2> states;
+    for (unsigned i = 0; i < states.size(); ++i) {
+      auto state = WorldClientState::create(root);
+      ASSERT_TRUE(state) << state.error().what();
+      states[i] = *state;
+      NetCompatibilityRules rules(i ? LegacyVersion : OpenProtocolVersion);
+      states[i]->setNetCompatibilityRules(rules);
+      states[i]->setClientPresenceEntities({(*anchor)->entityId()});
+      auto added =
+        world->addClient(MinClientConnectionId + i, SpawnTargetPosition(Vec2F(1024, 1024)), true, false, rules);
+      ASSERT_TRUE(added) << added.error().what();
+      ASSERT_TRUE(*added);
+      ASSERT_TRUE(
+        world->handleIncomingPackets(MinClientConnectionId + i, {std::make_shared<WorldStartAcknowledgePacket>()}));
+    }
+    std::array<HashMap<EntityId, std::shared_ptr<Entity>>, 2> visible;
+    for (unsigned phase = 0; phase < 3; ++phase) {
+      for (unsigned i = 0; i < states.size(); ++i) {
+        // The presence region remains near the anchor while the camera crosses
+        // sectors. Re-entering must create the target again, not reuse a delta
+        // version retained from the old visibility set.
+        states[i]->setWindow(phase == 1 ? RectI(1472, 960, 1664, 1088) : RectI(960, 960, 1152, 1088));
+        auto delta = states[i]->writeDelta();
+        ASSERT_TRUE(delta) << delta.error().what();
+        ASSERT_TRUE(world->handleIncomingPackets(MinClientConnectionId + i,
+                                                 {std::make_shared<WorldClientStateUpdatePacket>(*delta)}));
+      }
+      ASSERT_TRUE(world->update(1.0f / 60.0f));
+      for (unsigned i = 0; i < states.size(); ++i) {
+        NetCompatibilityRules rules(i ? LegacyVersion : OpenProtocolVersion);
+        auto packets = world->getOutgoingPackets(MinClientConnectionId + i);
+        ASSERT_TRUE(packets) << packets.error().what();
+        bool updateSetSeen = false;
+        bool stepSeen = false;
+        bool targetCreated = false;
+        bool targetDestroyed = false;
+        for (auto const& original : *packets) {
+          DataStreamBuffer wire;
+          wire.setStreamCompatibilityVersion(rules);
+          ASSERT_TRUE(original->write(wire, rules));
+          auto decoded = createPacket(original->type());
+          ASSERT_TRUE(decoded) << decoded.error().what();
+          ASSERT_TRUE(wire.seek(0));
+          ASSERT_TRUE((*decoded)->read(wire, rules));
+          auto atEnd = wire.atEnd();
+          ASSERT_TRUE(atEnd);
+          EXPECT_TRUE(*atEnd);
+          DataStreamBuffer encodedAgain;
+          encodedAgain.setStreamCompatibilityVersion(rules);
+          ASSERT_TRUE((*decoded)->write(encodedAgain, rules));
+          if (auto expected = as<WorldStartPacket>(original)) {
+            auto actual = as<WorldStartPacket>(*decoded);
+            ASSERT_TRUE(actual);
+            EXPECT_EQ(std::tie(expected->templateData, expected->skyData, expected->weatherData, expected->playerStart,
+                               expected->playerRespawn, expected->respawnInWorld, expected->worldProperties,
+                               expected->dungeonIdGravity, expected->dungeonIdBreathable, expected->protectedDungeonIds,
+                               expected->clientId, expected->localInterpolationMode),
+                      std::tie(actual->templateData, actual->skyData, actual->weatherData, actual->playerStart,
+                               actual->playerRespawn, actual->respawnInWorld, actual->worldProperties,
+                               actual->dungeonIdGravity, actual->dungeonIdBreathable, actual->protectedDungeonIds,
+                               actual->clientId, actual->localInterpolationMode));
+          } else if (auto expected = as<CentralStructureUpdatePacket>(original)) {
+            auto actual = as<CentralStructureUpdatePacket>(*decoded);
+            ASSERT_TRUE(actual);
+            EXPECT_EQ(expected->structureData, actual->structureData);
+          } else if (auto expected = as<WorldLayoutUpdatePacket>(original)) {
+            auto actual = as<WorldLayoutUpdatePacket>(*decoded);
+            ASSERT_TRUE(actual);
+            EXPECT_EQ(expected->layoutData, actual->layoutData);
+          } else if (auto expected = as<EntityUpdateSetPacket>(original)) {
+            auto actual = as<EntityUpdateSetPacket>(*decoded);
+            ASSERT_TRUE(actual);
+            EXPECT_EQ(expected->forConnection, actual->forConnection);
+            EXPECT_EQ(expected->deltas, actual->deltas);
+          } else {
+            EXPECT_EQ(wire.data(), encodedAgain.data());
+          }
+          auto const& packet = *decoded;
+          if (packet->type() == PacketType::StepUpdate)
+            stepSeen = true;
+          if (auto entityCreate = as<EntityCreatePacket>(packet)) {
+            EXPECT_TRUE(stepSeen);
+            EXPECT_FALSE(updateSetSeen);
+            EXPECT_FALSE(visible[i].contains(entityCreate->entityId));
+            auto entity = (*factory)->netLoadEntity(entityCreate->entityType, entityCreate->storeData, rules);
+            ASSERT_TRUE(entity) << entity.error().what();
+            ASSERT_TRUE((*entity)->readNetState(entityCreate->firstNetState, 0.0f, rules));
+            visible[i][entityCreate->entityId] = *entity;
+            targetCreated |= entityCreate->entityId == (*target)->entityId();
+          } else if (auto entityDestroy = as<EntityDestroyPacket>(packet)) {
+            EXPECT_TRUE(visible[i].remove(entityDestroy->entityId));
+            EXPECT_FALSE(entityDestroy->death);
+            targetDestroyed |= entityDestroy->entityId == (*target)->entityId();
+          } else if (auto update = as<EntityUpdateSetPacket>(packet)) {
+            updateSetSeen = true;
+            for (auto const& [id, delta] : update->deltas) {
+              auto entity = visible[i].get(id);
+              ASSERT_TRUE(entity) << entity.error().what();
+              ASSERT_TRUE(entity->get()->readNetState(delta, 0.0f, rules));
+            }
+          }
+        }
+        EXPECT_TRUE(stepSeen);
+        EXPECT_TRUE(visible[i].contains((*anchor)->entityId()));
+        EXPECT_EQ(visible[i].contains((*target)->entityId()), phase != 1);
+        EXPECT_EQ(targetCreated, phase != 1);
+        EXPECT_EQ(targetDestroyed, phase == 1);
+      }
+    }
+  });

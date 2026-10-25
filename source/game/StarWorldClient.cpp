@@ -2992,6 +2992,68 @@ std::expected<RpcPromise<InteractAction>, StarException> WorldClient::interact(I
   return pair.first;
 }
 
+std::expected<void, StarException> gatherClientLightingTiles(CellularLightingCalculator& calculator,
+                                                             ClientTileSectorArray& tiles, WorkerPool& workers,
+                                                             MaterialDatabase const& materials,
+                                                             LiquidsDatabase const& liquids,
+                                                             Vec3F const& environmentLight, float undergroundLevel) {
+  // Each column is guaranteed to be no larger than the sector size.
+  auto gatherColumn = [&](Vec2I const& pos, std::span<ClientTile const> column) -> std::expected<void, StarException> {
+    std::size_t baseIndex = calculator.baseIndexFor(pos);
+    for (std::size_t y = 0; y < column.size(); ++y) {
+      auto& tile = column[y];
+      Vec3F light;
+      if (tile.foreground != EmptyMaterialId || tile.foregroundMod != NoModId)
+        light += materials.radiantLight(tile.foreground, tile.foregroundMod);
+      if (tile.liquid.liquid != EmptyLiquidId && tile.liquid.level != 0.0f)
+        light += liquids.radiantLight(tile.liquid);
+      if (tile.foregroundLightTransparent) {
+        if (tile.background != EmptyMaterialId || tile.backgroundMod != NoModId)
+          light += materials.radiantLight(tile.background, tile.backgroundMod);
+        if (tile.backgroundLightTransparent && pos[1] + y > undergroundLevel)
+          light += environmentLight;
+      }
+      calculator.setCellIndex(baseIndex + y, light, !tile.foregroundLightTransparent);
+    }
+    return {};
+  };
+
+  RectI region = calculator.calculationRegion();
+  int worldWidth = static_cast<int>(tiles.size()[0]);
+  int worldHeight = static_cast<int>(tiles.size()[1]);
+  int gatheredRows = std::clamp(region.yMax(), 0, worldHeight) - std::clamp(region.yMin(), 0, worldHeight);
+  // Real-asset gather measurements put small clipped regions below the useful
+  // parallel grain. Keep the larger/interior cases on their existing workers.
+  constexpr std::int64_t CallerGatherCellLimit = 12 * 1024;
+  bool useCaller = static_cast<std::int64_t>(region.width()) * gatheredRows <= CallerGatherCellLimit;
+  if (region.width() < worldWidth && region.xMin() >= -worldWidth
+      && static_cast<std::int64_t>(region.xMax()) <= 2 * static_cast<std::int64_t>(worldWidth)) {
+    if (useCaller)
+      return tiles.tileEvalColumns(region, gatherColumn);
+    return tiles.tileEvalColumnsParallel(workers, region, gatherColumn);
+  }
+
+  // Whole-world tile traversal deduplicates wrapped x coordinates. Lighting
+  // instead needs every image in its unwrapped calculation region, including
+  // the configured border around large viewports and small worlds.
+  for (int destinationX = region.xMin(); destinationX < region.xMax();) {
+    int sourceX = pmod<int>(destinationX, worldWidth);
+    int stripWidth = std::min(region.xMax() - destinationX, worldWidth - sourceX);
+    RectI strip(sourceX, region.yMin(), sourceX + stripWidth, region.yMax());
+    auto gatherStrip = [&](Vec2I const& pos, std::span<ClientTile const> column) -> std::expected<void, StarException> {
+      return gatherColumn({destinationX + (pos[0] - sourceX), pos[1]}, column);
+    };
+    auto gathered = useCaller ? tiles.tileEvalColumns(strip, gatherStrip)
+                              : tiles.tileEvalColumnsParallel(workers, strip, gatherStrip);
+    // The column API drains all borrowed jobs even on failure before either
+    // the translation captures or the world snapshot can be released.
+    if (!gathered)
+      return std::unexpected(std::move(gathered.error()));
+    destinationX += stripWidth;
+  }
+  return {};
+}
+
 std::expected<void, StarException> WorldClient::lightingTileGather() {
   std::int64_t start = Time::monotonicMicroseconds();
   Vec3F environmentLight = m_sky->environmentLight().toRgbF();
@@ -3004,36 +3066,12 @@ std::expected<void, StarException> WorldClient::lightingTileGather() {
   if (!result235)
     return std::unexpected(std::move(result235.error()));
   auto materialDatabase = (std::move(*result235));
-  
-  // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
-  
+
   auto result236 = this->root().workers();
   if (!result236)
     return std::unexpected(std::move(result236.error()));
-  auto result237 = m_tileArray->tileEvalColumnsParallel(result236->get(), m_lightingCalculator.calculationRegion(), [&, &self = *this](Vec2I const& pos, std::span<ClientTile const> column)  -> std::expected<void, StarException> {
-      std::size_t baseIndex = self.m_lightingCalculator.baseIndexFor(pos);
-      for (std::size_t y = 0; y < column.size(); ++y) {
-        auto& tile = column[y];
-        Vec3F light;
-        if (tile.foreground != EmptyMaterialId || tile.foregroundMod != NoModId) {
-          light += materialDatabase->radiantLight(tile.foreground, tile.foregroundMod);
-        }
-        
-        if (tile.liquid.liquid != EmptyLiquidId && tile.liquid.level != 0.0f) {
-          light += liquidsDatabase->radiantLight(tile.liquid);
-        }
-        if (tile.foregroundLightTransparent) {
-          if (tile.background != EmptyMaterialId || tile.backgroundMod != NoModId) {
-            light += materialDatabase->radiantLight(tile.background, tile.backgroundMod);
-          }
-          if (tile.backgroundLightTransparent && pos[1] + y > undergroundLevel) {
-            light += environmentLight;
-          }
-        }
-        self.m_lightingCalculator.setCellIndex(baseIndex + y, light, !tile.foregroundLightTransparent);
-      }
-      return {};
-    });
+  auto result237 = gatherClientLightingTiles(m_lightingCalculator, *m_tileArray, result236->get(), *materialDatabase,
+                                             *liquidsDatabase, environmentLight, undergroundLevel);
   if (!result237)
     return std::unexpected(std::move(result237.error()));
   this->root().logMap().set("client_render_world_async_light_gather", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
@@ -3041,7 +3079,9 @@ std::expected<void, StarException> WorldClient::lightingTileGather() {
 }
 
 std::expected<void, StarException> WorldClient::lightingCalc() {
+  std::int64_t prepWaitStart = Time::monotonicMicroseconds();
   std::unique_lock prepLocker(m_lightMapPrepMutex);
+  std::int64_t prepStart = Time::monotonicMicroseconds();
   if (!m_pendingLightReady.load()) {
     return {};
   }
@@ -3087,7 +3127,8 @@ std::expected<void, StarException> WorldClient::lightingCalc() {
   auto result248 = lightingTileGather();
   if (!result248)
     return std::unexpected(std::move(result248.error()));
-  
+
+  std::int64_t prepEnd = Time::monotonicMicroseconds();
   prepLocker.unlock();
   
   Vec2I regionMin = m_lightingCalculator.calculationRegion().min();
@@ -3124,11 +3165,22 @@ std::expected<void, StarException> WorldClient::lightingCalc() {
   auto result249 = m_lightingCalculator.calculate(m_pendingLightMap);
   if (!result249)
     return std::unexpected(std::move(result249.error()));
+  std::int64_t propagationEnd = Time::monotonicMicroseconds();
+  std::int64_t publicationStart;
   {
     std::lock_guard mapLocker(m_lightMapMutex);
+    publicationStart = Time::monotonicMicroseconds();
     m_lightMinPosition = lightRange.min();
     m_lightMap = std::move(m_pendingLightMap);
   }
+  std::int64_t publicationEnd = Time::monotonicMicroseconds();
+  root.logMap().set("client_render_world_async_light_prep_wait", strf("{:05d}\u00b5s", prepStart - prepWaitStart));
+  root.logMap().set("client_render_world_async_light_prep", strf("{:05d}\u00b5s", prepEnd - prepStart));
+  root.logMap().set("client_render_world_async_light_propagation", strf("{:05d}\u00b5s", propagationEnd - prepEnd));
+  root.logMap().set("client_render_world_async_light_publication_wait",
+                    strf("{:05d}\u00b5s", publicationStart - propagationEnd));
+  root.logMap().set("client_render_world_async_light_publication",
+                    strf("{:05d}\u00b5s", publicationEnd - publicationStart));
   return {};
 }
 

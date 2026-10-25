@@ -134,9 +134,9 @@ nix build .#benchmarks
 nix build .#benchmarks-gui -o result-benchmarks-gui
 ```
 
-For native presets, configure from `source/` with `-DSTAR_BUILD_BENCHMARKS=ON -DVCPKG_MANIFEST_FEATURES="qt-tools;benchmarks"`. Targets: `core_benchmarks`, `worker_benchmarks`, `game_benchmarks`, `ownership_benchmarks`, Linux/MinGW-only `allocator_benchmarks`, and GUI-only `frontend_benchmarks`. Nix development shells include the dependency.
+For native presets, configure from `source/` with `-DSTAR_BUILD_BENCHMARKS=ON -DVCPKG_MANIFEST_FEATURES="qt-tools;benchmarks"`. Targets: `core_benchmarks`, `worker_benchmarks`, `game_benchmarks`, `ownership_benchmarks`, `performance_benchmarks`, Linux/MinGW-only `allocator_benchmarks`, and GUI-only `frontend_benchmarks` / `tile_performance_benchmarks`. Nix development shells include the dependency.
 
-`game_benchmarks`, `ownership_benchmarks`, `frontend_benchmarks` and GUI-only `frontend_tests` need owned assets and a fresh, private bootconfig; never point them at saves. For example:
+Asset-backed benchmarks and GUI-only `frontend_tests` need owned assets and a fresh, private bootconfig; never point them at saves. For example:
 
 ```json
 {
@@ -153,6 +153,10 @@ For native presets, configure from `source/` with `-DSTAR_BUILD_BENCHMARKS=ON -D
 Core cases cover JSON encoding, fixed enum lookups and reserved string-key hash maps. Worker cases submit 256 checked tasks per batch, varying capture size, producer results and queue-only versus one-worker execution. Frontend cases exercise dense mixed-size bubble separation and an explicit representative gameplay-key fixture, not the user's bindings or the complete client frame. Game cases cover object/projectile parsing, generated world serialization and genuine nested Lua profile export. Ownership cases cover small-record serialization/readback, real ItemBag stacking/matching, valid PCM WAV and real Ogg cloning/seeking/reading/reclamation, and real image/bytes cache getters and mixed-resource eviction. Asset caches are warmed; fixture setup and validation are untimed. Core/allocator cases report CPU time; worker/frontend/game/ownership cases report wall time, and profile export includes file writes.
 
 `allocator_benchmarks` compares `BlockAllocator`, default PMR and bounded PMR pools. Allocation counters run outside timed samples and measure outstanding C++ `new` requests, not RSS or fragmentation. Production retains `BlockAllocator`: default PMR retained substantially more memory in the representative statistics-list workload; bounded PMR reduced retention but was much slower.
+
+`performance_benchmarks` exercises production collision, liquid scheduling, light gathering/propagation, mixed-version client snapshots with real TCP consumers, and queued Lua asset patches. Collision/contact order, liquid state and lighting output have behavior fingerprints; network consumers validate fields and ordering without assuming unordered objects re-encode byte-for-byte. Asset timings include result readback, full collection and destruction. Automatic GC avoids per-item full collections but allows a larger transient managed heap; compare requested-byte peak and post-collection retention separately, not as allocator fragmentation measurements.
+
+`tile_performance_benchmarks` requires a real SDL/OpenGL display. It validates cached output against fresh framebuffer pixels, including foreground changes underneath partial liquids. Native frame/resource reclamation runs outside setup samples; reported setup/GL-upload costs are not whole-frame or hardware GPU timings. Use fixed complete batches (`--benchmark_min_time=1x`) with repeated samples for expensive world/active-cell resets; do not shrink workloads or relax timeouts.
 
 Compare identical inputs/build flags on the same CPU, preferably A/B/B/A with repeated samples; account for VPS noise. These benchmarks do not replace correctness tests or justify timing thresholds on shared CI.
 
@@ -177,6 +181,8 @@ Widget parents are borrowed; children and pane handles retain their actual owner
 Client transitions and pane assembly use ordered domain phases; preserve service leases and teardown barriers across phase boundaries. Successful error recovery must stop session startup, not masquerade as a successful connection. Transport and message-response variants use exhaustive dispatch.
 
 Worker submissions retain concrete constrained callables until queue-boundary erasure; move-only and lvalue-callable work is supported. Client gameplay input snapshots held/edge actions only within a stable focus/configuration interval, never across frames. Radio scroll length is cached per message; bubble separation folds candidates without a filtered temporary list.
+
+Collision reuses distances and only skips repeated sorts for strictly unique keys; equal-distance permutations remain significant. Liquid scheduling preserves per-liquid budgets, unlimited regions, activation order and partial-error recovery. Asset workers leave automatic Lua GC enabled during load bursts and collect fully before idle waits, outside the asset mutex. The debug display (`/debug`) reports the previous completed frame's events, catch-up updates, rendering, final submission, ImGui, presentation and throttle wall times; these are CPU durations, not GPU execution measurements.
 
 `BTree<Storage>` owns a `BTreeStorage` implementation. Lua scripts use fixed-address, nonmovable hosts with value-owned features; preserve each host's initialization, storage-snapshot and shutdown ordering.
 

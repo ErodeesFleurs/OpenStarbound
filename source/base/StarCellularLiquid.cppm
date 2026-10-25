@@ -145,6 +145,7 @@ private:
 
   [[nodiscard]] std::expected<std::optional<std::reference_wrapper<WorkingCell>>, StarException> workingCell(Vec2I p);
   [[nodiscard]] std::expected<std::optional<std::reference_wrapper<WorkingCellState>>, StarException> adjacentCell(WorkingCell& cell, Adjacency adjacency);
+  bool inNoProcessingLimitRegion(Vec2I const& position) const;
 
   void setPressure(float pressure, WorkingCellState& cell);
   void transferPressure(float amount, WorkingCellState& source, WorkingCellState& dest, bool allowReverse);
@@ -159,6 +160,11 @@ private:
   BAHashMap<LiquidId, unsigned> m_liquidTickDeltas;
   std::optional<unsigned> m_processingLimit;
   List<RectI> m_noProcessingLimitRegions;
+  // Ordered subsets of the active queues: stable windows only require visiting
+  // the ordinary budget prefix and these cells, never the skipped suffix.
+  // An existing (even empty) entry is initialized for the current regions.
+  // Missing entries are built only when that liquid is due to run.
+  BAHashMap<LiquidId, BAOrderedHashSet<Vec2I>> m_unlimitedActiveCells;
   std::uint64_t m_step;
 
   BAHashMap<Vec2I, std::optional<WorkingCell>> m_workingCells;
@@ -213,7 +219,10 @@ List<RectI> LiquidCellEngine<LiquidId>::noProcessingLimitRegions() const {
 
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::setNoProcessingLimitRegions(List<RectI> noProcessingLimitRegions) {
-  m_noProcessingLimitRegions = noProcessingLimitRegions;
+  if (m_noProcessingLimitRegions == noProcessingLimitRegions)
+    return;
+  m_noProcessingLimitRegions = std::move(noProcessingLimitRegions);
+  m_unlimitedActiveCells.clear();
 }
 
 template <typename LiquidId>
@@ -275,6 +284,14 @@ bool LiquidCellEngine<LiquidId>::isActive(Vec2I const& pos) const {
   return false;
 }
 
+template <typename LiquidId> bool LiquidCellEngine<LiquidId>::inNoProcessingLimitRegion(Vec2I const& position) const {
+  for (auto const& region : m_noProcessingLimitRegions) {
+    if (region.contains(position))
+      return true;
+  }
+  return false;
+}
+
 template <typename LiquidId>
 [[nodiscard]] std::expected<void, StarException> LiquidCellEngine<LiquidId>::setup() {
   // Clear transient state left by a failed update.
@@ -286,33 +303,51 @@ template <typename LiquidId>
     if (tickDelta == 0 || m_step % tickDelta != 0)
       continue;
 
-    std::size_t limitedCellNumber = 0;
-    for (auto const& pos : activeCellsPair.second.values()) {
-      if (m_processingLimit) {
-        bool foundInUnlimitedRegion = false;
-        for (auto const& region : m_noProcessingLimitRegions) {
-          if (region.contains(pos)) {
-            foundInUnlimitedRegion = true;
-            break;
-          }
-        }
-
-        if (!foundInUnlimitedRegion) {
-          if (limitedCellNumber < *m_processingLimit)
-            ++limitedCellNumber;
-          else
-            continue;
-        }
+    auto unlimited = m_unlimitedActiveCells.find(activeCellsPair.first);
+    if (m_processingLimit && !m_noProcessingLimitRegions.empty() && unlimited == m_unlimitedActiveCells.end()) {
+      auto& indexed = m_unlimitedActiveCells[activeCellsPair.first];
+      for (auto const& position : activeCellsPair.second) {
+        if (inNoProcessingLimitRegion(position))
+          indexed.add(position);
       }
+      unlimited = m_unlimitedActiveCells.find(activeCellsPair.first);
+    }
 
+    auto process = [&](Vec2I const& pos) -> std::expected<void, StarException> {
       auto found = workingCell(pos);
-      if (!found) return std::unexpected(std::move(found.error()));
+      if (!found)
+        return std::unexpected(std::move(found.error()));
       auto cell = *found;
-      if (!cell || cell->get().liquid != activeCellsPair.first) {
-        activeCellsPair.second.remove(pos);
-      } else {
+      if (cell && cell->get().liquid == activeCellsPair.first)
         m_currentActiveCells.append(*cell);
-        activeCellsPair.second.remove(pos);
+      activeCellsPair.second.remove(pos);
+      if (unlimited != m_unlimitedActiveCells.end())
+        unlimited->second.remove(pos);
+      return {};
+    };
+
+    std::size_t limitedCellNumber = 0;
+    auto position = activeCellsPair.second.begin();
+    while (position != activeCellsPair.second.end() && (!m_processingLimit || limitedCellNumber < *m_processingLimit)) {
+      // Copy only the current coordinate; advance before erasing its list node.
+      auto pos = *position++;
+      if (m_processingLimit && (unlimited == m_unlimitedActiveCells.end() || !unlimited->second.contains(pos)))
+        ++limitedCellNumber;
+      auto processed = process(pos);
+      if (!processed)
+        return std::unexpected(std::move(processed.error()));
+    }
+
+    // Cells beyond the ordinary budget still run if monitored. Removing the
+    // prefix above also removes it from this ordered subset, preserving the
+    // original input order (including equal-Y ties) without scanning skips.
+    if (m_processingLimit && unlimited != m_unlimitedActiveCells.end()) {
+      auto remaining = unlimited->second.begin();
+      while (remaining != unlimited->second.end()) {
+        auto pos = *remaining++;
+        auto processed = process(pos);
+        if (!processed)
+          return std::unexpected(std::move(processed.error()));
       }
     }
   }
@@ -567,8 +602,14 @@ template <typename LiquidId>
       auto found = workingCell(p);
       if (!found) return std::unexpected(std::move(found.error()));
       auto cell = *found;
-      if (cell && cell->get().liquid)
-        m_activeCells[*cell->get().liquid].add(p);
+      if (cell && cell->get().liquid) {
+        auto liquid = *cell->get().liquid;
+        if (m_activeCells[liquid].add(p)) {
+          auto unlimited = m_unlimitedActiveCells.find(liquid);
+          if (unlimited != m_unlimitedActiveCells.end() && inNoProcessingLimitRegion(p))
+            unlimited->second.add(p);
+        }
+      }
       return {};
     };
     for (auto const& p : {c, c + Vec2I(-1, 0), c + Vec2I(1, 0), c + Vec2I(0, -1), c + Vec2I(0, 1)}) {
@@ -577,9 +618,8 @@ template <typename LiquidId>
     }
   }
 
-  eraseWhere(m_activeCells, [](auto const& p) {
-      return p.second.empty();
-    });
+  eraseWhere(m_activeCells, [](auto const& p) { return p.second.empty(); });
+  eraseWhere(m_unlimitedActiveCells, [this](auto const& p) { return !m_activeCells.contains(p.first); });
   return {};
 }
 

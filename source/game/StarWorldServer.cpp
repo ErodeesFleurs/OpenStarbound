@@ -1798,22 +1798,28 @@ std::expected<void, StarException> WorldServer::update(float dt) {
   }
 
   bool sendRemoteUpdates = m_entityUpdateTimer.wrapTick(dt);
+  std::optional<Vec2I> activeRegionPad;
   for (auto const& pair : m_clientInfo) {
     auto result190 = pair.second->monitoringRegions(m_entityMap);
     if (!result190)
       return std::unexpected(std::move(result190.error()));
-    for (auto const& monitoredRegion : std::move(*result190)) {
-      auto result191 = m_serverConfig.get("playerActiveRegionPad");
-      if (!result191)
-        return std::unexpected(std::move(result191.error()));
-      auto result192 = jsonToVec2I(std::move(*result191));
-      if (!result192)
-        return std::unexpected(std::move(result192.error()));
-      auto result193 = signalRegion(monitoredRegion.padded(std::move(*result192)));
+    // Simulation, sector generation and entity removal have finished. Keep
+    // this client's regions through the final activation/snapshot phase only.
+    for (auto const& monitoredRegion : *result190) {
+      if (!activeRegionPad) {
+        auto result191 = m_serverConfig.get("playerActiveRegionPad");
+        if (!result191)
+          return std::unexpected(std::move(result191.error()));
+        auto result192 = jsonToVec2I(std::move(*result191));
+        if (!result192)
+          return std::unexpected(std::move(result192.error()));
+        activeRegionPad = std::move(*result192);
+      }
+      auto result193 = signalRegion(monitoredRegion.padded(*activeRegionPad));
       if (!result193)
         return std::unexpected(std::move(result193.error()));
     }
-    auto result194 = queueUpdatePackets(pair.first, sendRemoteUpdates);
+    auto result194 = queueUpdatePackets(pair.first, sendRemoteUpdates, *result190);
     if (!result194)
       return std::unexpected(std::move(result194.error()));
   }
@@ -3638,7 +3644,8 @@ std::expected<List<ItemDescriptor>, StarException> WorldServer::destroyBlock(Til
   return drops;
 }
 
-std::expected<void, StarException> WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdates) {
+std::expected<void, StarException> WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdates,
+                                                                   List<RectI> const& monitoringRegions) {
   auto result394 = m_clientInfo.get(clientId);
   if (!result394)
     return std::unexpected(std::move(result394.error()));
@@ -3732,10 +3739,7 @@ std::expected<void, StarException> WorldServer::queueUpdatePackets(ConnectionId 
   clientInfo->pendingLiquidUpdates.clear();
 
   HashSet<std::shared_ptr<Entity>> monitoredEntities;
-  auto result402 = clientInfo->monitoringRegions(m_entityMap);
-  if (!result402)
-    return std::unexpected(std::move(result402.error()));
-  for (auto const& monitoredRegion : std::move(*result402)) {
+  for (auto const& monitoredRegion : monitoringRegions) {
     auto collected = m_entityMap->forEachEntity(RectF(monitoredRegion),
         [&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
           monitoredEntities.add(entity);
@@ -3771,11 +3775,11 @@ std::expected<void, StarException> WorldServer::queueUpdatePackets(ConnectionId 
     }
   }
 
+  auto netRules = clientInfo->clientState->netCompatibilityRules();
   for (auto const& monitoredEntity : monitoredEntities) {
     EntityId entityId = monitoredEntity->entityId();
     ConnectionId connectionId = connectionForEntity(entityId);
     if (connectionId != clientId) {
-      auto netRules = clientInfo->clientState->netCompatibilityRules();
       if (auto version = clientInfo->clientSlavesNetVersion.maybeRef(entityId)) {
         if (auto updateSetPacket = updateSetPackets.value(connectionId)) {
           auto pair = std::make_pair(entityId, version->get());

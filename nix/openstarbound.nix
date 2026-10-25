@@ -152,10 +152,14 @@ let
     "core_benchmarks"
     "game_benchmarks"
     "ownership_benchmarks"
+    "performance_benchmarks"
     "worker_benchmarks"
     "allocator_benchmarks"
   ]
-  ++ lib.optional (withBenchmarks && guiSupport) "frontend_benchmarks";
+  ++ lib.optionals (withBenchmarks && guiSupport) [
+    "frontend_benchmarks"
+    "tile_performance_benchmarks"
+  ];
   qtTools =
     lib.optional qtSupport "json_tool" ++ lib.optional (qtSupport && steamSupport) "mod_uploader";
   distBinaries = plain ++ wrapped ++ qtTools;

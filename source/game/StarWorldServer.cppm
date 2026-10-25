@@ -456,7 +456,8 @@ private:
   [[nodiscard]] std::expected<TileModificationList, StarException> doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection = false, bool updateNeighbors = true);
 
   // Queues pending (step based) updates to the given player
-  [[nodiscard]] std::expected<void, StarException> queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdates);
+  [[nodiscard]] std::expected<void, StarException> queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdates,
+                                                                      List<RectI> const& monitoringRegions);
   [[nodiscard]] std::expected<void, StarException> updateDamage(float dt);
 
   [[nodiscard]] std::expected<void, StarException> updateDamagedBlocks(float dt);
