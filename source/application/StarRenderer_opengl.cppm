@@ -31,7 +31,11 @@ enum class BoolSettingMode {
   FromSetting,
   Disabled
 };
-extern std::expected<EnumMap<BoolSettingMode>, StarException> const BoolSettingModeNames;
+inline constexpr auto BoolSettingModeNames = sortedEnumNames(std::to_array<std::pair<BoolSettingMode, std::string_view>>({
+  {BoolSettingMode::Enabled, "Enabled"},
+  {BoolSettingMode::FromSetting, "FromSetting"},
+  {BoolSettingMode::Disabled, "Disabled"}
+}));
 
 bool settingModeValue(BoolSettingMode const& mode, bool const& setting);
 

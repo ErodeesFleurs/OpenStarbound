@@ -26,12 +26,12 @@ namespace {
   // An IODevice that reports more bytes than it was asked for, the way
   // File::pread used to turn a failed read into SIZE_MAX.
   struct OverlongReadDevice : IODevice {
-    [[nodiscard]] std::expected<std::size_t, StarException> read(char*, std::size_t) override { return 0; }
-    [[nodiscard]] std::expected<std::size_t, StarException> write(char const*, std::size_t) override { return 0; }
+    [[nodiscard]] std::expected<std::size_t, StarException> read(std::span<char>) override { return 0; }
+    [[nodiscard]] std::expected<std::size_t, StarException> write(std::span<char const>) override { return 0; }
     [[nodiscard]] std::expected<StreamOffset, StarException> pos() override { return 0; }
     [[nodiscard]] std::expected<void, StarException> seek(StreamOffset, IOSeek) override { return {}; }
-    [[nodiscard]] std::expected<std::size_t, StarException> readAbsolute(StreamOffset, char*, std::size_t) override { return std::numeric_limits<std::size_t>::max(); }
-    [[nodiscard]] std::expected<std::size_t, StarException> writeAbsolute(StreamOffset, char const*, std::size_t) override { return std::numeric_limits<std::size_t>::max(); }
+    [[nodiscard]] std::expected<std::size_t, StarException> readAbsolute(StreamOffset, std::span<char>) override { return std::numeric_limits<std::size_t>::max(); }
+    [[nodiscard]] std::expected<std::size_t, StarException> writeAbsolute(StreamOffset, std::span<char const>) override { return std::numeric_limits<std::size_t>::max(); }
     [[nodiscard]] std::expected<std::shared_ptr<::Star::IODevice>, StarException> clone() override { return std::make_shared<OverlongReadDevice>(); }
   };
 }
@@ -41,10 +41,10 @@ TEST(FileTest, FullReadRejectsImpossibleLengths) {
   char buffer[4];
   // Without the length check these underflow the remaining length and loop
   // forever instead of failing.
-  auto read = device->readFullAbsolute(0, buffer, sizeof(buffer));
+  auto read = device->readFullAbsolute(0, buffer);
   ASSERT_FALSE(read);
   EXPECT_TRUE(read.error().is<IOException>());
-  auto write = device->writeFullAbsolute(0, buffer, sizeof(buffer));
+  auto write = device->writeFullAbsolute(0, buffer);
   ASSERT_FALSE(write);
   EXPECT_TRUE(write.error().is<IOException>());
 }

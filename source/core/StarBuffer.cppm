@@ -22,11 +22,11 @@ public:
   [[nodiscard]] std::expected<void, StarException> resize(StreamOffset size) override;
   [[nodiscard]] std::expected<bool, StarException> atEnd() override;
 
-  [[nodiscard]] std::expected<std::size_t, StarException> read(char* data, std::size_t len) override;
-  [[nodiscard]] std::expected<std::size_t, StarException> write(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> read(std::span<char> data) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> write(std::span<char const> data) override;
 
-  [[nodiscard]] std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
-  [[nodiscard]] std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, std::span<char> data) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, std::span<char const> data) override;
 
   [[nodiscard]] std::expected<void, StarException> open(IOMode mode) override;
 
@@ -87,11 +87,11 @@ public:
   [[nodiscard]] std::expected<void, StarException> seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) override;
   [[nodiscard]] std::expected<bool, StarException> atEnd() override;
 
-  [[nodiscard]] std::expected<std::size_t, StarException> read(char* data, std::size_t len) override;
-  [[nodiscard]] std::expected<std::size_t, StarException> write(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> read(std::span<char> data) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> write(std::span<char const> data) override;
 
-  [[nodiscard]] std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
-  [[nodiscard]] std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, std::span<char> data) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, std::span<char const> data) override;
 
   [[nodiscard]] std::expected<String, StarException> deviceName() const override;
 

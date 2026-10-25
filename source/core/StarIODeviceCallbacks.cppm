@@ -63,7 +63,7 @@ std::size_t IODeviceCallbacks::readFunc(void* ptr, std::size_t size, std::size_t
     state->m_error = IOException("Vorbis read request exceeds addressable size");
     return 0;
   }
-  auto count = state->m_device->read(static_cast<char*>(ptr), size * nmemb);
+  auto count = state->m_device->read({static_cast<char*>(ptr), size * nmemb});
   if (!count) {
     state->m_error = std::move(count.error());
     return 0;

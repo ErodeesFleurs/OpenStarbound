@@ -51,7 +51,7 @@ namespace {
   template <typename T>
   [[nodiscard]] std::expected<T, StarException> readLEType(std::shared_ptr<IODevice> const& device) {
     T value;
-    auto read = device->readFull(reinterpret_cast<char*>(&value), sizeof(value));
+    auto read = device->readFull({reinterpret_cast<char*>(&value), sizeof(value)});
     if (!read)
       return std::unexpected(std::move(read.error()));
     fromByteOrder(ByteOrder::LittleEndian, reinterpret_cast<char*>(&value), sizeof(value));
@@ -66,7 +66,7 @@ namespace {
     auto seek = device->seek(0);
     if (!seek)
       return std::unexpected(std::move(seek.error()));
-    auto read = device->readFull(signature.data(), signature.size());
+    auto read = device->readFull(signature);
     auto restore = device->seek(*previous);
     if (!read)
       return std::unexpected(std::move(read.error()));
@@ -81,7 +81,7 @@ namespace {
     if (!seek)
       return std::unexpected(std::move(seek.error()));
     std::array<char, 4> signature{};
-    auto read = device->readFull(signature.data(), signature.size());
+    auto read = device->readFull(signature);
     if (!read)
       return std::unexpected(std::move(read.error()));
     if (std::memcmp(signature.data(), "RIFF", 4) != 0)
@@ -94,12 +94,12 @@ namespace {
       return std::unexpected(std::move(actualSize.error()));
     if (*actualSize < 0 || std::uint64_t(*fileSize) + 8 != std::uint64_t(*actualSize))
       return std::unexpected(AudioException::format("Wav file is wrong size, reports {} is actually {}", std::uint64_t(*fileSize) + 8, *actualSize));
-    read = device->readFull(signature.data(), signature.size());
+    read = device->readFull(signature);
     if (!read)
       return std::unexpected(std::move(read.error()));
     if (std::memcmp(signature.data(), "WAVE", 4) != 0)
       return std::unexpected(AudioException("Wav file has invalid WAVE magic bytes"));
-    read = device->readFull(signature.data(), signature.size());
+    read = device->readFull(signature);
     if (!read)
       return std::unexpected(std::move(read.error()));
     if (std::memcmp(signature.data(), "fmt ", 4) != 0)
@@ -140,7 +140,7 @@ namespace {
     seek = device->seek(*fmtSize - 16, IOSeek::Relative);
     if (!seek)
       return std::unexpected(std::move(seek.error()));
-    read = device->readFull(signature.data(), signature.size());
+    read = device->readFull(signature);
     if (!read)
       return std::unexpected(std::move(read.error()));
     if (std::memcmp(signature.data(), "data", 4) != 0)
@@ -425,13 +425,13 @@ public:
     std::size_t requested = std::min(size, remaining / 2) * 2;
     if (requested == 0)
       return 0;
-    auto read = m_data.device->read(reinterpret_cast<char*>(buffer), requested);
+    auto read = m_data.device->read({reinterpret_cast<char*>(buffer), requested});
     if (!read)
       return std::unexpected(std::move(read.error()));
     if (*read == 0)
       return std::unexpected(AudioException("PCM audio data is truncated"));
     if (*read % 2 != 0) {
-      auto tail = m_data.device->readFull(reinterpret_cast<char*>(buffer) + *read, 1);
+      auto tail = m_data.device->readFull({reinterpret_cast<char*>(buffer) + *read, 1});
       if (!tail)
         return std::unexpected(std::move(tail.error()));
       ++*read;

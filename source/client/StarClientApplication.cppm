@@ -107,8 +107,7 @@ private:
   [[nodiscard]] std::expected<void, StarException> updateTitle(float dt);
   [[nodiscard]] std::expected<void, StarException> updateRunning(float dt);
 
-  bool isActionTaken(InterfaceAction action) const;
-  bool isActionTakenEdge(InterfaceAction action) const;
+  bool isHeldActionTaken(InterfaceAction action) const;
 
   [[nodiscard]] std::expected<void, StarException> updateCamera(float dt);
 

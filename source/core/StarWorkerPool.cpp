@@ -201,20 +201,6 @@ std::expected<void, StarException> WorkerPool::finish() {
   return {};
 }
 
-WorkerPoolHandle WorkerPool::addWork(UniqueFunction<std::expected<void, StarException>()> work) {
-  auto state = std::make_shared<WorkerPoolHandle::Impl>();
-  queueWork([state, work = std::move(work)](std::optional<StarException> cancelled) mutable -> std::expected<void, StarException> {
-    auto result = cancelled ? std::expected<void, StarException>(std::unexpected(std::move(*cancelled))) : work();
-    std::lock_guard lock(state->mutex);
-    if (!result)
-      state->error.emplace(std::move(result.error()));
-    state->done.store(true, std::memory_order_release);
-    state->done.notify_all();
-    state->condition.notify_all();
-    return {};
-  });
-  return state;
-}
 
 std::size_t WorkerPool::getWorkerCount() const {
   std::lock_guard lock(m_workMutex);

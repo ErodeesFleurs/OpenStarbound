@@ -56,11 +56,11 @@ std::shared_ptr<IODevice> const& DataStreamIODevice::device() const {
 }
 
 [[nodiscard]] std::expected<void, StarException> DataStreamIODevice::readData(char* data, std::size_t len) {
-  return m_device->readFull(data, len);
+  return m_device->readFull({data, len});
 }
 
 [[nodiscard]] std::expected<void, StarException> DataStreamIODevice::writeData(char const* data, std::size_t len) {
-  return m_device->writeFull(data, len);
+  return m_device->writeFull({data, len});
 }
 
 DataStreamBuffer::DataStreamBuffer() {
@@ -149,11 +149,11 @@ void DataStreamBuffer::reset(ByteArray b) {
 }
 
 [[nodiscard]] std::expected<void, StarException> DataStreamBuffer::readData(char* data, std::size_t len) {
-  return m_buffer->readFull(data, len);
+  return m_buffer->readFull({data, len});
 }
 
 [[nodiscard]] std::expected<void, StarException> DataStreamBuffer::writeData(char const* data, std::size_t len) {
-  return m_buffer->writeFull(data, len);
+  return m_buffer->writeFull({data, len});
 }
 
 DataStreamExternalBuffer::DataStreamExternalBuffer() : m_buffer() {}
@@ -205,10 +205,10 @@ void DataStreamExternalBuffer::reset(std::span<char const> externalData) {
 }
 
 [[nodiscard]] std::expected<void, StarException> DataStreamExternalBuffer::readData(char* data, std::size_t len) {
-  return m_buffer.readFull(data, len);
+  return m_buffer.readFull({data, len});
 }
 [[nodiscard]] std::expected<void, StarException> DataStreamExternalBuffer::writeData(char const* data, std::size_t len) {
-  return m_buffer.writeFull(data, len);
+  return m_buffer.writeFull({data, len});
 }
 
 }

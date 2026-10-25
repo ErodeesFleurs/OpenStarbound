@@ -136,10 +136,10 @@ std::expected<void, StarException> File::copy(String const& source, String const
       return std::unexpected(std::move(end.error()));
     if (*end)
       break;
-    auto count = (*sourceFile)->read(buffer, sizeof(buffer));
+    auto count = (*sourceFile)->read(buffer);
     if (!count)
       return std::unexpected(std::move(count.error()));
-    auto written = (*targetFile)->writeFull(buffer, *count);
+    auto written = (*targetFile)->writeFull({buffer, *count});
     if (!written)
       return std::unexpected(std::move(written.error()));
   }
@@ -169,7 +169,7 @@ std::expected<ByteArray, StarException> File::readFile(String const& filename) {
     if (*end)
       break;
     char buffer[1024];
-    auto count = (*file)->read(buffer, sizeof(buffer));
+    auto count = (*file)->read(buffer);
     if (!count)
       return std::unexpected(std::move(count.error()));
     bytes.append(buffer, *count);
@@ -192,7 +192,7 @@ std::expected<String, StarException> File::readFileString(String const& filename
     if (*end)
       break;
     char buffer[1024];
-    auto count = (*file)->read(buffer, sizeof(buffer));
+    auto count = (*file)->read(buffer);
     if (!count)
       return std::unexpected(std::move(count.error()));
     text.append(buffer, *count);
@@ -220,7 +220,7 @@ std::expected<void, StarException> File::writeFile(char const* data, std::size_t
   auto file = File::open(filename, IOMode::Write | IOMode::Truncate);
   if (!file)
     return std::unexpected(std::move(file.error()));
-  auto written = (*file)->writeFull(data, len);
+  auto written = (*file)->writeFull({data, len});
   if (!written)
     return std::unexpected(std::move(written.error()));
   return (*file)->close();
@@ -303,32 +303,32 @@ std::expected<bool, StarException> File::atEnd() {
   return *position >= *length;
 }
 
-std::expected<std::size_t, StarException> File::read(char* data, std::size_t len) {
+std::expected<std::size_t, StarException> File::read(std::span<char> data) {
   if (!m_file)
     return std::unexpected(IOException("read called on closed File"));
   if (!isReadable())
     return std::unexpected(IOException("read called on non-readable File"));
-  return fread(m_file, data, len);
+  return fread(m_file, data.data(), data.size());
 }
 
-std::expected<std::size_t, StarException> File::write(char const* data, std::size_t len) {
+std::expected<std::size_t, StarException> File::write(std::span<char const> data) {
   if (!m_file)
     return std::unexpected(IOException("write called on closed File"));
   if (!isWritable())
     return std::unexpected(IOException("write called on non-writable File"));
-  return fwrite(m_file, data, len);
+  return fwrite(m_file, data.data(), data.size());
 }
 
-std::expected<std::size_t, StarException> File::readAbsolute(StreamOffset position, char* data, std::size_t len) {
+std::expected<std::size_t, StarException> File::readAbsolute(StreamOffset position, std::span<char> data) {
   if (!m_file || !isReadable())
     return std::unexpected(IOException("readAbsolute called on closed or non-readable File"));
-  return pread(m_file, data, len, position);
+  return pread(m_file, data.data(), data.size(), position);
 }
 
-std::expected<std::size_t, StarException> File::writeAbsolute(StreamOffset position, char const* data, std::size_t len) {
+std::expected<std::size_t, StarException> File::writeAbsolute(StreamOffset position, std::span<char const> data) {
   if (!m_file || !isWritable())
     return std::unexpected(IOException("writeAbsolute called on closed or non-writable File"));
-  return pwrite(m_file, data, len, position);
+  return pwrite(m_file, data.data(), data.size(), position);
 }
 
 String File::fileName() const {

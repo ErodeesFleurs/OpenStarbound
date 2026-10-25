@@ -47,8 +47,8 @@ public:
   // Only forward seeks are supported on writes; reads emulate seeks slowly.
   [[nodiscard]] std::expected<void, StarException> seek(StreamOffset pos, IOSeek seek = IOSeek::Absolute) override;
   [[nodiscard]] std::expected<bool, StarException> atEnd() override;
-  [[nodiscard]] std::expected<std::size_t, StarException> read(char* data, std::size_t len) override;
-  [[nodiscard]] std::expected<std::size_t, StarException> write(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> read(std::span<char> data) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> write(std::span<char const> data) override;
   [[nodiscard]] std::expected<void, StarException> open(IOMode mode) override;
   // Compression is ignored on read. Always truncates on write.
   [[nodiscard]] std::expected<void, StarException> open(IOMode mode, CompressionLevel compression);
@@ -269,12 +269,12 @@ std::expected<bool, StarException> CompressedFile::atEnd() {
   return zng_gzeof(static_cast<gzFile>(m_file)) != 0;
 }
 
-std::expected<std::size_t, StarException> CompressedFile::read(char* data, std::size_t len) {
-  if (!len)
+std::expected<std::size_t, StarException> CompressedFile::read(std::span<char> data) {
+  if (data.empty())
     return 0;
   if (!m_file || !isReadable())
     return std::unexpected(IOException("Compressed file is not open for reading"));
-  int result = zng_gzread(static_cast<gzFile>(m_file), data, std::min(len, std::size_t(std::numeric_limits<int>::max())));
+  int result = zng_gzread(static_cast<gzFile>(m_file), data.data(), std::min(data.size(), std::size_t(std::numeric_limits<int>::max())));
   int status;
   zng_gzerror(static_cast<gzFile>(m_file), &status);
   if (result < 0 || (status != Z_OK && status != Z_STREAM_END))
@@ -284,12 +284,12 @@ std::expected<std::size_t, StarException> CompressedFile::read(char* data, std::
   return static_cast<std::size_t>(result);
 }
 
-std::expected<std::size_t, StarException> CompressedFile::write(char const* data, std::size_t len) {
-  if (!len)
+std::expected<std::size_t, StarException> CompressedFile::write(std::span<char const> data) {
+  if (data.empty())
     return 0;
   if (!m_file || !isWritable())
     return std::unexpected(IOException("Compressed file is not open for writing"));
-  int result = zng_gzwrite(static_cast<gzFile>(m_file), data, std::min(len, std::size_t(std::numeric_limits<int>::max())));
+  int result = zng_gzwrite(static_cast<gzFile>(m_file), data.data(), std::min(data.size(), std::size_t(std::numeric_limits<int>::max())));
   if (!result)
     return std::unexpected(compressedFileError("write", static_cast<gzFile>(m_file)));
   return static_cast<std::size_t>(result);

@@ -130,11 +130,13 @@ Benchmarks are opt-in and retain correctness tests. They require static [Google 
 ```sh
 nix build .#benchmarks
 ./result/bin/core_benchmarks --benchmark_repetitions=7 --benchmark_out=core.json --benchmark_out_format=json
+# Optional GUI cases (also includes the headless benchmarks):
+nix build .#benchmarks-gui -o result-benchmarks-gui
 ```
 
-For native presets, configure from `source/` with `-DSTAR_BUILD_BENCHMARKS=ON -DVCPKG_MANIFEST_FEATURES="qt-tools;benchmarks"`, then build targets `core_benchmarks game_benchmarks`. Nix development shells include the dependency.
+For native presets, configure from `source/` with `-DSTAR_BUILD_BENCHMARKS=ON -DVCPKG_MANIFEST_FEATURES="qt-tools;benchmarks"`. Targets: `core_benchmarks`, `worker_benchmarks`, `game_benchmarks`, Linux/MinGW-only `allocator_benchmarks`, and GUI-only `frontend_benchmarks`. Nix development shells include the dependency.
 
-`game_benchmarks` needs owned assets and a fresh, private bootconfig; never point it at saves. For example:
+`game_benchmarks`, `frontend_benchmarks` and GUI-only `frontend_tests` need owned assets and a fresh, private bootconfig; never point them at saves. For example:
 
 ```json
 {
@@ -148,9 +150,11 @@ For native presets, configure from `source/` with `-DSTAR_BUILD_BENCHMARKS=ON -D
 ./result/bin/game_benchmarks -bootconfig /path/to/benchmark.config --benchmark_repetitions=7 --benchmark_out=game.json --benchmark_out_format=json
 ```
 
-Core cases cover JSON encoding, fixed enum lookups and reserved string-key hash maps. Game cases separate cold object configuration parsing from warm lookups, parse the complete projectile catalog, serialize a generated terrestrial layout and export a genuine nested Lua profile. Asset caches are warmed; fixture setup and validation are untimed. Game cases report wall time, and profile export includes file writes.
+Core cases cover JSON encoding, fixed enum lookups and reserved string-key hash maps. Worker cases submit 256 checked tasks per batch, varying capture size, producer results and queue-only versus one-worker execution. Frontend cases exercise dense mixed-size bubble separation and an explicit representative gameplay-key fixture, not the user's bindings or the complete client frame. Game cases cover object/projectile parsing, generated world serialization and genuine nested Lua profile export. Asset caches are warmed; fixture setup and validation are untimed. Core/allocator cases report CPU time; worker/frontend/game cases report wall time, and profile export includes file writes.
 
-Compare identical inputs/build flags on the same CPU; use repeated samples and account for VPS noise. These measure latency/throughput, not allocator fragmentation. Do not replace correctness tests or impose timing thresholds on shared CI.
+`allocator_benchmarks` compares `BlockAllocator`, default PMR and bounded PMR pools. Allocation counters run outside timed samples and measure outstanding C++ `new` requests, not RSS or fragmentation. Production retains `BlockAllocator`: default PMR retained substantially more memory in the representative statistics-list workload; bounded PMR reduced retention but was much slower.
+
+Compare identical inputs/build flags on the same CPU, preferably A/B/B/A with repeated samples; account for VPS noise. These benchmarks do not replace correctness tests or justify timing thresholds on shared CI.
 
 ### Development notes
 
@@ -159,13 +163,17 @@ Project C++ uses named modules, `import std;` and `std::expected`, with RTTI and
 Containers own their storage; shared algorithms and codecs use `SequenceContainer`, `MapContainer` and `SetContainer` constraints. Use `keyView()`/`valueView()` for nonmutating map traversal and `std::span`/`std::mdspan` for contiguous borrowed data. Views must not outlive owners or invalidation; retain snapshots across mutation or callbacks, and materialize Lua arguments before invoking scripts.
 Reuse owned sequence buffers for nonfallible path conversion and sorting; keep resource-name ordering identical across network peers. Materialize serialized arrays only once. Lua profile export borrows call-tree entries while its detached engine remains alive.
 
+`IODevice` byte transfers accept `std::span<char>`/`std::span<char const>`; pointer/count overloads are removed. Short-transfer, EOF, closed-device and absolute-position semantics are unchanged. JSON serialization borrows retained string storage and writes UTF-8 directly, preserving sink/encoding error order.
+
+Worker submissions retain concrete constrained callables until queue-boundary erasure; move-only and lvalue-callable work is supported. Client gameplay input snapshots held/edge actions only within a stable focus/configuration interval, never across frames. Radio scroll length is cached per message; bubble separation folds candidates without a filtered temporary list.
+
 `BTree<Storage>` owns a `BTreeStorage` implementation. Lua scripts use fixed-address, nonmovable hosts with value-owned features; preserve each host's initialization, storage-snapshot and shutdown ordering.
 
 Synchronization uses standard mutexes, guards and condition variables; clock acquisition uses `std::chrono`. Checked native thread lifecycle, writer-preferring read/write locking and durable file I/O remain explicit. Convert raw clock ticks using their reported frequencies. TCP close must wake readiness waits promptly while allowing already-buffered complete packets to drain.
 
 Numeric lexical conversion uses `std::from_chars` and requires full tokens. Integer overflow leaves existing destinations unchanged; value-initialized conversions yield `0`, including oversized `uint64_t` inputs that previously wrapped. JSON numbers use bounded UTF-32 stack buffers with `std::format_to_n`, preserving default formatting.
 
-Fixed input, log-level and Perlin name tables are `constexpr` arrays. Use `enumName<Names>`, `enumValue<Names>` or `maybeEnumValue<Names>` for checked lookup; returned names borrow static storage. ASCII reverse lookup uses byte views and `std::ranges::lower_bound` over precomputed indices. Non-ASCII input is fully UTF-8-validated before returning a checked miss; case folding remains ASCII-only.
+Fixed input, renderer, biome, log-level and Perlin name tables are `constexpr` arrays. Use `enumName<Names>`, `enumValue<Names>` or `maybeEnumValue<Names>` for checked lookup; returned names borrow static storage. ASCII reverse lookup uses byte views and `std::ranges::lower_bound` over precomputed indices. Non-ASCII input is fully UTF-8-validated before returning a checked miss; case folding remains ASCII-only. Wire-network traversal uses an explicit-object recursive lambda rather than local type erasure.
 
 For clangd 23, run `nix develop -c bash scripts/ide/configure-clangd.sh`. Use `--experimental-modules-support`, `--compile-commands-dir=/absolute/path/to/OpenStarbound/build/clangd` and `--query-driver=/nix/store/*-xclang-wrapper-*/bin/clang++,/nix/store/*-xclang-wrapper-*/bin/clang`; set `LC_ALL=C` and `LANGUAGE=C`.
 

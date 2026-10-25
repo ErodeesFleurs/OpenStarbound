@@ -13,10 +13,10 @@ std::expected<void, StarException> IODevice::resize(StreamOffset) {
   return std::unexpected(IOException("resize not supported"));
 }
 
-std::expected<void, StarException> IODevice::readFull(char* data, std::size_t len) {
-  auto count = read(data, len);
+std::expected<void, StarException> IODevice::readFull(std::span<char> data) {
+  auto count = read(data);
   if (!count) return std::unexpected(std::move(count.error()));
-  if (*count != len) {
+  if (*count != data.size()) {
     auto end = atEnd();
     if (!end) return std::unexpected(std::move(end.error()));
     if (*end) return std::unexpected(EofException("Failed to read full buffer in readFull, eof reached."));
@@ -25,10 +25,10 @@ std::expected<void, StarException> IODevice::readFull(char* data, std::size_t le
   return {};
 }
 
-std::expected<void, StarException> IODevice::writeFull(char const* data, std::size_t len) {
-  auto count = write(data, len);
+std::expected<void, StarException> IODevice::writeFull(std::span<char const> data) {
+  auto count = write(data);
   if (!count) return std::unexpected(std::move(count.error()));
-  if (*count != len) {
+  if (*count != data.size()) {
     auto end = atEnd();
     if (!end) return std::unexpected(std::move(end.error()));
     if (*end) return std::unexpected(EofException("Failed to write full buffer in writeFull, eof reached."));
@@ -77,52 +77,50 @@ std::expected<StreamOffset, StarException> IODevice::size() {
   return *length;
 }
 
-std::expected<std::size_t, StarException> IODevice::readAbsolute(StreamOffset readPosition, char* data, std::size_t len) {
+std::expected<std::size_t, StarException> IODevice::readAbsolute(StreamOffset readPosition, std::span<char> data) {
   auto stored = pos();
   if (!stored) return std::unexpected(std::move(stored.error()));
   auto moved = seek(readPosition);
   if (!moved) return std::unexpected(std::move(moved.error()));
-  auto count = read(data, len);
+  auto count = read(data);
   auto restored = seek(*stored);
   if (!count) return std::unexpected(std::move(count.error()));
   if (!restored) return std::unexpected(std::move(restored.error()));
   return *count;
 }
 
-std::expected<std::size_t, StarException> IODevice::writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) {
+std::expected<std::size_t, StarException> IODevice::writeAbsolute(StreamOffset writePosition, std::span<char const> data) {
   auto stored = pos();
   if (!stored) return std::unexpected(std::move(stored.error()));
   auto moved = seek(writePosition);
   if (!moved) return std::unexpected(std::move(moved.error()));
-  auto count = write(data, len);
+  auto count = write(data);
   auto restored = seek(*stored);
   if (!count) return std::unexpected(std::move(count.error()));
   if (!restored) return std::unexpected(std::move(restored.error()));
   return *count;
 }
 
-std::expected<void, StarException> IODevice::readFullAbsolute(StreamOffset position, char* data, std::size_t len) {
-  while (len > 0) {
-    auto count = readAbsolute(position, data, len);
+std::expected<void, StarException> IODevice::readFullAbsolute(StreamOffset position, std::span<char> data) {
+  while (!data.empty()) {
+    auto count = readAbsolute(position, data);
     if (!count) return std::unexpected(std::move(count.error()));
-    if (*count == 0 || *count > len)
+    if (*count == 0 || *count > data.size())
       return std::unexpected(IOException("Failed to read full buffer in readFullAbsolute"));
     position += *count;
-    data += *count;
-    len -= *count;
+    data = data.subspan(*count);
   }
   return {};
 }
 
-std::expected<void, StarException> IODevice::writeFullAbsolute(StreamOffset position, char const* data, std::size_t len) {
-  while (len > 0) {
-    auto count = writeAbsolute(position, data, len);
+std::expected<void, StarException> IODevice::writeFullAbsolute(StreamOffset position, std::span<char const> data) {
+  while (!data.empty()) {
+    auto count = writeAbsolute(position, data);
     if (!count) return std::unexpected(std::move(count.error()));
-    if (*count == 0 || *count > len)
+    if (*count == 0 || *count > data.size())
       return std::unexpected(IOException("Failed to write full buffer in writeFullAbsolute"));
     position += *count;
-    data += *count;
-    len -= *count;
+    data = data.subspan(*count);
   }
   return {};
 }
@@ -131,28 +129,28 @@ std::expected<ByteArray, StarException> IODevice::readBytes(std::size_t size) {
   ByteArray bytes;
   bytes.resize(size);
   if (size) {
-    auto result = readFull(bytes.ptr(), size);
+    auto result = readFull(bytes);
     if (!result) return std::unexpected(std::move(result.error()));
   }
   return bytes;
 }
 
 std::expected<void, StarException> IODevice::writeBytes(ByteArray const& bytes) {
-  return writeFull(bytes.ptr(), bytes.size());
+  return writeFull(bytes);
 }
 
 std::expected<ByteArray, StarException> IODevice::readBytesAbsolute(StreamOffset position, std::size_t size) {
   ByteArray bytes;
   bytes.resize(size);
   if (size) {
-    auto result = readFullAbsolute(position, bytes.ptr(), size);
+    auto result = readFullAbsolute(position, bytes);
     if (!result) return std::unexpected(std::move(result.error()));
   }
   return bytes;
 }
 
 std::expected<void, StarException> IODevice::writeBytesAbsolute(StreamOffset position, ByteArray const& bytes) {
-  return writeFullAbsolute(position, bytes.ptr(), bytes.size());
+  return writeFullAbsolute(position, bytes);
 }
 
 void IODevice::setMode(IOMode mode) { m_mode = mode; }

@@ -132,11 +132,6 @@ void main() {
 )SHADER";
 
 
-extern std::expected<EnumMap<BoolSettingMode>, StarException> const BoolSettingModeNames = EnumMap<BoolSettingMode>::create({
-  {BoolSettingMode::Enabled, "Enabled"},
-  {BoolSettingMode::FromSetting, "FromSetting"},
-  {BoolSettingMode::Disabled, "Disabled"}
-});
 
 bool settingModeValue(BoolSettingMode const& mode, bool const& setting) {
   if (mode == BoolSettingMode::FromSetting) {
@@ -231,10 +226,9 @@ std::expected<RefPtr<OpenGlRenderer::GlFrameBuffer>, StarException> OpenGlRender
   result->multisample = GLEW_VERSION_4_0 ? *multisample : 0;
   auto hdrName = fbConfig.getString("hdr", "Disabled");
   if (!hdrName) return std::unexpected(std::move(hdrName.error()));
-  if (!BoolSettingModeNames) return std::unexpected(BoolSettingModeNames.error());
-  auto hdrMode = BoolSettingModeNames->getLeft(*hdrName);
+  auto hdrMode = enumValue<BoolSettingModeNames>(*hdrName);
   if (!hdrMode) return std::unexpected(std::move(hdrMode.error()));
-  result->hdrMode = **hdrMode;
+  result->hdrMode = *hdrMode;
   auto hdrSetting = fbConfig.getBool("hdrSetting", false);
   if (!hdrSetting) return std::unexpected(std::move(hdrSetting.error()));
   bool hdr = settingModeValue(result->hdrMode, *hdrSetting);
@@ -259,21 +253,19 @@ std::expected<RefPtr<OpenGlRenderer::GlFrameBuffer>, StarException> OpenGlRender
     return std::unexpected(RendererException("Framebuffer size must be positive"));
   auto addressingName = fbConfig.getString("textureAddressing", "clamp");
   if (!addressingName) return std::unexpected(std::move(addressingName.error()));
-  if (!TextureAddressingNames) return std::unexpected(TextureAddressingNames.error());
-  auto addressing = TextureAddressingNames->getLeft(*addressingName);
+  auto addressing = enumValue<TextureAddressingNames>(*addressingName);
   if (!addressing) return std::unexpected(std::move(addressing.error()));
   auto filteringName = fbConfig.getString("textureFiltering", "nearest");
   if (!filteringName) return std::unexpected(std::move(filteringName.error()));
-  if (!TextureFilteringNames) return std::unexpected(TextureFilteringNames.error());
-  auto filtering = TextureFilteringNames->getLeft(*filteringName);
+  auto filtering = enumValue<TextureFilteringNames>(*filteringName);
   if (!filtering) return std::unexpected(std::move(filtering.error()));
 
   GlTextureBindingGuard textureBinding;
   GlFramebufferBindingGuard framebufferBinding;
   result->texture = make_ref<GlLoneTexture>();
   auto& texture = result->texture;
-  texture->textureFiltering = **filtering;
-  texture->textureAddressing = **addressing;
+  texture->textureFiltering = *filtering;
+  texture->textureAddressing = *addressing;
   texture->textureSize = size;
   glGenTextures(1, &texture->textureId);
   auto textureStatus = checkGlError("framebuffer texture creation");
@@ -288,8 +280,8 @@ std::expected<RefPtr<OpenGlRenderer::GlFrameBuffer>, StarException> OpenGlRender
     GLenum format = result->alpha ? GL_RGBA : GL_RGB;
     GLenum internalFormat = hdr ? (result->alpha ? GL_RGBA16F : GL_RGB16F) : (result->alpha ? GL_RGBA8 : GL_RGB8);
     glTexImage2D(target, 0, internalFormat, size[0], size[1], 0, format, hdr ? GL_FLOAT : GL_UNSIGNED_BYTE, nullptr);
-    GLint wrap = **addressing == TextureAddressing::Clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT;
-    GLint filter = **filtering == TextureFiltering::Nearest ? GL_NEAREST : GL_LINEAR;
+    GLint wrap = *addressing == TextureAddressing::Clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT;
+    GLint filter = *filtering == TextureFiltering::Nearest ? GL_NEAREST : GL_LINEAR;
     glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap);
     glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap);
     glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filter);
@@ -532,16 +524,14 @@ std::expected<void, StarException> OpenGlRenderer::loadEffectConfig(String const
     texture.textureUnit = textureUnit++;
     auto addressingName = entry.second.getString("textureAddressing", "clamp");
     if (!addressingName) return std::unexpected(std::move(addressingName.error()));
-    if (!TextureAddressingNames) return std::unexpected(TextureAddressingNames.error());
-    auto addressing = TextureAddressingNames->getLeft(*addressingName);
+    auto addressing = enumValue<TextureAddressingNames>(*addressingName);
     if (!addressing) return std::unexpected(std::move(addressing.error()));
-    texture.textureAddressing = **addressing;
+    texture.textureAddressing = *addressing;
     auto filteringName = entry.second.getString("textureFiltering", "nearest");
     if (!filteringName) return std::unexpected(std::move(filteringName.error()));
-    if (!TextureFilteringNames) return std::unexpected(TextureFilteringNames.error());
-    auto filtering = TextureFilteringNames->getLeft(*filteringName);
+    auto filtering = enumValue<TextureFilteringNames>(*filteringName);
     if (!filtering) return std::unexpected(std::move(filtering.error()));
-    texture.textureFiltering = **filtering;
+    texture.textureFiltering = *filtering;
     auto sizeUniform = entry.second.optString("textureSizeUniform");
     if (!sizeUniform) return std::unexpected(std::move(sizeUniform.error()));
     if (*sizeUniform) {

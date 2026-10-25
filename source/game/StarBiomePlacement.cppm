@@ -135,7 +135,12 @@ std::expected<Json, StarException> variantFromBiomeItem(BiomeItem const& biomeIt
 
 enum class BiomePlacementArea { Surface, Underground };
 enum class BiomePlacementMode { Floor, Ceiling, Background, Ocean };
-extern std::expected<EnumMap<BiomePlacementMode>, StarException> const BiomePlacementModeNames;
+inline constexpr auto BiomePlacementModeNames = sortedEnumNames(std::to_array<std::pair<BiomePlacementMode, std::string_view>>({
+  {BiomePlacementMode::Floor, "floor"},
+  {BiomePlacementMode::Ceiling, "ceiling"},
+  {BiomePlacementMode::Background, "background"},
+  {BiomePlacementMode::Ocean, "ocean"}
+}));
 
 struct BiomeItemPlacement {
   BiomeItemPlacement(BiomeItem item, Vec2I position, float priority);
@@ -183,7 +188,10 @@ private:
     // periodic clumpy noise.
     Periodic
   };
-  static std::expected<EnumMap<DistributionType>, StarException> const DistributionTypeNames;
+  inline static constexpr auto DistributionTypeNames = sortedEnumNames(std::to_array<std::pair<DistributionType, std::string_view>>({
+    {DistributionType::Random, "random"},
+    {DistributionType::Periodic, "periodic"}
+  }));
 
   BiomePlacementMode m_mode;
   DistributionType m_distribution;

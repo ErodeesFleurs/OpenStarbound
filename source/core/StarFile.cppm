@@ -117,15 +117,15 @@ public:
   [[nodiscard]] std::expected<void, StarException> resize(StreamOffset size) override;
   [[nodiscard]] std::expected<StreamOffset, StarException> size() override;
   [[nodiscard]] std::expected<bool, StarException> atEnd() override;
-  [[nodiscard]] std::expected<std::size_t, StarException> read(char* data, std::size_t len) override;
-  [[nodiscard]] std::expected<std::size_t, StarException> write(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> read(std::span<char> data) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> write(std::span<char const> data) override;
 
   // Do an immediate read / write of an absolute location in the file, without
   // modifying the current file cursor.  Safe to call in a threaded context
   // with other reads and writes, but not safe vs changing the File state like
   // open and close.
-  [[nodiscard]] std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
-  [[nodiscard]] std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, std::span<char> data) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, std::span<char const> data) override;
 
   [[nodiscard]] std::expected<void, StarException> open(IOMode mode) override;
   // Consumes the handle even on error.  Call explicitly after writing so that

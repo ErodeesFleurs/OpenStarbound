@@ -81,6 +81,7 @@ set (star_game_tests_SOURCES
       StarTestUniverse.cpp
       StarGameTest.cpp
       assets_test.cpp
+      biome_placement_test.cpp
       function_test.cpp
       item_test.cpp
       liquid_types_test.cpp
@@ -96,6 +97,7 @@ set (star_game_tests_SOURCES
       world_snapshot_test.cpp
       universe_connection_test.cpp
       weather_domain_test.cpp
+      wire_processor_test.cpp
       weather_test.cpp
     )
 add_executable (game_tests
@@ -122,3 +124,20 @@ add_test (NAME game_tests WORKING_DIRECTORY $<TARGET_FILE_DIR:game_tests> COMMAN
 set_tests_properties(core_tests PROPERTIES
                      LABELS "NoAssets")
 
+
+if(STAR_BUILD_GUI)
+  add_executable(frontend_tests
+    $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>
+    gtest/gtest-all.cc game_tests_main.cpp StarTestUniverse.cpp StarGameTest.cpp frontend_test.cpp)
+  target_sources(frontend_tests PRIVATE FILE_SET CXX_MODULES FILES StarTestUniverse.cppm StarGameTest.cppm)
+  target_include_directories(frontend_tests PRIVATE
+    ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES} ${STAR_GAME_INCLUDES} ${STAR_APPLICATION_INCLUDES}
+    ${STAR_RENDERING_INCLUDES} ${STAR_WINDOWING_INCLUDES} ${STAR_FRONTEND_INCLUDES}
+    ${CMAKE_CURRENT_SOURCE_DIR})
+  target_link_libraries(frontend_tests PRIVATE
+    star_base_modules star_frontend_modules star_application_modules star_build_config
+    $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>
+    $<LINK_ONLY:star_application_dependencies> $<LINK_ONLY:star_voice_dependencies>)
+  set_target_properties(frontend_tests PROPERTIES CXX_SCAN_FOR_MODULES ON)
+endif()

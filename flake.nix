@@ -125,6 +125,7 @@
             guiSupport = false;
             withBenchmarks = true;
           };
+          benchmarks-gui = openstarbound.override { withBenchmarks = true; };
         };
     in
     {

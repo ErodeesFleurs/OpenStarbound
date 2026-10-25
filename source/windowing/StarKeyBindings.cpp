@@ -229,7 +229,10 @@ Set<InterfaceAction> KeyBindings::actions(InputEvent const& event) const {
 Set<InterfaceAction> KeyBindings::actions(KeyChord chord) const {
   std::size_t mostMatchedMods = 0;
   Set<InterfaceAction> matching;
-  for (auto const& pair : m_actions.value(chord.key)) {
+  auto bindings = m_actions.ptr(chord.key);
+  if (!bindings)
+    return matching;
+  for (auto const& pair : *bindings) {
     // first make sure that all required mods for the binding are held
     if ((pair.first & chord.mods) == pair.first) {
       // now count the number of mods in the binding
@@ -250,7 +253,12 @@ Set<InterfaceAction> KeyBindings::actions(KeyChord chord) const {
 }
 
 Set<InterfaceAction> KeyBindings::actionsForKey(Key key) const {
-  return Set<InterfaceAction>::from(m_actions.value(key).transformed([](auto p){ return p.second; }));
+  Set<InterfaceAction> matching;
+  if (auto bindings = m_actions.ptr(key)) {
+    for (auto const& pair : *bindings)
+      matching.add(pair.second);
+  }
+  return matching;
 }
 
 }

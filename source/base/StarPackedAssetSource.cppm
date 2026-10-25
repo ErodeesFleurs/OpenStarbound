@@ -191,15 +191,15 @@ std::expected<std::shared_ptr<IODevice>, StarException> PackedAssetSource::open(
       : file(std::move(file)), path(std::move(path)), fileOffset(offset), assetSize(size) {
       setMode(IOMode::Read);
     }
-    [[nodiscard]] std::expected<std::size_t, StarException> read(char* data, std::size_t len) override {
-      len = std::min<std::uint64_t>(len, assetSize - assetPos);
-      auto result = file->readFullAbsolute(fileOffset + assetPos, data, len);
+    [[nodiscard]] std::expected<std::size_t, StarException> read(std::span<char> data) override {
+      auto len = std::min<std::uint64_t>(data.size(), assetSize - assetPos);
+      auto result = file->readFullAbsolute(fileOffset + assetPos, data.first(len));
       if (!result)
         return std::unexpected(std::move(result.error()));
       assetPos += len;
       return len;
     }
-    [[nodiscard]] std::expected<std::size_t, StarException> write(char const*, std::size_t) override {
+    [[nodiscard]] std::expected<std::size_t, StarException> write(std::span<char const>) override {
       return std::unexpected(IOException("Assets IODevices are read-only"));
     }
     [[nodiscard]] std::expected<StreamOffset, StarException> size() override { return assetSize; }

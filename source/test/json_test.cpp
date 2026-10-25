@@ -327,6 +327,113 @@ TEST(JsonTest, NumericOutputStopsAtFirstSinkError) {
   }
 }
 
+TEST(JsonTest, Utf8OutputPreservesExactEscapesUnicodeAndFormatting) {
+  String controls("A\0\1\b\f\n\r\t\"\\", 10);
+  Json input = JsonObject{{"é", 1}, {"a", JsonArray{controls, "é水😀", Json(), true}}};
+  std::string escaped = "\"A\\u0000\\u0001\\b\\f\\n\\r\\t\\\"\\\\\"";
+  std::string compact = "{\"a\":[" + escaped + ",\"é水😀\",null,true],\"é\":1}";
+  std::string pretty = "{\n  \"a\" : [" + escaped + ", \"é水😀\", null, true],\n  \"é\" : 1\n}";
+  JsonBuilderStream builder;
+  auto streamed = JsonStreamer<Json>::toJsonStream(input, builder, true);
+  ASSERT_TRUE(streamed);
+  auto rebuilt = builder.takeTop();
+  ASSERT_TRUE(rebuilt);
+  EXPECT_EQ(*rebuilt, input);
+  for (int indentation : {0, 2}) {
+    auto repr = input.repr(indentation, true);
+    ASSERT_TRUE(repr);
+    EXPECT_EQ(repr->utf8(), indentation == 0 ? compact : pretty);
+    auto parsed = Json::parseJson(*repr);
+    ASSERT_TRUE(parsed);
+    EXPECT_EQ(*parsed, input);
+    for (bool sort : {false, true}) {
+      String wideOutput;
+      auto wide = outputUtf32Json(input, JsonStringOutputIterator(wideOutput), indentation, sort);
+      ASSERT_TRUE(wide);
+      std::string byteOutput;
+      auto bytes = outputUtf8Json(input, std::back_inserter(byteOutput), indentation, sort);
+      ASSERT_TRUE(bytes);
+      EXPECT_EQ(byteOutput, wideOutput.utf8());
+    }
+  }
+}
+
+TEST(JsonTest, Utf8OutputValidatesCurrentStringBeforeWriting) {
+  struct Sink {
+    std::string& prefix;
+    std::size_t& calls;
+    std::expected<void, StarException> push(char c) {
+      ++calls;
+      prefix.push_back(c);
+      return std::unexpected(JsonException("unexpected output callback"));
+    }
+  };
+  for (auto const& invalid : {String("valid\xff", 6), String("valid\0\xff", 7),
+           String("valid\xe2\x82", 7), String("valid\xc0\x80", 7), String("valid\xf4\x90\x80\x80", 9)}) {
+    std::string prefix;
+    std::size_t calls = 0;
+    auto written = outputUtf8Json(Json(invalid), Sink{prefix, calls}, 2, false);
+    ASSERT_FALSE(written);
+    EXPECT_TRUE(written.error().is<UnicodeException>());
+    EXPECT_EQ(calls, 0u);
+    EXPECT_TRUE(prefix.empty());
+
+    // A genuine UTF-32 builder must also receive no partial string callback.
+    struct Builder : JsonBuilderStream {
+      std::size_t strings = 0;
+      std::expected<void, StarException> putString(char32_t const* text, std::size_t size) override {
+        ++strings;
+        return JsonBuilderStream::putString(text, size);
+      }
+    } builder;
+    auto built = JsonStreamer<Json>::toJsonStream(Json(invalid), builder, false);
+    ASSERT_FALSE(built);
+    EXPECT_TRUE(built.error().is<UnicodeException>());
+    EXPECT_EQ(builder.strings, 0u);
+  }
+}
+
+TEST(JsonTest, Utf8OutputPreservesFirstSinkErrorBeforeInvalidLaterValues) {
+  struct Sink {
+    std::string& prefix;
+    std::size_t& calls;
+    std::size_t limit;
+    std::expected<void, StarException> push(char c) {
+      ++calls;
+      if (prefix.size() == limit)
+        return std::unexpected(JsonException("UTF-8 sink failure"));
+      prefix.push_back(c);
+      return {};
+    }
+  };
+  Json input = JsonArray{"é水😀", String("bad\xff", 4)};
+  std::string validPrefix = "[\"é水😀\",";
+  for (std::size_t limit = 0; limit < validPrefix.size(); ++limit) {
+    std::string prefix;
+    std::size_t calls = 0;
+    auto written = outputUtf8Json(input, Sink{prefix, calls, limit}, 0, false);
+    ASSERT_FALSE(written);
+    EXPECT_TRUE(written.error().is<JsonException>());
+    EXPECT_FALSE(written.error().is<UnicodeException>());
+    EXPECT_EQ(calls, limit + 1);
+    EXPECT_EQ(prefix, validPrefix.substr(0, limit));
+  }
+  for (Json const& invalid : {input, Json(JsonObject{{String("key\0\xff", 5), 1}})}) {
+    std::string prefix;
+    std::size_t calls = 0;
+    auto written = outputUtf8Json(invalid, Sink{prefix, calls, 100}, 2, true);
+    ASSERT_FALSE(written);
+    EXPECT_TRUE(written.error().is<UnicodeException>());
+    // Invalid keys are checked after '{', but before indentation or quotes.
+    if (invalid.type() == Json::Type::Object) {
+      EXPECT_EQ(prefix, "{");
+      EXPECT_EQ(calls, 1u);
+    } else {
+      EXPECT_EQ(prefix, validPrefix);
+    }
+  }
+}
+
 TEST(JsonTest, Query) {
   auto result37 = Json::parse(R"JSON(
       {

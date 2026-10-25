@@ -59,7 +59,7 @@ std::expected<void, StarException> FileLogSink::log(char const* msg, LogLevel le
   if (!name)
     return std::unexpected(std::move(name.error()));
   auto line = strf("[{}] [{}] {}\n", timestamp, *name, msg);
-  auto written = m_output->write(line.data(), line.size());
+  auto written = m_output->write(line);
   if (!written)
     return std::unexpected(std::move(written.error()));
   return {};

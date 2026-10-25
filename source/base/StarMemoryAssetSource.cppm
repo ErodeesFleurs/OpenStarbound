@@ -80,14 +80,14 @@ std::expected<std::shared_ptr<IODevice>, StarException> MemoryAssetSource::open(
       setMode(IOMode::Read);
     }
 
-    [[nodiscard]] std::expected<std::size_t, StarException> read(char* data, std::size_t len) override {
-      len = std::min<std::size_t>(len, assetSize - static_cast<std::size_t>(assetPos));
-      std::memcpy(data, assetData + assetPos, len);
+    [[nodiscard]] std::expected<std::size_t, StarException> read(std::span<char> data) override {
+      auto len = std::min<std::size_t>(data.size(), assetSize - static_cast<std::size_t>(assetPos));
+      std::memcpy(data.data(), assetData + assetPos, len);
       assetPos += len;
       return len;
     }
 
-    [[nodiscard]] std::expected<std::size_t, StarException> write(char const*, std::size_t) override {
+    [[nodiscard]] std::expected<std::size_t, StarException> write(std::span<char const>) override {
       return std::unexpected(IOException("Assets IODevices are read-only"));
     }
 

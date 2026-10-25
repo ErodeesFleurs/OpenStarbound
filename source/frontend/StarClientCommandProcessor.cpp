@@ -995,7 +995,7 @@ std::expected<String, StarException> ClientCommandProcessor::render(String const
   if (!file) return std::unexpected(std::move(file.error()));
   auto size = buffer->size();
   if (!size) return std::unexpected(std::move(size.error()));
-  auto written = (*file)->writeFull(buffer->ptr(), *size);
+  auto written = (*file)->writeFull({buffer->ptr(), static_cast<std::size_t>(*size)});
   auto closed = (*file)->close();
   if (!written) {
     if (!closed)

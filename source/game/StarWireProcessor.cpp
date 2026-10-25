@@ -154,8 +154,7 @@ std::expected<void, StarException> WireProcessor::loadNetwork(Vec2I tilePosition
   // if that wire entity was found.
   // TODO: This is depth first recursive, because that is the simplest thing,
   // but if this causes issues with recursion depth it can be changed.
-  std::function<std::expected<bool, StarException>(Vec2I)> doLoad;
-  doLoad = [&](Vec2I const& pos) -> std::expected<bool, StarException> {
+  auto doLoad = [&](this auto const& self, Vec2I const& pos) -> std::expected<bool, StarException> {
     auto sector = m_worldStorage->sectorForPosition(pos);
     if (!sector)
       return false;
@@ -194,7 +193,7 @@ std::expected<void, StarException> WireProcessor::loadNetwork(Vec2I tilePosition
       auto connections = wes->wireEntity->connectionsForNode({WireDirection::Input, i});
       if (!connections) return std::unexpected(std::move(connections.error()));
       for (auto const& connection : *connections) {
-        auto loaded = doLoad(connection.entityLocation);
+        auto loaded = self(connection.entityLocation);
         if (!loaded) return std::unexpected(std::move(loaded.error()));
         if (!*loaded) {
           if (auto r = wes->wireEntity->removeNodeConnection({WireDirection::Input, i}, connection); !r) return std::unexpected(std::move(r.error()));
@@ -206,7 +205,7 @@ std::expected<void, StarException> WireProcessor::loadNetwork(Vec2I tilePosition
       auto connections = wes->wireEntity->connectionsForNode({WireDirection::Output, i});
       if (!connections) return std::unexpected(std::move(connections.error()));
       for (auto const& connection : *connections) {
-        auto loaded = doLoad(connection.entityLocation);
+        auto loaded = self(connection.entityLocation);
         if (!loaded) return std::unexpected(std::move(loaded.error()));
         if (!*loaded) {
           if (auto r = wes->wireEntity->removeNodeConnection({WireDirection::Output, i}, connection); !r) return std::unexpected(std::move(r.error()));

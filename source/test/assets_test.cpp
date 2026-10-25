@@ -57,18 +57,18 @@ namespace {
   public:
     FailingPngBuffer(ByteArray bytes, StreamOffset failAt) : Buffer(std::move(bytes)), m_failAt(failAt) {}
 
-    [[nodiscard]] std::expected<void, StarException> readFull(char* data, std::size_t length) override {
+    [[nodiscard]] std::expected<void, StarException> readFull(std::span<char> data) override {
       auto ready = failIfRequested();
       if (!ready)
         return std::unexpected(std::move(ready.error()));
-      return Buffer::readFull(data, length);
+      return Buffer::readFull(data);
     }
 
-    [[nodiscard]] std::expected<void, StarException> writeFull(char const* data, std::size_t length) override {
+    [[nodiscard]] std::expected<void, StarException> writeFull(std::span<char const> data) override {
       auto ready = failIfRequested();
       if (!ready)
         return std::unexpected(std::move(ready.error()));
-      return Buffer::writeFull(data, length);
+      return Buffer::writeFull(data);
     }
 
     unsigned unwound = 0;
@@ -278,7 +278,7 @@ const GameTestRegistration assetsWavSignaturesAndPcmSamples("AssetsTest", "WavSi
   };
   auto device = [&]() -> std::expected<std::shared_ptr<Buffer>, StarException> {
     auto buffer = std::make_shared<Buffer>();
-    auto written = buffer->writeFull(reinterpret_cast<char const*>(bytes.data()), bytes.size());
+    auto written = buffer->writeFull({reinterpret_cast<char const*>(bytes.data()), bytes.size()});
     if (!written)
       return std::unexpected(std::move(written.error()));
     auto sought = buffer->seek(0);

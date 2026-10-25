@@ -147,10 +147,14 @@ let
     "core_tests"
     "game_tests"
   ]
+  ++ lib.optional (withTests && guiSupport) "frontend_tests"
   ++ lib.optionals withBenchmarks [
     "core_benchmarks"
     "game_benchmarks"
-  ];
+    "worker_benchmarks"
+    "allocator_benchmarks"
+  ]
+  ++ lib.optional (withBenchmarks && guiSupport) "frontend_benchmarks";
   qtTools =
     lib.optional qtSupport "json_tool" ++ lib.optional (qtSupport && steamSupport) "mod_uploader";
   distBinaries = plain ++ wrapped ++ qtTools;

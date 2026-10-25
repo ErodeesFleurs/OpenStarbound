@@ -137,9 +137,6 @@ std::expected<Json, StarException> variantFromBiomeItem(BiomeItem const& item) {
   return std::unexpected(BiomeException("Unrecognized biome item type"));
 }
 
-extern std::expected<EnumMap<BiomePlacementMode>, StarException> const BiomePlacementModeNames = EnumMap<BiomePlacementMode>::create({
-    {BiomePlacementMode::Floor, "floor"}, {BiomePlacementMode::Ceiling, "ceiling"},
-    {BiomePlacementMode::Background, "background"}, {BiomePlacementMode::Ocean, "ocean"}});
 
 BiomeItemPlacement::BiomeItemPlacement(BiomeItem item, Vec2I position, float priority)
   : item(std::move(item)), position(position), priority(priority) {}
@@ -319,12 +316,11 @@ BiomeItemDistribution::BiomeItemDistribution() {
 std::expected<BiomeItemDistribution, StarException> BiomeItemDistribution::create(Root& root, Json const& config, std::uint64_t seed, float biomeHueShift) {
   BiomeItemDistribution result;
   RandomSource rand(seed);
-  if (!BiomePlacementModeNames) return std::unexpected(BiomePlacementModeNames.error());
   auto modeName = config.getString("mode", "floor");
   if (!modeName) return std::unexpected(std::move(modeName.error()));
-  auto mode = BiomePlacementModeNames->getLeft(*modeName);
+  auto mode = enumValue<BiomePlacementModeNames>(*modeName);
   if (!mode) return std::unexpected(std::move(mode.error()));
-  result.m_mode = **mode;
+  result.m_mode = *mode;
   {
     auto value = config.getFloat("priority", 0.0f);
     if (!value) return std::unexpected(std::move(value.error()));
@@ -345,12 +341,11 @@ std::expected<BiomeItemDistribution, StarException> BiomeItemDistribution::creat
       *settings = std::move(*value);
     }
   }
-  if (!DistributionTypeNames) return std::unexpected(DistributionTypeNames.error());
   auto typeName = settings->getString("type");
   if (!typeName) return std::unexpected(std::move(typeName.error()));
-  auto type = DistributionTypeNames->getLeft(*typeName);
+  auto type = enumValue<DistributionTypeNames>(*typeName);
   if (!type) return std::unexpected(std::move(type.error()));
-  result.m_distribution = **type;
+  result.m_distribution = *type;
   if (result.m_distribution == DistributionType::Random) {
     {
       auto value = settings->getFloat("blockProbability");
@@ -404,18 +399,16 @@ std::expected<BiomeItemDistribution, StarException> BiomeItemDistribution::creat
 
 std::expected<BiomeItemDistribution, StarException> BiomeItemDistribution::create(Assets const& assets, Json const& store) {
   BiomeItemDistribution result;
-  if (!BiomePlacementModeNames) return std::unexpected(BiomePlacementModeNames.error());
-  if (!DistributionTypeNames) return std::unexpected(DistributionTypeNames.error());
   auto modeName = store.getString("mode");
   if (!modeName) return std::unexpected(std::move(modeName.error()));
-  auto mode = BiomePlacementModeNames->getLeft(*modeName);
+  auto mode = enumValue<BiomePlacementModeNames>(*modeName);
   if (!mode) return std::unexpected(std::move(mode.error()));
-  result.m_mode = **mode;
+  result.m_mode = *mode;
   auto distributionName = store.getString("distribution");
   if (!distributionName) return std::unexpected(std::move(distributionName.error()));
-  auto distribution = DistributionTypeNames->getLeft(*distributionName);
+  auto distribution = enumValue<DistributionTypeNames>(*distributionName);
   if (!distribution) return std::unexpected(std::move(distribution.error()));
-  result.m_distribution = **distribution;
+  result.m_distribution = *distribution;
   {
     auto value = store.getFloat("priority");
     if (!value) return std::unexpected(std::move(value.error()));
@@ -479,11 +472,9 @@ std::expected<BiomeItemDistribution, StarException> BiomeItemDistribution::creat
 }
 
 std::expected<Json, StarException> BiomeItemDistribution::toJson() const {
-  if (!BiomePlacementModeNames) return std::unexpected(BiomePlacementModeNames.error());
-  if (!DistributionTypeNames) return std::unexpected(DistributionTypeNames.error());
-  auto mode = BiomePlacementModeNames->getRight(m_mode);
+  auto mode = enumName<BiomePlacementModeNames>(m_mode);
   if (!mode) return std::unexpected(std::move(mode.error()));
-  auto distribution = DistributionTypeNames->getRight(m_distribution);
+  auto distribution = enumName<DistributionTypeNames>(m_distribution);
   if (!distribution) return std::unexpected(std::move(distribution.error()));
   JsonArray randomItems;
   for (auto const& item : m_randomItems) {
@@ -503,7 +494,7 @@ std::expected<Json, StarException> BiomeItemDistribution::toJson() const {
     if (!weight) return std::unexpected(std::move(weight.error()));
     weightedItems.append(JsonArray{std::move(*item), std::move(*weight)});
   }
-  return JsonObject{{"mode", **mode}, {"distribution", **distribution}, {"priority", m_priority},
+  return JsonObject{{"mode", String(*mode)}, {"distribution", String(*distribution)}, {"priority", m_priority},
       {"blockProbability", m_blockProbability}, {"blockSeed", m_blockSeed}, {"randomItems", std::move(randomItems)},
       {"densityFunction", std::move(*density)}, {"modulusDistortion", std::move(*distortion)},
       {"modulus", m_modulus}, {"modulusOffset", m_modulusOffset}, {"weightedItems", std::move(weightedItems)}};
@@ -561,7 +552,5 @@ std::expected<std::optional<BiomeItemPlacement>, StarException> BiomeItemDistrib
   return std::optional<BiomeItemPlacement>();
 }
 
-std::expected<EnumMap<BiomeItemDistribution::DistributionType>, StarException> const BiomeItemDistribution::DistributionTypeNames = EnumMap<DistributionType>::create({
-  {DistributionType::Random, "random"}, {DistributionType::Periodic, "periodic"}});
 
 }

@@ -92,6 +92,7 @@ private:
   std::shared_ptr<ImageWidget> m_portraitImage;
 
   RadioMessage m_message;
+  std::size_t m_scrollTextLength = 0;
 
   String m_backgroundImage;
 

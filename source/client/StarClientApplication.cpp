@@ -1894,6 +1894,26 @@ std::expected<void, StarException> ClientApplication::updateRunning(float dt) {
     if (!focused)
       return std::unexpected(std::move(focused.error()));
     if (!*focused && !m_cinematicOverlay->suppressInput()) {
+      // Events and bindings are stable during this gameplay-input interval.
+      // Resolve each event once, after UI focus/consumption and any rebinding,
+      // and discard both snapshots before the next input/update dispatch.
+      auto resolveActions = [&](List<KeyDownEvent> const& events) {
+        std::bitset<std::to_underlying(InterfaceAction::Count)> actions;
+        for (auto const& event : events) {
+          for (auto action : m_guiContext->actions(event))
+            actions[std::to_underlying(action)] = true;
+        }
+        return actions;
+      };
+      auto heldActions = resolveActions(m_heldKeyEvents);
+      auto edgeActions = resolveActions(m_edgeKeyEvents);
+      auto isActionTaken = [&](InterfaceAction action) {
+        return heldActions[std::to_underlying(action)];
+      };
+      auto isActionTakenEdge = [&](InterfaceAction action) {
+        return edgeActions[std::to_underlying(action)];
+      };
+
       m_player->setShifting(isActionTaken(InterfaceAction::PlayerShifting));
 
       if (isActionTaken(InterfaceAction::PlayerRight))
@@ -2074,7 +2094,7 @@ std::expected<void, StarException> ClientApplication::updateRunning(float dt) {
         }
         m_voice->setLocalSpeaker(worldClient->connection());
       }
-      worldClient->setInteractiveHighlightMode(isActionTaken(InterfaceAction::ShowLabels));
+      worldClient->setInteractiveHighlightMode(isHeldActionTaken(InterfaceAction::ShowLabels));
     }
     if (auto camera = updateCamera(dt); !camera)
       return std::unexpected(std::move(camera.error()));
@@ -2151,23 +2171,15 @@ std::expected<void, StarException> ClientApplication::updateRunning(float dt) {
     return {};
 }
 
-bool ClientApplication::isActionTaken(InterfaceAction action) const {
-  for (auto keyEvent : m_heldKeyEvents) {
+bool ClientApplication::isHeldActionTaken(InterfaceAction action) const {
+  // Labels and camera controls are queried outside the gameplay-focus interval.
+  for (auto const& keyEvent : m_heldKeyEvents) {
     if (m_guiContext->actions(keyEvent).contains(action))
       return true;
   }
-
   return false;
 }
 
-bool ClientApplication::isActionTakenEdge(InterfaceAction action) const {
-  for (auto keyEvent : m_edgeKeyEvents) {
-    if (m_guiContext->actions(keyEvent).contains(action))
-      return true;
-  }
-
-  return false;
-}
 
 std::expected<void, StarException> ClientApplication::updateCamera(float dt) {
   if (!m_universeClient->worldClient())
@@ -2199,7 +2211,7 @@ std::expected<void, StarException> ClientApplication::updateCamera(float dt) {
     return std::unexpected(std::move(cameraPosition.error()));
   auto playerCameraPosition = *cameraPosition;
 
-  if (isActionTaken(InterfaceAction::CameraShift)) {
+  if (isHeldActionTaken(InterfaceAction::CameraShift)) {
     m_snapBackCameraOffset = false;
     m_cameraOffsetDownTime += dt;
     Vec2F aim = m_universeClient->worldClient()->geometry().diff(m_mainInterface->cursorWorldPosition(), playerCameraPosition);

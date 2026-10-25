@@ -75,9 +75,17 @@ public:
   [[nodiscard]] std::expected<void, StarException> stop();
   // Drain accepted work and join workers. Do not call from this pool's jobs.
   [[nodiscard]] std::expected<void, StarException> finish();
-  WorkerPoolHandle addWork(UniqueFunction<std::expected<void, StarException>()> work);
-  template <typename ResultType>
-  WorkerPoolPromise<ResultType> addProducer(UniqueFunction<std::expected<ResultType, StarException>()> producer);
+  // Store the concrete callable and invoke it as an lvalue; only the queue erases it.
+  template <typename Callable>
+    requires (std::constructible_from<std::decay_t<Callable>, Callable&&>
+        && std::invocable<std::decay_t<Callable>&>
+        && std::same_as<std::invoke_result_t<std::decay_t<Callable>&>, std::expected<void, StarException>>)
+  WorkerPoolHandle addWork(Callable&& work);
+  template <typename ResultType, typename Callable>
+    requires (std::constructible_from<std::decay_t<Callable>, Callable&&>
+        && std::invocable<std::decay_t<Callable>&>
+        && std::same_as<std::invoke_result_t<std::decay_t<Callable>&>, std::expected<ResultType, StarException>>)
+  WorkerPoolPromise<ResultType> addProducer(Callable&& producer);
   std::size_t getWorkerCount() const;
   bool isWorkerThread() const;
 
@@ -95,6 +103,16 @@ private:
 
   using QueuedWork = UniqueFunction<std::expected<void, StarException>(std::optional<StarException>)>;
   void queueWork(QueuedWork work);
+  template <typename Callable>
+  static auto invokeTask(Callable& callable) -> std::invoke_result_t<Callable&> {
+    // A callable's arbitrary bool conversion is not an emptiness predicate.
+    // UniqueFunction and other checked wrappers report their own empty state.
+    if constexpr (std::is_pointer_v<Callable> || std::is_member_pointer_v<Callable>) {
+      if (callable == nullptr)
+        return std::unexpected(StarException("Cannot invoke an empty UniqueFunction"));
+    }
+    return std::invoke(callable);
+  }
   // Require m_threadMutex; never join while m_workMutex is held.
   [[nodiscard]] std::expected<void, StarException> stopWorkers();
   [[nodiscard]] std::expected<void, StarException> joinWorkers();
@@ -152,11 +170,33 @@ template <typename ResultType>
 WorkerPoolPromise<ResultType>::WorkerPoolPromise(std::shared_ptr<Impl> impl)
   : m_impl(std::move(impl)) {}
 
-template <typename ResultType>
-WorkerPoolPromise<ResultType> WorkerPool::addProducer(UniqueFunction<std::expected<ResultType, StarException>()> producer) {
+template <typename Callable>
+  requires (std::constructible_from<std::decay_t<Callable>, Callable&&>
+      && std::invocable<std::decay_t<Callable>&>
+      && std::same_as<std::invoke_result_t<std::decay_t<Callable>&>, std::expected<void, StarException>>)
+WorkerPoolHandle WorkerPool::addWork(Callable&& work) {
+  auto state = std::make_shared<WorkerPoolHandle::Impl>();
+  queueWork([state, work = std::forward<Callable>(work)](std::optional<StarException> cancelled) mutable -> std::expected<void, StarException> {
+    auto result = cancelled ? std::expected<void, StarException>(std::unexpected(std::move(*cancelled))) : invokeTask(work);
+    std::lock_guard lock(state->mutex);
+    if (!result)
+      state->error.emplace(std::move(result.error()));
+    state->done.store(true, std::memory_order_release);
+    state->done.notify_all();
+    state->condition.notify_all();
+    return {};
+  });
+  return state;
+}
+
+template <typename ResultType, typename Callable>
+  requires (std::constructible_from<std::decay_t<Callable>, Callable&&>
+      && std::invocable<std::decay_t<Callable>&>
+      && std::same_as<std::invoke_result_t<std::decay_t<Callable>&>, std::expected<ResultType, StarException>>)
+WorkerPoolPromise<ResultType> WorkerPool::addProducer(Callable&& producer) {
   auto state = std::make_shared<typename WorkerPoolPromise<ResultType>::Impl>();
-  queueWork([state, producer = std::move(producer)](std::optional<StarException> cancelled) mutable -> std::expected<void, StarException> {
-    auto result = cancelled ? std::expected<ResultType, StarException>(std::unexpected(std::move(*cancelled))) : producer();
+  queueWork([state, producer = std::forward<Callable>(producer)](std::optional<StarException> cancelled) mutable -> std::expected<void, StarException> {
+    auto result = cancelled ? std::expected<ResultType, StarException>(std::unexpected(std::move(*cancelled))) : invokeTask(producer);
     std::lock_guard lock(state->mutex);
     if (result)
       state->result.emplace(std::move(*result));

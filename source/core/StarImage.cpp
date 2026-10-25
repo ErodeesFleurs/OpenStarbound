@@ -68,7 +68,7 @@ void pngWarning(png_structp png, png_const_charp message) noexcept {
 void readPngData(png_structp png, png_bytep data, png_size_t length) noexcept {
   auto& state = *static_cast<PngState*>(png_get_io_ptr(png));
   {
-    auto result = state.device->readFull(reinterpret_cast<char*>(data), length);
+    auto result = state.device->readFull({reinterpret_cast<char*>(data), length});
     if (!result)
       state.error = std::move(result.error());
   }
@@ -80,7 +80,7 @@ void readPngData(png_structp png, png_bytep data, png_size_t length) noexcept {
 void writePngData(png_structp png, png_bytep data, png_size_t length) noexcept {
   auto& state = *static_cast<PngState*>(png_get_io_ptr(png));
   {
-    auto result = state.device->writeFull(reinterpret_cast<char*>(data), length);
+    auto result = state.device->writeFull({reinterpret_cast<char*>(data), length});
     if (!result)
       state.error = std::move(result.error());
   }
@@ -182,7 +182,7 @@ bool writePngRows(PngState& state, unsigned width, unsigned height, unsigned cha
 
 std::expected<void, StarException> readPngSignature(IODevice& device) {
   png_byte header[8]{};
-  auto result = device.readFull(reinterpret_cast<char*>(header), sizeof(header));
+  auto result = device.readFull({reinterpret_cast<char*>(header), sizeof(header)});
   if (!result)
     return std::unexpected(std::move(result.error()));
   if (png_sig_cmp(header, 0, sizeof(header))) {
@@ -198,7 +198,7 @@ std::expected<void, StarException> readPngSignature(IODevice& device) {
 
 std::expected<bool, StarException> Image::isPng(std::shared_ptr<IODevice> device) {
   png_byte header[8]{};
-  auto read = device->readAbsolute(0, (char*)header, sizeof(header));
+  auto read = device->readAbsolute(0, {reinterpret_cast<char*>(header), sizeof(header)});
   if (!read)
     return std::unexpected(std::move(read.error()));
   return *read == sizeof(header) && !png_sig_cmp(header, 0, sizeof(header));

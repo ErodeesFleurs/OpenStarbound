@@ -159,9 +159,7 @@ std::expected<void, StarException> RadioMessagePopup::update(float dt) {
       if (!portraitPath) return std::unexpected(std::move(portraitPath.error()));
       auto portrait = m_portraitImage->setImage(*portraitPath);
       if (!portrait) return std::unexpected(std::move(portrait.error()));
-      auto length = Text::stripEscapeCodes(m_message.text).length();
-      if (!length) return std::unexpected(std::move(length.error()));
-      int textLength = std::floor(*length * (1.0f - m_stageTimer.percent()));
+      int textLength = std::floor(m_scrollTextLength * (1.0f - m_stageTimer.percent()));
       auto limit = m_messageLabel->setTextCharLimit(textLength);
       if (!limit) return std::unexpected(std::move(limit.error()));
     } else if (m_popupStage == PopupStage::Persist) {
@@ -256,6 +254,7 @@ std::expected<void, StarException> RadioMessagePopup::enterStage(PopupStage newS
     } else {
       auto length = Text::stripEscapeCodes(m_message.text).length();
       if (!length) return std::unexpected(std::move(length.error()));
+      m_scrollTextLength = *length;
       m_stageTimer = GameTimer(*length / m_message.textSpeed);
       auto portrait = m_portraitImage->show();
       if (!portrait) return std::unexpected(std::move(portrait.error()));

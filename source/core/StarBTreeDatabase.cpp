@@ -1212,7 +1212,7 @@ namespace Star {
     if (auto buffer = m_uncommittedWrites.ptr(blockIndex)) {
       buffer->copyTo(block, blockOffset, size);
     } else {
-      return m_device->readFullAbsolute(HeaderSize + blockIndex * (StreamOffset)m_blockSize + blockOffset, block, size);
+      return m_device->readFullAbsolute(HeaderSize + blockIndex * (StreamOffset)m_blockSize + blockOffset, {block, size});
     }
     return {};
   }
@@ -1579,7 +1579,7 @@ namespace Star {
 
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::commitWrites() {
     for (auto& write : m_uncommittedWrites) {
-      auto result157 = m_device->writeFullAbsolute(HeaderSize + write.first * (StreamOffset)m_blockSize, write.second.ptr(), m_blockSize);
+      auto result157 = m_device->writeFullAbsolute(HeaderSize + write.first * (StreamOffset)m_blockSize, {write.second.ptr(), m_blockSize});
       if (!result157) return std::unexpected(std::move(result157.error()));
 
     }

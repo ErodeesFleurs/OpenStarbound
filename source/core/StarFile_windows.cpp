@@ -253,7 +253,7 @@ std::expected<void, StarException> File::overwriteFileWithRename(char const* dat
     auto file = open(newFile, IOMode::Write | IOMode::Truncate);
     if (!file)
       return std::unexpected(std::move(file.error()));
-    auto written = (*file)->writeFull(data, len);
+    auto written = (*file)->writeFull({data, len});
     if (!written)
       return std::unexpected(std::move(written.error()));
     auto synced = (*file)->sync();

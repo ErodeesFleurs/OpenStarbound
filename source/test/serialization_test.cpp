@@ -76,13 +76,33 @@ TEST(DataStreamTest, OrderedMapWireBytesAndDuplicateKeys) {
 
 TEST(ExternalBufferTest, ClosedDeviceRejectsZeroLengthRead) {
   ExternalBuffer buffer{std::span<char const>{}};
-  auto read = buffer.read(nullptr, 0);
+  auto read = buffer.read({});
   ASSERT_TRUE(read);
   EXPECT_EQ(*read, 0u);
   ASSERT_TRUE(buffer.close());
-  auto closedRead = buffer.read(nullptr, 0);
+  auto closedRead = buffer.read({});
   ASSERT_FALSE(closedRead);
   EXPECT_TRUE(closedRead.error().is<IOException>());
+}
+
+TEST(BufferTest, SpanTransfersRespectSlicesShortReadsAndAbsolutePositions) {
+  Buffer buffer(ByteArray("abc", 3));
+  std::array<char, 6> output{'!', '!', '!', '!', '!', '!'};
+  auto read = buffer.read(std::span(output).subspan(1, 4));
+  ASSERT_TRUE(read);
+  EXPECT_EQ(*read, 3u);
+  EXPECT_EQ(output, (std::array<char, 6>{'!', 'a', 'b', 'c', '!', '!'}));
+  EXPECT_EQ(buffer.pos(), 3);
+  EXPECT_EQ(buffer.read(output), 0u);
+
+  std::array<char, 4> input{'?', 'x', 'y', '?'};
+  auto written = buffer.writeAbsolute(1, std::span<char const>(input).subspan(1, 2));
+  ASSERT_TRUE(written);
+  EXPECT_EQ(*written, 2u);
+  EXPECT_EQ(buffer.pos(), 3);
+  ASSERT_TRUE(buffer.readFullAbsolute(0, std::span(output).subspan(2, 3)));
+  EXPECT_EQ(output, (std::array<char, 6>{'!', 'a', 'a', 'x', 'y', '!'}));
+  EXPECT_EQ(buffer.pos(), 3);
 }
 
 TEST(DataStreamTest, ExternalSpanBorrowsSlicesAndResetRewinds) {

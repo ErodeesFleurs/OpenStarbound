@@ -134,7 +134,7 @@ std::expected<Jsonlike, StarException> inputUtf8Json(InputIterator begin, InputI
 
 template <typename OutputIterator>
 std::expected<void, StarException> outputUtf8Json(Json const& val, OutputIterator out, int pretty, bool sort) {
-  JsonWriter<Utf8OutputIterator<OutputIterator>> writer(Utf8OutputIterator<OutputIterator>(out), pretty);
+  JsonWriter<OutputIterator, true> writer(out, pretty);
   return JsonStreamer<Json>::toJsonStream(val, writer, sort);
 }
 

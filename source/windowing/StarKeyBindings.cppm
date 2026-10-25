@@ -85,6 +85,8 @@ enum class InterfaceAction {
   InterfaceCodex,
   InterfaceQuest,
   InterfaceCrafting,
+  // Cardinality for local action snapshots; not a bindable action.
+  Count,
 };
 extern std::expected<EnumMap<InterfaceAction>, StarException> const InterfaceActionNames;
 

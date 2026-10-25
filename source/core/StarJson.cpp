@@ -1136,11 +1136,11 @@ Json::operator bool() const {
 }
 
 std::expected<String, StarException> Json::repr(int pretty, bool sort) const {
-  String result;
-  auto written = outputUtf32Json(*this, JsonStringOutputIterator(result), pretty, sort);
+  std::string result;
+  auto written = outputUtf8Json(*this, std::back_inserter(result), pretty, sort);
   if (!written)
     return std::unexpected(std::move(written.error()));
-  return result;
+  return String(std::move(result));
 }
 
 std::expected<String, StarException> Json::printJson(int pretty, bool sort) const {

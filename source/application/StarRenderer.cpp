@@ -12,15 +12,6 @@ import star.vector;
 import star.rect;
 namespace Star {
 
-extern std::expected<EnumMap<TextureAddressing>, StarException> const TextureAddressingNames = EnumMap<TextureAddressing>::create({
-  {TextureAddressing::Clamp, "Clamp"},
-  {TextureAddressing::Wrap, "Wrap"}
-});
-
-extern std::expected<EnumMap<TextureFiltering>, StarException> const TextureFilteringNames = EnumMap<TextureFiltering>::create({
-  {TextureFiltering::Nearest, "Nearest"},
-  {TextureFiltering::Linear, "Linear"}
-});
 
 RenderQuad::RenderQuad(Vec2F posA, Vec2F posB, Vec2F posC, Vec2F posD, Vec4B color, float param1) : texture() {
   a = { posA, { 0, 0 }, color, param1 };

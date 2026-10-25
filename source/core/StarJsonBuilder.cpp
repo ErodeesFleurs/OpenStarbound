@@ -18,10 +18,10 @@ std::expected<void, StarException> JsonBuilderStream::endObject() {
     if (!value) return std::unexpected(std::move(value.error()));
     auto keyJson = pop();
     if (!keyJson) return std::unexpected(std::move(keyJson.error()));
-    auto key = keyJson->toString();
+    auto key = keyJson->stringPtr();
     if (!key) return std::unexpected(std::move(key.error()));
-    if (!object.insert(*key, std::move(*value)).second)
-      return std::unexpected(JsonParsingException(strf("Json object contains a duplicate entry for key '{}'", *key)));
+    if (!object.insert(**key, std::move(*value)).second)
+      return std::unexpected(JsonParsingException(strf("Json object contains a duplicate entry for key '{}'", **key)));
   }
   return set(Json(std::move(object)));
 }
@@ -117,11 +117,9 @@ std::expected<void, StarException> JsonStreamer<Json>::toJsonStream(Json const& 
       return stream.putInteger(text.data(), static_cast<std::size_t>(formatted.size));
     }
     case Json::Type::String: {
-      auto value = val.toString();
+      auto value = val.stringPtr();
       if (!value) return std::unexpected(std::move(value.error()));
-      auto text = value->wideString();
-      if (!text) return std::unexpected(std::move(text.error()));
-      return stream.putString(text->data(), text->size());
+      return stream.putStringUtf8((*value)->utf8());
     }
     case Json::Type::Array: {
       auto elements = val.iterateArray();
@@ -150,9 +148,7 @@ std::expected<void, StarException> JsonStreamer<Json>::toJsonStream(Json const& 
           auto comma = stream.putComma();
           if (!comma) return std::unexpected(std::move(comma.error()));
         }
-        auto key = pair.first.wideString();
-        if (!key) return std::unexpected(std::move(key.error()));
-        auto written = stream.objectKey(key->data(), key->size());
+        auto written = stream.objectKeyUtf8(pair.first.utf8());
         if (!written) return std::unexpected(std::move(written.error()));
         written = stream.putColon();
         if (!written) return std::unexpected(std::move(written.error()));

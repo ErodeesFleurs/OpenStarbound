@@ -63,23 +63,24 @@ RectF separateBubble(List<RectF> const& sortedLeftEdges, List<RectF> const& sort
 
   while (true) {
     // While box is overlapping any other boxes, move it halfway away.
-    List<RectF> overlappingBoxes = horizontalOverlaps.filtered([&box](RectF const& overlapper) {
-      if (overlapper.intersects(box, false)) {
-        Vec2F oSize = overlapper.size(), bSize = box.size();
-        if (oSize[0] == bSize[0]) {
-          if (oSize[1] == bSize[1])
-            return overlapper.center()[1] <= box.center()[1];
-          else
-            return oSize[1] > bSize[1];
-        }
-        else if (oSize[0] > bSize[0])
-          return true;
+    bool overlapping = false;
+    RectF overlapBoundBox = box;
+    for (auto const& overlapper : horizontalOverlaps) {
+      // Test against this iteration's box, not the growing overlap bound.
+      if (!overlapper.intersects(box, false))
+        continue;
+      Vec2F oSize = overlapper.size(), bSize = box.size();
+      bool separates = oSize[0] > bSize[0]
+          || (oSize[0] == bSize[0]
+              && (oSize[1] > bSize[1]
+                  || (oSize[1] == bSize[1] && overlapper.center()[1] <= box.center()[1])));
+      if (separates) {
+        overlapping = true;
+        overlapBoundBox = overlapBoundBox.combined(overlapper);
       }
-      return false;
-    });
-    if (overlappingBoxes.empty())
+    }
+    if (!overlapping)
       break;
-    RectF overlapBoundBox = std::ranges::fold_left(overlappingBoxes, box, [](RectF const& a, RectF const& b) { return a.combined(b); });
     //SpatialLogger::logPoly("screen", PolyF(box), { 255, 0, 0, 255 });
     //SpatialLogger::logPoly("screen", PolyF(overlapBoundBox), { 0, 0, 255, 255 });
     auto height = box.height();

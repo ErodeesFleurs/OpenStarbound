@@ -41,8 +41,8 @@ public:
 
   // Do a read or write that may result in less data read or written than
   // requested.
-  [[nodiscard]] virtual std::expected<std::size_t, StarException> read(char* data, std::size_t len) = 0;
-  [[nodiscard]] virtual std::expected<std::size_t, StarException> write(char const* data, std::size_t len) = 0;
+  [[nodiscard]] virtual std::expected<std::size_t, StarException> read(std::span<char> data) = 0;
+  [[nodiscard]] virtual std::expected<std::size_t, StarException> write(std::span<char const> data) = 0;
 
   [[nodiscard]] virtual std::expected<StreamOffset, StarException> pos() = 0;
   [[nodiscard]] virtual std::expected<void, StarException> seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) = 0;
@@ -54,14 +54,14 @@ public:
   // current file position.  Default implementation stores the file position,
   // then seeks and calls read/write partial, then restores the file position,
   // and is not thread safe.
-  [[nodiscard]] virtual std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, char* data, std::size_t len);
-  [[nodiscard]] virtual std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len);
+  [[nodiscard]] virtual std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, std::span<char> data);
+  [[nodiscard]] virtual std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, std::span<char const> data);
 
   // Full operations report short transfers, including a distinct EOF error.
-  [[nodiscard]] virtual std::expected<void, StarException> readFull(char* data, std::size_t len);
-  [[nodiscard]] virtual std::expected<void, StarException> writeFull(char const* data, std::size_t len);
-  [[nodiscard]] virtual std::expected<void, StarException> readFullAbsolute(StreamOffset readPosition, char* data, std::size_t len);
-  [[nodiscard]] virtual std::expected<void, StarException> writeFullAbsolute(StreamOffset writePosition, char const* data, std::size_t len);
+  [[nodiscard]] virtual std::expected<void, StarException> readFull(std::span<char> data);
+  [[nodiscard]] virtual std::expected<void, StarException> writeFull(std::span<char const> data);
+  [[nodiscard]] virtual std::expected<void, StarException> readFullAbsolute(StreamOffset readPosition, std::span<char> data);
+  [[nodiscard]] virtual std::expected<void, StarException> writeFullAbsolute(StreamOffset writePosition, std::span<char const> data);
 
   // Default implementation only accepts the current mode.
   [[nodiscard]] virtual std::expected<void, StarException> open(IOMode mode);

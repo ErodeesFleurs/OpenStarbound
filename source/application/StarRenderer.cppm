@@ -28,13 +28,19 @@ enum class TextureAddressing {
   Clamp,
   Wrap
 };
-extern std::expected<EnumMap<TextureAddressing>, StarException> const TextureAddressingNames;
+inline constexpr auto TextureAddressingNames = sortedEnumNames(std::to_array<std::pair<TextureAddressing, std::string_view>>({
+  {TextureAddressing::Clamp, "Clamp"},
+  {TextureAddressing::Wrap, "Wrap"}
+}));
 
 enum class TextureFiltering {
   Nearest,
   Linear
 };
-extern std::expected<EnumMap<TextureFiltering>, StarException> const TextureFilteringNames;
+inline constexpr auto TextureFilteringNames = sortedEnumNames(std::to_array<std::pair<TextureFiltering, std::string_view>>({
+  {TextureFiltering::Nearest, "Nearest"},
+  {TextureFiltering::Linear, "Linear"}
+}));
 
 // Medium is the maximum guaranteed texture group size
 // Where a Medium sized texture group is expected to fill a single page Large can be used,
