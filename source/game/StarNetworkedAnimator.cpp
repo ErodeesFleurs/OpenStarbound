@@ -1395,7 +1395,7 @@ std::expected<List<LightSource>, StarException> NetworkedAnimator::lightSources(
 
     Color color = pair.second.color.get();
     if (pair.second.flicker)
-      color.setValue(clamp(color.value() * pair.second.flicker->value(SinWeightOperator<float>()), 0.0f, 1.0f));
+      color.setValue(std::clamp(color.value() * pair.second.flicker->value(SinWeightOperator<float>()), 0.0f, 1.0f));
 
     lightSources.append(LightSource{
       position + translate,

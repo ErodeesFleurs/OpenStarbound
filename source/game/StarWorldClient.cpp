@@ -39,7 +39,6 @@ import star.asset_path;
 import star.image;
 import star.format;
 import star.version;
-import star.either;
 import star.audio;
 import star.map;
 import star.net_compatibility;
@@ -1440,7 +1439,7 @@ std::expected<void, StarException> WorldClient::render(WorldRenderData& renderDa
       auto result87 = (std::move(*result86))->evaluate(m_sky->timeOfDay() / m_sky->dayLength());
       if (!result87)
         return std::unexpected(std::move(result87.error()));
-      layer.alpha *= clamp((float)(std::move(*result87)), 0.0f, 1.0f);
+      layer.alpha *= std::clamp((float)(std::move(*result87)), 0.0f, 1.0f);
     }
   }
   
@@ -1889,12 +1888,14 @@ std::expected<void, StarException> WorldClient::handleIncomingPackets(List<std::
       }
       
       if (!entity) {
-        m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeLeft(String("Unknown entity")), entityMessagePacket->uuid));
+        m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(
+          std::unexpected(String("Unknown entity")), entityMessagePacket->uuid));
       } else if (!entity->isMaster()) {
         auto result133 = this->root().logger().error("Server has sent a scripted entity response for a slave entity");
         if (!result133)
           return std::unexpected(std::move(result133.error()));
-        m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeLeft(String("Entity delivery error")), entityMessagePacket->uuid));
+        m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(
+          std::unexpected(String("Entity delivery error")), entityMessagePacket->uuid));
       } else {
         ConnectionId fromConnection = entityMessagePacket->fromConnection;
         if (fromConnection == *m_clientId) {
@@ -1912,7 +1913,7 @@ std::expected<void, StarException> WorldClient::handleIncomingPackets(List<std::
               Uuid const& uuid;
 
               void operator()(Json& result) const {
-                client.m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeRight(result), uuid));
+                client.m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(result, uuid));
               }
 
               void operator()(RpcPromise<Json>& promise) const {
@@ -1922,7 +1923,8 @@ std::expected<void, StarException> WorldClient::handleIncomingPackets(List<std::
             };
             std::visit(QueueEntityResponse{*this, entityMessagePacket->uuid}, *response);
           } else {
-            m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeLeft(String("Message not handled by entity")), entityMessagePacket->uuid));
+            m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(
+              std::unexpected(String("Message not handled by entity")), entityMessagePacket->uuid));
           }
         }
       }
@@ -1936,18 +1938,12 @@ std::expected<void, StarException> WorldClient::handleIncomingPackets(List<std::
         if (!result136)
           return std::unexpected(std::move(result136.error()));
         auto response = (std::move(*result136));
-        if (entityMessageResponsePacket->response.isRight()) {
-          auto result137 = entityMessageResponsePacket->response.right();
-          if (!result137)
-            return std::unexpected(std::move(result137.error()));
-          auto result138 = response.fulfill(result137->get());
+        if (entityMessageResponsePacket->response.has_value()) {
+          auto result138 = response.fulfill(*entityMessageResponsePacket->response);
           if (!result138)
             return std::unexpected(std::move(result138.error()));
         } else {
-          auto result139 = entityMessageResponsePacket->response.left();
-          if (!result139)
-            return std::unexpected(std::move(result139.error()));
-          auto result140 = response.fail(result139->get());
+          auto result140 = response.fail(entityMessageResponsePacket->response.error());
           if (!result140)
             return std::unexpected(std::move(result140.error()));
         }
@@ -2405,12 +2401,13 @@ std::expected<void, StarException> WorldClient::update(float dt) {
             auto result192 = m_entityMessagePromises[uuid].result();
             if (!result192)
               return std::unexpected(std::move(result192.error()));
-            m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeRight(*(std::move(*result192))), uuid));
+            m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(*(std::move(*result192)), uuid));
           } else {
             auto result193 = m_entityMessagePromises[uuid].error();
             if (!result193)
               return std::unexpected(std::move(result193.error()));
-            m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeLeft(*(std::move(*result193))), uuid));
+            m_outgoingPackets.append(
+              std::make_shared<EntityMessageResponsePacket>(std::unexpected(*(std::move(*result193))), uuid));
           }
         }
         m_entityMessagePromises.remove(uuid);

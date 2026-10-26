@@ -716,9 +716,9 @@ std::expected<List<WorldLayout::RegionWeighting>, StarException> WorldLayout::ge
       xMax = layer.boundaries[cellIndex];
 
     if (x > (xMin + xMax) / 2.0f)
-      return clamp<float>(0.5f - (x - xMax) / m_regionBlending, 0.0f, 1.0f);
+      return std::clamp<float>(0.5f - (x - xMax) / m_regionBlending, 0.0f, 1.0f);
     else
-      return clamp<float>(0.5f - (xMin - x) / m_regionBlending, 0.0f, 1.0f);
+      return std::clamp<float>(0.5f - (xMin - x) / m_regionBlending, 0.0f, 1.0f);
   };
 
   auto addLayerWeighting = [&](WorldLayer const& layer, int x, float weightFactor) {

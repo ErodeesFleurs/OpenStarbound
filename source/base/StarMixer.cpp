@@ -392,11 +392,12 @@ std::expected<void, StarException> Mixer::read(std::span<std::int16_t> outBuffer
         }
 
         for (std::size_t s = 0; s < ramt / channels; ++s) {
-          float vol = lerp((float)s / frameCount, beginVolume * groupVolume * audioStopVolBegin, endVolume * groupEndVolume * audioStopVolEnd);
+          float vol = std::lerp(beginVolume * groupVolume * audioStopVolBegin,
+                                endVolume * groupEndVolume * audioStopVolEnd, (float)s / frameCount);
           for (std::size_t c = 0; c < channels; ++c) {
             float sample = m_mixBuffer[s * channels + c] * vol * audioState.positionalChannelVolumes[c] * audioInstance->m_volume.value;
             std::int16_t& outSample = outBuffer[s * channels + c];
-            outSample = clamp(sample + outSample, -32767.0f, 32767.0f);
+            outSample = std::clamp(sample + outSample, -32767.0f, 32767.0f);
           }
         }
         return {};
@@ -445,7 +446,7 @@ std::expected<void, StarException> Mixer::read(std::span<std::int16_t> outBuffer
         return std::unexpected(std::move(effected.error()));
 
       for (std::size_t s = 0; s < frameCount; ++s) {
-        float amt = lerp((float)s / frameCount, effectBegin, effectEnd);
+        float amt = std::lerp(effectBegin, effectEnd, (float)s / frameCount);
         for (std::size_t c = 0; c < channels; ++c) {
           std::int16_t prev = outBuffer[s * channels + c];
           outBuffer[s * channels + c] = lerp(amt, prev, m_mixBuffer[s * channels + c]);

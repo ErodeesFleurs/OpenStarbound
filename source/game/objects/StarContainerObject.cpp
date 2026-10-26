@@ -1073,7 +1073,7 @@ std::expected<void, StarException> ContainerObject::stopCrafting() {
 float ContainerObject::craftingProgress() const {
   if (!isCrafting())
     return 1;
-  return clamp(m_craftingProgress.get(), 0.0f, 1.0f);
+  return std::clamp(m_craftingProgress.get(), 0.0f, 1.0f);
 }
 
 std::expected<void, StarException> ContainerObject::burnContainerContents() {

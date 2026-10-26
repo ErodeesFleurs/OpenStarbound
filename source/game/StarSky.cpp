@@ -426,7 +426,7 @@ float Sky::spaceLevel() const {
   if (type() == SkyType::Atmospheric && m_skyParameters.spaceLevel && m_skyParameters.surfaceLevel) {
     float altitudeRange = *m_skyParameters.spaceLevel - *m_skyParameters.surfaceLevel;
     float relativeAltitude = m_altitude - *m_skyParameters.surfaceLevel;
-    return clamp(relativeAltitude / altitudeRange, 0.0f, 1.0f);
+    return std::clamp(relativeAltitude / altitudeRange, 0.0f, 1.0f);
   }
   return 1.0f;
 }
@@ -488,7 +488,7 @@ float Sky::skyAlpha() const {
     return 0.0f;
   } else {
     float skyLevel = 1.0f - spaceLevel();
-    return clamp(std::pow(skyLevel, m_numericSettings.skyLevelExponent), 0.0f, 1.0f);
+    return std::clamp(std::pow(skyLevel, m_numericSettings.skyLevelExponent), 0.0f, 1.0f);
   }
 }
 

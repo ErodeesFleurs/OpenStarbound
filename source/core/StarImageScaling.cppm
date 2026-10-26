@@ -102,12 +102,9 @@ std::expected<Image, StarException> scaleBicubic(Image const& srcImage, Vec2F co
 
       auto result = cubic4(fpart[1], a, b, c, d);
 
-      auto assigned = destImage.set({x, y}, Vec4B(
-          clamp(result[0], 0.0f, 255.0f),
-          clamp(result[1], 0.0f, 255.0f),
-          clamp(result[2], 0.0f, 255.0f),
-          clamp(result[3], 0.0f, 255.0f)
-        ));
+      auto assigned = destImage.set({x, y},
+                                    Vec4B(std::clamp(result[0], 0.0f, 255.0f), std::clamp(result[1], 0.0f, 255.0f),
+                                          std::clamp(result[2], 0.0f, 255.0f), std::clamp(result[3], 0.0f, 255.0f)));
       if (!assigned)
         return std::unexpected(std::move(assigned.error()));
     }

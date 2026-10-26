@@ -230,7 +230,7 @@ public:
   T distanceTo(VectorType const& l, bool infinite = false) const {
     auto t = lineProjection(l);
     if (!infinite)
-      t = clamp<T>(t, 0, 1);
+      t = std::clamp<T>(t, 0, 1);
     return vmag(l - eval(t));
   }
 

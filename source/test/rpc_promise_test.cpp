@@ -426,6 +426,50 @@ TEST(JsonRpcTest, SuccessfulTransportPreservesStructuredResult) {
   EXPECT_EQ(*error, std::optional<String>{});
 }
 
+TEST(JsonRpcTest, HandlerRegistrationPreservesActiveCallableState) {
+  Logger logger;
+  JsonRpc sender(logger);
+  JsonRpc receiver(logger);
+  ASSERT_TRUE(receiver.registerHandler(
+    "grow", [&receiver, visits = 0](Json const&) mutable -> std::expected<Json, StarException> {
+      if (++visits == 1) {
+        for (int i = 0; i < 256; ++i) {
+          auto added = receiver.registerHandler(
+            strf("generated-{}", i), [i](Json const&) -> std::expected<Json, StarException> { return Json(i); });
+          if (!added)
+            return std::unexpected(std::move(added.error()));
+        }
+      }
+      return Json(++visits);
+    }));
+
+  for (int expected : {2, 4}) {
+    auto response = sender.invokeRemote("grow", Json());
+    ASSERT_TRUE(response);
+    auto request = sender.send();
+    ASSERT_TRUE(request);
+    ASSERT_TRUE(receiver.receive(*request));
+    auto reply = receiver.send();
+    ASSERT_TRUE(reply);
+    ASSERT_TRUE(sender.receive(*reply));
+    auto result = response->result();
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, std::optional<Json>{Json(expected)});
+  }
+
+  auto response = sender.invokeRemote("generated-255", Json());
+  ASSERT_TRUE(response);
+  auto request = sender.send();
+  ASSERT_TRUE(request);
+  ASSERT_TRUE(receiver.receive(*request));
+  auto reply = receiver.send();
+  ASSERT_TRUE(reply);
+  ASSERT_TRUE(sender.receive(*reply));
+  auto result = response->result();
+  ASSERT_TRUE(result);
+  EXPECT_EQ(*result, std::optional<Json>{Json(255)});
+}
+
 TEST(RpcPromiseTest, ConcurrentObserversShareOneLazyEvaluation) {
   std::atomic<int> calls = 0;
   auto wrapped = RpcPromise<int>::createFulfilled(7).wrap([&calls](int value) -> std::expected<int, StarException> {

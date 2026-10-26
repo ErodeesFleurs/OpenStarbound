@@ -631,7 +631,7 @@ inline Float Perlin<Float>::ridgedMulti(Float x) const {
     val *= val;
     val *= weight;
 
-    weight = clamp<Float>(val * m_gain, 0.0, 1.0);
+    weight = std::clamp<Float>(val * m_gain, 0.0, 1.0);
 
     sum += val / scale;
     scale *= m_alpha;
@@ -656,7 +656,7 @@ inline Float Perlin<Float>::ridgedMulti(Float x, Float y) const {
     val *= val;
     val *= weight;
 
-    weight = clamp<Float>(val * m_gain, 0.0, 1.0);
+    weight = std::clamp<Float>(val * m_gain, 0.0, 1.0);
 
     sum += val / scale;
     scale *= m_alpha;
@@ -683,7 +683,7 @@ inline Float Perlin<Float>::ridgedMulti(Float x, Float y, Float z) const {
     val *= val;
     val *= weight;
 
-    weight = clamp<Float>(val * m_gain, 0.0, 1.0);
+    weight = std::clamp<Float>(val * m_gain, 0.0, 1.0);
 
     sum += val / scale;
     scale *= m_alpha;

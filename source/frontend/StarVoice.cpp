@@ -288,7 +288,7 @@ std::expected<void, StarException> Voice::loadJson(Json const& config, bool skip
     if ((**bitrate).canConvert(Json::Type::Int)) {
       auto value = (**bitrate).toUInt();
       if (!value) return std::unexpected(std::move(value.error()));
-      newBitrate = clamp((unsigned)*value, 6000u, 510000u);
+      newBitrate = std::clamp((unsigned)*value, 6000u, 510000u);
     }
   }
   bool changed = false;
@@ -503,7 +503,7 @@ void Voice::mix(std::span<std::int16_t> buffer, std::size_t frameCount, unsigned
 
     float vol = m_outputAmplitude;
     for (std::size_t i = 0; i != sharedBuffer.size(); ++i)
-      finalBuffer[i] = (std::int16_t)clamp<int>(sharedBuffer[i] * vol, INT16_MIN, INT16_MAX);
+      finalBuffer[i] = (std::int16_t)std::clamp<int>(sharedBuffer[i] * vol, INT16_MIN, INT16_MAX);
 
     SDL_MixAudio(reinterpret_cast<Uint8*>(buffer.data()), reinterpret_cast<Uint8 const*>(finalBuffer.data()), SDL_AUDIO_S16LE, finalBuffer.size() * sizeof(std::int16_t), 1.0f);
     std::memset(sharedBuffer.data(), 0, sharedBuffer.size() * sizeof(std::int32_t));

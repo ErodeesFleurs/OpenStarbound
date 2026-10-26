@@ -9,7 +9,6 @@ import star.algorithm;
 import star.json;
 import star.io_device;
 import star.string;
-import star.either;
 import star.thread;
 import star.logging;
 import std;
@@ -914,3 +913,142 @@ const GameTestRegistration universeConnectionsStartupFailureJoinsEveryPreviously
   testing::GTEST_FLAG(death_test_style) = oldStyle;
 });
 #endif
+
+namespace {
+
+template <typename ResponsePacket> void messageResponseWireCompatibility() {
+  auto uuid = Uuid::create("00112233445566778899aabbccddeeff");
+  ASSERT_TRUE(uuid);
+
+  ResponsePacket defaultPacket;
+  ASSERT_FALSE(defaultPacket.response.has_value());
+  EXPECT_TRUE(defaultPacket.response.error().empty());
+  DataStreamBuffer defaultWire;
+  ASSERT_TRUE(defaultPacket.write(defaultWire));
+  DataStreamBuffer expectedDefault;
+  ASSERT_TRUE(expectedDefault.write<std::uint8_t>(1));
+  ASSERT_TRUE(expectedDefault.write(String{}));
+  ASSERT_TRUE(expectedDefault.write(defaultPacket.uuid));
+  EXPECT_EQ(defaultWire.data(), expectedDefault.data());
+
+  std::array<std::expected<Json, String>, 4> responses{std::unexpected(String{}),
+                                                       std::unexpected(String("message failed")), Json(),
+                                                       Json(JsonObject{{"answer", 42}, {"message", "received"}})};
+  for (auto const& response : responses) {
+    ResponsePacket packet(response, *uuid);
+    DataStreamBuffer wire;
+    ASSERT_TRUE(packet.write(wire));
+
+    // These are the pre-migration domain bytes, not a generic expected codec.
+    DataStreamBuffer legacyWire;
+    ASSERT_TRUE(legacyWire.write<std::uint8_t>(response.has_value() ? 2 : 1));
+    if (response.has_value())
+      ASSERT_TRUE(legacyWire.write(*response));
+    else
+      ASSERT_TRUE(legacyWire.write(response.error()));
+    ASSERT_TRUE(legacyWire.write(*uuid));
+    EXPECT_EQ(wire.data(), legacyWire.data());
+
+    ResponsePacket decoded;
+    ASSERT_TRUE(wire.seek(0));
+    ASSERT_TRUE(decoded.read(wire));
+    EXPECT_EQ(decoded.response, response);
+    EXPECT_EQ(decoded.uuid, *uuid);
+    auto atEnd = wire.atEnd();
+    ASSERT_TRUE(atEnd);
+    EXPECT_TRUE(*atEnd);
+  }
+}
+
+template <typename ResponsePacket> void messageResponseUnknownTags() {
+  auto uuid = Uuid::create("00112233445566778899aabbccddeeff");
+  ASSERT_TRUE(uuid);
+  std::array<std::expected<Json, String>, 3> previousResponses{
+    std::unexpected(String{}), std::unexpected(String("previous error")), Json("previous success")};
+  for (std::uint8_t tag : {0, 3, 255}) {
+    DataStreamBuffer wire;
+    ASSERT_TRUE(wire.write(tag));
+    ASSERT_TRUE(wire.write(*uuid));
+    for (auto const& previous : previousResponses) {
+      ResponsePacket decoded(previous, Uuid::nil());
+      ASSERT_TRUE(wire.seek(0));
+      ASSERT_TRUE(decoded.read(wire));
+      EXPECT_EQ(decoded.response, previous);
+      EXPECT_EQ(decoded.uuid, *uuid);
+      auto atEnd = wire.atEnd();
+      ASSERT_TRUE(atEnd);
+      EXPECT_TRUE(*atEnd);
+
+      for (std::size_t length = 0; length < wire.size(); ++length) {
+        SCOPED_TRACE(length);
+        DataStreamExternalBuffer truncated(wire.span().first(length));
+        ResponsePacket failed(previous, Uuid::nil());
+        EXPECT_FALSE(failed.read(truncated));
+        EXPECT_EQ(failed.response, previous);
+        EXPECT_EQ(failed.uuid, Uuid::nil());
+      }
+    }
+  }
+}
+
+template <typename ResponsePacket> void messageResponseDecodeFailures() {
+  auto uuid = Uuid::create("00112233445566778899aabbccddeeff");
+  ASSERT_TRUE(uuid);
+  std::array<std::expected<Json, String>, 2> responses{std::unexpected(String("new error")),
+                                                       Json(JsonObject{{"new", JsonArray{1, 2, 3}}})};
+  std::array<std::expected<Json, String>, 3> previousResponses{
+    std::unexpected(String{}), std::unexpected(String("previous error")), Json("previous success")};
+  for (auto const& response : responses) {
+    DataStreamBuffer wire;
+    ASSERT_TRUE(wire.write<std::uint8_t>(response.has_value() ? 2 : 1));
+    if (response.has_value())
+      ASSERT_TRUE(wire.write(*response));
+    else
+      ASSERT_TRUE(wire.write(response.error()));
+    auto payloadEnd = wire.size();
+    ASSERT_TRUE(wire.write(*uuid));
+
+    for (auto const& previous : previousResponses) {
+      for (std::size_t length = 0; length < wire.size(); ++length) {
+        SCOPED_TRACE(length);
+        DataStreamExternalBuffer truncated(wire.span().first(length));
+        ResponsePacket decoded(previous, Uuid::nil());
+        EXPECT_FALSE(decoded.read(truncated));
+        // Payload failure leaves the response intact; a complete payload is
+        // committed even when the following UUID fails to decode.
+        EXPECT_EQ(decoded.response, length < payloadEnd ? previous : response);
+        EXPECT_EQ(decoded.uuid, Uuid::nil());
+      }
+    }
+  }
+}
+
+}// namespace
+
+const GameTestRegistration
+  entityMessageResponseWireCompatibility("MessageResponsePackets", "EntityWireCompatibility", [](GameTest&) {
+    messageResponseWireCompatibility<EntityMessageResponsePacket>();
+  });
+
+const GameTestRegistration
+  universeMessageResponseWireCompatibility("MessageResponsePackets", "UniverseWireCompatibility", [](GameTest&) {
+    messageResponseWireCompatibility<UniverseMessageResponse>();
+  });
+
+const GameTestRegistration entityMessageResponseUnknownTags("MessageResponsePackets", "EntityUnknownTags",
+                                                            [](GameTest&) {
+                                                              messageResponseUnknownTags<EntityMessageResponsePacket>();
+                                                            });
+
+const GameTestRegistration universeMessageResponseUnknownTags("MessageResponsePackets", "UniverseUnknownTags",
+                                                              [](GameTest&) {
+                                                                messageResponseUnknownTags<UniverseMessageResponse>();
+                                                              });
+
+const GameTestRegistration
+  entityMessageResponseDecodeFailures("MessageResponsePackets", "EntityDecodeFailures",
+                                      [](GameTest&) { messageResponseDecodeFailures<EntityMessageResponsePacket>(); });
+
+const GameTestRegistration
+  universeMessageResponseDecodeFailures("MessageResponsePackets", "UniverseDecodeFailures",
+                                        [](GameTest&) { messageResponseDecodeFailures<UniverseMessageResponse>(); });

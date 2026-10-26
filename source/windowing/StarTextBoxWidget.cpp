@@ -300,7 +300,8 @@ std::expected<void, StarException> TextBoxWidget::setCursorPosition(int cursorPo
   auto length = m_text.size();
   if (!length)
     return std::unexpected(std::move(length.error()));
-  m_cursorOffset = clamp(cursorPosition, 0, static_cast<int>(std::min<std::size_t>(*length, std::numeric_limits<int>::max())));
+  m_cursorOffset =
+    std::clamp(cursorPosition, 0, static_cast<int>(std::min<std::size_t>(*length, std::numeric_limits<int>::max())));
   return {};
 }
 

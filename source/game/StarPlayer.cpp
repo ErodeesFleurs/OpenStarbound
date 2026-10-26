@@ -2657,7 +2657,8 @@ std::expected<std::shared_ptr<Item>, StarException> Player::pickupItems(std::sha
       if (!varianceResult)
         return std::unexpected(std::move(varianceResult.error()));
       auto variance = std::move(*varianceResult);
-      if (auto result = m_effectsAnimator->setSoundPitchMultiplier("pickup", clamp(pitch * variance, 0.f, 2.f)); !result)
+      if (auto result = m_effectsAnimator->setSoundPitchMultiplier("pickup", std::clamp(pitch * variance, 0.f, 2.f));
+          !result)
         return std::unexpected(std::move(result.error()));
       if (auto result = m_effectsAnimator->playSound("pickup"); !result)
         return std::unexpected(std::move(result.error()));
@@ -3422,7 +3423,7 @@ std::expected<void, StarException> Player::processControls() {
 
   if (useMoveVector) {
     m_pendingMoves.insert(m_moveVector.x() < 0.0f ? MoveControlType::Left : MoveControlType::Right);
-    m_movementController->setMoveSpeedMultiplier(clamp(std::abs(m_moveVector.x()), 0.0f, 1.0f));
+    m_movementController->setMoveSpeedMultiplier(std::clamp(std::abs(m_moveVector.x()), 0.0f, 1.0f));
   }
   else
     m_movementController->setMoveSpeedMultiplier(1.0f);

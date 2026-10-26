@@ -381,7 +381,7 @@ std::expected<float, StarException> MiningTool::durabilityStatus() {
   auto durability = instanceValue("durability").and_then([](Json const& value) { return value.toFloat(); });
   if (!durability)
     return std::unexpected(std::move(durability.error()));
-  return clamp(1.0f - *hit / *durability, 0.0f, 1.0f);
+  return std::clamp(1.0f - *hit / *durability, 0.0f, 1.0f);
 }
 
 std::expected<float, StarException> MiningTool::getAngle(float aimAngle) {

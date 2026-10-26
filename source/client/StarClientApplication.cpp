@@ -2095,7 +2095,7 @@ std::expected<void, StarException> ClientApplication::updateRunning(float dt) {
                              : newZoom - threshold < intZoom;
       if (pastInt) {
         float intNewZoom = goingIn ? std::ceil(newZoom) : std::floor(newZoom);
-        newZoom = lerp(clamp(std::abs(intZoom - newZoom) - 1.f, 0.f, 1.f), intZoom, intNewZoom);
+        newZoom = std::lerp(intZoom, intNewZoom, std::clamp(std::abs(intZoom - newZoom) - 1.f, 0.f, 1.f));
         m_cameraZoomDirection = 0;
       }
       if (auto saved = config->set("zoomLevel", std::min(1000000.f, newZoom)); !saved)

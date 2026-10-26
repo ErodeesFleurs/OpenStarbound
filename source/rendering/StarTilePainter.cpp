@@ -628,7 +628,8 @@ std::expected<void, StarException> TilePainter::produceLiquidPrimitives(HashMap<
 }
 
 float TilePainter::liquidDrawLevel(float liquidLevel) const {
-  return clamp((liquidLevel - m_liquidDrawLevels[0]) / (m_liquidDrawLevels[1] - m_liquidDrawLevels[0]), 0.0f, 1.0f);
+  return std::clamp((liquidLevel - m_liquidDrawLevels[0]) / (m_liquidDrawLevels[1] - m_liquidDrawLevels[0]), 0.0f,
+                    1.0f);
 }
 
 }

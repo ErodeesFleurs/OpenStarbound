@@ -307,9 +307,10 @@ std::expected<void, StarException> MainMixer::update(float dt, bool muteSfx, boo
 
       float stereoIncidence = channel == 0 ? -diffNorm[0] : diffNorm[0];
 
-      float maxDistance = baseMaxDistance * rangeMultiplier * lerp((stereoIncidence + 1.0f) / 2.0f, stereoAdjustmentRange[0], stereoAdjustmentRange[1]);
+      float maxDistance = baseMaxDistance * rangeMultiplier
+        * std::lerp(stereoAdjustmentRange[0], stereoAdjustmentRange[1], (stereoIncidence + 1.0f) / 2.0f);
 
-      return std::pow(clamp(diffMagnitude / maxDistance, 0.0f, 1.0f), 1.0f / attenuationGamma);
+      return std::pow(std::clamp(diffMagnitude / maxDistance, 0.0f, 1.0f), 1.0f / attenuationGamma);
     };
 
     if (m_voice)

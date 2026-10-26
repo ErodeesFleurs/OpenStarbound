@@ -13,7 +13,6 @@ import star.map;
 import star.format;
 import star.version;
 import star.ordered_map;
-import star.either;
 import star.color;
 import star.random;
 import star.weighted_pool;
@@ -197,6 +196,33 @@ namespace {
 // Sending code supplies IDs or uses the explicit random-source factory below.
 Uuid unfilledPacketUuid() {
   return Uuid::nil();
+}
+
+// Message responses retain their historical error/success tags, independently
+// of the in-memory expected representation. Unknown tags consume no payload.
+std::expected<void, StarException> readMessageResponse(DataStream& ds, std::expected<Json, String>& response) {
+  auto tag = ds.read<std::uint8_t>();
+  if (!tag)
+    return std::unexpected(std::move(tag.error()));
+  if (*tag == 1) {
+    auto error = ds.read<String>();
+    if (!error)
+      return std::unexpected(std::move(error.error()));
+    response = std::unexpected(std::move(*error));
+  } else if (*tag == 2) {
+    auto value = ds.read<Json>();
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    response = std::move(*value);
+  }
+  return {};
+}
+
+std::expected<void, StarException> writeMessageResponse(DataStream& ds, std::expected<Json, String> const& response) {
+  auto tag = ds.write<std::uint8_t>(response.has_value() ? 2 : 1);
+  if (!tag)
+    return std::unexpected(std::move(tag.error()));
+  return response.has_value() ? ds.write(*response) : ds.write(response.error());
 }
 }
 
@@ -1607,19 +1633,22 @@ std::expected<Json, StarException> EntityMessagePacket::writeJson() const {
   };
 }
 
-EntityMessageResponsePacket::EntityMessageResponsePacket() : uuid(unfilledPacketUuid()) {}
+EntityMessageResponsePacket::EntityMessageResponsePacket()
+    : response(std::unexpected(String{})), uuid(unfilledPacketUuid()) {}
 
-EntityMessageResponsePacket::EntityMessageResponsePacket(Either<String, Json> response, Uuid uuid)
-  : response(std::move(response)), uuid(uuid) {}
+EntityMessageResponsePacket::EntityMessageResponsePacket(std::expected<Json, String> response, Uuid uuid)
+    : response(std::move(response)), uuid(uuid) {}
 
 std::expected<void, StarException> EntityMessageResponsePacket::read(DataStream& ds) {
-  auto fields = std::tie(response, uuid);
-  return ds.read(fields);
+  if (auto decoded = readMessageResponse(ds, response); !decoded)
+    return std::unexpected(std::move(decoded.error()));
+  return ds.read(uuid);
 }
 
 std::expected<void, StarException> EntityMessageResponsePacket::write(DataStream& ds) const {
-  auto fields = std::tie(response, uuid);
-  return ds.write(fields);
+  if (auto encoded = writeMessageResponse(ds, response); !encoded)
+    return std::unexpected(std::move(encoded.error()));
+  return ds.write(uuid);
 }
 
 UpdateWorldPropertiesPacket::UpdateWorldPropertiesPacket() {}
@@ -2211,19 +2240,21 @@ std::expected<Json, StarException> UniverseMessage::writeJson() const {
   };
 }
 
-UniverseMessageResponse::UniverseMessageResponse() : uuid(unfilledPacketUuid()) {}
+UniverseMessageResponse::UniverseMessageResponse() : response(std::unexpected(String{})), uuid(unfilledPacketUuid()) {}
 
-UniverseMessageResponse::UniverseMessageResponse(Either<String, Json> response, Uuid uuid)
-  : response(std::move(response)), uuid(uuid) {}
+UniverseMessageResponse::UniverseMessageResponse(std::expected<Json, String> response, Uuid uuid)
+    : response(std::move(response)), uuid(uuid) {}
 
 std::expected<void, StarException> UniverseMessageResponse::read(DataStream& ds) {
-  auto fields = std::tie(response, uuid);
-  return ds.read(fields);
+  if (auto decoded = readMessageResponse(ds, response); !decoded)
+    return std::unexpected(std::move(decoded.error()));
+  return ds.read(uuid);
 }
 
 std::expected<void, StarException> UniverseMessageResponse::write(DataStream& ds) const {
-  auto fields = std::tie(response, uuid);
-  return ds.write(fields);
+  if (auto encoded = writeMessageResponse(ds, response); !encoded)
+    return std::unexpected(std::move(encoded.error()));
+  return ds.write(uuid);
 }
 
 }

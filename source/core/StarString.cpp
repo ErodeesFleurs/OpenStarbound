@@ -67,7 +67,7 @@ std::expected<String, StarException> String::create(Char point, std::size_t coun
 }
 std::expected<String, StarException> String::create(Char point) { return create(point, 1); }
 std::string const& String::utf8() const { return m_string; }
-std::string String::takeUtf8() { return take(m_string); }
+std::string String::takeUtf8() { return std::exchange(m_string, {}); }
 ByteArray String::utf8Bytes() const { return ByteArray(std::span<char const>(m_string)); }
 char const* String::utf8Ptr() const { return m_string.c_str(); }
 std::size_t String::utf8Size() const { return m_string.size(); }
@@ -261,8 +261,10 @@ std::expected<StringList, StarException> String::splitAny(String const& chars, s
       if (!match) return std::unexpected(std::move(match.error()));
       delimiter = *match;
     }
-    if (delimiter) { if (!next.empty()) result.append(take(next)); }
-    else {
+    if (delimiter) {
+      if (!next.empty())
+        result.append(std::exchange(next, {}));
+    } else {
       if (result.size() == maxSplit) done = true;
       auto appended = next.append(*point);
       if (!appended) return std::unexpected(std::move(appended.error()));

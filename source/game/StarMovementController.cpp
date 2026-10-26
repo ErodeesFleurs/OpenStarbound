@@ -859,7 +859,7 @@ std::expected<void, StarException> MovementController::tickMaster(float dt) {
     // but it is applied here as a multiplicitave factor from [0, 1] so it does
     // not induce oscillation at very high friction and so it cannot be
     // negative.
-    float frictionFactor = clamp(friction / mass() * dt, 0.0f, 1.0f);
+    float frictionFactor = std::clamp(friction / mass() * dt, 0.0f, 1.0f);
     newVelocity = lerp(frictionFactor, newVelocity, refVel);
   }
   
@@ -888,7 +888,7 @@ std::expected<void, StarException> MovementController::tickSlave(float dt) {
   auto liquid = worldRef.liquidLevel(collisionBody().boundBox());
   if (!liquid) return std::unexpected(std::move(liquid.error()));
   LiquidLevel cll = *liquid;
-  m_liquidPercentage = clamp(cll.level, 0.0f, 1.0f);
+  m_liquidPercentage = std::clamp(cll.level, 0.0f, 1.0f);
   m_liquidId = cll.liquid;
   return {};
 }
@@ -987,7 +987,7 @@ std::expected<void, StarException> MovementController::updateForceRegions(float)
           Vec2F gNorm = gradientForceRegion.gradient.direction();
           Vec2F pDiff = geometry.diff(pos, gradientForceRegion.gradient.min());
           float projected = pDiff[0] * gNorm[0] + pDiff[1] * gNorm[1];
-          float gradientFactor = 1.0 - clamp(projected / gradientForceRegion.gradient.length(), -1.0f, 1.0f);
+          float gradientFactor = 1.0 - std::clamp(projected / gradientForceRegion.gradient.length(), -1.0f, 1.0f);
 
           controller.approachVelocityAlongAngle(gradientForceRegion.gradient.angle(),
               gradientForceRegion.baseTargetVelocity * overlapFactor * gradientFactor,
@@ -1032,7 +1032,7 @@ std::expected<void, StarException> MovementController::updateLiquidPercentage() 
     cll = *liquid;
   }
 
-  m_liquidPercentage = clamp(cll.level, 0.0f, 1.0f);
+  m_liquidPercentage = std::clamp(cll.level, 0.0f, 1.0f);
   m_liquidId = cll.liquid;
   return {};
 }
@@ -1214,7 +1214,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
 
           if (thisSideHorizontalOverlap > maxSideHorizontalOverlap) {
             for (auto const& bodyVertex : checkBody) {
-              float t = clamp(side.lineProjection(bodyVertex), 0.0f, 1.0f);
+              float t = std::clamp(side.lineProjection(bodyVertex), 0.0f, 1.0f);
               Vec2F nearPoint = side.eval(t);
               if (nearPoint[1] > cp.sortPosition[1]) {
                 if (vmagSquared(bodyVertex - nearPoint) <= square(separationTolerance)) {

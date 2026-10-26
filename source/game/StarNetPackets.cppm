@@ -13,7 +13,6 @@ import star.map;
 import star.format;
 import star.version;
 import star.ordered_map;
-import star.either;
 import star.color;
 import star.random;
 import star.weighted_pool;
@@ -1140,12 +1139,12 @@ struct EntityMessageResponsePacket : PacketBase<PacketType::EntityMessageRespons
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<EntityMessageResponsePacket>(); }
 
   EntityMessageResponsePacket();
-  EntityMessageResponsePacket(Either<String, Json> response, Uuid uuid);
+  EntityMessageResponsePacket(std::expected<Json, String> response, Uuid uuid);
 
   [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
   [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  Either<String, Json> response;
+  std::expected<Json, String> response;
   Uuid uuid;
 };
 
@@ -1423,12 +1422,12 @@ struct UniverseMessageResponse : PacketBase<PacketType::UniverseMessageResponse>
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<UniverseMessageResponse>(); }
 
   UniverseMessageResponse();
-  UniverseMessageResponse(Either<String,Json> response, Uuid uuid);
+  UniverseMessageResponse(std::expected<Json, String> response, Uuid uuid);
 
   [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
   [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  Either<String, Json> response;
+  std::expected<Json, String> response;
   Uuid uuid;
 };
 }

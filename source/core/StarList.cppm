@@ -204,10 +204,7 @@ public:
   explicit List(std::span<value_type const> values) : m_storage(values.begin(), values.end()) {}
   template <std::input_iterator Iterator>
   List(Iterator first, Iterator last) : m_storage(first, last) {}
-  List(std::initializer_list<value_type> values) {
-    for (auto const& value : values)
-      m_storage.push_back(value);
-  }
+  List(std::initializer_list<value_type> values) : m_storage(values) {}
 
   iterator begin() { return m_storage.begin(); }
   const_iterator begin() const { return m_storage.begin(); }
@@ -1586,10 +1583,7 @@ public:
   explicit Deque(std::span<value_type const> values) : m_storage(values.begin(), values.end()) {}
   template <std::input_iterator Iterator>
   Deque(Iterator first, Iterator last) : m_storage(first, last) {}
-  Deque(std::initializer_list<value_type> values) {
-    for (auto const& value : values)
-      m_storage.push_back(value);
-  }
+  Deque(std::initializer_list<value_type> values) : m_storage(values) {}
 
   iterator begin() { return m_storage.begin(); }
   const_iterator begin() const { return m_storage.begin(); }
@@ -2089,10 +2083,7 @@ public:
   explicit LinkedList(std::span<value_type const> values) : m_storage(values.begin(), values.end()) {}
   template <std::input_iterator Iterator>
   LinkedList(Iterator first, Iterator last) : m_storage(first, last) {}
-  LinkedList(std::initializer_list<value_type> values) {
-    for (auto const& value : values)
-      m_storage.push_back(value);
-  }
+  LinkedList(std::initializer_list<value_type> values) : m_storage(values) {}
 
   iterator begin() { return m_storage.begin(); }
   const_iterator begin() const { return m_storage.begin(); }

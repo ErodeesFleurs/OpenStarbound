@@ -654,7 +654,7 @@ std::expected<void, StarException> MaterialItem::fire(FireMode mode, bool shifti
   }
 
   if (total) {
-    float intensity = clamp(std::sqrt((float)total) / 16, 0.0f, 1.0f);
+    float intensity = std::clamp(std::sqrt((float)total) / 16, 0.0f, 1.0f);
     auto sound = root().random().randValueFrom(m_placeSounds);
     auto pitch = root().random().randf(0.9f, 1.1f);
     if (!pitch)

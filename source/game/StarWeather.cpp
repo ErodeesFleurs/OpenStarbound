@@ -198,8 +198,8 @@ std::expected<void, StarException> ServerWeather::update(double dt) {
       m_nextWeatherChangeTime = m_currentTime + *duration;
       m_currentWind = m_currentWeatherType->maximumWind * (m_root.get().random().randb() ? 1 : -1);
     }
-    m_currentWeatherIntensity = std::min(clamp((m_currentTime - m_lastWeatherChangeTime) / *warmup, 0.0, 1.0),
-        clamp((m_nextWeatherChangeTime - m_currentTime) / *cooldown, 0.0, 1.0));
+    m_currentWeatherIntensity = std::min(std::clamp((m_currentTime - m_lastWeatherChangeTime) / *warmup, 0.0, 1.0),
+                                         std::clamp((m_nextWeatherChangeTime - m_currentTime) / *cooldown, 0.0, 1.0));
   } else {
     m_currentWeatherIndex = NPos;
     m_currentWeatherType = {};

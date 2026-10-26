@@ -48,7 +48,8 @@ public:
 
 private:
   Logger& m_logger;
-  JsonRpcHandlers m_handlers;
+  // Handlers may register more methods while their own callable is borrowed.
+  StableStringMap<JsonRpcRemoteFunction> m_handlers;
   Map<std::uint64_t, RpcPromiseKeeper<Json>> m_pendingResponse;
   List<Json> m_pending;
   std::uint64_t m_requestId;

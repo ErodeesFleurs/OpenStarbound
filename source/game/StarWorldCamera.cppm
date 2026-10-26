@@ -126,7 +126,7 @@ inline Vec2F WorldCamera::tileMinScreen() const {
 }
 
 inline void WorldCamera::update(float dt) {
-  float newPixelRatio = lerp(std::exp(-20.0f * dt), m_targetPixelRatio, m_pixelRatio);
+  float newPixelRatio = std::lerp(m_targetPixelRatio, m_pixelRatio, std::exp(-20.0f * dt));
   if (std::abs(newPixelRatio - m_targetPixelRatio) < 0.0125f)
     newPixelRatio = m_targetPixelRatio;
   if (m_pixelRatio != newPixelRatio) {

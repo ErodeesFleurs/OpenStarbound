@@ -749,7 +749,7 @@ std::expected<float, StarException> Chat::visible() const {
   }
   double difference = (Time::monotonicMilliseconds() - m_timeChatLastActive) / 1000.0;
   if (difference < m_chatVisTime) return 1.0f;
-  return clamp<float>(1 - (difference - m_chatVisTime) / m_fadeRate, 0, 1);
+  return std::clamp<float>(1 - (difference - m_chatVisTime) / m_fadeRate, 0, 1);
 }
 
 std::expected<bool, StarException> Chat::sendEvent(InputEvent const& event) {

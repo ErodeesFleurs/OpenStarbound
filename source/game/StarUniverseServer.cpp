@@ -746,12 +746,12 @@ std::expected<bool, StarException> UniverseServer::unbanUuid(String const& uuidS
   }
   if (auto stored = (*config)->set("bannedUuids", *entries); !stored)
     return std::unexpected(std::move(stored.error()));
-  eraseWhere(m_tempBans, [&](TimeoutBan const& ban) {
+  m_tempBans.filter([&](TimeoutBan const& ban) {
     if (ban.uuid && ban.uuid->hex() == uuidString) {
       found = true;
-      return true;
+      return false;
     }
-    return false;
+    return true;
   });
   return found;
 }
@@ -786,12 +786,12 @@ std::expected<bool, StarException> UniverseServer::unbanIp(String const& address
   }
   if (auto stored = (*config)->set("bannedIPs", *entries); !stored)
     return std::unexpected(std::move(stored.error()));
-  eraseWhere(m_tempBans, [&](TimeoutBan const& ban) {
+  m_tempBans.filter([&](TimeoutBan const& ban) {
     if (ban.ip && *ban.ip == *address) {
       found = true;
-      return true;
+      return false;
     }
-    return false;
+    return true;
   });
   return found;
 }
@@ -1110,7 +1110,8 @@ std::expected<void, StarException> UniverseServer::shutdown() {
     messageLocker.unlock();
     auto rejectRemote = [&](ConnectionId clientId, Uuid const& uuid) {
       if (m_connectionServer && m_connectionServer->hasConnection(clientId))
-        record(m_connectionServer->sendPackets(clientId, {std::make_shared<UniverseMessageResponse>(makeLeft(String("ServerShutdown")), uuid)}));
+        record(m_connectionServer->sendPackets(
+          clientId, {std::make_shared<UniverseMessageResponse>(std::unexpected(String("ServerShutdown")), uuid)}));
     };
     for (auto& message : messages) {
       if (std::holds_alternative<RpcPromiseKeeper<Json>>(message.keeper))
@@ -2227,13 +2228,17 @@ std::expected<void, StarException> UniverseServer::handleUniverseMessages() {
     if (!result)
       return std::unexpected(std::move(result.error()));
     if (*result) {
-      if (auto sent = m_connectionServer->sendPackets(entry.first, {std::make_shared<UniverseMessageResponse>(makeRight(**result), uuid)}); !sent)
+      if (auto sent =
+            m_connectionServer->sendPackets(entry.first, {std::make_shared<UniverseMessageResponse>(**result, uuid)});
+          !sent)
         return std::unexpected(std::move(sent.error()));
     } else {
       auto error = entry.second.error();
       if (!error)
         return std::unexpected(std::move(error.error()));
-      if (auto sent = m_connectionServer->sendPackets(entry.first, {std::make_shared<UniverseMessageResponse>(makeLeft(**error), uuid)}); !sent)
+      if (auto sent = m_connectionServer->sendPackets(
+            entry.first, {std::make_shared<UniverseMessageResponse>(std::unexpected(**error), uuid)});
+          !sent)
         return std::unexpected(std::move(sent.error()));
     }
     m_universeMessagePromises.remove(uuid);
@@ -2250,14 +2255,20 @@ std::expected<void, StarException> UniverseServer::handleUniverseMessages() {
       if (remote) {
         auto [uuid, clientId] = std::get<std::pair<Uuid, ConnectionId>>(message.keeper);
         if (!response)
-          return m_connectionServer->sendPackets(clientId, {std::make_shared<UniverseMessageResponse>(makeLeft(String(std::string_view(response.error().what()))), uuid)});
+          return m_connectionServer->sendPackets(
+            clientId,
+            {std::make_shared<UniverseMessageResponse>(
+              std::unexpected(String(std::string_view(response.error().what()))), uuid)});
         if (!*response)
-          return m_connectionServer->sendPackets(clientId, {std::make_shared<UniverseMessageResponse>(makeLeft(String("Message not handled by universe")), uuid)});
+          return m_connectionServer->sendPackets(clientId,
+                                                 {std::make_shared<UniverseMessageResponse>(
+                                                   std::unexpected(String("Message not handled by universe")), uuid)});
         if (std::holds_alternative<RpcPromise<Json>>(**response)) {
           m_universeMessagePromises[uuid] = {clientId, std::get<RpcPromise<Json>>(**response)};
           return {};
         }
-        return m_connectionServer->sendPackets(clientId, {std::make_shared<UniverseMessageResponse>(makeRight(std::get<Json>(**response)), uuid)});
+        return m_connectionServer->sendPackets(
+          clientId, {std::make_shared<UniverseMessageResponse>(std::get<Json>(**response), uuid)});
       }
       auto& keeper = std::get<RpcPromiseKeeper<Json>>(message.keeper);
       if (!response)
@@ -2997,9 +3008,7 @@ std::expected<void, StarException> UniverseServer::removeTimedBan() {
   std::unique_lock locker(m_mainLock, std::defer_lock);
   lockWithDiagnostics(locker);
   auto currentTime = Time::monotonicMilliseconds();
-  eraseWhere(m_tempBans, [currentTime](TimeoutBan const& b) {
-    return b.banExpiry <= currentTime;
-  });
+  m_tempBans.filter([currentTime](TimeoutBan const& b) { return b.banExpiry > currentTime; });
   return {};
 }
 
@@ -3130,7 +3139,11 @@ std::expected<void, StarException> UniverseServer::packetsReceived(UniverseConne
           }
 
           if (blocked) {
-            if (auto sent = m_connectionServer->sendPackets(clientId, {std::make_shared<EntityMessageResponsePacket>(makeLeft(String("Warp entity message blocked by server")), entityMessage->uuid)}); !sent)
+            if (auto sent = m_connectionServer->sendPackets(
+                  clientId,
+                  {std::make_shared<EntityMessageResponsePacket>(
+                    std::unexpected(String("Warp entity message blocked by server")), entityMessage->uuid)});
+                !sent)
               return std::unexpected(std::move(sent.error()));
             continue;
           }
@@ -3237,7 +3250,11 @@ std::expected<void, StarException> UniverseServer::packetsReceived(UniverseConne
           if (auto client = m_clients.value(universeMessage->connection); client && !m_disconnectingClients.contains(universeMessage->connection)) {
             clientsLocker.unlock();
             if (client->netRules().version() < 18) {
-              if (auto sent = m_connectionServer->sendPackets(clientId, {std::make_shared<UniverseMessageResponse>(makeLeft(String("Client is not new enough")), universeMessage->uuid)}); !sent)
+              if (auto sent = m_connectionServer->sendPackets(
+                    clientId,
+                    {std::make_shared<UniverseMessageResponse>(std::unexpected(String("Client is not new enough")),
+                                                               universeMessage->uuid)});
+                  !sent)
                 return std::unexpected(std::move(sent.error()));
             } else {
               std::unique_lock messageLocker(m_messageLock, std::defer_lock);
@@ -3249,7 +3266,11 @@ std::expected<void, StarException> UniverseServer::packetsReceived(UniverseConne
                 return std::unexpected(std::move(sent.error()));
             }
           } else {
-            if (auto sent = m_connectionServer->sendPackets(clientId, {std::make_shared<UniverseMessageResponse>(makeLeft(String("Client does not exist")), universeMessage->uuid)}); !sent)
+            if (auto sent = m_connectionServer->sendPackets(
+                  clientId,
+                  {std::make_shared<UniverseMessageResponse>(std::unexpected(String("Client does not exist")),
+                                                             universeMessage->uuid)});
+                !sent)
               return std::unexpected(std::move(sent.error()));
           }
         }
@@ -3273,9 +3294,9 @@ std::expected<void, StarException> UniverseServer::packetsReceived(UniverseConne
             }
             clientsLocker.unlock();
           } else {
-            auto settled = universeMessageResponse->response.isRight()
-                ? std::get<RpcPromiseKeeper<Json>>(response).fulfill(universeMessageResponse->response.rightRef())
-                : std::get<RpcPromiseKeeper<Json>>(response).fail(universeMessageResponse->response.leftRef());
+            auto settled = universeMessageResponse->response.has_value()
+              ? std::get<RpcPromiseKeeper<Json>>(response).fulfill(*universeMessageResponse->response)
+              : std::get<RpcPromiseKeeper<Json>>(response).fail(universeMessageResponse->response.error());
             if (!settled)
               return std::unexpected(std::move(settled.error()));
           }
@@ -3872,7 +3893,9 @@ std::expected<void, StarException> UniverseServer::doDisconnection(ConnectionId 
       if (std::holds_alternative<RpcPromiseKeeper<Json>>(it->second.second))
         record(std::get<RpcPromiseKeeper<Json>>(it->second.second).fail("Client disconnected"));
       else if (origin && m_connectionServer->hasConnection(*origin))
-        record(m_connectionServer->sendPackets(*origin, {std::make_shared<UniverseMessageResponse>(makeLeft(String("Client disconnected")), it->first)}));
+        record(m_connectionServer->sendPackets(
+          *origin,
+          {std::make_shared<UniverseMessageResponse>(std::unexpected(String("Client disconnected")), it->first)}));
       it = m_universeMessageResponses.erase(it);
     }
   }

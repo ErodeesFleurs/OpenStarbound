@@ -178,7 +178,7 @@ std::expected<float, StarException> MixSelector::get(int x, int y) const {
   auto mix = m_mixSource->get(x, y);
   if (!mix)
     return std::unexpected(std::move(mix.error()));
-  auto f = clamp(*mix, -1.0f, 1.0f);
+  auto f = std::clamp(*mix, -1.0f, 1.0f);
   if (f == -1)
     return m_aSource->get(x, y);
   if (f == 1)

@@ -214,6 +214,10 @@ Core standard-library adapters retain engine-specific contracts:
 - `File::copy` uses `std::filesystem::copy_file` with overwrite and `error_code` reporting. It copies regular files, follows symlinks, rejects source/target aliases, and uses the standard operation's permission behavior. It is neither an atomic replacement nor a durability barrier.
 - Use `List::filter` for nonfallible sequence cleanup when predicates do not depend on intermediate erases or destruction order; its standard `remove_if` path compacts once. Generic `eraseWhere` retains immediate erasure and checked-predicate short-circuiting.
 - Stream formatting writes through `std::format_to` without constructing a complete result string on the default-width path. Explicit ostream widths retain buffered field padding; stream errors, tied streams, `unitbuf`, and the explicit `coutf`/`cerrf` flushes remain effective.
+- Standard-backed sequence constructors delegate directly to their containers. Lua callable argument packs use `FunctionTraits::ArgTuple` with `std::type_identity`, without constructing argument values.
+- JSON-RPC's private handler registry uses standard node-hash storage so that registering more methods during a call does not relocate its active callable. Other engine hash tables retain their existing storage and iteration contracts.
+- Entity and universe message responses use `std::expected<Json, String>`, with packet-local codecs preserving error tag `1`, success tag `2`, the default empty-string error, and legacy unknown-tag/partial-read behavior.
+- Use `std::clamp` only where ordered bounds are established and no reference escapes. Presentation/audio scalar interpolation uses `std::lerp`; procedural generation and generic/vector/integer interpolation retain the original `Star::lerp` arithmetic. Songbook pitch conversion uses `std::log2`, without a bitwise rounding-equivalence promise.
 
 Check library implementation support, not just the language standard: the pinned libc++ does not implement `std::move_only_function`, so `UniqueFunction` remains in use.
 

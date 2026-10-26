@@ -29,7 +29,7 @@ public:
   }
 
   PointT pointAt(float t) const {
-    float u = clamp<float>(t, 0, 1);
+    float u = std::clamp<float>(t, 0, 1);
     if (u != t) {
       t = u;
       EmergencyLog::warn("Passed out of range time to Spline::pointAt");
@@ -52,7 +52,7 @@ public:
   }
 
   PointT tangentAt(float t) const {
-    float u = clamp<float>(t, 0, 1);
+    float u = std::clamp<float>(t, 0, 1);
     if (u != t) {
       t = u;
       EmergencyLog::warn("Passed out of range time to Spline::tangentAt");
@@ -96,7 +96,7 @@ public:
       return 0;
     if (u == 1)
       return 1;
-    u = clamp<float>(u, 0, 1);
+    u = std::clamp<float>(u, 0, 1);
     if (u == 0 || u == 1) {
       EmergencyLog::warn("Passed out of range time to Spline::arcLenPara");
       return u;

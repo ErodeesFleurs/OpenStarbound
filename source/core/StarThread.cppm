@@ -33,8 +33,6 @@ public:
   // Yield this thread, offering the opportunity to reschedule.
   static void yield();
 
-  [[nodiscard]] static std::expected<unsigned, StarException> numberOfProcessors();
-
   template <typename Function, typename... Args>
   [[nodiscard]] static auto invoke(String const& name, Function&& f, Args&&... args)
       -> std::expected<ThreadFunction<typename std::invoke_result_t<std::decay_t<Function>&, std::decay_t<Args>&...>::value_type>, StarException>;

@@ -1,16 +1,12 @@
 import std;
 import star.math_common;
+import star.interpolation;
+import star.vector;
 import star.matrix3;
 
 #include "gtest/gtest.h"
 
 using namespace Star;
-
-TEST(MathTest, All) {
-  EXPECT_EQ(countSetBits<std::uint32_t>(7), 3u);
-  EXPECT_EQ(countSetBits<std::uint32_t>(15), 4u);
-  EXPECT_EQ(countSetBits<std::uint32_t>(-1), 32u);
-}
 
 TEST(Math, CycleIncrement) {
   int a = 0;
@@ -27,6 +23,20 @@ TEST(Math, CycleIncrement) {
   int b = 14;
   b = cycleIncrement(b, 10, 13);
   ASSERT_EQ(b, 10);
+}
+
+TEST(Math, GenericLerpPreservesArithmetic) {
+  EXPECT_EQ(lerp(0.25f, Vec2F(2.0f, -4.0f), Vec2F(10.0f, 4.0f)), Vec2F(4.0f, -2.0f));
+  EXPECT_EQ(lerp(2.0f, Vec2F(2.0f, -4.0f), Vec2F(10.0f, 4.0f)), Vec2F(18.0f, 12.0f));
+  EXPECT_EQ(lerp(0.25f, -3, 3), -1);
+}
+
+TEST(Math, ClampedFloatToBytePreservesSaturationAndTruncation) {
+  EXPECT_EQ(floatToByte(-1.0f, true), 0);
+  EXPECT_EQ(floatToByte(0.0f, true), 0);
+  EXPECT_EQ(floatToByte(0.5f, true), 127);
+  EXPECT_EQ(floatToByte(1.0f, true), 255);
+  EXPECT_EQ(floatToByte(2.0f, true), 255);
 }
 
 TEST(Matrix3, RangeCopyPreservesRowMajorValuesAndDestinationBounds) {

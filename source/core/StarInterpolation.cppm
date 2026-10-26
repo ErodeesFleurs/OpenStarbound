@@ -222,7 +222,7 @@ Bound2<LocType, IndexType> getBound2(LocType loc, IndexType extent, BoundMode bm
   if (bmode == BoundMode::Wrap) {
     loc = pfmod<LocType>(loc, extent);
   } else {
-    LocType newLoc = clamp<LocType>(loc, 0, extent - 1);
+    LocType newLoc = std::clamp<LocType>(loc, 0, extent - 1);
     if (bmode == BoundMode::Extrapolate)
       bound.offset += loc - newLoc;
 
@@ -272,7 +272,7 @@ Bound4<LocType, IndexType> getBound4(LocType loc, IndexType extent, BoundMode bm
   if (bmode == BoundMode::Wrap) {
     loc = pfmod<LocType>(loc, extent);
   } else {
-    LocType newLoc = clamp<LocType>(loc, 0, extent - 1);
+    LocType newLoc = std::clamp<LocType>(loc, 0, extent - 1);
     if (bmode == BoundMode::Extrapolate)
       bound.offset += loc - newLoc;
 

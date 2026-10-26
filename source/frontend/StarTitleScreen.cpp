@@ -356,8 +356,8 @@ std::expected<void, StarException> TitleScreen::render() {
   if (!skyRenderData)
     return std::unexpected(std::move(skyRenderData.error()));
   float pixelRatioBasis = screenSize[1] / 1080.0f;
-  float starAndDebrisRatio = lerp(0.0625f, pixelRatioBasis * 2.0f, pixelRatio);
-  float orbiterAndPlanetRatio = lerp(0.125f, pixelRatioBasis * 3.0f, pixelRatio);
+  float starAndDebrisRatio = std::lerp(pixelRatioBasis * 2.0f, pixelRatio, 0.0625f);
+  float orbiterAndPlanetRatio = std::lerp(pixelRatioBasis * 3.0f, pixelRatio, 0.125f);
   if (auto r = m_environmentPainter->renderStars(starAndDebrisRatio, screenSize, *skyRenderData); !r) return std::unexpected(std::move(r.error()));
   if (auto r = m_environmentPainter->renderDebrisFields(starAndDebrisRatio, screenSize, *skyRenderData); !r) return std::unexpected(std::move(r.error()));
   if (auto r = m_environmentPainter->renderBackOrbiters(orbiterAndPlanetRatio, screenSize, *skyRenderData); !r) return std::unexpected(std::move(r.error()));

@@ -15,21 +15,6 @@ namespace Constants {
   inline double constexpr deg2rad = 1 / rad2deg;
 }
 
-inline float log2(float f) {
-  return std::log(f) * (float)std::numbers::log2e;
-}
-
-inline double log2(double d) {
-  return std::log(d) * std::numbers::log2e;
-}
-
-// Count the number of '1' bits in the given unsigned integer
-template <typename Int>
-  requires std::unsigned_integral<Int>
-unsigned countSetBits(Int value) {
-  return (unsigned)std::popcount(value);
-}
-
 template <typename T, typename T2>
   requires (!std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer && sizeof(T) >= sizeof(T2))
 bool nearEqual(T x, T2 y, unsigned ulp) {
@@ -246,7 +231,7 @@ T approachAngle(T goal, T current, T rate) {
 // Used in color conversion from floating point to uint8_t
 inline std::uint8_t floatToByte(float val, bool doClamp = false) {
   if (doClamp)
-    val = clamp(val, 0.0f, 1.0f);
+    val = std::clamp(val, 0.0f, 1.0f);
   return (std::uint8_t)(val * 255.0f);
 }
 
@@ -279,8 +264,6 @@ export module star.math_common;
 export namespace Star {
   using ::Star::MathExceptionTag;
   using ::Star::MathException;
-  using ::Star::log2;
-  using ::Star::countSetBits;
   using ::Star::nearEqual;
   using ::Star::nearZero;
   using ::Star::square;

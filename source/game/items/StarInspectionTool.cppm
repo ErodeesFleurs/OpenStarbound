@@ -366,7 +366,7 @@ std::expected<float, StarException> InspectionTool::inspectionLevel(std::shared_
           totalLevel += *pointLevel;
       }
     }
-    return clamp(totalLevel / std::min(spaceSet.size(), m_fullInspectionSpaces), 0.0f, 1.0f);
+    return std::clamp(totalLevel / std::min(spaceSet.size(), m_fullInspectionSpaces), 0.0f, 1.0f);
   }
   else
     return pointInspectionLevel(inspectable->position());
@@ -381,7 +381,7 @@ std::expected<float, StarException> InspectionTool::pointInspectionLevel(Vec2F c
   float angleFactor = (std::abs(angleDiff(gdiff.angle(), m_currentAngle)) - m_inspectionAngles[0]) / (m_inspectionAngles[1] - m_inspectionAngles[0]);
   float distFactor = (gdist - m_inspectionRanges[0]) / (m_inspectionRanges[1] - m_inspectionRanges[0]);
   float ambientFactor = gdist / m_ambientInspectionRadius;
-  return 1 - clamp(std::max(distFactor, std::min(ambientFactor, angleFactor)), 0.0f, 1.0f);
+  return 1 - std::clamp(std::max(distFactor, std::min(ambientFactor, angleFactor)), 0.0f, 1.0f);
 }
 
 std::expected<bool, StarException> InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& targetSpaces) const {

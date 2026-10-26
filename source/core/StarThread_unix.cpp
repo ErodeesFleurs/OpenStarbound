@@ -143,13 +143,6 @@ void Thread::sleepPrecise(unsigned msecs) {
   }
 }
 
-std::expected<unsigned, StarException> Thread::numberOfProcessors() {
-  long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
-  if (nprocs < 1)
-    return std::unexpected(StarException(strf("Could not determine number of CPUs online: {}\n", std::strerror(errno))));
-  return static_cast<unsigned>(nprocs);
-}
-
 Thread::Thread(String const& name) {
   m_impl.reset(new ThreadImpl([this]() {
       return run();

@@ -167,7 +167,7 @@ static std::expected<void, StarException> run(int argc, char** argv) {
       auto value = terrainResult(x, y) / scale;
       if (mode == "heatmap") {
         Color color = Color::rgb(255, 0, 0);
-        color.setHue(clamp(value / 2 + 0.5f, 0.0f, 1.0f));
+        color.setHue(std::clamp(value / 2 + 0.5f, 0.0f, 1.0f));
         auto written = outputImage->set(x, y, color.toRgb());
         if (!written)
           return std::unexpected(std::move(written.error()));

@@ -963,9 +963,7 @@ double Songbook::fundamentalFrequency(double p) {
   return 55.0 * std::pow(2.0, (p - 69.0) / 12.0 + 3.0);
 }
 
-double Songbook::fundamentalPitch(double f) {
-  return 69.0 + 12 * log2(f / 440.0);
-}
+double Songbook::fundamentalPitch(double f) { return 69.0 + 12 * std::log2(f / 440.0); }
 
 std::expected<void, StarException> Songbook::netElementsNeedLoad(bool) {
   if (m_songNetState.pullUpdated()) {

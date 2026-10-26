@@ -724,7 +724,7 @@ std::expected<LuaCallbacks, StarException> ActiveItem::makeActiveItemCallbacks()
       toTarget -= handRotationCenter;
       float toTargetDist = toTarget.magnitude();
       // Clamp targets inside the barrel-offset circle to retain continuity.
-      float angleAdjust = -std::asin(clamp(aimVerticalOffset / toTargetDist, -1.0f, 1.0f));
+      float angleAdjust = -std::asin(std::clamp(aimVerticalOffset / toTargetDist, -1.0f, 1.0f));
       auto angleSide = getAngleSide(toTarget.angle());
       return luaTupleReturn(angleSide.first + angleAdjust, numericalDirection(angleSide.second));
     }); !added)
@@ -746,7 +746,7 @@ std::expected<LuaCallbacks, StarException> ActiveItem::makeActiveItemCallbacks()
         return std::unexpected(std::move(itemWorld.error()));
       Vec2F toTarget = itemWorld->get().geometry().diff(targetPosition, ownerPosition + handRotationCenter);
       float toTargetDist = toTarget.magnitude();
-      float angleAdjust = -std::asin(clamp(aimVerticalOffset / toTargetDist, -1.0f, 1.0f));
+      float angleAdjust = -std::asin(std::clamp(aimVerticalOffset / toTargetDist, -1.0f, 1.0f));
       return toTarget.angle() + angleAdjust;
     }); !added)
     return std::unexpected(std::move(added.error()));

@@ -516,7 +516,7 @@ std::expected<String, StarException> CommandProcessor::timescale(ConnectionId co
 
   auto parsedScale = lexicalCast<float>(arguments[0]);
   if (!parsedScale) return std::unexpected(std::move(parsedScale.error()));
-  float timescale = clamp(*parsedScale, 0.001f, 32.0f);
+  float timescale = std::clamp(*parsedScale, 0.001f, 32.0f);
   auto set = m_universe.setTimescale(timescale);
   if (!set) return std::unexpected(std::move(set.error()));
   return strf("Set timescale to {:6.6f}x", timescale);
@@ -536,7 +536,7 @@ std::expected<String, StarException> CommandProcessor::tickrate(ConnectionId con
 
   auto parsedRate = lexicalCast<float>(arguments[0]);
   if (!parsedRate) return std::unexpected(std::move(parsedRate.error()));
-  float tickRate = clamp(*parsedRate, 5.f, 500.f);
+  float tickRate = std::clamp(*parsedRate, 5.f, 500.f);
   m_universe.setTickRate(tickRate);
   return strf("Set tick rate to {:4.2f}Hz", tickRate);
 }

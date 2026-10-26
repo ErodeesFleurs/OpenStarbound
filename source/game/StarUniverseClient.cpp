@@ -57,7 +57,6 @@ import star.periodic_function;
 import star.time;
 import star.io_device;
 import star.string;
-import star.either;
 import star.encode;
 import star.lua;
 
@@ -713,7 +712,7 @@ std::expected<void, StarException> UniverseClient::update(float dt) {
       auto result = std::move(*resultResult);
       if (!result)
         return std::unexpected(StarException("Completed universe message has no result"));
-      auto operation54 = m_connection->pushSingle(std::make_shared<UniverseMessageResponse>(makeRight(std::move(*result)), uuid));
+      auto operation54 = m_connection->pushSingle(std::make_shared<UniverseMessageResponse>(std::move(*result), uuid));
       if (!operation54)
         return std::unexpected(std::move(operation54.error()));
     } else {
@@ -723,7 +722,8 @@ std::expected<void, StarException> UniverseClient::update(float dt) {
       auto error = std::move(*errorResult);
       if (!error)
         return std::unexpected(StarException("Failed universe message has no error"));
-      auto operation55 = m_connection->pushSingle(std::make_shared<UniverseMessageResponse>(makeLeft(std::move(*error)), uuid));
+      auto operation55 =
+        m_connection->pushSingle(std::make_shared<UniverseMessageResponse>(std::unexpected(std::move(*error)), uuid));
       if (!operation55)
         return std::unexpected(std::move(operation55.error()));
     }
@@ -1787,7 +1787,7 @@ std::expected<void, StarException> UniverseClient::handlePackets(List<std::share
         m_celestialDatabase->invalidateCacheFor(planet->coordinate);
       } else if (auto pause = as<PausePacket>(packet)) {
         setPause(pause->pause);
-        m_root.timing().timescale = clamp(pause->timescale, 0.0f, 1024.f);
+        m_root.timing().timescale = std::clamp(pause->timescale, 0.0f, 1024.f);
       } else if (auto info = as<ServerInfoPacket>(packet)) {
         m_serverInfo = ServerInfo{info->players, info->maxPlayers};
       } else if (auto request = as<ClientCustomWorldRequest>(packet)) {
@@ -1912,11 +1912,13 @@ std::expected<void, StarException> UniverseClient::handlePackets(List<std::share
           return std::unexpected(std::move(responseResult.error()));
         auto response = std::move(*responseResult);
         if (!response) {
-          auto operation95 = m_connection->pushSingle(std::make_shared<UniverseMessageResponse>(makeLeft(String("Message not handled by universe")), message->uuid));
+          auto operation95 = m_connection->pushSingle(std::make_shared<UniverseMessageResponse>(
+            std::unexpected(String("Message not handled by universe")), message->uuid));
           if (!operation95)
             return std::unexpected(std::move(operation95.error()));
         } else if (std::holds_alternative<Json>(*response)) {
-          auto operation96 = m_connection->pushSingle(std::make_shared<UniverseMessageResponse>(makeRight(std::get<Json>(*response)), message->uuid));
+          auto operation96 = m_connection->pushSingle(
+            std::make_shared<UniverseMessageResponse>(std::get<Json>(*response), message->uuid));
           if (!operation96)
             return std::unexpected(std::move(operation96.error()));
         } else {
@@ -1934,20 +1936,12 @@ std::expected<void, StarException> UniverseClient::handlePackets(List<std::share
           if (!keeperResult)
             return std::unexpected(std::move(keeperResult.error()));
           auto keeper = std::move(*keeperResult);
-          if (message->response.isRight()) {
-            auto responseResult = message->response.right();
-            if (!responseResult)
-              return std::unexpected(std::move(responseResult.error()));
-            auto response = std::move(*responseResult);
-            auto operation98 = keeper.fulfill(response.get());
+          if (message->response.has_value()) {
+            auto operation98 = keeper.fulfill(*message->response);
             if (!operation98)
               return std::unexpected(std::move(operation98.error()));
           } else {
-            auto responseResult = message->response.left();
-            if (!responseResult)
-              return std::unexpected(std::move(responseResult.error()));
-            auto response = std::move(*responseResult);
-            auto operation99 = keeper.fail(response.get());
+            auto operation99 = keeper.fail(message->response.error());
             if (!operation99)
               return std::unexpected(std::move(operation99.error()));
           }

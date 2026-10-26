@@ -1431,13 +1431,13 @@ namespace LuaDetail {
     return FunctionWrapper<Return, std::decay_t<Args>...>::wrap(std::forward<Function>(function));
   }
   template <typename Return, typename Function, typename... Args>
-  LuaWrappedFunction wrapFunctionArgs(Function&& function, VariadicTypedef<Args...> const&) {
+  LuaWrappedFunction wrapFunctionArgs(Function&& function, std::type_identity<std::tuple<Args...>>) {
     return wrapFunctionWithSignature<Return, Args...>(std::forward<Function>(function));
   }
   template <typename Function>
   LuaWrappedFunction wrapFunction(Function&& function) {
     return wrapFunctionArgs<typename FunctionTraits<Function>::Return>(
-        std::forward<Function>(function), typename FunctionTraits<Function>::Args());
+      std::forward<Function>(function), std::type_identity<typename FunctionTraits<Function>::ArgTuple>{});
   }
 
   template <typename Return, typename T, typename... Args>
@@ -1483,13 +1483,13 @@ namespace LuaDetail {
     return MethodWrapper<Return, std::decay_t<Args>...>::wrap(std::forward<Function>(function));
   }
   template <typename Return, typename Function, typename... Args>
-  LuaWrappedFunction wrapMethodArgs(Function&& function, VariadicTypedef<Args...> const&) {
+  LuaWrappedFunction wrapMethodArgs(Function&& function, std::type_identity<std::tuple<Args...>>) {
     return wrapMethodWithSignature<Return, Args...>(std::forward<Function>(function));
   }
   template <typename Function>
   LuaWrappedFunction wrapMethod(Function&& function) {
     return wrapMethodArgs<typename FunctionTraits<Function>::Return>(
-        std::forward<Function>(function), typename FunctionTraits<Function>::Args());
+      std::forward<Function>(function), std::type_identity<typename FunctionTraits<Function>::ArgTuple>{});
   }
 
   template <typename Function, typename... Args>
@@ -1547,14 +1547,14 @@ namespace LuaDetail {
     return TableIteratorWrapper<Return, std::decay_t<Args>...>::wrap(engine, std::forward<Function>(function));
   }
   template <typename Return, typename Function, typename... Args>
-  std::function<std::expected<bool, StarException>(LuaValue, LuaValue)> wrapTableIteratorArgs(
-      LuaEngine& engine, Function&& function, VariadicTypedef<Args...> const&) {
+  std::function<std::expected<bool, StarException>(LuaValue, LuaValue)>
+  wrapTableIteratorArgs(LuaEngine& engine, Function&& function, std::type_identity<std::tuple<Args...>>) {
     return wrapTableIteratorWithSignature<Return, Args...>(engine, std::forward<Function>(function));
   }
   template <typename Function>
   std::function<std::expected<bool, StarException>(LuaValue, LuaValue)> wrapTableIterator(LuaEngine& engine, Function&& function) {
     return wrapTableIteratorArgs<typename FunctionTraits<Function>::Return>(
-        engine, std::forward<Function>(function), typename FunctionTraits<Function>::Args());
+      engine, std::forward<Function>(function), std::type_identity<typename FunctionTraits<Function>::ArgTuple>{});
   }
 
   // Like lua_setfield but raw; used inside protected Lua calls.

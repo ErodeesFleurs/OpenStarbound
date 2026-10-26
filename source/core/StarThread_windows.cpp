@@ -107,14 +107,6 @@ void Thread::sleepPrecise(unsigned msecs) {
   }
 }
 
-std::expected<unsigned, StarException> Thread::numberOfProcessors() {
-  SYSTEM_INFO info;
-  GetSystemInfo(&info);
-  if (info.dwNumberOfProcessors == 0)
-    return std::unexpected(StarException("Could not determine number of CPUs online"));
-  return info.dwNumberOfProcessors;
-}
-
 Thread::Thread(String const& name) {
   m_impl.reset(new ThreadImpl([this]() { return run(); }, name));
 }

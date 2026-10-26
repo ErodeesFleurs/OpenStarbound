@@ -82,7 +82,6 @@ public:
 
   [[nodiscard]] static std::expected<ByteArray, StarException> readFile(String const& filename);
   [[nodiscard]] static std::expected<String, StarException> readFileString(String const& filename);
-  [[nodiscard]] static std::expected<StreamOffset, StarException> fileSize(String const& filename);
 
   [[nodiscard]] static std::expected<void, StarException> writeFile(std::span<char const> data, String const& filename);
   [[nodiscard]] static std::expected<void, StarException> writeFile(ByteArray const& data, String const& filename);

@@ -345,7 +345,7 @@ static void processSaturationShift(Image& image, SaturationShiftImageOperation c
   image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
     if (pixel[3] != 0) {
       Color color = Color::rgba(pixel);
-      color.setSaturation(clamp(color.saturation() + op.saturationShiftAmount, 0.0f, 1.0f));
+      color.setSaturation(std::clamp(color.saturation() + op.saturationShiftAmount, 0.0f, 1.0f));
       pixel = color.toRgba();
     }
   });
@@ -371,7 +371,7 @@ std::expected<void, StarException> processImageOperation(ImageOperation const& o
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0) {
         Color color = Color::rgba(pixel);
-        color.setValue(clamp(color.value() * op->get().brightnessMultiply, 0.0f, 1.0f));
+        color.setValue(std::clamp(color.value() * op->get().brightnessMultiply, 0.0f, 1.0f));
         pixel = color.toRgba();
       }
     });

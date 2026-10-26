@@ -718,7 +718,7 @@ std::expected<List<LightSource>, StarException> Object::lightSources() const {
   if (!m_lightSourceColor.get().isClear() && orientation) {
     Color color = m_lightSourceColor.get();
     if (m_lightFlickering)
-      color.setValue(clamp(color.value() * m_lightFlickering->value(SinWeightOperator<float>()), 0.0f, 1.0f));
+      color.setValue(std::clamp(color.value() * m_lightFlickering->value(SinWeightOperator<float>()), 0.0f, 1.0f));
 
     LightSource lightSource;
     lightSource.position = position() + centerOfTile(orientation->lightPosition);

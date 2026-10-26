@@ -25,7 +25,7 @@ public:
   void setStepCount(unsigned everyXSteps) {
     m_everyXSteps = everyXSteps;
     if (everyXSteps != 0)
-      m_counter = clamp<unsigned>(m_counter, 0, m_everyXSteps - 1);
+      m_counter = std::clamp<unsigned>(m_counter, 0, m_everyXSteps - 1);
     else
       m_counter = 0;
   }

@@ -402,11 +402,11 @@ std::expected<std::uint8_t, StarException> ChatBubbleManager::calcDistanceFadeAl
 
   // that distance factor is divided by the max allowable distance
   // to re-space the distance as a 0 - 1 over the max allowable distance
-  distanceFactor = clamp(distanceFactor / m_furthestVisibleTextDistance, 0.0f, 1.0f);
+  distanceFactor = std::clamp(distanceFactor / m_furthestVisibleTextDistance, 0.0f, 1.0f);
 
   auto evaluated = fadeFunction->evaluate(distanceFactor);
   if (!evaluated) return std::unexpected(std::move(evaluated.error()));
-  return clamp((int)*evaluated, 0, 255);
+  return std::clamp((int)*evaluated, 0, 255);
 }
 std::expected<void, StarException> ChatBubbleManager::render() {
   if (m_bubbles.empty() && m_portraitBubbles.empty())

@@ -187,19 +187,6 @@ std::expected<String, StarException> File::readFileString(String const& filename
   return String(std::move(text));
 }
 
-std::expected<StreamOffset, StarException> File::fileSize(String const& filename) {
-  auto file = File::open(filename, IOMode::Read);
-  if (!file)
-    return std::unexpected(std::move(file.error()));
-  auto result = (*file)->size();
-  if (!result)
-    return std::unexpected(std::move(result.error()));
-  auto closed = (*file)->close();
-  if (!closed)
-    return std::unexpected(std::move(closed.error()));
-  return *result;
-}
-
 std::expected<void, StarException> File::writeFile(std::span<char const> data, String const& filename) {
   auto file = File::open(filename, IOMode::Write | IOMode::Truncate);
   if (!file)

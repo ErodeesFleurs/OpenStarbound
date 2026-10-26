@@ -84,10 +84,10 @@ Color Color::rgbf(float r, float g, float b) {
 
 Color Color::rgbaf(float r, float g, float b, float a) {
   Color c;
-  c.m_data[0] = clamp(r, 0.0f, 1.0f);
-  c.m_data[1] = clamp(g, 0.0f, 1.0f);
-  c.m_data[2] = clamp(b, 0.0f, 1.0f);
-  c.m_data[3] = clamp(a, 0.0f, 1.0f);
+  c.m_data[0] = std::clamp(r, 0.0f, 1.0f);
+  c.m_data[1] = std::clamp(g, 0.0f, 1.0f);
+  c.m_data[2] = std::clamp(b, 0.0f, 1.0f);
+  c.m_data[3] = std::clamp(a, 0.0f, 1.0f);
   return c;
 }
 
@@ -118,22 +118,22 @@ Color Color::temperature(float temp) {
   Color c;
   c.setAlpha(255);
 
-  temp = clamp<float>(temp, 1000, 40000);
+  temp = std::clamp<float>(temp, 1000, 40000);
 
   temp /= 100;
 
   double r, g, b;
   if (temp <= 66) {
     r = 255;
-    g = clamp<double>(99.4708025861 * std::log(temp) - 161.1195681661, 0, 255);
+    g = std::clamp<double>(99.4708025861 * std::log(temp) - 161.1195681661, 0, 255);
     if (temp <= 19) {
       b = 0;
     } else {
-      b = clamp<double>(138.5177312231 * std::log(temp - 10) - 305.0447927307, 0, 255);
+      b = std::clamp<double>(138.5177312231 * std::log(temp - 10) - 305.0447927307, 0, 255);
     }
   } else {
-    r = clamp<double>(329.698727446 * std::pow(temp - 60, -0.1332047592), 0, 255);
-    g = clamp<double>(288.1221695283 * std::pow(temp - 60, -0.0755148492), 0, 255);
+    r = std::clamp<double>(329.698727446 * std::pow(temp - 60, -0.1332047592), 0, 255);
+    g = std::clamp<double>(288.1221695283 * std::pow(temp - 60, -0.0755148492), 0, 255);
     b = 255;
   }
 
@@ -158,10 +158,10 @@ Color Color::hsv(float h, float s, float v) {
 }
 
 Color Color::hsva(float h, float s, float v, float a) {
-  h = clamp(h, 0.0f, 1.0f);
-  s = clamp(s, 0.0f, 1.0f);
-  v = clamp(v, 0.0f, 1.0f);
-  a = clamp(a, 0.0f, 1.0f);
+  h = std::clamp(h, 0.0f, 1.0f);
+  s = std::clamp(s, 0.0f, 1.0f);
+  v = std::clamp(v, 0.0f, 1.0f);
+  a = std::clamp(a, 0.0f, 1.0f);
 
   Color retColor;
   if (s == 0.0f) {
@@ -284,21 +284,13 @@ std::uint8_t Color::alpha() const {
   return std::uint8_t(m_data[3] * 255);
 }
 
-void Color::setRedF(float r) {
-  m_data[0] = clamp(r, 0.0f, 1.0f);
-}
+void Color::setRedF(float r) { m_data[0] = std::clamp(r, 0.0f, 1.0f); }
 
-void Color::setGreenF(float g) {
-  m_data[1] = clamp(g, 0.0f, 1.0f);
-}
+void Color::setGreenF(float g) { m_data[1] = std::clamp(g, 0.0f, 1.0f); }
 
-void Color::setBlueF(float b) {
-  m_data[2] = clamp(b, 0.0f, 1.0f);
-}
+void Color::setBlueF(float b) { m_data[2] = std::clamp(b, 0.0f, 1.0f); }
 
-void Color::setAlphaF(float a) {
-  m_data[3] = clamp(a, 0.0f, 1.0f);
-}
+void Color::setAlphaF(float a) { m_data[3] = std::clamp(a, 0.0f, 1.0f); }
 
 void Color::setRed(std::uint8_t r) {
   m_data[0] = r / 255.0f;
@@ -418,17 +410,17 @@ float Color::value() const {
 
 void Color::setHue(float h) {
   auto hsva = toHsva();
-  *this = Color::hsva(clamp(h, 0.0f, 1.0f), hsva[1], hsva[2], alphaF());
+  *this = Color::hsva(std::clamp(h, 0.0f, 1.0f), hsva[1], hsva[2], alphaF());
 }
 
 void Color::setSaturation(float s) {
   auto hsva = toHsva();
-  *this = Color::hsva(hsva[0], clamp(s, 0.0f, 1.0f), hsva[2], alphaF());
+  *this = Color::hsva(hsva[0], std::clamp(s, 0.0f, 1.0f), hsva[2], alphaF());
 }
 
 void Color::setValue(float v) {
   auto hsva = toHsva();
-  *this = Color::hsva(hsva[0], hsva[1], clamp(v, 0.0f, 1.0f), alphaF());
+  *this = Color::hsva(hsva[0], hsva[1], std::clamp(v, 0.0f, 1.0f), alphaF());
 }
 
 void Color::hueShift(float h) {
@@ -509,7 +501,7 @@ Color Color::complementary() {
 }
 
 Color Color::mix(Color const& c, float amount) const {
-  return Color::rgbaf(lerp(clamp(amount, 0.0f, 1.0f), toRgbaF(), c.toRgbaF()));
+  return Color::rgbaf(lerp(std::clamp(amount, 0.0f, 1.0f), toRgbaF(), c.toRgbaF()));
 }
 
 Color Color::multiply(float amount) const {

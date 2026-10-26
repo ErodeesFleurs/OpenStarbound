@@ -296,7 +296,7 @@ std::expected<std::reference_wrapper<DataStream>, StarException> operator<<(Data
 }
 
 void TileDamageStatus::updateDamageEffectPercentage() {
-  m_damageEffectPercentage = clamp(m_damageEffectTimeFactor, 0.0f, 1.0f) * m_damagePercentage;
+  m_damageEffectPercentage = std::clamp(m_damageEffectTimeFactor, 0.0f, 1.0f) * m_damagePercentage;
 }
 
 EntityTileDamageStatus::EntityTileDamageStatus() {
@@ -321,7 +321,7 @@ float EntityTileDamageStatus::damagePercentage() const {
 }
 
 float EntityTileDamageStatus::damageEffectPercentage() const {
-  return clamp(m_damageEffectTimeFactor.get(), 0.0f, 1.0f) * m_damagePercentage.get();
+  return std::clamp(m_damageEffectTimeFactor.get(), 0.0f, 1.0f) * m_damagePercentage.get();
 }
 
 TileDamageType EntityTileDamageStatus::damageType() const {

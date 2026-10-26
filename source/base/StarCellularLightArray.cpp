@@ -47,7 +47,8 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(std::size_t x
 
         Vec2F direction = relativeLightPosition / distance;
         if (light.beam > 0.0001f) {
-          attenuation += (1.0f - light.beamAmbience) * clamp(light.beam * (1.0f - direction * beamDirection), 0.0f, 1.0f);
+          attenuation +=
+            (1.0f - light.beamAmbience) * std::clamp(light.beam * (1.0f - direction * beamDirection), 0.0f, 1.0f);
           if (attenuation >= 1.0f)
             continue;
         }
@@ -120,7 +121,8 @@ void CellularLightArray<ColoredLightTraits>::calculatePointLighting(std::size_t 
 
         Vec2F direction = relativeLightPosition / distance;
         if (light.beam > 0.0f) {
-          attenuation += (1.0f - light.beamAmbience) * clamp(light.beam * (1.0f - direction * beamDirection), 0.0f, 1.0f);
+          attenuation +=
+            (1.0f - light.beamAmbience) * std::clamp(light.beam * (1.0f - direction * beamDirection), 0.0f, 1.0f);
           if (attenuation >= 1.0f)
             continue;
         }

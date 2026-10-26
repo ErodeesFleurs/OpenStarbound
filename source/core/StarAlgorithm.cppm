@@ -401,18 +401,6 @@ FinallyGuard<typename std::decay<Functor>::type> finally(Functor&& f) {
   return FinallyGuard<Functor>(std::forward<Functor>(f));
 }
 
-template <typename... Rest>
-struct VariadicTypedef;
-
-template <>
-struct VariadicTypedef<> {};
-
-template <typename FirstT, typename... RestT>
-struct VariadicTypedef<FirstT, RestT...> {
-  using First = FirstT;
-  using Rest = VariadicTypedef<RestT...>;
-};
-
 // For generic types, directly use the result of the signature of its
 // 'operator()'
 template <typename T>
@@ -425,7 +413,6 @@ struct FunctionTraits<ReturnType(ArgsTypes...)> {
 
   using Return = ReturnType;
 
-  using Args = VariadicTypedef<ArgsTypes...>;
   using ArgTuple = std::tuple<ArgsTypes...>;
 
   template <std::size_t i>
@@ -489,6 +476,5 @@ export namespace Star {
   using ::Star::take;
   using ::Star::FinallyGuard;
   using ::Star::finally;
-  using ::Star::VariadicTypedef;
   using ::Star::FunctionTraits;
 }
