@@ -257,14 +257,6 @@ std::expected<LuaTable, StarException> LuaContext::createTable() {
   return engine().createTable();
 }
 
-LuaNullEnforcer::LuaNullEnforcer(LuaEngine& engine)
-  : m_engine(std::ref(engine)) { ++m_engine->get().m_nullTerminated; };
-
-LuaNullEnforcer::LuaNullEnforcer(LuaNullEnforcer&& other)
-  : m_engine(std::exchange(other.m_engine, std::nullopt)) {}
-
-LuaNullEnforcer::~LuaNullEnforcer() { if (m_engine) --m_engine->get().m_nullTerminated; };
-
 std::expected<LuaValue, StarException> LuaConverter<Json>::from(LuaEngine& engine, Json const& v) {
   if (v.isType(Json::Type::Null))
     return LuaNil;
@@ -377,7 +369,6 @@ std::expected<LuaEnginePtr, StarException> LuaEngine::create(bool safe) {
   self->m_instructionCount = 0;
   self->m_recursionLevel = 0;
   self->m_recursionLimit = 0;
-  self->m_nullTerminated = 0;
 
   if (!self->m_state)
     return std::unexpected(LuaException("Failed to initialize Lua"));
@@ -677,13 +668,12 @@ std::expected<LuaString, StarException> LuaEngine::createString(std::string_view
   LuaStackRestore stack(m_state);
   if (!lua_checkstack(m_state, 3))
     return std::unexpected(LuaException("Exhausted the Lua stack while creating a string"));
-  auto input = str.substr(0, m_nullTerminated > 0 ? str.find('\0') : str.size());
   lua_pushcfunction(m_state, [](lua_State* state) {
     auto const& input = *static_cast<std::string_view const*>(lua_touserdata(state, 1));
     lua_pushlstring(state, input.data(), input.size());
     return 1;
   });
-  lua_pushlightuserdata(m_state, &input);
+  lua_pushlightuserdata(m_state, &str);
   auto called = handleError(m_state, pcallWithTraceback(m_state, 1, 1));
   if (!called)
     return std::unexpected(std::move(called.error()));
@@ -865,14 +855,6 @@ void LuaEngine::tuneAutoGarbageCollection(float pause, float stepMultiplier) {
 
 std::size_t LuaEngine::memoryUsage() const {
   return (std::size_t)lua_gc(m_state, LUA_GCCOUNT, 0) * 1024 + lua_gc(m_state, LUA_GCCOUNTB, 0);
-}
-
-LuaNullEnforcer LuaEngine::nullTerminate() {
-  return LuaNullEnforcer(*this);
-}
-
-void LuaEngine::setNullTerminated(bool nullTerminated) {
-  m_nullTerminated = nullTerminated ? 0 : std::numeric_limits<int>::min();
 }
 
 std::expected<void, StarException> LuaEngine::addImGui() {
@@ -1069,8 +1051,6 @@ void LuaEngine::propagateErrorWithTraceback(lua_State* from, lua_State* to) {
 
 
 std::size_t LuaEngine::stringLength(int handleIndex) {
-  if (m_nullTerminated > 0)
-    return stringView(handleIndex).utf8Size();
   pushHandle(m_state, handleIndex);
   std::size_t len = 0;
   lua_tolstring(m_state, -1, &len);
@@ -1082,8 +1062,6 @@ String LuaEngine::string(int handleIndex) {
   pushHandle(m_state, handleIndex);
   std::size_t length = 0;
   auto data = lua_tolstring(m_state, -1, &length);
-  if (m_nullTerminated > 0)
-    length = std::strlen(data);
   lua_pop(m_state, 1);
   return String(std::string_view(data, length));
 }
@@ -1092,8 +1070,6 @@ StringView LuaEngine::stringView(int handleIndex) {
   pushHandle(m_state, handleIndex);
   std::size_t length = 0;
   auto data = lua_tolstring(m_state, -1, &length);
-  if (m_nullTerminated > 0)
-    length = std::strlen(data);
   lua_pop(m_state, 1);
   return StringView(std::string_view(data, length));
 }
@@ -1838,8 +1814,6 @@ std::expected<std::optional<Json>, StarException> LuaEngine::stackToJson(int ind
     case LUA_TSTRING: {
       std::size_t size;
       char const* data = lua_tolstring(m_state, index, &size);
-      if (m_nullTerminated > 0)
-        size = std::strlen(data);
       return Json(String(std::string_view(data, size)));
     }
     case LUA_TTABLE:
@@ -1934,8 +1908,6 @@ std::expected<std::optional<Json>, StarException> LuaEngine::stackToJson(int ind
       } else if (keyType == LUA_TSTRING) {
         std::size_t size;
         char const* data = lua_tolstring(m_state, cursor, &size);
-        if (m_nullTerminated > 0)
-          size = std::strlen(data);
         stringEntries[String(std::string_view(data, size))] = std::move(value);
       } else {
         return false;

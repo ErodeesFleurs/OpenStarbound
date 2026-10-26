@@ -240,7 +240,6 @@ std::expected<std::shared_ptr<CommandProcessor>, StarException> CommandProcessor
   if (!scripts) return std::unexpected(std::move(scripts.error()));
   auto scriptsSet = processor->m_scriptComponent.setScripts(std::move(*scripts));
   if (!scriptsSet) return std::unexpected(std::move(scriptsSet.error()));
-  processor->m_luaRoot->luaEngine().setNullTerminated(false);
   auto rootSet = processor->m_scriptComponent.setLuaRoot(processor->m_luaRoot);
   if (!rootSet) return std::unexpected(std::move(rootSet.error()));
   auto initialized = processor->m_scriptComponent.init();

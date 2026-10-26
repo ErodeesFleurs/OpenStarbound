@@ -438,42 +438,6 @@ public:
   [[nodiscard]] std::expected<LuaUserData, StarException> createUserData(T t);
 };
 
-template <typename T>
-struct LuaNullTermWrapper : T {
-  LuaNullTermWrapper() : T() {}
-  LuaNullTermWrapper(LuaNullTermWrapper const& nt) : T(nt) {}
-  LuaNullTermWrapper(LuaNullTermWrapper&& nt) : T(std::move(nt)) {}
-  LuaNullTermWrapper(T const& bt) : T(bt) {}
-  LuaNullTermWrapper(T&& bt) : T(std::move(bt)) {}
-
-  using T::T;
-
-  LuaNullTermWrapper& operator=(LuaNullTermWrapper const& rhs) {
-    T::operator=(rhs);
-    return *this;
-  }
-
-  LuaNullTermWrapper& operator=(LuaNullTermWrapper&& rhs) {
-    T::operator=(std::move(rhs));
-    return *this;
-  }
-
-  LuaNullTermWrapper& operator=(T&& other) {
-    T::operator=(std::forward<T>(other));
-    return *this;
-  }
-};
-
-class LuaNullEnforcer {
-public:
-  LuaNullEnforcer(LuaEngine& engine);
-  LuaNullEnforcer(LuaNullEnforcer const&) = delete;
-  LuaNullEnforcer(LuaNullEnforcer&&);
-  ~LuaNullEnforcer();
-private:
-  std::optional<std::reference_wrapper<LuaEngine>> m_engine;
-};
-
 // Types that want to participate in automatic lua conversion should specialize
 // this template and provide static to and from methods on it.  The method
 // signatures will be called like:
@@ -681,10 +645,6 @@ public:
   // Bytes in use by lua
   std::size_t memoryUsage() const;
 
-  // Enforce null-terminated string conversion as long as the returned enforcer object is in scope.
-  LuaNullEnforcer nullTerminate();
-  // Disables null-termination enforcement
-  void setNullTerminated(bool nullTerminated);
   [[nodiscard]] std::expected<void, StarException> addImGui();
 private:
   friend struct LuaDetail::LuaRegistryReference;
@@ -695,7 +655,6 @@ private:
   friend class LuaThread;
   friend class LuaUserData;
   friend class LuaContext;
-  friend class LuaNullEnforcer;
   friend std::expected<std::optional<Json>, StarException> LuaDetail::tableToJsonContainer(LuaTable const& table);
 
   LuaEngine() = default;
@@ -815,7 +774,6 @@ private:
   std::uint64_t m_instructionCount;
   unsigned m_recursionLevel;
   unsigned m_recursionLimit;
-  int m_nullTerminated;
   std::string m_warningMessage;
   HashMap<std::tuple<String, unsigned>, std::shared_ptr<LuaProfileEntry>> m_profileEntries;
   lua_Debug m_debugInfo;
@@ -2650,8 +2608,6 @@ export namespace Star {
   using ::Star::LuaCallbacks;
   using ::Star::LuaMethods;
   using ::Star::LuaContext;
-  using ::Star::LuaNullTermWrapper;
-  using ::Star::LuaNullEnforcer;
   using ::Star::LuaProfileEntry;
   using ::Star::LuaConverter;
   using ::Star::LuaUserDataMethods;

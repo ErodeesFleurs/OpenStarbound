@@ -34,7 +34,6 @@ std::expected<std::shared_ptr<ScriptableThread>, StarException> ScriptableThread
   if (!root)
     return std::unexpected(std::move(root.error()));
   thread->m_luaRoot = std::move(*root);
-  thread->m_luaRoot->luaEngine().setNullTerminated(false);
   auto pause = thread->m_parameters.getFloat("luaGcPause", 1.2f);
   if (!pause)
     return std::unexpected(std::move(pause.error()));

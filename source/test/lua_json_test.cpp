@@ -2,6 +2,7 @@ import std;
 import star.format;
 import star.lua;
 import star.string;
+import star.string_view;
 import star.json;
 
 #include "gtest/gtest.h"
@@ -615,34 +616,60 @@ TEST(LuaJsonTest, UnsupportedNativeValuesRemainErrorsBeforeConversionMisses) {
   EXPECT_EQ(context->eval<int>("6 * 7"), 42);
 }
 
-TEST(LuaJsonTest, EmbeddedNullHonorsTerminationScopeAndOptOut) {
+TEST(LuaJsonTest, EmbeddedNullStringsRetainBytesAcrossLuaOperations) {
+  auto engine = LuaEngine::create();
+  ASSERT_TRUE(engine);
+  auto context = (*engine)->createContext();
+  ASSERT_TRUE(context);
+  for (auto bytes : {std::string_view{}, std::string_view("\0", 1), std::string_view("\0a\0\0b\0", 6),
+                     std::string_view("before\0after", 12), std::string_view("你\0好", 7)}) {
+    auto value = (*engine)->createString(bytes);
+    ASSERT_TRUE(value);
+    EXPECT_EQ(value->length(), bytes.size());
+    EXPECT_EQ(value->toString().utf8(), bytes);
+    EXPECT_EQ(value->view().utf8(), bytes);
+    ASSERT_TRUE(context->set("value", *value));
+    auto concatenated = context->eval<LuaString>("value .. '\\0tail'");
+    ASSERT_TRUE(concatenated);
+    std::string expected(bytes);
+    expected.append("\0tail", 5);
+    EXPECT_EQ(concatenated->length(), expected.size());
+    EXPECT_EQ(concatenated->toString().utf8(), expected);
+    EXPECT_EQ(concatenated->view().utf8(), expected);
+  }
+}
+
+TEST(LuaJsonTest, EmbeddedNullObjectKeysRemainDistinctDuringRoundTrip) {
   auto engine = LuaEngine::create();
   ASSERT_TRUE(engine);
   auto context = (*engine)->createContext();
   ASSERT_TRUE(context);
   ASSERT_TRUE(context->load(R"SCRIPT(
     function embeddedNull()
-      return {value = "before\0after"}
+      return {
+        key = "plain",
+        ["key\0tail"] = "extended",
+        ["\0key"] = "leading",
+        nested = {"before\0after", "\0a\0\0b\0", "你\0好"}
+      }
     end
   )SCRIPT"));
-  Json full = JsonObject{{"value", String(std::string_view("before\0after", 12))}};
-  auto unrestricted = context->invokePath<Json>("embeddedNull");
-  ASSERT_TRUE(unrestricted);
-  EXPECT_EQ(*unrestricted, full);
-  {
-    auto termination = (*engine)->nullTerminate();
-    auto terminated = context->invokePath<Json>("embeddedNull");
-    ASSERT_TRUE(terminated);
-    EXPECT_EQ(*terminated, Json(JsonObject{{"value", "before"}}));
-  }
-  auto restored = context->invokePath<Json>("embeddedNull");
-  ASSERT_TRUE(restored);
-  EXPECT_EQ(*restored, full);
-  (*engine)->setNullTerminated(false);
-  {
-    auto termination = (*engine)->nullTerminate();
-    auto optedOut = context->invokePath<Json>("embeddedNull");
-    ASSERT_TRUE(optedOut);
-    EXPECT_EQ(*optedOut, full);
-  }
+  Json expected =
+    JsonObject{{"key", "plain"},
+               {String(std::string_view("key\0tail", 8)), "extended"},
+               {String(std::string_view("\0key", 4)), "leading"},
+               {"nested",
+                JsonArray{String(std::string_view("before\0after", 12)), String(std::string_view("\0a\0\0b\0", 6)),
+                          String(std::string_view("你\0好", 7))}}};
+  auto converted = context->invokePath<Json>("embeddedNull");
+  ASSERT_TRUE(converted);
+  EXPECT_EQ(*converted, expected);
+  ASSERT_TRUE(context->set("input", expected));
+  auto selected = context->eval<Json>(R"SCRIPT(
+    return {input.key, input["key\0tail"], input["\0key"], input.nested[1], input.nested[2], input.nested[3]}
+  )SCRIPT");
+  ASSERT_TRUE(selected);
+  EXPECT_EQ(*selected,
+            Json(JsonArray{"plain", "extended", "leading", String(std::string_view("before\0after", 12)),
+                           String(std::string_view("\0a\0\0b\0", 6)), String(std::string_view("你\0好", 7))}));
 }

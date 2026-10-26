@@ -2855,7 +2855,6 @@ std::expected<void, StarException> WorldServer::init(bool firstTime) {
   if (!result306)
     return std::unexpected(std::move(result306.error()));
   m_luaRoot = std::move(*result306);
-  m_luaRoot->luaEngine().setNullTerminated(false);
   auto result307 = m_serverConfig.getFloat("luaGcPause");
   if (!result307)
     return std::unexpected(std::move(result307.error()));

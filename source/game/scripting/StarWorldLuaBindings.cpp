@@ -311,10 +311,11 @@ namespace LuaBindings {
     [[nodiscard]] std::expected<std::optional<String>, StarException> entityName(World& world, EntityId entityId);
     [[nodiscard]] std::expected<std::optional<Json>, StarException> entityNametag(World& world, EntityId entityId);
     [[nodiscard]] std::expected<std::optional<String>, StarException> entityDescription(World& world, EntityId entityId, std::optional<String> const& species);
-    [[nodiscard]] std::expected<LuaNullTermWrapper<std::optional<List<Drawable>>>, StarException> entityPortrait(World& world, EntityId entityId, String const& portraitMode);
+    [[nodiscard]] std::expected<std::optional<List<Drawable>>, StarException>
+    entityPortrait(World& world, EntityId entityId, String const& portraitMode);
     [[nodiscard]] std::expected<std::optional<String>, StarException> entityHandItem(World& world, EntityId entityId, String const& handName);
     [[nodiscard]] std::expected<Json, StarException> entityHandItemDescriptor(World& world, EntityId entityId, String const& handName);
-    [[nodiscard]] std::expected<LuaNullTermWrapper<std::optional<String>>, StarException> entityUniqueId(World& world, EntityId entityId);
+    [[nodiscard]] std::expected<std::optional<String>, StarException> entityUniqueId(World& world, EntityId entityId);
     [[nodiscard]] std::expected<Json, StarException> getObjectParameter(World& world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue);
     [[nodiscard]] std::expected<Json, StarException> getNpcScriptParameter(World& world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue);
     [[nodiscard]] std::expected<List<Vec2I>, StarException> objectSpaces(World& world, EntityId entityId);
@@ -1201,13 +1202,19 @@ namespace LuaBindings {
       return std::unexpected(std::move(result.error()));
     if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId, std::optional<String>>("entityDescription", std::bind(WorldEntityCallbacks::entityDescription, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaNullTermWrapper<std::optional<List<Drawable>>>, EntityId, String>("entityPortrait", std::bind(WorldEntityCallbacks::entityPortrait, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<List<Drawable>>, EntityId, String>(
+          "entityPortrait",
+          std::bind(WorldEntityCallbacks::entityPortrait, std::ref(world), std::placeholders::_1,
+                    std::placeholders::_2));
+        !result)
       return std::unexpected(std::move(result.error()));
     if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId, String>("entityHandItem", std::bind(WorldEntityCallbacks::entityHandItem, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
     if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, String>("entityHandItemDescriptor", std::bind(WorldEntityCallbacks::entityHandItemDescriptor, std::ref(world), std::placeholders::_1, std::placeholders::_2)); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallbackWithSignature<LuaNullTermWrapper<std::optional<String>>, EntityId>("entityUniqueId", std::bind(WorldEntityCallbacks::entityUniqueId, std::ref(world), std::placeholders::_1)); !result)
+    if (auto result = callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>(
+          "entityUniqueId", std::bind(WorldEntityCallbacks::entityUniqueId, std::ref(world), std::placeholders::_1));
+        !result)
       return std::unexpected(std::move(result.error()));
     if (auto result = callbacks.registerCallbackWithSignature<Json, EntityId, String, std::optional<Json>>("getObjectParameter", std::bind(WorldEntityCallbacks::getObjectParameter, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)); !result)
       return std::unexpected(std::move(result.error()));
@@ -2541,7 +2548,8 @@ namespace LuaBindings {
     return {};
   }
 
-  std::expected<LuaNullTermWrapper<std::optional<List<Drawable>>>, StarException> WorldEntityCallbacks::entityPortrait(World& world, EntityId entityId, String const& portraitMode) {
+  std::expected<std::optional<List<Drawable>>, StarException>
+  WorldEntityCallbacks::entityPortrait(World& world, EntityId entityId, String const& portraitMode) {
     if (auto entity = as<PortraitEntity>(world.entity(entityId))) {
       if (!PortraitModeNames)
         return std::unexpected(PortraitModeNames.error());
@@ -2553,8 +2561,7 @@ namespace LuaBindings {
       auto portraitResult = entity->portrait(mode);
       if (!portraitResult)
         return std::unexpected(std::move(portraitResult.error()));
-      auto portrait = std::move(*portraitResult);
-      return LuaNullTermWrapper<std::optional<List<Drawable>>>(std::move(portrait));
+      return std::move(*portraitResult);
     }
     return {};
   }
@@ -2597,7 +2604,8 @@ namespace LuaBindings {
     return Json();
   }
 
-  std::expected<LuaNullTermWrapper<std::optional<String>>, StarException> WorldEntityCallbacks::entityUniqueId(World& world, EntityId entityId) {
+  std::expected<std::optional<String>, StarException> WorldEntityCallbacks::entityUniqueId(World& world,
+                                                                                           EntityId entityId) {
     if (auto entity = world.entity(entityId))
       return entity->uniqueId();
     return {};

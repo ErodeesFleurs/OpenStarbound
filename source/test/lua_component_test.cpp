@@ -17,11 +17,14 @@ import star.lua_actor_movement_component;
 import star.lua_converters;
 import star.lua_game_converters;
 import star.lua_root;
+import star.npc;
+import star.npc_database;
 import star.root;
 import star.rpc_promise;
 import star.string;
 import star.vector;
 import star.world_server;
+import star.world_lua_bindings;
 
 using namespace Star;
 
@@ -372,4 +375,40 @@ const GameTestRegistration inputModifierPresence("InputNameSerialization",
                                                    ASSERT_FALSE(invalid);
                                                    EXPECT_TRUE(invalid.error().is<JsonException>());
                                                  });
+const GameTestRegistration luaEntityIdentifiers(
+  "LuaEntityBindings", "EmbeddedNullIdentifiersSurviveFreshAndRestartedEngines", [](GameTest& fixture) {
+    auto storage = File::ephemeralFile(fixture.root().random());
+    ASSERT_TRUE(storage);
+    auto world = WorldServer::create(fixture.root(), Vec2U(2048, 2048), *storage);
+    ASSERT_TRUE(world);
+    auto close = finally([&] { EXPECT_TRUE((*world)->close()); });
+    auto database = fixture.root().npcDatabase();
+    ASSERT_TRUE(database);
+    auto variant = (*database)->generateNpcVariant("human", "villager", 1.0f, 1234, JsonObject());
+    ASSERT_TRUE(variant);
+    auto npc = (*database)->createNpc(*variant);
+    ASSERT_TRUE(npc);
+    ASSERT_TRUE((*world)->addEntity(*npc));
+    String identifier(std::string_view("\0before\0\0after\0", 15));
+    (*npc)->setUniqueId(identifier);
+    auto luaRoot = LuaRoot::create(fixture.root());
+    ASSERT_TRUE(luaRoot);
+    for (bool restart : {false, true}) {
+      SCOPED_TRACE(restart ? "restarted engine" : "fresh engine");
+      if (restart)
+        ASSERT_TRUE((*luaRoot)->restart());
+      auto context = (*luaRoot)->luaEngine().createContext();
+      ASSERT_TRUE(context);
+      auto callbacks = LuaBindings::makeWorldCallbacks(fixture.root(), **world);
+      ASSERT_TRUE(callbacks);
+      ASSERT_TRUE(context->setCallbacks("world", *callbacks));
+      ASSERT_TRUE(context->set("id", (*npc)->entityId()));
+      auto identifiers = context->eval<Json>("{world.entityUniqueId(id), world.entity(id):uniqueId()}");
+      ASSERT_TRUE(identifiers) << identifiers.error().what();
+      EXPECT_EQ(*identifiers, Json(JsonArray{identifier, identifier}));
+      auto lengths = context->eval<Json>("{#world.entityUniqueId(id), #world.entity(id):uniqueId()}");
+      ASSERT_TRUE(lengths);
+      EXPECT_EQ(*lengths, Json(JsonArray{15, 15}));
+    }
+  });
 }

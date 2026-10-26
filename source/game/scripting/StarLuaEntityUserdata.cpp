@@ -248,10 +248,10 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
     }); !registration)
       return std::unexpected(std::move(registration.error()));
 
-    if (auto registration = methods.registerMethod("uniqueId",
-    [&](std::shared_ptr<Entity> const& entity) -> std::expected<LuaNullTermWrapper<std::optional<String>>, StarException> {
-        return entity->uniqueId();
-    }); !registration)
+    if (auto registration = methods.registerMethod(
+          "uniqueId",
+          [&](std::shared_ptr<Entity> const& entity) -> std::optional<String> { return entity->uniqueId(); });
+        !registration)
       return std::unexpected(std::move(registration.error()));
 
     if (auto registration = methods.registerMethod("getParameter",
@@ -332,21 +332,24 @@ std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> LuaUserDataMet
       return std::unexpected(std::move(registration.error()));
 
     // portrait entity methods
-    if (auto registration = methods.registerMethod("portrait",
-    [&](std::shared_ptr<Entity> const& entity, String const& portraitMode) -> std::expected<LuaNullTermWrapper<std::optional<List<Drawable>>>, StarException> {
-        if (auto portrait = asRef<PortraitEntity>(*entity)) {
-            if (!PortraitModeNames)
+    if (auto registration = methods.registerMethod(
+          "portrait",
+          [&](std::shared_ptr<Entity> const& entity,
+              String const& portraitMode) -> std::expected<std::optional<List<Drawable>>, StarException> {
+            if (auto portrait = asRef<PortraitEntity>(*entity)) {
+              if (!PortraitModeNames)
                 return std::unexpected(PortraitModeNames.error());
-            auto mode = PortraitModeNames->getLeft(portraitMode);
-            if (!mode)
-              return std::unexpected(std::move(mode.error()));
-            auto drawables = portrait->get().portrait(mode->get());
-            if (!drawables)
-              return std::unexpected(std::move(drawables.error()));
-            return LuaNullTermWrapper<std::optional<List<Drawable>>>(std::move(*drawables));
-        }
-        return {};
-  }); !registration)
+              auto mode = PortraitModeNames->getLeft(portraitMode);
+              if (!mode)
+                return std::unexpected(std::move(mode.error()));
+              auto drawables = portrait->get().portrait(mode->get());
+              if (!drawables)
+                return std::unexpected(std::move(drawables.error()));
+              return std::move(*drawables);
+            }
+            return {};
+          });
+        !registration)
       return std::unexpected(std::move(registration.error()));
 
 

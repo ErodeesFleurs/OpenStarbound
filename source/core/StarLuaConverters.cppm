@@ -15,29 +15,6 @@ import star.rpc_promise;
 import star.matrix3;
 namespace Star {
 
-template <typename T>
-struct LuaConverter<LuaNullTermWrapper<T>> : LuaConverter<T> {
-  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, LuaNullTermWrapper<T>&& v) {
-    auto enforcer = engine.nullTerminate();
-    return LuaConverter<T>::from(engine, std::forward<T>(v));
-  }
-
-  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, LuaNullTermWrapper<T> const& v) {
-    auto enforcer = engine.nullTerminate();
-    return LuaConverter<T>::from(engine, v);
-  }
-
-  [[nodiscard]] static std::expected<std::optional<LuaNullTermWrapper<T>>, StarException> to(LuaEngine& engine, LuaValue const& v) {
-    auto enforcer = engine.nullTerminate();
-    auto converted = engine.luaMaybeTo<T>(v);
-    if (!converted)
-      return std::unexpected(std::move(converted.error()));
-    if (!*converted)
-      return std::nullopt;
-    return LuaNullTermWrapper<T>(std::move(**converted));
-  }
-};
-
 template <typename T1, typename T2>
 struct LuaConverter<std::pair<T1, T2>> {
   template <typename Pair>
@@ -321,8 +298,6 @@ export namespace Star {
   using ::Star::LuaConverter;
   using ::Star::LuaUserDataMethods;
 
-  template <typename T>
-  struct LuaConverter<LuaNullTermWrapper<T>>;
   template <typename T1, typename T2>
   struct LuaConverter<std::pair<T1, T2>>;
   template <typename T, std::size_t N>

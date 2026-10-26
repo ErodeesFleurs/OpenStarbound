@@ -454,7 +454,6 @@ std::expected<void, StarException> WorldClient::initialize(ClientSubWorldId subW
   if (!result35)
     return std::unexpected(std::move(result35.error()));
   m_luaRoot = (std::move(*result35));
-  m_luaRoot->luaEngine().setNullTerminated(false);
   auto result36 = m_clientConfig.getFloat("luaGcPause");
   if (!result36)
     return std::unexpected(std::move(result36.error()));
