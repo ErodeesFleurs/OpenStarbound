@@ -120,33 +120,17 @@ std::expected<void, StarException> File::removeDirectoryRecursive(String const& 
 }
 
 std::expected<void, StarException> File::copy(String const& source, String const& target) {
-  auto sourceFile = File::open(source, IOMode::Read);
-  if (!sourceFile)
-    return std::unexpected(std::move(sourceFile.error()));
-  auto targetFile = File::open(target, IOMode::ReadWrite);
-  if (!targetFile)
-    return std::unexpected(std::move(targetFile.error()));
-  auto resized = (*targetFile)->resize(0);
-  if (!resized)
-    return std::unexpected(std::move(resized.error()));
-  char buffer[1024];
-  while (true) {
-    auto end = (*sourceFile)->atEnd();
-    if (!end)
-      return std::unexpected(std::move(end.error()));
-    if (*end)
-      break;
-    auto count = (*sourceFile)->read(buffer);
-    if (!count)
-      return std::unexpected(std::move(count.error()));
-    auto written = (*targetFile)->writeFull({buffer, *count});
-    if (!written)
-      return std::unexpected(std::move(written.error()));
-  }
-  auto closed = (*targetFile)->close();
-  if (!closed)
-    return std::unexpected(std::move(closed.error()));
-  return (*sourceFile)->close();
+  auto sourcePath = filesystemPath(source);
+  if (!sourcePath)
+    return std::unexpected(std::move(sourcePath.error()));
+  auto targetPath = filesystemPath(target);
+  if (!targetPath)
+    return std::unexpected(std::move(targetPath.error()));
+  std::error_code error;
+  std::filesystem::copy_file(*sourcePath, *targetPath, std::filesystem::copy_options::overwrite_existing, error);
+  if (error)
+    return std::unexpected(IOException::format("could not copy '{}' to '{}': {}", source, target, error.message()));
+  return {};
 }
 
 std::expected<std::shared_ptr<File>, StarException> File::open(String const& filename, IOMode mode) {

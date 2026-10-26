@@ -266,14 +266,24 @@ std::string strfChecked(std::basic_format_string<Char, T...> fmt, T const&... ar
 
 template <typename... T>
 void format(std::ostream& out, std::format_string<T...> fmt, T&&... args) {
-  out << Detail::vformatChecked(fmt.get(), args...);
+  // Preserve ostream field padding when the caller has set a width.
+  if (out.width() != 0) {
+    out << Detail::vformatChecked(fmt.get(), args...);
+    return;
+  }
+  std::ostream::sentry sentry(out);
+  if (sentry) {
+    auto output = std::format_to(std::ostreambuf_iterator<char>(out), fmt, std::forward<T>(args)...);
+    if (output.failed())
+      out.setstate(std::ios_base::badbit);
+  }
 }
 
 
 // Automatically flushes; use format to avoid flushing.
 template <typename... T>
 void coutf(std::format_string<T...> fmt, T&&... args) {
-  std::cout << Detail::vformatChecked(fmt.get(), args...);
+  Star::format(std::cout, fmt, std::forward<T>(args)...);
   std::cout.flush();
 }
 
@@ -281,7 +291,7 @@ void coutf(std::format_string<T...> fmt, T&&... args) {
 // Automatically flushes; use format to avoid flushing.
 template <typename... T>
 void cerrf(std::format_string<T...> fmt, T&&... args) {
-  std::cerr << Detail::vformatChecked(fmt.get(), args...);
+  Star::format(std::cerr, fmt, std::forward<T>(args)...);
   std::cerr.flush();
 }
 

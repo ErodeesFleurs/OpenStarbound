@@ -203,6 +203,52 @@ TEST(StringTest, CompileTimeFormattingPreservesByteLengths) {
   EXPECT_EQ(strf(withNull, "y"), std::string("x\0y", 3));
 }
 
+TEST(StringTest, StreamFormattingPreservesBinaryTextAndFieldPadding) {
+  std::ostringstream output;
+  Star::format(output, "{}:{:04x}", String(std::string_view("日\0x", 5)), 42);
+  EXPECT_EQ(output.str(), std::string("日\0x:002a", 10));
+  output.str("");
+  output << std::setfill('_') << std::setw(8) << std::left;
+  Star::format(output, "{}:{}", "日", 42);
+  output << '!';
+  EXPECT_EQ(output.str(), "日:42__!");
+  EXPECT_EQ(output.width(), 0);
+}
+
+TEST(StringTest, StreamFormattingReportsShortWrites) {
+  class LimitedBuffer : public std::streambuf {
+  public:
+    LimitedBuffer() { setp(m_bytes.data(), m_bytes.data() + m_bytes.size()); }
+    std::string_view written() const { return {pbase(), static_cast<std::size_t>(pptr() - pbase())}; }
+
+  private:
+    std::array<char, 4> m_bytes;
+  } buffer;
+  std::ostream output(&buffer);
+  Star::format(output, "{}", "abcdef");
+  EXPECT_TRUE(output.bad());
+  EXPECT_EQ(buffer.written(), "abcd");
+}
+
+TEST(StringTest, StreamFormattingHonorsTiedStreamsAndUnitbuf) {
+  class SyncBuffer : public std::stringbuf {
+  public:
+    int sync() override {
+      flushed = str();
+      return 0;
+    }
+    std::string flushed;
+  } tiedBuffer, outputBuffer;
+  std::ostream tied(&tiedBuffer);
+  std::ostream output(&outputBuffer);
+  tied << "pending";
+  output.tie(&tied);
+  output << std::unitbuf;
+  Star::format(output, "{}:{}", "日", 42);
+  EXPECT_EQ(tiedBuffer.flushed, "pending");
+  EXPECT_EQ(outputBuffer.flushed, "日:42");
+}
+
 TEST(StringTest, TagTemplatesPreserveByteLengthsAndRejectInvalidTags) {
   std::array<std::pair<std::string_view, std::string_view>, 3> bindings{{
       {"name", "日"}, {"value", "002a"}, {"name", "ignored"}}};

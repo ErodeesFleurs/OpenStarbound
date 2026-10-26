@@ -76,8 +76,8 @@ public:
   // it already exists.
   [[nodiscard]] static std::expected<void, StarException> rename(String const& source, String const& target);
 
-  // Copies the source file to the target, overwriting the target path if it
-  // already exists.
+  // Copies a regular file, overwriting an existing target. Source and target
+  // must identify different files; symlinks are followed as by filesystem::copy_file.
   [[nodiscard]] static std::expected<void, StarException> copy(String const& source, String const& target);
 
   [[nodiscard]] static std::expected<ByteArray, StarException> readFile(String const& filename);

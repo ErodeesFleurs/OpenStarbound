@@ -2115,14 +2115,14 @@ std::expected<void, StarException> WorldClient::update(float dt) {
   m_interpolationTracker.update(m_currentTime);
   
   List<WorldAction> triggeredActions;
-  eraseWhere(m_timers, [&triggeredActions, dt](std::pair<float, WorldAction>& timer) {
+  m_timers.filter([&triggeredActions, dt](std::pair<float, WorldAction>& timer) {
     if ((timer.first -= dt) <= 0) {
       triggeredActions.append(timer.second);
-      return true;
+      return false;
     }
-    return false;
+    return true;
   });
-  
+
   for (auto const& action : triggeredActions) {
     auto result155 = action(*this);
     if (!result155)

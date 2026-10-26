@@ -1575,13 +1575,13 @@ std::expected<void, StarException> WorldServer::update(float dt) {
     pair.second->interpolationTracker.update(m_currentTime);
 
   List<WorldAction> triggeredActions;
-  eraseWhere(m_timers, [&triggeredActions, dt](std::pair<float, WorldAction>& timer) {
-      if ((timer.first -= dt) <= 0) {
-        triggeredActions.append(timer.second);
-        return true;
-      }
+  m_timers.filter([&triggeredActions, dt](std::pair<float, WorldAction>& timer) {
+    if ((timer.first -= dt) <= 0) {
+      triggeredActions.append(timer.second);
       return false;
-    });
+    }
+    return true;
+  });
   for (auto const& action : triggeredActions) {
     if (!action)
       return std::unexpected(WorldServerException("Empty world timer action"));

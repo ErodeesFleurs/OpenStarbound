@@ -100,7 +100,7 @@ void NetworkedAnimator::DynamicTarget::clearFinishedAudio() {
   }
 
   for (auto& p : independentSounds)
-    eraseWhere(p.second, [](std::shared_ptr<AudioInstance> const& audio) { return audio->finished(); });
+    p.second.filter([](std::shared_ptr<AudioInstance> const& audio) { return !audio->finished(); });
 
   eraseWhere(currentAudioBasePositions, [](std::pair<std::shared_ptr<AudioInstance>, Vec2F> const& pair) {
       return pair.first->finished();

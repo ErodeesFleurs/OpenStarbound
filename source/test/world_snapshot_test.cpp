@@ -167,6 +167,40 @@ namespace {
   }
 }
 
+const GameTestRegistration worldTimersPreserveOrderAndDeferReentrantActions(
+  "WorldTimers", "PreserveOrderAndDeferReentrantActions", [](GameTest& fixture) {
+    auto storage = File::ephemeralFile(fixture.root().random());
+    ASSERT_TRUE(storage) << storage.error().what();
+    auto created = WorldServer::create(fixture.root(), Vec2U(2048, 2048), *storage);
+    ASSERT_TRUE(created) << created.error().what();
+    auto world = *created;
+    auto closeWorld = finally([&] { EXPECT_TRUE(world->close()); });
+    std::vector<int> fired;
+    world->timer(0, [&](World& owner) -> std::expected<void, StarException> {
+      fired.push_back(1);
+      owner.timer(0, [&](World&) -> std::expected<void, StarException> {
+        fired.push_back(4);
+        return {};
+      });
+      return {};
+    });
+    world->timer(0.25f, [&](World&) -> std::expected<void, StarException> {
+      fired.push_back(3);
+      return {};
+    });
+    world->timer(0, [&](World&) -> std::expected<void, StarException> {
+      fired.push_back(2);
+      return {};
+    });
+
+    ASSERT_TRUE(world->update(0.125f));
+    EXPECT_EQ(fired, (std::vector<int>{1, 2}));
+    ASSERT_TRUE(world->update(0.125f));
+    EXPECT_EQ(fired, (std::vector<int>{1, 2, 3, 4}));
+    ASSERT_TRUE(world->update(0.125f));
+    EXPECT_EQ(fired, (std::vector<int>{1, 2, 3, 4}));
+  });
+
 // World generation is deterministic: it is a pure function of the celestial
 // parameters (the coordinate feeds the planet seed, the system/type fields come
 // from fixed Perlin seeds in the assets), so these hashes are stable across

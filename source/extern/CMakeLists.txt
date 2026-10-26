@@ -4,7 +4,6 @@ set (star_extern_HEADERS
     curve25519/include/external_calls.h
     imgui_iterator.inl
     imgui_lua_bindings.hpp
-    tinyformat.h
     xxhash.h
   )
 

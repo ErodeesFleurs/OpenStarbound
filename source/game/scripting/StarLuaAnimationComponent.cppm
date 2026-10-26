@@ -157,7 +157,7 @@ inline List<LightSource> const& LuaScriptAnimation::lightSources() { return m_li
 inline List<Particle> LuaScriptAnimation::pullNewParticles() { return take(m_pendingParticles); }
 
 inline List<std::shared_ptr<AudioInstance>> LuaScriptAnimation::pullNewAudios() {
-  eraseWhere(m_activeAudio, [](std::shared_ptr<AudioInstance> const& audio) { return audio->finished(); });
+  m_activeAudio.filter([](std::shared_ptr<AudioInstance> const& audio) { return !audio->finished(); });
   return take(m_pendingAudios);
 }
 

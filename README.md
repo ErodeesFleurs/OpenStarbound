@@ -209,6 +209,14 @@ nix shell --inputs-from . nixpkgs#python3 nixpkgs#clang-tools --command scripts/
 
 Use `--apply` to format or `--base <commit>` to compare a branch. This shell is for formatting only; project compilation still uses pinned xclang. Reuse already-imported result classification where semantics match; callable ownership/reference-adaptation policies remain independent.
 
+Core standard-library adapters retain engine-specific contracts:
+
+- `File::copy` uses `std::filesystem::copy_file` with overwrite and `error_code` reporting. It copies regular files, follows symlinks, rejects source/target aliases, and uses the standard operation's permission behavior. It is neither an atomic replacement nor a durability barrier.
+- Use `List::filter` for nonfallible sequence cleanup when predicates do not depend on intermediate erases or destruction order; its standard `remove_if` path compacts once. Generic `eraseWhere` retains immediate erasure and checked-predicate short-circuiting.
+- Stream formatting writes through `std::format_to` without constructing a complete result string on the default-width path. Explicit ostream widths retain buffered field padding; stream errors, tied streams, `unitbuf`, and the explicit `coutf`/`cerrf` flushes remain effective.
+
+Check library implementation support, not just the language standard: the pinned libc++ does not implement `std::move_only_function`, so `UniqueFunction` remains in use.
+
 ## Community
 
 [Issues and contributions](https://github.com/OpenStarbound/OpenStarbound/issues) are welcome.

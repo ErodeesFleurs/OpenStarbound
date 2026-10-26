@@ -242,9 +242,7 @@ std::expected<void, StarException> Songbook::playback() {
   if (!m_heldNotes.empty()) {
     for (auto& note : m_heldNotes)
       note.audio->setPosition(m_position);
-    eraseWhere(m_heldNotes, [&](HeldNote const& note) -> bool {
-        return note.audio->finished();
-      });
+    m_heldNotes.filter([](HeldNote const& note) { return !note.audio->finished(); });
   }
 
   while (!m_track.empty() && (m_track.begin()->timecode <= (now + 0.5))) {

@@ -115,6 +115,64 @@ TEST(FileTest, All) {
 #endif
 }
 
+TEST(FileTest, CopyOverwritesBinaryFilesAndRotatesBackups) {
+  auto random = RandomService::create();
+  ASSERT_TRUE(random);
+  auto directory = File::temporaryDirectory(**random);
+  ASSERT_TRUE(directory);
+  auto cleanup = finally([&]() { removeTree(*directory); });
+  auto source = File::relativeTo(*directory, "source-日");
+  auto target = File::relativeTo(*directory, "target-日");
+  std::string bytes(8193, '\0');
+  for (std::size_t i = 0; i < bytes.size(); ++i)
+    bytes[i] = static_cast<char>(i % 251);
+  String payload(std::move(bytes));
+  ASSERT_TRUE(File::writeFile(payload, source));
+  ASSERT_TRUE(File::writeFile(String(std::string(16384, 'x')), target));
+  ASSERT_TRUE(File::copy(source, target));
+  EXPECT_EQ(File::readFileString(target), payload);
+  EXPECT_EQ(File::readFileString(source), payload);
+
+  ASSERT_TRUE(File::writeFile(String("first"), target));
+  ASSERT_TRUE(File::backupFileInSequence(target, 2));
+  ASSERT_TRUE(File::writeFile(String("second"), target));
+  ASSERT_TRUE(File::backupFileInSequence(target, 2));
+  EXPECT_EQ(File::readFileString(target + ".1"), "second");
+  EXPECT_EQ(File::readFileString(target + ".2"), "first");
+  EXPECT_EQ(File::readFileString(target), "second");
+
+  ASSERT_TRUE(File::writeFile(String(), source));
+  ASSERT_TRUE(File::copy(source, target));
+  EXPECT_EQ(File::readFileString(target), "");
+}
+
+TEST(FileTest, CopyErrorsDoNotTruncateSourceOrExistingTarget) {
+  auto random = RandomService::create();
+  ASSERT_TRUE(random);
+  auto directory = File::temporaryDirectory(**random);
+  ASSERT_TRUE(directory);
+  auto cleanup = finally([&]() { removeTree(*directory); });
+  auto source = File::relativeTo(*directory, "source");
+  auto target = File::relativeTo(*directory, "target");
+  ASSERT_TRUE(File::writeFile(String("source bytes"), source));
+  ASSERT_TRUE(File::writeFile(String("target bytes"), target));
+  auto sameFile = File::copy(source, source);
+  ASSERT_FALSE(sameFile);
+  EXPECT_TRUE(sameFile.error().is<IOException>());
+  EXPECT_EQ(File::readFileString(source), "source bytes");
+  EXPECT_FALSE(File::copy(File::relativeTo(*directory, "missing"), target));
+  EXPECT_FALSE(File::copy(*directory, target));
+  EXPECT_EQ(File::readFileString(target), "target bytes");
+  EXPECT_FALSE(File::copy(source, File::relativeTo(*directory, "missing/target")));
+
+#ifdef STAR_SYSTEM_LINUX
+  auto alias = File::relativeTo(*directory, "alias");
+  ASSERT_EQ(::link(source.utf8Ptr(), alias.utf8Ptr()), 0);
+  EXPECT_FALSE(File::copy(source, alias));
+  EXPECT_EQ(File::readFileString(source), "source bytes");
+#endif
+}
+
 TEST(FileTest, DirectoryHelpersPreserveFailureBoundaries) {
   auto randomResult = RandomService::create();
   ASSERT_TRUE(randomResult);
