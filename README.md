@@ -37,7 +37,7 @@ Use `/help` for commands. See the [command reference](assets/opensb/help.config.
 
 Requires **C++23**, **CMake 3.28+**, **Ninja 1.11+**, and [xclang](https://github.com/clice-io/xclang) **23.1.2.9** with bundled libc++ and `std` module sources. Windows, Linux, macOS and CI use this toolchain; GCC, Apple Clang and MSVC builds are unsupported. C++ dependencies must use the same compiler/runtime; Windows uses the MinGW ABI.
 
-Lua is fetched using a [version/SHA-256 lock](cmake/dependencies/lua.json) and [project patch](cmake/patches/lua-openstarbound.patch), not vendored. Git is required for this path; Nix supplies prepatched sources. For offline builds, pass `-DFETCHCONTENT_SOURCE_DIR_STAR_LUA=/path/to/prepatched-lua` and `-DFETCHCONTENT_FULLY_DISCONNECTED=ON`; the source root must contain `src/`.
+Lua is fetched using a [version/SHA-256 lock](cmake/dependencies/lua.json) and [project patch](cmake/patches/lua-openstarbound.patch), not vendored. Git is required for this path; Nix supplies prepatched sources. Patch files are checked out with LF endings, including on Windows with `core.autocrlf=true`. For offline builds, pass `-DFETCHCONTENT_SOURCE_DIR_STAR_LUA=/path/to/prepatched-lua` and `-DFETCHCONTENT_FULLY_DISCONNECTED=ON`; the source root must contain `src/`.
 
 ### Nix on Linux
 
@@ -58,11 +58,15 @@ Bootstrap [vcpkg](https://github.com/microsoft/vcpkg#quick-start) **outside this
 
 | Platform | Preset | Additional requirements |
 |---|---|---|
-| Linux x86_64 | `linux-release` | C-ABI/window-system development packages listed in [CI](.github/workflows/build.yml) |
+| Linux x86_64 | `linux-release` | Debian/Ubuntu native C SDK (`libc6-dev`) and C-ABI/window-system packages listed in [CI](.github/workflows/build.yml) |
 | Linux ARM64 | `linux-arm-release` | Same prerequisites; Steam/Discord SDKs disabled |
 | Windows x64 | `windows-release` | MSYS2 UCRT64 `make`; set `MSYS2_ROOT` and add `ucrt64/bin` to `PATH` |
 | macOS Intel | `macos-release` | Xcode Command Line Tools and a macOS 14-capable SDK |
 | macOS Apple Silicon | `macos-arm-release` | Same SDK requirements |
+
+On native Linux, the installer adapts only the host target to the complete system C SDK (headers, glibc and startup files), while retaining xclang's bundled static libc++, libc++abi, libunwind and compiler-rt. CI uses Ubuntu 24.04/glibc 2.39; these native builds do **not** retain the archive's glibc 2.17 compatibility baseline. Other targets keep their bundled SDKs. An explicit `OSB_NATIVE_COMPILER_ROOT` preserves an existing native wrapper's SDK instead, including Nix host tools for Windows cross-builds.
+
+All presets chainload the repository's [toolchain wrapper](triplets/toolchain.cmake). On macOS it explicitly selects bundled `ld64.lld` so CMake and vcpkg's Meson ports use the same linker as the compiler driver.
 
 Linux/macOS, from the repository root; choose your preset from the table:
 

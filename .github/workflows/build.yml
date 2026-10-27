@@ -90,7 +90,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/.cache/vcpkg
-          key: vcpkg-xclang23.1.2.9-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**') }}
+          key: vcpkg-xclang23.1.2.9-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**', 'scripts/ci/*.cmake') }}
           restore-keys: |
             vcpkg-xclang23.1.2.9-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
 
@@ -214,7 +214,7 @@ jobs:
       - name: Install Packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkgconf libxmu-dev libgl-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
+          sudo apt-get install -y libc6-dev pkgconf libxmu-dev libgl-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
           libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
@@ -240,7 +240,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/.cache/vcpkg
-          key: vcpkg-xclang23.1.2.9-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**') }}
+          key: vcpkg-xclang23.1.2.9-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**', 'scripts/ci/*.cmake') }}
           restore-keys: |
             vcpkg-xclang23.1.2.9-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
 
@@ -344,7 +344,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/.cache/vcpkg
-          key: vcpkg-xclang23.1.2.9-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**') }}
+          key: vcpkg-xclang23.1.2.9-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**', 'scripts/ci/*.cmake') }}
           restore-keys: |
             vcpkg-xclang23.1.2.9-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
 

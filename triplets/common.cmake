@@ -8,7 +8,9 @@ set(VCPKG_ENV_PASSTHROUGH_UNTRACKED XCLANG_ROOT MSYS2_ROOT MAKEFLAGS)
 set(VCPKG_ENV_PASSTHROUGH OSB_NATIVE_COMPILER_ROOT)
 set(VCPKG_HASH_ADDITIONAL_FILES
     "${CMAKE_CURRENT_LIST_FILE}"
-    "${CMAKE_CURRENT_LIST_DIR}/toolchain.cmake")
+    "${CMAKE_CURRENT_LIST_DIR}/toolchain.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/../scripts/ci/install-xclang.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/../scripts/ci/configure-native-linux-sdk.cmake")
 if(PORT STREQUAL "qt5-base")
     list(APPEND VCPKG_HASH_ADDITIONAL_FILES
         "${CMAKE_CURRENT_LIST_DIR}/../cmake/patches/qtbase-libcxx.patch")
@@ -18,8 +20,17 @@ if(NOT EXISTS "$ENV{XCLANG_ROOT}/lib/cmake/xclang/toolchain.cmake")
 endif()
 set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE "${CMAKE_CURRENT_LIST_DIR}/toolchain.cmake")
 set(OSB_COMPILER_ROOT "$ENV{XCLANG_ROOT}")
+# Driver configs contain the native C SDK identity as well as its flags.
+# Compiler binary/version hashes alone do not capture this implicit input.
+if(EXISTS "$ENV{XCLANG_ROOT}/bin/${XCLANG_TARGET}.cfg")
+    list(APPEND VCPKG_HASH_ADDITIONAL_FILES
+        "$ENV{XCLANG_ROOT}/bin/${XCLANG_TARGET}.cfg")
+endif()
 # CMAKE_HOST_SYSTEM_PROCESSOR is unset when vcpkg reads triplets in script mode.
 cmake_host_system_information(RESULT OSB_HOST_PROCESSOR QUERY OS_PLATFORM)
+if(OSB_HOST_PROCESSOR MATCHES "^(arm64|aarch64|ARM64)$")
+    set(OSB_HOST_PROCESSOR aarch64)
+endif()
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux"
         AND XCLANG_TARGET STREQUAL "${OSB_HOST_PROCESSOR}-unknown-linux-gnu"
         AND DEFINED ENV{OSB_NATIVE_COMPILER_ROOT}

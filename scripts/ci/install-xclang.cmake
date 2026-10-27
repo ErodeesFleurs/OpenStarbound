@@ -63,6 +63,12 @@ execute_process(COMMAND "${XCLANG_ROOT}/bin/xclang${exe}" --version
 if(NOT version_status EQUAL 0 OR NOT installed_version MATCHES "23\\.1\\.2\\.9")
     message(FATAL_ERROR "Unexpected xclang release: ${installed_version}${version_error}")
 endif()
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND "$ENV{OSB_NATIVE_COMPILER_ROOT}" STREQUAL "")
+    # Ubuntu's development packages belong to its native C SDK, not the
+    # archive's glibc 2.17 sysroot. An explicit native wrapper supplies its
+    # own SDK instead (for example Nix's Windows cross-build host tools).
+    include("${CMAKE_CURRENT_LIST_DIR}/configure-native-linux-sdk.cmake")
+endif()
 message(STATUS "${installed_version}XCLANG_ROOT=${XCLANG_ROOT}")
 if(DEFINED ENV{GITHUB_ENV})
     file(APPEND "$ENV{GITHUB_ENV}" "XCLANG_ROOT=${XCLANG_ROOT}\n")

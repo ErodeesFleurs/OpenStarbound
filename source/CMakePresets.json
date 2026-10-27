@@ -19,7 +19,7 @@
       "cacheVariables": {
         "CMAKE_INSTALL_PREFIX": "${sourceParentDir}/install",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceParentDir}/triplets",
-        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "$env{XCLANG_ROOT}/lib/cmake/xclang/toolchain.cmake",
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceParentDir}/triplets/toolchain.cmake",
         "VCPKG_MANIFEST_FEATURES": "qt-tools",
         "CMAKE_VERBOSE_MAKEFILE": true,
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
