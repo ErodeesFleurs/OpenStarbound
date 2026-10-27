@@ -97,6 +97,8 @@ ctest --preset windows-release
 
 Presets write binaries to `dist/`. Supply your owned assets, the platform's `sbinit.config` and vendor runtime libraries before launching; see [Linux](scripts/ci/linux), [Windows](scripts/ci/windows) and [macOS](scripts/ci/macos) assembly scripts. Generated distributions never include commercial `packed.pak`.
 
+macOS tests also need `libsteam_api.dylib` beside the test executable. CI stages vendor runtime libraries after building and before invoking CTest.
+
 ### Cross-compiling Windows from Linux
 
 Requires Nix, bootstrapped vcpkg, CMake/Ninja/GNU make and the Linux host prerequisites above. From the repository root:

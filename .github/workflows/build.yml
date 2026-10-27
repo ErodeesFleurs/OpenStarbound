@@ -346,10 +346,15 @@ jobs:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'macos-arm-release'
           buildPreset: 'macos-arm-release'
-          testPreset: 'macos-arm-release'
 
       - name: Copy Libraries
         run: cp lib/osx/arm64/*.dylib lib/osx/libsteam_api.dylib dist/
+
+      - name: Run Tests
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          testPreset: 'macos-arm-release'
 
       - name: Prepare Artifacts
         run: tarlz -c9vf OpenStarbound-macOS-Silicon.tar.lz dist
