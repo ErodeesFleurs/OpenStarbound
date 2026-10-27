@@ -297,23 +297,9 @@ jobs:
           archive: false
 
   build_macos:
-    name: Build OpenStarbound macOS ${{ matrix.arch }}
-    runs-on: ${{ matrix.runner }}
+    name: Build OpenStarbound macOS arm64
+    runs-on: macos-15
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x86_64
-            runner: macos-15-intel
-            preset: macos-release
-            lib_arch: x64
-            artifact: OpenStarbound-macOS-Intel
-          - arch: arm64
-            runner: macos-15
-            preset: macos-arm-release
-            lib_arch: arm64
-            artifact: OpenStarbound-macOS-Silicon
     env:
       MACOSX_DEPLOYMENT_TARGET: '14.0'
     steps:
@@ -358,31 +344,31 @@ jobs:
           VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.cache/vcpkg,readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
-          configurePreset: '${{ matrix.preset }}'
-          buildPreset: '${{ matrix.preset }}'
-          testPreset: '${{ matrix.preset }}'
+          configurePreset: 'macos-arm-release'
+          buildPreset: 'macos-arm-release'
+          testPreset: 'macos-arm-release'
 
       - name: Copy Libraries
-        run: cp lib/osx/${{ matrix.lib_arch }}/*.dylib lib/osx/libsteam_api.dylib dist/
+        run: cp lib/osx/arm64/*.dylib lib/osx/libsteam_api.dylib dist/
 
       - name: Prepare Artifacts
-        run: tarlz -c9vf ${{ matrix.artifact }}.tar.lz dist
+        run: tarlz -c9vf OpenStarbound-macOS-Silicon.tar.lz dist
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}.tar.lz
+          name: OpenStarbound-macOS-Silicon
+          path: OpenStarbound-macOS-Silicon.tar.lz
           archive: false
 
       - name: Assemble Files
         run: |
           scripts/ci/macos/assemble.sh
-          mv -v client.tar.lz ${{ matrix.artifact }}-Client.tar.lz
+          mv -v client.tar.lz OpenStarbound-macOS-Silicon-Client.tar.lz
 
       - name: Upload Client Files
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: ${{ matrix.artifact }}-Client
-          path: ${{ matrix.artifact }}-Client.tar.lz
+          name: OpenStarbound-macOS-Silicon-Client
+          path: OpenStarbound-macOS-Silicon-Client.tar.lz
           archive: false

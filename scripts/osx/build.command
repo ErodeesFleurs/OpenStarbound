@@ -5,8 +5,7 @@ cd "$(dirname "$0")/../.."
 export XCLANG_ROOT
 export PATH="$XCLANG_ROOT/bin:$PATH"
 case "$(uname -m)" in
-  arm64|aarch64) preset=macos-arm-release ;;
-  x86_64) preset=macos-release ;;
-  *) echo "Unsupported macOS architecture" >&2; exit 1 ;;
+  arm64|aarch64) ;;
+  *) echo "Only Apple Silicon macOS is supported" >&2; exit 1 ;;
 esac
-cmake --build "build/$preset" --parallel "$@"
+cmake --build build/macos-arm-release --parallel "$@"

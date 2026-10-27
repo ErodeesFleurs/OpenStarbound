@@ -97,30 +97,18 @@
     },
     {
       "inherits": "base",
-      "name": "macos-release",
-      "displayName": "macOS x64 (xclang 23.1.2.9, libc++)",
-      "binaryDir": "${sourceParentDir}/build/macos-release",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "XCLANG_TARGET": "x86_64-apple-darwin",
-        "VCPKG_TARGET_TRIPLET": "x64-osx",
-        "VCPKG_HOST_TRIPLET": "x64-osx",
-        "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/osx/include",
-        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/osx/x64;${sourceParentDir}/lib/osx",
-        "STAR_USE_JEMALLOC": false,
-        "STAR_ENABLE_DISCORD_INTEGRATION": false
-      }
-    },
-    {
-      "inherits": "macos-release",
       "name": "macos-arm-release",
       "displayName": "macOS ARM64 (xclang 23.1.2.9, libc++)",
       "binaryDir": "${sourceParentDir}/build/macos-arm-release",
       "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
         "XCLANG_TARGET": "aarch64-apple-darwin",
         "VCPKG_TARGET_TRIPLET": "arm64-osx",
         "VCPKG_HOST_TRIPLET": "arm64-osx",
-        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/osx/arm64;${sourceParentDir}/lib/osx"
+        "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/osx/include",
+        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/osx/arm64;${sourceParentDir}/lib/osx",
+        "STAR_USE_JEMALLOC": false,
+        "STAR_ENABLE_DISCORD_INTEGRATION": false
       }
     }
   ],
@@ -129,7 +117,6 @@
     { "name": "windows-cross", "configurePreset": "windows-cross" },
     { "name": "linux-release", "configurePreset": "linux-release" },
     { "name": "linux-arm-release", "configurePreset": "linux-arm-release" },
-    { "name": "macos-release", "configurePreset": "macos-release" },
     { "name": "macos-arm-release", "configurePreset": "macos-arm-release" }
   ],
   "testPresets": [
@@ -143,7 +130,6 @@
     { "inherits": "base", "name": "windows-cross", "configurePreset": "windows-cross" },
     { "inherits": "base", "name": "linux-release", "configurePreset": "linux-release" },
     { "inherits": "base", "name": "linux-arm-release", "configurePreset": "linux-arm-release" },
-    { "inherits": "base", "name": "macos-release", "configurePreset": "macos-release" },
     { "inherits": "base", "name": "macos-arm-release", "configurePreset": "macos-arm-release" }
   ]
 }

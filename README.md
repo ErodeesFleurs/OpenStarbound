@@ -61,8 +61,7 @@ Bootstrap [vcpkg](https://github.com/microsoft/vcpkg#quick-start) **outside this
 | Linux x86_64 | `linux-release` | Debian/Ubuntu native C SDK (`libc6-dev`) and C-ABI/window-system packages listed in [CI](.github/workflows/build.yml) |
 | Linux ARM64 | `linux-arm-release` | Same prerequisites; Steam/Discord SDKs disabled |
 | Windows x64 | `windows-release` | MSYS2 UCRT64 `make`; set `MSYS2_ROOT` and add `ucrt64/bin` to `PATH` |
-| macOS Intel | `macos-release` | Xcode Command Line Tools, a macOS 14-capable SDK, and Homebrew `autoconf autoconf-archive automake libtool tarlz` |
-| macOS Apple Silicon | `macos-arm-release` | Same SDK requirements |
+| macOS Apple Silicon | `macos-arm-release` | Xcode Command Line Tools, a macOS 14-capable SDK, and Homebrew `autoconf autoconf-archive automake libtool tarlz` |
 
 On native Linux, the installer adapts only the host target to the complete system C SDK (headers, glibc and startup files), while retaining xclang's bundled static libc++, libc++abi, libunwind and compiler-rt. CI uses Ubuntu 24.04/glibc 2.39; these native builds do **not** retain the archive's glibc 2.17 compatibility baseline. Other targets keep their bundled SDKs. An explicit `OSB_NATIVE_COMPILER_ROOT` preserves an existing native wrapper's SDK instead, including Nix host tools for Windows cross-builds.
 
