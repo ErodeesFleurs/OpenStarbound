@@ -58,6 +58,13 @@ foreach(config RelWithAsserts RelWithDebInfo Release)
   star_default_compile_options(${config} math -ffast-math)
 endforeach()
 
+# Clang serializes complex arithmetic mode in every BMI. Keep it stable when
+# macOS color conversion opts out of scalar fast-math for saturation accuracy.
+if(STAR_SYSTEM_MACOS)
+  target_compile_options(star_build_config INTERFACE
+    "$<$<COMPILE_LANGUAGE:CXX>:-fno-cx-limited-range>")
+endif()
+
 foreach(config Debug RelWithAsserts RelWithDebInfo)
   if(STAR_DEBUG_SYMBOL_LEVEL STREQUAL "minimal" OR
       (STAR_DEBUG_SYMBOL_LEVEL STREQUAL "default" AND config STREQUAL "RelWithDebInfo"))

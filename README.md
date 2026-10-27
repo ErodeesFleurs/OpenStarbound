@@ -65,7 +65,7 @@ Bootstrap [vcpkg](https://github.com/microsoft/vcpkg#quick-start) **outside this
 
 On native Linux, the installer adapts only the host target to the complete system C SDK (headers, glibc and startup files), while retaining xclang's bundled static libc++, libc++abi, libunwind and compiler-rt. CI uses Ubuntu 24.04/glibc 2.39; these native builds do **not** retain the archive's glibc 2.17 compatibility baseline. Other targets keep their bundled SDKs. An explicit `OSB_NATIVE_COMPILER_ROOT` preserves an existing native wrapper's SDK instead, including Nix host tools for Windows cross-builds.
 
-All presets chainload the repository's [toolchain wrapper](triplets/toolchain.cmake). On macOS it explicitly selects bundled `ld64.lld` so CMake and vcpkg's Meson ports use the same linker as the compiler driver.
+All presets chainload the repository's [toolchain wrapper](triplets/toolchain.cmake). On macOS it explicitly selects bundled `ld64.lld` so CMake and vcpkg's Meson ports use the same linker as the compiler driver. macOS C++ module providers and importers share full complex-arithmetic range semantics; the scalar color-conversion accuracy override remains in place.
 
 The pinned `vcpkg-make` overlay preserves default configure options when CMake leaves an empty `EXCLUDE_FILTER` undefined (CMake before 3.31/CMP0174). This keeps installation prefixes, release/debug directories and shared/static linkage options intact for all autotools ports, without per-package staging relocation.
 
