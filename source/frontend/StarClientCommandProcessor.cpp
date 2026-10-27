@@ -209,7 +209,6 @@ import star.ai_interface;
 
 
 import star.quest_interface;
-import star.input;
 
 
 
@@ -299,13 +298,7 @@ std::expected<String, StarException> ClientCommandProcessor::previewQuestPane(St
   return "No such quest";
 }
 
-std::expected<StringList, StarException> ClientCommandProcessor::handleCommand(String const& commandLine, bool userInput) {
-  std::optional<Input::ClipboardUnlock> unlock;
-  if (userInput) {
-    auto input = m_context.input();
-    if (!input) return std::unexpected(std::move(input.error()));
-    unlock.emplace(input->get().unlockClipboard());
-  }
+std::expected<StringList, StarException> ClientCommandProcessor::handleCommand(String const& commandLine) {
   auto result = executeCommand(commandLine);
   if (result) return result;
   if (result.error().is<ShellParsingException>()) {
@@ -340,7 +333,7 @@ std::expected<StringList, StarException> ClientCommandProcessor::executeCommand(
       auto isCommand = entry.beginsWith("/");
       if (!isCommand) return std::unexpected(std::move(isCommand.error()));
       if (*isCommand) {
-        auto output = handleCommand(entry, false);
+        auto output = handleCommand(entry);
         if (!output) return std::unexpected(std::move(output.error()));
         result.appendAll(std::move(*output));
       } else {

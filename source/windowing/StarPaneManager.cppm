@@ -117,6 +117,9 @@ public:
   // Returns true if the current widget that has captured the keyboard is
   // accepting text input.
   [[nodiscard]] std::expected<bool, StarException> keyboardCapturedForTextInput() const;
+  // Keyboard action candidates in exactly the native dispatch order, including
+  // its captured-pane exclusivity and first-modal barrier.
+  [[nodiscard]] std::expected<List<std::shared_ptr<Pane>>, StarException> inputTargetPanes() const;
 
   [[nodiscard]] std::expected<bool, StarException> sendInputEvent(InputEvent const& event);
 

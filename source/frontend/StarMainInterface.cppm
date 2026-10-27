@@ -28,6 +28,7 @@ import star.map;
 import star.strong_typedef;
 import star.rpc_promise;
 import star.ordered_map;
+import star.lua_components;
 
 
 import star.font_texture_group;
@@ -83,6 +84,7 @@ import star.registered_pane_manager;
 import star.main_interface_types;
 import star.uuid;
 import star.warping;
+import star.chat_types;
 
 namespace Star {
 enum class P2PJoinRequestReply;
@@ -95,7 +97,10 @@ namespace Star {
 class UniverseClient;
 class WorldPainter;
 class Item;
-class Chat;
+class BaseScriptPane;
+class LuaRoot;
+class WorldClient;
+class TeamClient;
 class ClientCommandProcessor;
 class OptionsMenu;
 class WirePane;
@@ -184,7 +189,19 @@ public:
 
   bool isDebugDisplayed();
 
-  [[nodiscard]] std::expected<void, StarException> doChat(String const& chat, bool addToHistory);
+  [[nodiscard]] std::expected<StringList, StarException> executeClientCommand(String const& command);
+  [[nodiscard]] std::expected<void, StarException> addChatMessages(List<ChatReceivedMessage> const& messages, bool showPane = true);
+  [[nodiscard]] std::expected<std::optional<Json>, StarException> callPane(String const& id, String const& method, JsonArray const& arguments = {});
+  [[nodiscard]] std::expected<std::optional<Json>, StarException> callUi(String const& id, String const& method, JsonArray const& arguments = {});
+  [[nodiscard]] std::expected<void, StarException> sendPaneEvent(String const& id, String const& event, Json payload);
+  [[nodiscard]] std::expected<void, StarException> createPane(String const& id, Json config, String const& layer);
+  [[nodiscard]] std::expected<void, StarException> destroyPane(String const& id);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeClientCallbacks();
+  Json uiSession() const;
+  [[nodiscard]] static std::expected<bool, StarException> paneIdAvailable(String const& id);
+  [[nodiscard]] std::expected<JsonArray, StarException> paneInputTargets() const;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> findRegisteredPane(String const& id);
+  [[nodiscard]] std::expected<void, StarException> displayRegisteredPane(String const& id);
 
   [[nodiscard]] std::expected<void, StarException> queueMessage(String const& message, std::optional<float> cooldown, float spring);
   [[nodiscard]] std::expected<void, StarException> queueMessage(String const& message);
@@ -220,6 +237,8 @@ private:
   [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<WorldPainter> painter);
   [[nodiscard]] std::expected<void, StarException> initMainBarPanes();
   [[nodiscard]] std::expected<void, StarException> initScriptAndHudPanes(std::shared_ptr<WorldPainter> painter);
+  [[nodiscard]] std::expected<void, StarException> initUiController();
+  [[nodiscard]] std::expected<void, StarException> synchronizeUiSession();
   [[nodiscard]] std::expected<void, StarException> initPlanetHud();
   [[nodiscard]] std::expected<void, StarException> initCharacterSwap();
   [[nodiscard]] std::expected<void, StarException> initWorldOverlays();
@@ -285,7 +304,18 @@ private:
 
   StringMap<std::shared_ptr<CanvasWidget>> m_canvases;
 
-  std::shared_ptr<Chat> m_chat;
+  Map<String, std::pair<std::shared_ptr<BaseScriptPane>, PaneLayer>> m_paneInstances;
+  std::unique_ptr<LuaUpdateScript> m_uiController;
+  Map<String, LuaCallbacks> m_uiCapabilities;
+  std::shared_ptr<Player> m_uiPlayer;
+  std::shared_ptr<WorldClient> m_uiWorld;
+  std::shared_ptr<TeamClient> m_uiTeam;
+  std::shared_ptr<LuaRoot> m_uiRoot;
+  WorldId m_uiWorldId;
+  std::uint64_t m_uiRootGeneration = 0;
+  std::uint64_t m_uiWorldGeneration = 0;
+  std::uint64_t m_uiPlayerGeneration = 0;
+  bool m_uiInWorld = false;
   std::shared_ptr<ClientCommandProcessor> m_clientCommandProcessor;
   std::shared_ptr<RadioMessagePopup> m_radioMessagePopup;
   std::shared_ptr<WirePane> m_wireInterface;
@@ -310,6 +340,7 @@ private:
   bool m_disableHud = false;
 
   String m_lastCommand;
+  bool m_commandInput = false;
 
   LinkedList<std::shared_ptr<GuiMessage>> m_messages;
   HashMap<ItemDescriptor, std::pair<std::size_t, std::shared_ptr<GuiMessage>>> m_itemDropMessages;
@@ -335,7 +366,7 @@ export namespace Star {
   using ::Star::UniverseClient;
   using ::Star::WorldPainter;
   using ::Star::Item;
-  using ::Star::Chat;
+  using ::Star::BaseScriptPane;
   using ::Star::ClientCommandProcessor;
   using ::Star::OptionsMenu;
   using ::Star::WirePane;

@@ -177,6 +177,15 @@
 ---@field subImage fun(self:Image, min:Vec2U, size:Vec2U):Image
 ---@field process fun(self:Image, directives:string):Image
 
+---@class TextStyle
+---@field fontSize? integer
+---@field font? string
+---@field color? Color
+---@field shadow? Color
+---@field lineSpacing? number
+---@field directives? string
+---@field backDirectives? string
+
 ---@class CanvasWidget
 ---@field size fun(self:CanvasWidget):Vec2I
 ---@field mousePosition fun(self:CanvasWidget):Vec2I
@@ -193,4 +202,5 @@
 ---@field drawRect fun(self:CanvasWidget, rect:RectF, color?:Color)
 ---@field drawPoly fun(self:CanvasWidget, poly:PolyF, color?:Color, width?:number)
 ---@field drawTriangles fun(self:CanvasWidget, triangles:PolyF[], color?:Color)
----@field drawText fun(self:CanvasWidget, text:string, positioning:Json, fontSize:integer, color?:Color, lineSpacing?:number, font?:string, directives?:string)
+---@field drawText fun(self:CanvasWidget, text:string, positioning:Json, sizeOrStyle:integer|TextStyle, color?:Color, lineSpacing?:number, font?:string, directives?:string)
+---@field measureText fun(self:CanvasWidget, text:string, positioning:Json, sizeOrStyle:integer|TextStyle, color?:Color, lineSpacing?:number, font?:string, directives?:string):RectF

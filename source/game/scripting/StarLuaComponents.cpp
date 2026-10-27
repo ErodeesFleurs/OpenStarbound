@@ -69,6 +69,9 @@ std::expected<void, StarException> LuaBaseComponent::addCallbacks(String groupNa
   if (m_callbacks.contains(groupName))
     return std::unexpected(LuaComponentException::format("Duplicate callbacks named '{}' in LuaBaseComponent", groupName));
   if (m_context) {
+    // Component-owned groups override inherited root/script tables.
+    if (auto result = m_context->remove(groupName); !result)
+      return std::unexpected(std::move(result.error()));
     if (auto result = m_context->setCallbacks(groupName, callbacks); !result)
       return std::unexpected(std::move(result.error()));
   }
@@ -143,6 +146,8 @@ void LuaBaseComponent::setAutoReInit(bool enabled) {
 std::expected<void, StarException> LuaBaseComponent::setLuaRoot(std::shared_ptr<LuaRoot> luaRoot) {
   if (luaRoot && &luaRoot->root() != &m_root)
     return std::unexpected(LuaComponentException("Lua component and LuaRoot must belong to the same Root"));
+  if (m_luaRoot != luaRoot)
+    m_rootGeneration = 0;
   m_luaRoot = std::move(luaRoot);
   return {};
 }
@@ -150,7 +155,7 @@ std::expected<void, StarException> LuaBaseComponent::setLuaRoot(std::shared_ptr<
 std::shared_ptr<LuaRoot> const& LuaBaseComponent::luaRoot() { return m_luaRoot; }
 
 std::expected<bool, StarException> LuaBaseComponent::init() {
-  if (auto result = uninit(); !result)
+  if (auto result = uninit({}); !result)
     return std::unexpected(std::move(result.error()));
   if (!m_luaRoot)
     return false;
@@ -186,7 +191,12 @@ std::expected<bool, StarException> LuaBaseComponent::init() {
   return true;
 }
 
-std::expected<void, StarException> LuaBaseComponent::uninit() {
+std::expected<void, StarException> LuaBaseComponent::uninit(String const& beforeUninit) {
+  // Consume reload identity before hooks: callbacks may reenter invoke(), and
+  // must observe this lifecycle operation rather than recursively rebuilding.
+  if (m_reloadTracker)
+    (void)m_reloadTracker->pullTriggered();
+  m_rootGeneration = m_luaRoot ? m_luaRoot->generation() : 0;
   std::optional<StarException> error;
   auto remember = [&](auto result, std::string_view operation) {
     if (!result) {
@@ -199,13 +209,22 @@ std::expected<void, StarException> LuaBaseComponent::uninit() {
     }
   };
   if (m_context) {
-    auto hasUninit = m_context->containsPath("uninit");
-    if (!hasUninit)
-      remember(std::move(hasUninit), "Exception while finding script uninit");
-    else if (*hasUninit)
-      remember(m_context->invokePath("uninit"), "Exception while calling script uninit");
-    remember(contextShutdown(), "Exception while shutting down script context");
-    m_context.reset();
+    auto invokeHook = [&](String const& name) {
+      auto present = m_context->containsPath(name);
+      if (!present)
+        remember(std::move(present), "Exception while finding script shutdown hook");
+      else if (*present)
+        remember(m_context->invokePath(name), "Exception while calling script shutdown hook");
+    };
+    if (!beforeUninit.empty())
+      invokeHook(beforeUninit);
+    if (m_context)
+      invokeHook("uninit");
+    // Reentrant invoke failures can already shut down and release this context.
+    if (m_context) {
+      remember(contextShutdown(), "Exception while shutting down script context");
+      m_context.reset();
+    }
   }
   remember(stopThreads(), "Error stopping script threads");
   m_threads.clear();
@@ -213,6 +232,18 @@ std::expected<void, StarException> LuaBaseComponent::uninit() {
   if (error)
     return std::unexpected(std::move(*error));
   return {};
+}
+
+std::expected<bool, StarException> LuaBaseComponent::hasMethod(String const& name) {
+  auto ready = checkInitialization();
+  if (!ready)
+    return std::unexpected(std::move(ready.error()));
+  if (!*ready)
+    return false;
+  auto value = m_context->getPath(name);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return std::holds_alternative<LuaFunction>(*value);
 }
 
 bool LuaBaseComponent::initialized() const { return m_context.has_value(); }
@@ -226,6 +257,14 @@ std::expected<void, StarException> LuaBaseComponent::contextSetup() {
     return std::unexpected(std::move(self.error()));
   if (auto result = m_context->setPath("self", std::move(*self)); !result)
     return std::unexpected(std::move(result.error()));
+  // Install explicit groups before adding missing builtins, so each callback
+  // table is constructed once and inherited groups cannot mask fresh targets.
+  for (auto const& p : m_callbacks) {
+    if (auto result = m_context->remove(p.first); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_context->setCallbacks(p.first, p.second); !result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (!hasCallbacks("sb")) {
     auto callbacks = LuaBindings::makeUtilityCallbacks(m_root.random(), m_root.logger(), m_root.logMap());
     if (!callbacks)
@@ -247,10 +286,6 @@ std::expected<void, StarException> LuaBaseComponent::contextSetup() {
     if (auto result = addCallbacks("threads", std::move(*callbacks)); !result)
       return std::unexpected(std::move(result.error()));
   }
-  for (auto const& p : m_callbacks) {
-    if (auto result = m_context->setCallbacks(p.first, p.second); !result)
-      return std::unexpected(std::move(result.error()));
-  }
   return {};
 }
 
@@ -267,7 +302,9 @@ std::expected<void, StarException> LuaBaseComponent::setError(String error) {
 
 std::expected<bool, StarException> LuaBaseComponent::checkInitialization() {
   bool shouldBeInitialized = initialized() || error();
-  if (shouldBeInitialized && m_reloadTracker && m_reloadTracker->pullTriggered())
+  bool reloaded = m_reloadTracker && m_reloadTracker->pullTriggered();
+  bool replaced = m_luaRoot && m_rootGeneration != m_luaRoot->generation();
+  if (shouldBeInitialized && (reloaded || replaced))
     return init();
   return initialized();
 }
@@ -562,7 +599,7 @@ std::expected<void, StarException> LuaScriptUpdate::finishShutdown(std::expected
         error = result.error().withContext(strf("Earlier Lua world shutdown failure: {}", outputException(*error, true)));
     }
   };
-  remember(m_host.uninit());
+  remember(m_host.uninit({}));
   remember(m_host.removeCallbacks("world"));
   remember(m_host.removeThreadCallbacks("world"));
   for (auto const& name : m_worldThreadCallbacks)

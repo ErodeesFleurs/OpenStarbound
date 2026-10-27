@@ -65,6 +65,8 @@ public:
   void addCallbacks(String const& groupName, LuaCallbacks const& callbacks);
 
   LuaEngine& luaEngine() const;
+  // Changes only after a replacement engine has been successfully published.
+  std::uint64_t generation() const { return m_generation; }
 private:
   explicit LuaRoot(Root& root);
   class ScriptCache {
@@ -85,6 +87,7 @@ private:
 
   Root& m_root;
   LuaEnginePtr m_luaEngine;
+  std::uint64_t m_generation = 0;
   StringMap<LuaCallbacks> m_luaCallbacks;
   std::shared_ptr<ScriptCache> m_scriptCache;
 

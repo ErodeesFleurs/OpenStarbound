@@ -62,7 +62,6 @@ enum class MainInterfacePanes {
   ActionBar,
   TeamBar,
   StatusPane,
-  Chat,
   WireInterface,
   PlanetText,
   RadioMessagePopup,

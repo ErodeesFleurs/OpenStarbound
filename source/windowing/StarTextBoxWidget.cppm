@@ -72,6 +72,10 @@ public:
 
   int const& getCursorPosition() const;
   [[nodiscard]] std::expected<void, StarException> setCursorPosition(int cursorPosition);
+  [[nodiscard]] std::expected<void, StarException> setSelection(int anchor, int cursor);
+  [[nodiscard]] std::expected<Json, StarException> editorState() const;
+  void setEditorRendering(bool enabled);
+  void setTextStyle(TextStyle const& style);
 
 
   bool getHidden() const;
@@ -122,6 +126,7 @@ private:
   [[nodiscard]] std::expected<bool, StarException> modText(String const& text);
   [[nodiscard]] std::expected<bool, StarException> editText(std::size_t start, std::size_t count, String const& replacement);
   [[nodiscard]] std::expected<bool, StarException> newTextValid(String const& text) const;
+  [[nodiscard]] std::expected<bool, StarException> replaceSelection(String const& replacement);
 
   bool m_textHidden;
   String m_text;
@@ -132,6 +137,9 @@ private:
   TextStyle m_textStyle;
   int m_maxWidth;
   int m_cursorOffset;
+  int m_selectionAnchor;
+  bool m_repeatSelecting;
+  bool m_editorRendering;
   bool m_isHover;
   bool m_isPressed;
   SpecialRepeatKeyCodes m_repeatCode;

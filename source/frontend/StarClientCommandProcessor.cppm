@@ -69,7 +69,7 @@ public:
       MainInterfacePaneManager& paneManager, StringMap<StringList> macroCommands);
   void detachInterface() { m_paneManager.reset(); }
 
-  [[nodiscard]] std::expected<StringList, StarException> handleCommand(String const& commandLine, bool userInput = false);
+  [[nodiscard]] std::expected<StringList, StarException> handleCommand(String const& commandLine);
   [[nodiscard]] std::expected<StringList, StarException> updatePromises();
 
   bool debugDisplayEnabled() const;

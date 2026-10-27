@@ -32,15 +32,39 @@ Sets the hint text of a TextBoxWidget.
 
 #### `Int` widget.getCursorPosition(`String` widgetName)
 
-Gets the cursor position of a TextBoxWidget.
+Gets the zero-based Unicode codepoint cursor position of a TextBoxWidget (not a UTF-8 byte offset or grapheme index).
 
 ---
 
 #### `void` widget.setCursorPosition(`String` widgetName, `int` cursorPosition)
 
-Sets the cursor position of a TextBoxWidget.
+Sets the cursor position of a TextBoxWidget, clamped to its text length, and clears its selection.
 
 ---
+#### `void` widget.setTextEditorRendering(`String` widgetName, `bool` enabled)
+
+Controls native text, selection, caret and border drawing without changing visibility, focus or input handling. Set `false` to paint the entire field using Canvas. Do not hide the widget: hidden widgets no longer request text-input capture.
+
+#### `Json` widget.getTextEditorState(`String` widgetName)
+
+Returns `{text, displayText, cursor, anchor, selectionStart, selectionEnd, cursorOffset}`. All indices are zero-based Unicode codepoint offsets; the ordered selection is `[selectionStart, selectionEnd)`, with `anchor` retaining its direction. `displayText` uses the engine's password masking/newline markers. `cursorOffset` is the horizontal caret offset from the text anchor in interface units, before overfill scrolling. Use `widget.setTextStyle` with the same style used by Canvas.
+
+#### `void` widget.setTextSelection(`String` widgetName, `int` anchor, `int` cursor)
+
+Sets the selection and caret, clamping both to the text length. Equal indices clear the selection.
+
+#### `void` widget.setTextStyle(`String` widgetName, `Json` style)
+
+Sets the TextBoxWidget's complete text style: `fontSize`, `font`, `color`, `shadow`, `lineSpacing`, `directives` and `backDirectives`. This also controls caret measurement when native drawing is disabled.
+
+The off-draw editor is still a real `textbox` child with a registered callback. Existing `widget.focus`, `blur`, `setText` and textbox callback/`enterKey`/`escapeKey` configuration apply. Callbacks retain their existing event semantics (including key release); scripts can also read the state while rendering. The containing pane must forward raw focused-widget events and report its keyboard capture mode/area. Set the widget's position and size to the actual input field so the platform receives the candidate-window area.
+
+Editing includes Unicode-codepoint navigation, engine word-boundary navigation with Ctrl/Alt, Home/End, key repeat, Shift selection, Ctrl+A, clipboard copy/cut/paste and committed `TextInputEvent` insertion/replacement. Copy/cut without a selection keeps the engine's whole-field behavior. Selection replacement respects the textbox regex and width constraints. This remains a single-line field: Shift+Enter stores a newline rendered as `↵`; it is not a multiline layout editor. Combining marks/grapheme clusters are not treated as one caret step.
+
+The SDL backend starts/stops platform text input and passes the input area/caret offset to SDL. It forwards committed text, but the engine has no composition/preedit event representation or Lua preedit API; composition display and candidate behavior remain platform/SDL-dependent. This API does not add shaping, grapheme editing, or custom preedit rendering.
+
+---
+
 
 ### SliderBarWidget helpers
 

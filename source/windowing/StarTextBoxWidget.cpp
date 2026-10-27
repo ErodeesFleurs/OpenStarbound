@@ -71,6 +71,9 @@ TextBoxWidget::TextBoxWidget(GuiContext& context, String const& startingText, St
   m_isPressed = false;
   m_isHover = false;
   m_cursorOffset = 0;
+  m_selectionAnchor = 0;
+  m_repeatSelecting = false;
+  m_editorRendering = true;
   m_hAnchor = HorizontalAnchor::LeftAnchor;
   m_vAnchor = VerticalAnchor::BottomAnchor;
   m_drawBorder = false;
@@ -95,6 +98,7 @@ std::expected<void, StarException> TextBoxWidget::initialize() {
   if (*length > std::numeric_limits<int>::max())
     return std::unexpected(GuiException("Text box content is too long"));
   m_cursorOffset = static_cast<int>(*length);
+  m_selectionAnchor = m_cursorOffset;
   auto assets = context().root().assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
@@ -144,6 +148,8 @@ std::expected<String, StarException> TextBoxWidget::displayText() const {
 }
 
 std::expected<void, StarException> TextBoxWidget::renderImpl() {
+  if (!m_editorRendering)
+    return {};
   float blueRate = m_isHover && !m_isPressed ? 0.2f : 0.0f;
   auto drawOffset = getCursorDrawOffset();
   if (!drawOffset)
@@ -168,6 +174,29 @@ std::expected<void, StarException> TextBoxWidget::renderImpl() {
   auto text = m_text.empty() ? std::expected<String, StarException>(m_hint) : displayText();
   if (!text)
     return std::unexpected(std::move(text.error()));
+  if (m_selectionAnchor != m_cursorOffset) {
+    auto prefix = text->substr(0, std::min(m_selectionAnchor, m_cursorOffset));
+    if (!prefix)
+      return std::unexpected(std::move(prefix.error()));
+    auto selected = text->substr(std::min(m_selectionAnchor, m_cursorOffset), std::abs(m_cursorOffset - m_selectionAnchor));
+    if (!selected)
+      return std::unexpected(std::move(selected.error()));
+    auto prefixWidth = context().stringInterfaceWidth(*prefix);
+    if (!prefixWidth)
+      return std::unexpected(std::move(prefixWidth.error()));
+    auto selectionWidth = context().stringInterfaceWidth(*selected);
+    if (!selectionWidth)
+      return std::unexpected(std::move(selectionWidth.error()));
+    auto fullWidth = context().stringInterfaceWidth(*text);
+    if (!fullWidth)
+      return std::unexpected(std::move(fullWidth.error()));
+    float anchorOffset = m_hAnchor == HorizontalAnchor::RightAnchor ? *fullWidth :
+        m_hAnchor == HorizontalAnchor::HMidAnchor ? std::floor(*fullWidth / 2.0f) : 0;
+    auto highlighted = context().drawInterfaceQuad(RectF::withSize(pos + Vec2F(*prefixWidth - anchorOffset, 0),
+        Vec2F(*selectionWidth, m_textStyle.fontSize)), Vec4B(70, 100, 180, 160));
+    if (!highlighted)
+      return std::unexpected(std::move(highlighted.error()));
+  }
   auto rendered = context().renderInterfaceText(*text, {pos, m_hAnchor, m_vAnchor});
   auto cleared = context().clearTextStyle();
   if (!rendered)
@@ -201,28 +230,30 @@ std::expected<int, StarException> TextBoxWidget::getCursorDrawOffset() const {
   auto styled = context().setTextStyle(m_textStyle);
   if (!styled)
     return std::unexpected(std::move(styled.error()));
-  auto text = displayText();
-  if (!text)
-    return std::unexpected(std::move(text.error()));
-  auto tail = text->substr(m_cursorOffset);
-  if (!tail)
-    return std::unexpected(std::move(tail.error()));
-  auto width = context().stringWidth(*text);
-  if (!width)
-    return std::unexpected(std::move(width.error()));
-  auto tailWidth = context().stringWidth(*tail);
-  if (!tailWidth)
-    return std::unexpected(std::move(tailWidth.error()));
-  if (m_hAnchor == HorizontalAnchor::RightAnchor)
-    return -*width + *tailWidth;
-  float scale;
-  if (m_hAnchor == HorizontalAnchor::LeftAnchor)
-    scale = 1.0f;
-  else if (m_hAnchor == HorizontalAnchor::HMidAnchor)
-    scale = 0.5f;
-  else
-    return std::unexpected(GuiException("Somehow, the value of m_hAnchor became bad"));
-  return static_cast<int>(std::ceil(*width * scale - *tailWidth));
+  auto measure = [&]() -> std::expected<int, StarException> {
+    auto text = displayText();
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    auto prefix = text->substr(0, m_cursorOffset);
+    if (!prefix)
+      return std::unexpected(std::move(prefix.error()));
+    auto width = context().stringWidth(*text);
+    if (!width)
+      return std::unexpected(std::move(width.error()));
+    auto prefixWidth = context().stringWidth(*prefix);
+    if (!prefixWidth)
+      return std::unexpected(std::move(prefixWidth.error()));
+    int anchorOffset = m_hAnchor == HorizontalAnchor::RightAnchor ? *width :
+        m_hAnchor == HorizontalAnchor::HMidAnchor ? static_cast<int>(std::floor(*width / 2.0f)) : 0;
+    return *prefixWidth - anchorOffset;
+  };
+  auto result = measure();
+  auto cleared = context().clearTextStyle();
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  if (!cleared)
+    return std::unexpected(std::move(cleared.error()));
+  return *result;
 }
 
 std::expected<void, StarException> TextBoxWidget::update(float dt) {
@@ -249,6 +280,8 @@ std::expected<void, StarException> TextBoxWidget::update(float dt) {
     } else if (m_repeatCode == SpecialRepeatKeyCodes::Right && std::cmp_less(m_cursorOffset, *length)) {
       ++m_cursorOffset;
     }
+    if (!m_repeatSelecting || m_repeatCode == SpecialRepeatKeyCodes::Backspace || m_repeatCode == SpecialRepeatKeyCodes::Delete)
+      m_selectionAnchor = m_cursorOffset;
   }
   return {};
 }
@@ -273,6 +306,7 @@ std::expected<bool, StarException> TextBoxWidget::setText(String const& text, bo
   m_text = text;
   if (moveCursor || std::cmp_greater(m_cursorOffset, *length))
     m_cursorOffset = static_cast<int>(*length);
+  m_selectionAnchor = m_cursorOffset;
   m_repeatCode = SpecialRepeatKeyCodes::None;
   if (callback) {
     if (!m_callback)
@@ -302,7 +336,44 @@ std::expected<void, StarException> TextBoxWidget::setCursorPosition(int cursorPo
     return std::unexpected(std::move(length.error()));
   m_cursorOffset =
     std::clamp(cursorPosition, 0, static_cast<int>(std::min<std::size_t>(*length, std::numeric_limits<int>::max())));
+  m_selectionAnchor = m_cursorOffset;
+  m_repeatCode = SpecialRepeatKeyCodes::None;
   return {};
+}
+
+std::expected<void, StarException> TextBoxWidget::setSelection(int anchor, int cursor) {
+  auto positioned = setCursorPosition(cursor);
+  if (!positioned)
+    return std::unexpected(std::move(positioned.error()));
+  auto length = m_text.size();
+  if (!length)
+    return std::unexpected(std::move(length.error()));
+  m_selectionAnchor = std::clamp(anchor, 0, static_cast<int>(*length));
+  return {};
+}
+
+void TextBoxWidget::setEditorRendering(bool enabled) {
+  m_editorRendering = enabled;
+}
+
+void TextBoxWidget::setTextStyle(TextStyle const& style) {
+  m_textStyle = style;
+}
+
+std::expected<Json, StarException> TextBoxWidget::editorState() const {
+  auto text = displayText();
+  if (!text)
+    return std::unexpected(std::move(text.error()));
+  auto offset = getCursorDrawOffset();
+  if (!offset)
+    return std::unexpected(std::move(offset.error()));
+  return JsonObject{
+    {"text", m_text}, {"displayText", *text}, {"cursor", m_cursorOffset},
+    {"anchor", m_selectionAnchor},
+    {"selectionStart", std::min(m_selectionAnchor, m_cursorOffset)},
+    {"selectionEnd", std::max(m_selectionAnchor, m_cursorOffset)},
+    {"cursorOffset", *offset / context().interfaceScale()}
+  };
 }
 
 bool TextBoxWidget::getHidden() const {
@@ -463,6 +534,9 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
   if (std::holds_alternative<KeyDownEvent>(event)) {
     auto const& keyDown = std::get<KeyDownEvent>(event);
     m_repeatKeyThreshold = Time::monotonicMilliseconds() + 300LL;
+    m_repeatCode = SpecialRepeatKeyCodes::None;
+    bool selecting = (keyDown.mods & (KeyMod::LShift | KeyMod::RShift)) != KeyMod::NoMod;
+    m_repeatSelecting = selecting;
     if (keyDown.key == Key::Escape) {
       if (m_onEscapeKey) {
         auto called = m_onEscapeKey(*this);
@@ -474,11 +548,9 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
     }
     if (keyDown.key == Key::Return || keyDown.key == Key::KeypadEnter) {
       if ((keyDown.mods & (KeyMod::LShift | KeyMod::RShift)) != KeyMod::NoMod) {
-        auto modified = editText(m_cursorOffset, 0, "\n");
+        auto modified = replaceSelection("\n");
         if (!modified)
           return std::unexpected(std::move(modified.error()));
-        if (*modified)
-          ++m_cursorOffset;
         return true;
       }
       if (m_onEnterKey) {
@@ -506,27 +578,36 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
       return false;
     }
     if ((keyDown.mods & (KeyMod::LCtrl | KeyMod::RCtrl)) != KeyMod::NoMod) {
+      if (keyDown.key == Key::A) {
+        auto length = m_text.size();
+        if (!length)
+          return std::unexpected(std::move(length.error()));
+        m_selectionAnchor = 0;
+        m_cursorOffset = static_cast<int>(*length);
+        return true;
+      }
       if (keyDown.key == Key::C || keyDown.key == Key::X) {
-        context().setClipboard(m_text);
+        // Preserve the engine's whole-field copy/cut when no selection exists.
+        bool wholeField = m_selectionAnchor == m_cursorOffset;
+        auto selected = wholeField ? std::expected<String, StarException>(m_text) :
+            m_text.substr(std::min(m_selectionAnchor, m_cursorOffset), std::abs(m_cursorOffset - m_selectionAnchor));
+        if (!selected)
+          return std::unexpected(std::move(selected.error()));
+        context().setClipboard(*selected);
         if (keyDown.key == Key::X) {
-          auto modified = modText("");
+          // Whole-field cut is validated before changing either endpoint.
+          auto modified = wholeField ? modText("") : replaceSelection("");
           if (!modified)
             return std::unexpected(std::move(modified.error()));
-          if (*modified)
-            m_cursorOffset = 0;
+          if (*modified && wholeField)
+            m_selectionAnchor = m_cursorOffset = 0;
         }
         return true;
       }
       if (keyDown.key == Key::V) {
-        auto clipboard = context().getClipboard();
-        auto length = clipboard.size();
-        if (!length)
-          return std::unexpected(std::move(length.error()));
-        auto modified = editText(m_cursorOffset, 0, clipboard);
+        auto modified = replaceSelection(context().getClipboard());
         if (!modified)
           return std::unexpected(std::move(modified.error()));
-        if (*modified)
-          m_cursorOffset += *length;
         return true;
       }
     }
@@ -549,6 +630,23 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
       auto length = m_text.size();
       if (!length)
         return std::unexpected(std::move(length.error()));
+      bool deleting = keyDown.key == Key::Backspace || keyDown.key == Key::Delete;
+      if (m_selectionAnchor != m_cursorOffset) {
+        if (deleting) {
+          auto modified = replaceSelection("");
+          if (!modified)
+            return std::unexpected(std::move(modified.error()));
+          if (*modified)
+            m_repeatCode = right ? SpecialRepeatKeyCodes::Delete : SpecialRepeatKeyCodes::Backspace;
+          return true;
+        }
+        if (!selecting) {
+          m_cursorOffset = right ? std::max(m_selectionAnchor, m_cursorOffset) : std::min(m_selectionAnchor, m_cursorOffset);
+          m_selectionAnchor = m_cursorOffset;
+          m_repeatCode = right ? SpecialRepeatKeyCodes::Right : SpecialRepeatKeyCodes::Left;
+          return true;
+        }
+      }
       if (keyDown.key == Key::Backspace) {
         m_repeatCode = SpecialRepeatKeyCodes::Backspace;
         for (int i = 0; i < *steps && m_cursorOffset > 0; ++i) {
@@ -577,10 +675,14 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
         m_repeatCode = SpecialRepeatKeyCodes::Right;
         m_cursorOffset = static_cast<int>(std::min<std::size_t>(*length, static_cast<std::size_t>(m_cursorOffset) + *steps));
       }
+      if (!selecting || deleting)
+        m_selectionAnchor = m_cursorOffset;
       return true;
     }
     if (keyDown.key == Key::Home) {
       m_cursorOffset = 0;
+      if (!selecting)
+        m_selectionAnchor = m_cursorOffset;
       return true;
     }
     if (keyDown.key == Key::End) {
@@ -588,19 +690,17 @@ std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent cons
       if (!length)
         return std::unexpected(std::move(length.error()));
       m_cursorOffset = *length;
+      if (!selecting)
+        m_selectionAnchor = m_cursorOffset;
       return true;
     }
   }
   if (std::holds_alternative<TextInputEvent>(event)) {
     auto const& textInput = std::get<TextInputEvent>(event);
-    auto length = textInput.text.size();
-    if (!length)
-      return std::unexpected(std::move(length.error()));
-    auto modified = editText(m_cursorOffset, 0, textInput.text);
+    m_repeatCode = SpecialRepeatKeyCodes::None;
+    auto modified = replaceSelection(textInput.text);
     if (!modified)
       return std::unexpected(std::move(modified.error()));
-    if (*modified)
-      m_cursorOffset += *length;
     return true;
   }
   return false;
@@ -622,6 +722,31 @@ std::expected<bool, StarException> TextBoxWidget::editText(std::size_t start, st
   if (!after)
     return std::unexpected(std::move(after.error()));
   return modText(*before + replacement + *after);
+}
+
+std::expected<bool, StarException> TextBoxWidget::replaceSelection(String const& replacement) {
+  int start = std::min(m_selectionAnchor, m_cursorOffset);
+  int count = std::abs(m_cursorOffset - m_selectionAnchor);
+  auto length = replacement.size();
+  if (!length)
+    return std::unexpected(std::move(length.error()));
+  auto modified = editText(start, count, replacement);
+  if (!modified)
+    return std::unexpected(std::move(modified.error()));
+  if (!*modified && count > 0) {
+    auto selected = m_text.substr(start, count);
+    if (!selected)
+      return std::unexpected(std::move(selected.error()));
+    if (*selected == replacement) {
+      m_cursorOffset = start + static_cast<int>(*length);
+      m_selectionAnchor = m_cursorOffset;
+    }
+  }
+  if (*modified) {
+    m_cursorOffset = start + static_cast<int>(*length);
+    m_selectionAnchor = m_cursorOffset;
+  }
+  return *modified;
 }
 
 std::expected<bool, StarException> TextBoxWidget::modText(String const& text) {
@@ -652,8 +777,11 @@ std::expected<bool, StarException> TextBoxWidget::newTextValid(String const& tex
     if (!styled)
       return std::unexpected(std::move(styled.error()));
     auto width = context().stringInterfaceWidth(text);
+    auto cleared = context().clearTextStyle();
     if (!width)
       return std::unexpected(std::move(width.error()));
+    if (!cleared)
+      return std::unexpected(std::move(cleared.error()));
     return *width <= m_maxWidth;
   }
   return true;

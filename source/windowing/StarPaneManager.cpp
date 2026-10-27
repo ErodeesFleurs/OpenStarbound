@@ -318,6 +318,21 @@ std::expected<bool, StarException> PaneManager::keyboardCapturedForTextInput() c
     return std::unexpected(std::move(mode.error()));
   return *mode == KeyboardCaptureMode::TextInput;
 }
+std::expected<List<std::shared_ptr<Pane>>, StarException> PaneManager::inputTargetPanes() const {
+  auto captured = keyboardCapturedPane();
+  if (!captured) return std::unexpected(std::move(captured.error()));
+  if (*captured) return List<std::shared_ptr<Pane>>{*captured};
+  List<std::shared_ptr<Pane>> targets;
+  for (auto const& layer : m_displayedPanes) {
+    for (auto const& entry : layer.second) {
+      targets.append(entry.first);
+      if (layer.first == PaneLayer::ModalWindow)
+        return targets;
+    }
+  }
+  return targets;
+}
+
 
 std::expected<bool, StarException> PaneManager::sendInputEvent(InputEvent const& event) {
   if (std::holds_alternative<MouseMoveEvent>(event)) {
@@ -384,7 +399,8 @@ std::expected<bool, StarException> PaneManager::sendInputEvent(InputEvent const&
       if (!consumed)
         return std::unexpected(std::move(consumed.error()));
       if (*consumed) {
-        if (std::holds_alternative<MouseButtonDownEvent>(event)) {
+        if (std::holds_alternative<MouseButtonDownEvent>(event)
+            && (layerPair.first == PaneLayer::Window || layerPair.first == PaneLayer::ModalWindow)) {
           auto raised = layerPair.second.toFront(panePair.first);
           if (!raised)
             return std::unexpected(std::move(raised.error()));

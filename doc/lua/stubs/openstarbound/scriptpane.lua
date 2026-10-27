@@ -63,6 +63,10 @@ function pane.show() end
 --- Hides the pane if it is currently shown. ---
 function pane.hide() end
 
+--- Returns drawing visibility independently of display lifecycle membership. ---
+---@return boolean
+function pane.isVisible() end
+
 --- In vanilla Starbound this function returns nothing. OpenStarbound now returns widget callbacks for the newly created widget, allowing scripts to immediately operate on it without a separate `widget` lookup. ---
 ---@param config Json
 ---@param widgetName string

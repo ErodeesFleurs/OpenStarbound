@@ -133,6 +133,7 @@ std::expected<void, StarException> LuaRoot::restart() {
   (*engine)->setProfilingEnabled(*profilingEnabled);
   (*engine)->setInstructionMeasureInterval(*measureInterval);
   m_luaEngine = std::move(*engine);
+  ++m_generation;
   return {};
 }
 

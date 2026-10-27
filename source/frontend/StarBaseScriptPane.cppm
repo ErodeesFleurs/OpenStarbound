@@ -25,6 +25,8 @@ import star.set;
 import star.audio;
 import star.map;
 import star.lua_components;
+import star.lua;
+import star.lua_root;
 
 
 import star.font_texture_group;
@@ -61,6 +63,14 @@ public:
 
   [[nodiscard]] static std::expected<std::shared_ptr<BaseScriptPane>, StarException> create(GuiContext& guiContext, Json config, bool construct = true);
 
+  [[nodiscard]] std::expected<void, StarException> addCallbacks(String name, LuaCallbacks callbacks);
+  [[nodiscard]] std::expected<bool, StarException> removeCallbacks(String const& name);
+  [[nodiscard]] std::expected<void, StarException> setLuaRoot(std::shared_ptr<LuaRoot> root);
+  [[nodiscard]] std::expected<std::optional<Json>, StarException> call(String const& method, JsonArray const& args = {});
+  [[nodiscard]] std::expected<bool, StarException> hasMethod(String const& method);
+  [[nodiscard]] std::expected<Json, StarException> inputJson(InputEvent const& event) const;
+  [[nodiscard]] std::expected<bool, StarException> forwardEvent(InputEvent const& event);
+
   [[nodiscard]] std::expected<void, StarException> show() override;
   [[nodiscard]] std::expected<void, StarException> displayed() override;
   [[nodiscard]] std::expected<void, StarException> dismissed() override;
@@ -77,12 +87,14 @@ public:
   [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
   [[nodiscard]] std::expected<std::optional<String>, StarException> cursorOverride(Vec2I const& screenPosition) override;
   [[nodiscard]] std::expected<std::optional<std::shared_ptr<Item>>, StarException> shiftItemFromInventory(std::shared_ptr<Item> const& input) override;
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makePaneCallbacks() override;
 
 protected:
   explicit BaseScriptPane(GuiContext& guiContext);
   [[nodiscard]] std::expected<void, StarException> init(Json config, bool construct = true);
   std::shared_ptr<GuiReader> reader() override;
   [[nodiscard]] std::expected<void, StarException> construct(Json config);
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
 
   Json m_config;
   Json m_rawConfig;
@@ -97,6 +109,7 @@ protected:
   bool m_callbacksAdded;
   mutable LuaUpdateScript m_script;
 };
+
 
 }
 

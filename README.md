@@ -16,6 +16,7 @@ OpenStarbound is a fork of the [Starbound 1.4.4 source code](https://archive.org
 
 - Multithreaded lighting with higher color range and additive point lights.
 - Asset-load Lua scripts and `.patch.lua` patches for JSON and images.
+- Lua-managed HUD and window instances, including a Canvas-painted chat; shared pane, input, text-editing and message APIs allow new interfaces without per-window native hosts.
 - Positional Opus voice chat, including on vanilla servers.
 - Custom keybindings, character swapping, multiple fonts and an instrument volume slider.
 - Improved mod compatibility, inventory recovery and world-file storage.

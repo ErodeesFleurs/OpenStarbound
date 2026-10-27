@@ -95,6 +95,8 @@ public:
 
   void drawText(String s, TextPositioning position, unsigned fontSize, Vec4B const& color = Vec4B(255, 255, 255, 255), FontMode mode = FontMode::Normal, float lineSpacing = Star::DefaultLineSpacing, String font = "", String processingDirectives = "");
   void drawText(String s, TextPositioning position, TextStyle style);
+  // Returns layout bounds in Canvas-local units without queuing a draw operation.
+  [[nodiscard]] std::expected<RectF, StarException> measureText(String const& s, TextPositioning const& position, TextStyle const& style) const;
 
 protected:
   [[nodiscard]] std::expected<void, StarException> renderImpl() override;

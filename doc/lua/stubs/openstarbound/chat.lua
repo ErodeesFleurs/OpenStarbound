@@ -11,7 +11,7 @@ chat = {}
 ---@param data? JsonObject
 function chat.send(message, modeName, speak, data) end
 
---- Executes the specified command and returns a list of strings with the result. ---
+--- Executes a command and returns synchronous strings without displaying them. Extra arguments cannot grant clipboard authorization.
 ---@param command string
 ---@return string[]
 function chat.command(command) end
@@ -31,7 +31,7 @@ function chat.input() end
 ---@return boolean
 function chat.setInput(text, moveCursor) end
 
---- Clears the chat input text. If `count` is provided, it will clear the last `count` messages, all otherwise.
+--- Clears received messages, not input; removes the newest count messages or all when omitted.
 ---@param count? unsigned
 function chat.clear(count) end
 

@@ -377,15 +377,25 @@ Draws a polygon on the canvas.
 
 Draws a list of filled triangles to the canvas.
 
-##### `void` drawText(`String` text, `Json` textPositioning, `unsigned` fontSize, [`Color` color], [`float` lineSpacing], [`String` directives])
+##### `void` drawText(`String` text, `Json` textPositioning, `unsigned` fontSize, [`Color` color], [`float` lineSpacing], [`String` font], [`String` directives])
 
 Draws text on the canvas. textPositioning is in the format:
 
 ```lua
 {
-  position = {0, 0}
+  position = {0, 0},
   horizontalAnchor = "left", -- left, mid, right
   verticalAnchor = "top", -- top, mid, bottom
-  wrapWidth = nil -- wrap width in pixels or nil
+  wrapWidth = nil, -- wrap width in Canvas units or nil
+  charLimit = nil -- rendered codepoint limit, excluding rich-text commands
 }
 ```
+
+##### `void` drawText(`String` text, `Json` textPositioning, `Json` textStyle)
+
+The style-table form accepts the complete engine TextStyle: `fontSize`, `font`, `color`, `shadow`, `lineSpacing`, `directives` and `backDirectives`. Unspecified fields use engine TextStyle defaults. The numeric-size signature above is unchanged.
+
+##### `RectF` measureText(`String` text, `Json` textPositioning, `Json` textStyle)
+##### `RectF` measureText(`String` text, `Json` textPositioning, `unsigned` fontSize, [`Color` color], [`float` lineSpacing], [`String` font], [`String` directives])
+
+Returns `{xMin, yMin, xMax, yMax}` layout bounds in Canvas-local units without drawing or queuing an operation. Uses the same engine layout, rich-text commands, fonts, anchors, wrapping, line spacing, character limit and interface scaling as `drawText`, including `ignoreInterfaceScale`. Bounds describe glyph advances and line height, not the outer visible pixels introduced by shadows or image-processing directives. Empty text has zero-sized bounds at `position`.

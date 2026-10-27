@@ -1,4 +1,24 @@
 {
+  "panes" : {
+    "chat" : {
+      "config" : "/interface/opensb/chat/chat.config",
+      "layer" : "Hud",
+      "scope" : "session",
+      "open" : true,
+      "order" : 10,
+      "actions" : {
+        "ChatBegin" : "begin",
+        "ChatBeginCommand" : "command",
+        "ChatSendLine" : "send",
+        "ChatStop" : "stop",
+        "ChatPreviousLine" : "previous",
+        "ChatNextLine" : "next",
+        "ChatPageUp" : "pageUp",
+        "ChatPageDown" : "pageDown"
+      },
+      "events" : {"messages" : "receiveMessages"}
+    }
+  },
   "font" : {
     "defaultFont" : "hobo",
     "fallbackFont" : "unifont",

@@ -57,8 +57,10 @@ public:
 
   // A missing LuaRoot is the existing successful false initialization outcome.
   [[nodiscard]] std::expected<bool, StarException> init();
-  [[nodiscard]] std::expected<void, StarException> uninit();
+  // Runs an optional owner lifecycle hook before uninit, without auto-reloading.
+  [[nodiscard]] std::expected<void, StarException> uninit(String const& beforeUninit = {});
   bool initialized() const;
+  [[nodiscard]] std::expected<bool, StarException> hasMethod(String const& name);
 
   template <typename Ret = LuaValue, typename... V>
   [[nodiscard]] std::expected<std::optional<Ret>, StarException> invoke(String const& name, V&&... args);
@@ -93,6 +95,7 @@ private:
   std::shared_ptr<LuaRoot> m_luaRoot;
   std::shared_ptr<TrackerListener> m_reloadTracker;
   ListenerSubscription m_reloadSubscription;
+  std::uint64_t m_rootGeneration = 0;
   std::optional<LuaContext> m_context;
   std::optional<String> m_error;
   StringMap<std::shared_ptr<ScriptableThread>> m_threads;
@@ -285,8 +288,10 @@ private:
 // GUI scripts update without binding a world or exposing entity messages.
 class LuaUpdateScript final : public LuaBaseComponent {
 public:
-  explicit LuaUpdateScript(Root& root) : LuaBaseComponent(root), m_update(*this) {}
+  explicit LuaUpdateScript(Root& root) : LuaBaseComponent(root), m_storage(*this), m_update(*this) {}
   ~LuaUpdateScript() override { m_update.destroy(); }
+  [[nodiscard]] std::expected<JsonObject, StarException> getScriptStorage() const { return m_storage.getScriptStorage(); }
+  [[nodiscard]] std::expected<void, StarException> setScriptStorage(JsonObject storage) { return m_storage.setScriptStorage(std::move(storage)); }
   unsigned updateDelta() const { return m_update.updateDelta(); }
   float updateDt(float dt) const { return m_update.updateDt(dt); }
   float updateDt() const { return m_update.updateDt(); }
@@ -303,13 +308,17 @@ protected:
   [[nodiscard]] std::expected<void, StarException> contextSetup() override {
     if (auto result = LuaBaseComponent::contextSetup(); !result)
       return std::unexpected(std::move(result.error()));
+    if (auto result = m_storage.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
     if (auto result = m_update.contextSetup(); !result)
       return std::unexpected(std::move(result.error()));
     return {};
   }
   [[nodiscard]] std::expected<void, StarException> contextShutdown() override {
+    auto storage = m_storage.readStorage();
     auto stopped = m_update.contextShutdown();
-    return LuaScriptUpdate::finishShutdown(std::move(stopped), LuaBaseComponent::contextShutdown());
+    return m_storage.finishShutdown(std::move(storage),
+        LuaScriptUpdate::finishShutdown(std::move(stopped), LuaBaseComponent::contextShutdown()));
   }
   [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override {
     auto callbacks = LuaBaseComponent::makeThreadsCallbacks();
@@ -320,6 +329,7 @@ protected:
     return callbacks;
   }
 private:
+  LuaScriptStorage m_storage;
   LuaScriptUpdate m_update;
 };
 

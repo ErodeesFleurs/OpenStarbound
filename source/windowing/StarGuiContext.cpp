@@ -477,7 +477,7 @@ std::expected<RectF, StarException> GuiContext::determineTextSize(String const& 
 
 std::expected<RectF, StarException> GuiContext::determineInterfaceTextSize(String const& s, TextPositioning const& positioning) {
   auto res = determineTextSize(s, {positioning.pos * interfaceScale(), positioning.hAnchor, positioning.vAnchor,
-      positioning.wrapWidth.transform(std::bind(std::multiplies<int>(), std::placeholders::_1, interfaceScale()))});
+      positioning.wrapWidth.transform(std::bind(std::multiplies<int>(), std::placeholders::_1, interfaceScale())), positioning.charLimit});
   if (!res)
     return std::unexpected(std::move(res.error()));
   return res->scaled(1.0f / interfaceScale());

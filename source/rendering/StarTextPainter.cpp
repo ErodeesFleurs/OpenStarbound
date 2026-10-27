@@ -161,11 +161,13 @@ std::expected<RectF, StarException> TextPainter::renderGlyph(String::Char c, Tex
 }
 
 std::expected<RectF, StarException> TextPainter::determineTextSize(StringView s, TextPositioning const& position) {
-  return doRenderText(s, position, false, std::nullopt);
+  auto charLimit = position.charLimit;
+  return doRenderText(s, position, false, optionalRef(charLimit));
 }
 
 std::expected<RectF, StarException> TextPainter::determineLineSize(StringView s, TextPositioning const& position) {
-  return doRenderLine(s, position, false, std::nullopt);
+  auto charLimit = position.charLimit;
+  return doRenderLine(s, position, false, optionalRef(charLimit));
 }
 
 std::expected<RectF, StarException> TextPainter::determineGlyphSize(String::Char c, TextPositioning const& position) {

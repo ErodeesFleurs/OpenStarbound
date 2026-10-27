@@ -29,6 +29,7 @@ import star.lexical_cast;
 import star.casting;
 import star.input_event;
 import star.font;
+import star.input;
 import star.string;
 import star.text;
 import star.listener;
@@ -225,7 +226,6 @@ import star.base_script_pane;
 import star.chat_types;
 
 
-import star.chat;
 
 import star.configuration;
 
@@ -383,6 +383,12 @@ import star.client_context;
 import star.player_storage;
 
 import star.quest_manager;
+import star.interface_lua_bindings;
+import star.world_lua_bindings;
+import star.player_lua_bindings;
+import star.status_controller_lua_bindings;
+import star.celestial_lua_bindings;
+import star.team_client_lua_bindings;
 
 namespace Star {
 
@@ -400,6 +406,18 @@ std::expected<void, StarException> installPane(MainInterfacePaneManager& paneMan
   destination = std::move(*pane);
   return {};
 }
+template <typename ScriptHost>
+std::expected<void, StarException> bindUiCapabilities(ScriptHost& host, std::shared_ptr<LuaRoot> const& root,
+    Map<String, LuaCallbacks> const& capabilities) {
+  for (auto const& entry : capabilities) {
+    if (auto removed = host.removeCallbacks(entry.first); !removed)
+      return std::unexpected(std::move(removed.error()));
+    if (auto added = host.addCallbacks(entry.first, entry.second); !added)
+      return std::unexpected(std::move(added.error()));
+  }
+  return host.setLuaRoot(root);
+}
+
 
 }// namespace
 
@@ -574,14 +592,9 @@ std::expected<void, StarException> MainInterface::initScriptAndHudPanes(std::sha
                                 ScriptPane::create(context(), m_client, *collectionConfig), m_collections);
       !result)
     return std::unexpected(std::move(result.error()));
-  auto chatConfig = (*assets)->json("/interface/chat/chat.config");
-  if (!chatConfig)
-    return std::unexpected(std::move(chatConfig.error()));
-  if (auto result = installPane(m_paneManager, MainInterfacePanes::Chat, PaneLayer::Hud,
-                                Chat::create(context(), m_client, *chatConfig), m_chat);
-      !result)
-    return std::unexpected(std::move(result.error()));
   m_clientCommandProcessor = std::make_shared<ClientCommandProcessor>(context(), m_client, m_cinematicOverlay, m_paneManager, m_config->macroCommands);
+  if (auto result = initUiController(); !result)
+    return std::unexpected(std::move(result.error()));
   if (auto result = installPane(m_paneManager, MainInterfacePanes::RadioMessagePopup, PaneLayer::Hud,
                                 RadioMessagePopup::create(context()), m_radioMessagePopup);
       !result)
@@ -706,6 +719,260 @@ std::expected<void, StarException> MainInterface::initWorldOverlays() {
   return {};
 }
 
+std::expected<LuaCallbacks, StarException> MainInterface::makeClientCallbacks() {
+  LuaCallbacks callbacks;
+  auto storage = m_client->playerStorage();
+  auto lifetime = callbackStopToken();
+  if (auto added = callbacks.registerCallback("storage",
+      [storage, lifetime](String const& key) -> std::expected<LuaCallbacks, StarException> {
+        if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
+        if (key.empty() || key == "order")
+          return std::unexpected(GuiException("Storage must name a non-reserved metadata namespace"));
+        LuaCallbacks scoped;
+        if (auto added = scoped.registerCallback("get", [storage, key, lifetime](std::optional<Json> fallback) -> std::expected<Json, StarException> {
+              if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
+              auto value = storage->getMetadata(key);
+              if (!value) return std::unexpected(std::move(value.error()));
+              return value->isNull() ? fallback.value_or(Json()) : *value;
+            }); !added)
+          return std::unexpected(std::move(added.error()));
+        if (auto added = scoped.registerCallback("set", [storage, key, lifetime](Json value) -> std::expected<void, StarException> {
+              if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
+              return storage->setMetadata(key, std::move(value));
+            }); !added)
+          return std::unexpected(std::move(added.error()));
+        return scoped;
+      }); !added)
+    return std::unexpected(std::move(added.error()));
+  return callbacks;
+}
+
+Json MainInterface::uiSession() const {
+  return JsonObject{{"hasPlayer", static_cast<bool>(m_uiPlayer)}, {"inWorld", m_uiInWorld},
+      {"playerGeneration", m_uiPlayerGeneration}, {"worldGeneration", m_uiWorldGeneration}};
+}
+
+std::expected<void, StarException> MainInterface::initUiController() {
+  m_uiController = std::make_unique<LuaUpdateScript>(context().root());
+  // Session capability replacement is an integration boundary, not a policy
+  // installed independently on every pane. LuaBaseComponent owns script reload.
+  if (auto scripts = m_uiController->setScript("/interface/opensb/ui/controller.lua"); !scripts)
+    return std::unexpected(std::move(scripts.error()));
+  return synchronizeUiSession();
+}
+
+
+std::expected<void, StarException> MainInterface::synchronizeUiSession() {
+  if (!m_uiController) return {};
+  auto player = m_client->mainPlayer();
+  auto world = m_client->worldClient();
+  auto team = m_client->teamClient();
+  auto luaRoot = m_client->luaRoot();
+  auto worldId = m_client->clientContext() ? m_client->clientContext()->playerWorldId() : WorldId{};
+  bool inWorld = world && world->inWorld();
+  auto generation = luaRoot->generation();
+  if (player == m_uiPlayer && world == m_uiWorld && team == m_uiTeam && luaRoot == m_uiRoot
+      && generation == m_uiRootGeneration && worldId == m_uiWorldId && inWorld == m_uiInWorld)
+    return {};
+
+  bool worldChanged = world != m_uiWorld || worldId != m_uiWorldId || inWorld != m_uiInWorld;
+  bool playerChanged = player != m_uiPlayer;
+  Json next = JsonObject{{"hasPlayer", static_cast<bool>(player)}, {"inWorld", inWorld},
+      {"playerGeneration", m_uiPlayerGeneration + (playerChanged ? 1 : 0)},
+      {"worldGeneration", m_uiWorldGeneration + (worldChanged ? 1 : 0)}};
+  if (m_uiController->initialized() && luaRoot == m_uiRoot && generation == m_uiRootGeneration) {
+    auto suspended = m_uiController->invoke<Json>("suspend", next);
+    if (!suspended) return std::unexpected(std::move(suspended.error()));
+  }
+  // Uninit every borrowing context while the old targets are still retained.
+  for (auto const& entry : m_paneInstances) {
+    if (m_paneManager.isDisplayed(entry.second.first)) {
+      if (auto dismissed = m_paneManager.dismissPane(entry.second.first); !dismissed)
+        return std::unexpected(std::move(dismissed.error()));
+    } else if (auto dismissed = entry.second.first->dismissed(); !dismissed) {
+      return std::unexpected(std::move(dismissed.error()));
+    }
+  }
+  if (auto stopped = m_uiController->uninit(); !stopped)
+    return std::unexpected(std::move(stopped.error()));
+  m_uiCapabilities.clear();
+  m_uiPlayer = std::move(player);
+  m_uiWorld = std::move(world);
+  m_uiTeam = std::move(team);
+  m_uiRoot = std::move(luaRoot);
+  m_uiWorldId = std::move(worldId);
+  m_uiRootGeneration = generation;
+  m_uiInWorld = inWorld;
+  if (worldChanged) ++m_uiWorldGeneration;
+  if (playerChanged) ++m_uiPlayerGeneration;
+
+  // Root common services remain inherited, but borrowed session services are
+  // always explicit. An unavailable target must shadow any previous session's
+  // root table, not accidentally inherit callbacks into a released target.
+  m_uiCapabilities.set("player", LuaCallbacks{});
+  m_uiCapabilities.set("status", LuaCallbacks{});
+  m_uiCapabilities.set("world", LuaCallbacks{});
+  m_uiCapabilities.set("team", LuaCallbacks{});
+  if (m_uiPlayer) {
+    auto callbacks = LuaBindings::makePlayerCallbacks(context().root(), *m_uiPlayer);
+    if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+    m_uiCapabilities.set("player", std::move(*callbacks));
+    auto status = LuaBindings::makeStatusControllerCallbacks(m_uiPlayer->statusController());
+    if (!status) return std::unexpected(std::move(status.error()));
+    m_uiCapabilities.set("status", std::move(*status));
+  }
+  if (m_uiInWorld) {
+    auto callbacks = LuaBindings::makeWorldCallbacks(context().root(), *m_uiWorld);
+    if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+    m_uiCapabilities.set("world", std::move(*callbacks));
+  }
+  if (m_uiTeam) {
+    auto callbacks = LuaBindings::makeTeamClientCallbacks(*m_uiTeam);
+    if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+    m_uiCapabilities.set("team", std::move(*callbacks));
+  }
+  auto celestial = LuaBindings::makeCelestialCallbacks(context().root(), *m_client);
+  if (!celestial) return std::unexpected(std::move(celestial.error()));
+  m_uiCapabilities.set("celestial", std::move(*celestial));
+  auto chat = LuaBindings::makeChatCallbacks(*this, *m_client);
+  if (!chat) return std::unexpected(std::move(chat.error()));
+  m_uiCapabilities.set("chat", std::move(*chat));
+  auto interfaceCallbacks = LuaBindings::makeInterfaceCallbacks(*this);
+  if (!interfaceCallbacks) return std::unexpected(std::move(interfaceCallbacks.error()));
+  m_uiCapabilities.set("interface", std::move(*interfaceCallbacks));
+  auto client = makeClientCallbacks();
+  if (!client) return std::unexpected(std::move(client.error()));
+  m_uiCapabilities.set("client", std::move(*client));
+  for (auto const& entry : m_paneInstances) {
+    if (auto bound = bindUiCapabilities(*entry.second.first, m_uiRoot, m_uiCapabilities); !bound)
+      return std::unexpected(std::move(bound.error()));
+  }
+  if (auto bound = bindUiCapabilities(*m_uiController, m_uiRoot, m_uiCapabilities); !bound)
+    return std::unexpected(std::move(bound.error()));
+  auto initialized = m_uiController->init();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  return {};
+}
+
+std::expected<bool, StarException> MainInterface::paneIdAvailable(String const& id) {
+  if (id.empty() || id == "$ui") return false;
+  if (!MainInterfacePanesNames) return std::unexpected(MainInterfacePanesNames.error());
+  return !MainInterfacePanesNames->getLeft(id).has_value();
+}
+
+std::expected<JsonArray, StarException> MainInterface::paneInputTargets() const {
+  auto targets = m_paneManager.inputTargetPanes();
+  if (!targets) return std::unexpected(std::move(targets.error()));
+  JsonArray ids;
+  for (auto const& pane : *targets) {
+    for (auto const& entry : m_paneInstances) {
+      if (entry.second.first == pane) {
+        ids.append(entry.first);
+        break;
+      }
+    }
+  }
+  return ids;
+}
+
+std::expected<void, StarException> MainInterface::createPane(String const& id, Json config, String const& layer) {
+  auto available = paneIdAvailable(id);
+  if (!available) return std::unexpected(std::move(available.error()));
+  if (!*available || m_paneInstances.contains(id))
+    return std::unexpected(GuiException(strf("Pane id '{}' is already registered", id)));
+  if (!PaneLayerNames) return std::unexpected(PaneLayerNames.error());
+  auto parsed = PaneLayerNames->getLeft(layer);
+  if (!parsed) return std::unexpected(std::move(parsed.error()));
+  auto pane = BaseScriptPane::create(context(), std::move(config));
+  if (!pane) return std::unexpected(std::move(pane.error()));
+  if (auto bound = bindUiCapabilities(**pane, m_uiRoot, m_uiCapabilities); !bound)
+    return std::unexpected(std::move(bound.error()));
+  m_paneInstances.set(id, {*pane, parsed->get()});
+  return {};
+}
+
+std::expected<void, StarException> MainInterface::destroyPane(String const& id) {
+  auto instance = m_paneInstances.maybeRef(id);
+  if (!instance) return {};
+  auto pane = instance->get().first;
+  if (m_paneManager.isDisplayed(pane)) {
+    if (auto dismissed = m_paneManager.dismissPane(pane); !dismissed)
+      return std::unexpected(std::move(dismissed.error()));
+  } else if (auto dismissed = pane->dismissed(); !dismissed) {
+    return std::unexpected(std::move(dismissed.error()));
+  }
+  m_paneInstances.remove(id);
+  return {};
+}
+
+std::expected<std::shared_ptr<Pane>, StarException> MainInterface::findRegisteredPane(String const& id) {
+  if (auto instance = m_paneInstances.maybeRef(id))
+    return std::shared_ptr<Pane>(instance->get().first);
+  if (!MainInterfacePanesNames) return std::unexpected(MainInterfacePanesNames.error());
+  auto type = MainInterfacePanesNames->getLeft(id);
+  if (!type) return std::shared_ptr<Pane>{};
+  auto pane = m_paneManager.maybeRegisteredPane(type->get());
+  if (!pane) return std::unexpected(std::move(pane.error()));
+  return *pane;
+}
+
+std::expected<void, StarException> MainInterface::displayRegisteredPane(String const& id) {
+  if (auto instance = m_paneInstances.maybeRef(id)) {
+    auto const& [pane, layer] = instance->get();
+    if (m_paneManager.isDisplayed(pane))
+      return pane->show();
+    return m_paneManager.displayPane(layer, pane);
+  }
+  if (!MainInterfacePanesNames) return std::unexpected(MainInterfacePanesNames.error());
+  auto type = MainInterfacePanesNames->getLeft(id);
+  if (!type) {
+    if (!m_uiController) return std::unexpected(std::move(type.error()));
+    auto opened = m_uiController->invoke<Json>("open", id);
+    if (!opened) return std::unexpected(std::move(opened.error()));
+    return {};
+  }
+  auto displayed = m_paneManager.displayRegisteredPane(type->get());
+  if (!displayed) return std::unexpected(std::move(displayed.error()));
+  return {};
+}
+
+std::expected<std::optional<Json>, StarException> MainInterface::callPane(String const& id, String const& method, JsonArray const& arguments) {
+  auto pane = findRegisteredPane(id);
+  if (!pane) return std::unexpected(std::move(pane.error()));
+  auto scripted = as<BaseScriptPane>(*pane);
+  if (!scripted)
+    return std::unexpected(GuiException(strf("Pane '{}' does not expose Lua methods", id)));
+  return scripted->call(method, arguments);
+}
+
+std::expected<std::optional<Json>, StarException> MainInterface::callUi(String const& id, String const& method, JsonArray const& arguments) {
+  if (!m_uiController) return std::unexpected(GuiException("UI controller is not initialized"));
+  return m_uiController->invoke<Json>("dispatch", id, method, arguments);
+}
+
+std::expected<void, StarException> MainInterface::sendPaneEvent(String const& id, String const& event, Json payload) {
+  if (!m_uiController) return std::unexpected(GuiException("UI controller is not initialized"));
+  auto queued = m_uiController->invoke<Json>("enqueue", id, event, std::move(payload));
+  if (!queued) return std::unexpected(std::move(queued.error()));
+  return {};
+}
+
+std::expected<void, StarException> MainInterface::addChatMessages(List<ChatReceivedMessage> const& messages, bool showPane) {
+  if (messages.empty()) return {};
+  JsonArray payload;
+  payload.reserve(messages.size());
+  for (auto const& message : messages) {
+    auto logged = message.fromNick.empty()
+      ? context().root().logger().info("Chat: {}", message.text)
+      : context().root().logger().info("Chat: <{}> {}", message.fromNick, message.text);
+    if (!logged) return std::unexpected(std::move(logged.error()));
+    auto json = message.toJson();
+    if (!json) return std::unexpected(std::move(json.error()));
+    payload.append(std::move(*json));
+  }
+  return sendPaneEvent("chat", "messages", JsonObject{{"messages", std::move(payload)}, {"showPane", showPane}});
+}
+
 MainInterface::~MainInterface() {
   auto dismissed = close();
   if (!dismissed)
@@ -713,6 +980,7 @@ MainInterface::~MainInterface() {
 }
 
 std::expected<void, StarException> MainInterface::close() {
+  auto stopped = m_uiController ? m_uiController->uninit("shutdown") : std::expected<void, StarException>{};
   auto dismissed = m_paneManager.dismissAllPanes();
   (void)m_callbackStopSource.request_stop();
   if (auto player = m_client->mainPlayer())
@@ -730,6 +998,7 @@ std::expected<void, StarException> MainInterface::close() {
       dialog->detachInterface();
   if (m_clientCommandProcessor)
     m_clientCommandProcessor->detachInterface();
+  if (!stopped) return std::unexpected(std::move(stopped.error()));
   return dismissed;
 }
 
@@ -864,58 +1133,125 @@ std::expected<bool, StarException> MainInterface::handleInputEvent(InputEvent co
     auto const& mouseMove = std::get<MouseMoveEvent>(event);
     m_cursorScreenIPos = Vec2I::round(m_cursorScreenPos = mouseMove.mousePosition);
   }
+  if (auto synchronized = synchronizeUiSession(); !synchronized)
+    return std::unexpected(std::move(synchronized.error()));
+  auto dispatchUiInput = [&](Json const& data, std::shared_ptr<Pane> const& submitTarget) -> std::expected<bool, StarException> {
+    auto before = m_uiController->invoke<Json>("flush");
+    if (!before) return std::unexpected(std::move(before.error()));
+    bool userSubmit = false;
+    if (submitTarget) {
+      auto captured = m_paneManager.keyboardCapturedPane();
+      if (!captured) return std::unexpected(std::move(captured.error()));
+      auto textInput = m_paneManager.keyboardCapturedForTextInput();
+      if (!textInput) return std::unexpected(std::move(textInput.error()));
+      userSubmit = *captured == submitTarget && *textInput;
+    }
+    std::expected<std::optional<bool>, StarException> consumed;
+    {
+      struct CommandInputScope {
+        bool& enabled;
+        bool previous;
+        ~CommandInputScope() { enabled = previous; }
+      } commandScope{m_commandInput, std::exchange(m_commandInput, userSubmit)};
+      std::optional<Input::ClipboardUnlock> clipboardUnlock;
+      if (userSubmit) {
+        auto input = context().input();
+        if (!input) return std::unexpected(std::move(input.error()));
+        clipboardUnlock.emplace(input->get().unlockClipboard());
+      }
+      consumed = m_uiController->invoke<bool>("input", data);
+    }
+    if (!consumed) return std::unexpected(std::move(consumed.error()));
+    auto after = m_uiController->invoke<Json>("flush");
+    if (!after) return std::unexpected(std::move(after.error()));
+    return consumed->value_or(false);
+  };
+  std::optional<Json> pendingUiInput;
+  if (std::holds_alternative<KeyDownEvent>(event) || std::holds_alternative<KeyUpEvent>(event)) {
+    bool down = std::holds_alternative<KeyDownEvent>(event);
+    auto key = down ? std::get<KeyDownEvent>(event).key : std::get<KeyUpEvent>(event).key;
+    if (!InterfaceActionNames) return std::unexpected(InterfaceActionNames.error());
+    JsonArray actions;
+    for (auto action : context().actions(event)) {
+      auto name = InterfaceActionNames->getRight(action);
+      if (!name) return std::unexpected(std::move(name.error()));
+      actions.append(name->get());
+    }
+    auto captured = m_paneManager.keyboardCapturedPane();
+    if (!captured) return std::unexpected(std::move(captured.error()));
+    String capturedId;
+    if (*captured) {
+      for (auto const& entry : m_paneInstances) {
+        if (entry.second.first == *captured) {
+          capturedId = entry.first;
+          break;
+        }
+      }
+    }
+    Json input = JsonObject{{"type", down ? Json("keyDown") : Json("keyUp")}, {"key", static_cast<int>(key)},
+        {"keyboardCaptured", static_cast<bool>(*captured)}, {"capturedPane", capturedId}, {"actions", std::move(actions)}};
+    // Keep PaneManager's native close/layer/focus priority. Focused Lua panes
+    // receive semantic actions before their editor; uncaptured actions run only
+    // after higher native panes have declined the event.
+    bool closingWindow = down && context().actions(event).contains(InterfaceAction::GuiClose)
+        && m_paneManager.topPane({PaneLayer::Window, PaneLayer::ModalWindow});
+    if (down && (!*captured || closingWindow)) {
+      pendingUiInput = std::move(input);
+    } else {
+      auto textInput = m_paneManager.keyboardCapturedForTextInput();
+      if (!textInput) return std::unexpected(std::move(textInput.error()));
+      bool userSubmit = down && !capturedId.empty() && *textInput
+          && context().actions(event).contains(InterfaceAction::ChatSendLine);
+      auto consumed = dispatchUiInput(input, userSubmit ? *captured : std::shared_ptr<Pane>{});
+      if (!consumed) return std::unexpected(std::move(consumed.error()));
+      if (*consumed) return true;
+    }
+  }
 
   auto paneConsumed = m_paneManager.sendInputEvent(event);
   if (!paneConsumed)
     return std::unexpected(std::move(paneConsumed.error()));
   if (*paneConsumed && !std::holds_alternative<MouseButtonUpEvent>(event) && !std::holds_alternative<KeyUpEvent>(event))
     return true;
+  if (pendingUiInput) {
+    auto consumed = dispatchUiInput(*pendingUiInput, {});
+    if (!consumed) return std::unexpected(std::move(consumed.error()));
+    if (*consumed) return true;
+  }
 
   if (std::holds_alternative<KeyDownEvent>(event)) {
-    auto chatFocus = m_chat->hasFocus();
-    if (!chatFocus)
-      return std::unexpected(std::move(chatFocus.error()));
-    if (*chatFocus) {
-      if (context().actions(event).contains(InterfaceAction::ChatSendLine)) {
-        auto chat = m_chat->currentChat();
-        if (!chat)
-          return std::unexpected(std::move(chat.error()));
-        if (auto sent = doChat(*chat, true); !sent)
-          return std::unexpected(std::move(sent.error()));
-        if (auto cleared = m_chat->clearCurrentChat(); !cleared)
-          return std::unexpected(std::move(cleared.error()));
-        if (auto stopped = m_chat->stopChat(); !stopped)
-          return std::unexpected(std::move(stopped.error()));
-        return true;
-      }
-    } else {
-      auto capturedWidget = m_paneManager.keyboardCapturedWidget();
-      if (!capturedWidget)
-        return std::unexpected(std::move(capturedWidget.error()));
-      if (!*capturedWidget) {
+    auto capturedWidget = m_paneManager.keyboardCapturedWidget();
+    if (!capturedWidget)
+      return std::unexpected(std::move(capturedWidget.error()));
+    if (!*capturedWidget) {
       for (auto action : context().actions(event)) {
         auto handled = [&, action]() -> std::expected<void, StarException> {
           switch (action) {
             case InterfaceAction::GuiShifting:
               context().setShiftHeld(true);
               return {};
-            case InterfaceAction::ChatBegin:
-              return m_chat->startChat();
             case InterfaceAction::InterfaceHideHud:
               m_disableHud = !m_disableHud;
               return {};
-            case InterfaceAction::InterfaceRepeatCommand:
-              if (!m_lastCommand.empty())
-                return doChat(m_lastCommand, false);
+            case InterfaceAction::InterfaceRepeatCommand: {
+              if (m_lastCommand.empty()) return {};
+              auto input = context().input();
+              if (!input) return std::unexpected(std::move(input.error()));
+              auto clipboardUnlock = input->get().unlockClipboard();
+              auto results = executeClientCommand(m_lastCommand);
+              if (!results) return std::unexpected(std::move(results.error()));
+              for (auto const& result : *results) {
+                if (auto added = addChatMessages({{{MessageContext::CommandResult}, ServerConnectionId, "", result}}, true); !added)
+                  return std::unexpected(std::move(added.error()));
+              }
               return {};
+            }
             case InterfaceAction::InterfaceToggleFullscreen:
               return m_optionsMenu->toggleFullscreen();
             case InterfaceAction::InterfaceReload:
               if (auto reloaded = root.reload(); !reloaded)
                 return std::unexpected(std::move(reloaded.error()));
               return root.fullyLoad();
-            case InterfaceAction::ChatBeginCommand:
-              return m_chat->startCommand();
             case InterfaceAction::InterfaceCrafting:
               return togglePlainCraftingWindow();
             case InterfaceAction::InterfaceEscapeMenu:
@@ -938,7 +1274,6 @@ std::expected<bool, StarException> MainInterface::handleInputEvent(InputEvent co
           return std::unexpected(std::move(handled.error()));
       }
       }
-    }
     return false;
   } else if (std::holds_alternative<KeyUpEvent>(event)) {
     auto const& keyUp = std::get<KeyUpEvent>(event);
@@ -1198,13 +1533,17 @@ std::expected<void, StarException> MainInterface::preUpdate(float) {
     player->aim(cursorWorldPosition());
   if (m_paneManager.topPane({PaneLayer::Window, PaneLayer::ModalWindow}))
     return player->setBusyState(PlayerBusyState::Menu);
-  auto chatFocus = m_chat->hasFocus();
-  if (!chatFocus)
-    return std::unexpected(std::move(chatFocus.error()));
-  return player->setBusyState(*chatFocus ? PlayerBusyState::Chatting : PlayerBusyState::None);
+  auto focused = inputFocus();
+  if (!focused)
+    return std::unexpected(std::move(focused.error()));
+  return player->setBusyState(*focused ? PlayerBusyState::Chatting : PlayerBusyState::None);
 }
 
 std::expected<void, StarException> MainInterface::update(float dt) {
+  if (auto synchronized = synchronizeUiSession(); !synchronized)
+    return std::unexpected(std::move(synchronized.error()));
+  auto controlled = m_uiController->update<Json>(dt);
+  if (!controlled) return std::unexpected(std::move(controlled.error()));
   auto panesUpdated = m_paneManager.update(dt);
   if (!panesUpdated)
     return std::unexpected(std::move(panesUpdated.error()));
@@ -1348,12 +1687,16 @@ std::expected<void, StarException> MainInterface::update(float dt) {
   }
 
   int chatHeight = 0;
-  if (m_chat->active()) {
-    auto visible = m_chat->visible();
-    if (!visible)
-      return std::unexpected(std::move(visible.error()));
-    if (*visible > 0.1)
-      chatHeight = m_chat->size()[1];
+  auto chat = findRegisteredPane("chat");
+  if (!chat) return std::unexpected(std::move(chat.error()));
+  if (*chat && m_paneManager.isDisplayed(*chat) && (*chat)->visibility()) {
+    auto obstruction = callPane("chat", "layoutHeight", {});
+    if (!obstruction) return std::unexpected(std::move(obstruction.error()));
+    if (*obstruction) {
+      auto height = (**obstruction).toInt();
+      if (!height) return std::unexpected(std::move(height.error()));
+      chatHeight = *height;
+    }
   }
   m_radioMessagePopup->setChatHeight(chatHeight);
   if (!m_cinematicOverlay || m_cinematicOverlay->completed()) {
@@ -1383,7 +1726,7 @@ std::expected<void, StarException> MainInterface::update(float dt) {
           radioMessage->text,
           Text::stripEscapeCodes(*portrait)
         };
-        auto added = m_chat->addMessages({message}, false);
+        auto added = addChatMessages({message}, false);
         if (!added)
           return std::unexpected(std::move(added.error()));
       } else {
@@ -1408,14 +1751,14 @@ std::expected<void, StarException> MainInterface::update(float dt) {
       return std::unexpected(std::move(queued.error()));
   }
 
-  auto chatAdded = m_chat->addMessages(m_client->pullChatMessages());
+  auto chatAdded = addChatMessages(m_client->pullChatMessages(), true);
   if (!chatAdded)
     return std::unexpected(std::move(chatAdded.error()));
   auto commandResults = m_clientCommandProcessor->updatePromises();
   if (!commandResults)
     return std::unexpected(std::move(commandResults.error()));
   for (auto const& result : *commandResults) {
-    auto added = m_chat->addLine(result);
+    auto added = addChatMessages({{{MessageContext::CommandResult}, ServerConnectionId, "", result}}, true);
     if (!added)
       return std::unexpected(std::move(added.error()));
   }
@@ -1664,7 +2007,7 @@ std::expected<void, StarException> MainInterface::update(float dt) {
           Text::stripEscapeCodes(name),
           Text::stripEscapeCodes(portraitAction.text),
           Text::stripEscapeCodes(*portrait)};
-        auto added = m_chat->addMessages({message}, false);
+        auto added = addChatMessages({message}, false);
         if (!added)
           return std::unexpected(std::move(added.error()));
       } else if (std::holds_alternative<SayChatAction>(action)) {
@@ -1681,7 +2024,7 @@ std::expected<void, StarException> MainInterface::update(float dt) {
             auto showPane = sayAction.config.getBool("showPane", false);
             if (!showPane)
               return std::unexpected(std::move(showPane.error()));
-            auto added = m_chat->addMessages({std::move(*received)}, *showPane);
+            auto added = addChatMessages({std::move(*received)}, *showPane);
             if (!added)
               return std::unexpected(std::move(added.error()));
           }
@@ -1772,31 +2115,15 @@ bool MainInterface::isDebugDisplayed() {
   return m_clientCommandProcessor->debugDisplayEnabled();
 }
 
-std::expected<void, StarException> MainInterface::doChat(String const& chat, bool addToHistory) {
-  if (chat.empty())
-    return {};
-  auto command = chat.beginsWith("/");
-  if (!command)
-    return std::unexpected(std::move(command.error()));
-  if (*command) {
-    m_lastCommand = chat;
-    auto results = m_clientCommandProcessor->handleCommand(chat, true);
-    if (!results)
-      return std::unexpected(std::move(results.error()));
-    for (auto const& result : *results) {
-      if (auto added = m_chat->addLine(result); !added)
-        return std::unexpected(std::move(added.error()));
-    }
-  } else {
-    auto mode = m_chat->sendMode();
-    if (!mode)
-      return std::unexpected(std::move(mode.error()));
-    if (auto sent = m_client->sendChat(chat, *mode); !sent)
-      return std::unexpected(std::move(sent.error()));
-  }
-  if (addToHistory)
-    return m_chat->addHistory(chat);
-  return {};
+std::expected<StringList, StarException> MainInterface::executeClientCommand(String const& command) {
+  struct CommandInputScope {
+    bool& enabled;
+    bool previous;
+    ~CommandInputScope() { enabled = previous; }
+  } commandScope{m_commandInput, std::exchange(m_commandInput, false)};
+  if (commandScope.previous)
+    m_lastCommand = command;
+  return m_clientCommandProcessor->handleCommand(command);
 }
 
 std::expected<void, StarException> MainInterface::queueMessage(String const& message, std::optional<float> cooldown, float spring) {
@@ -1957,7 +2284,7 @@ std::expected<void, StarException> MainInterface::reviveScriptPanes(List<ScriptP
 }
 
 std::expected<void, StarException> MainInterface::displayDefaultPanes() {
-  for (auto pane : {MainInterfacePanes::ActionBar, MainInterfacePanes::Chat, MainInterfacePanes::TeamBar, MainInterfacePanes::StatusPane}) {
+  for (auto pane : {MainInterfacePanes::ActionBar, MainInterfacePanes::TeamBar, MainInterfacePanes::StatusPane}) {
     auto displayed = m_paneManager.displayRegisteredPane(pane);
     if (!displayed)
       return std::unexpected(std::move(displayed.error()));

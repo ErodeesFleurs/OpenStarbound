@@ -28,7 +28,6 @@ target_sources (star_frontend_module_interfaces PUBLIC FILE_SET CXX_MODULES FILE
     StarAiInterface.cppm
     StarActionBar.cppm
     StarBaseScriptPane.cppm
-    StarChat.cppm
     StarChatBubbleSeparation.cppm
     StarChatBubbleManager.cppm
     StarContainerInterface.cppm
@@ -92,7 +91,6 @@ add_library (star_frontend_modules STATIC
     StarAiInterface.cpp
     StarActionBar.cpp
     StarBaseScriptPane.cpp
-    StarChat.cpp
     StarChatBubbleSeparation.cpp
     StarChatBubbleManager.cpp
     StarContainerInterface.cpp

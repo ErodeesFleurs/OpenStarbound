@@ -23,7 +23,7 @@ Returns the HUD's visibility.
 ---
 
 #### `PaneId` interface.bindRegisteredPane(`String` paneName)
-Binds a registered pane (defined in `/source/frontend/StarMainInterfaceTypes`) to a Lua value, which can then call widget functions on that pane.
+Binds a native registered pane or a dynamically created string-ID pane to its pane/widget callbacks. Returns `nil` if no instance exists. Native identifiers are listed below; the bundled Lua chat uses the dynamic identifier `"chat"`, not a native `"Chat"` pane.
 <details><summary><b>Panes</b></summary>
 EscapeDialog<br>
 Inventory<br>
@@ -40,7 +40,6 @@ QuestLog<br>
 ActionBar<br>
 TeamBar<br>
 StatusPane<br>
-Chat<br>
 WireInterface<br>
 PlanetText<br>
 RadioMessagePopup<br>
@@ -54,7 +53,7 @@ Collections<br>
 
 #### `void` interface.displayRegisteredPane(`String` paneName)
 
-Displays a registered pane.
+Displays an existing instance. For a Lua registration without an instance, requests opening through the Lua interface manager.
 
 ---
 
@@ -69,3 +68,58 @@ Binds the canvas widget on the main interface with the specified name as userdat
 #### `float` interface.scale()
 
 Returns the scale used for interfaces.
+
+## Lua-managed interface instances
+
+The session controller loads `/interface.config:panes` using the shared Lua
+manager. Registrations, opening/closing, session/world scope, event dispatch and
+semantic action mapping are Lua policy; `BaseScriptPane` has no HUD-specific
+configuration or state. See [script pane runtime](scriptpane.md).
+
+Load the public Lua helper with:
+
+```lua
+require "/interface/opensb/ui/api.lua"
+
+ui.register("example", {
+  config = "/interface/example/example.config",
+  layer = "Window",
+  scope = "session",
+  open = false
+})
+ui.open("example")
+ui.send("example", "refresh", {reason = "externalChange"})
+ui.close("example")
+```
+
+These helpers enqueue requests; they do not mutate the pane stack inside the
+calling script. Native IDs and `"$ui"` are reserved. `ui.send` dispatches through
+the registration's `events` map, or `onEvent(name, payload)` when unmapped.
+Messages sent by handlers are deferred to a subsequent delivery boundary.
+World-scoped events and instances are discarded at world changes; session
+instances retain standard `storage` through capability rebinding.
+
+### Low-level instance bridge
+
+* `interface.createPane(id, config, layer)` constructs an undisplayed script
+  pane from resolved JSON. `id` must be unused and not a reserved native ID.
+  `layer` uses native names such as `"Hud"`, `"Window"` or `"ModalWindow"`.
+* `interface.destroyPane(id)` dismisses and releases a dynamic instance.
+  It does not destroy native registered panes. Instance storage ends here.
+* `interface.callPane(id, method, arguments?)` synchronously invokes a Lua
+  method on an existing script instance; JSON array arguments are spread
+  positionally. Returns its JSON result or `nil` for a missing method.
+  It neither opens nor creates instances.
+* `interface.sendPaneEvent(id, event, payload)` enqueues a manager event.
+  Prefer `ui.send` and the other helpers to constructing controller requests.
+* `interface.paneIdAvailable(id)` checks whether an ID is permitted for Lua ownership (nonempty and not reserved/native); an existing dynamic instance may still use that ID.
+* `interface.paneInputTargets()` returns dynamic IDs in current native input
+  priority, including capture, layers, click-to-raise and modal barriers.
+  The Lua manager uses this order rather than registration order for actions.
+* `interface.session()` returns `hasPlayer`, `inWorld`, `playerGeneration` and
+  `worldGeneration`. Generations identify changes, not world or player IDs.
+  Use `hasPlayer`/`inWorld` to test availability: unavailable session service
+  groups are explicitly empty tables, not inherited old callbacks or `nil`.
+
+Use the Lua manager for normal registration/lifetime changes; the low-level
+bridge exists for allocation, native stack access and synchronous queries.

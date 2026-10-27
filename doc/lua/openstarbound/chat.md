@@ -1,10 +1,10 @@
 # Chat
 
-The new `chat` table is accessible from almost every clientside script and allows interaction with the in-game chat system.
+The `chat` table is accessible from almost every client-side script. Network messages, command execution and logging are native services; the bundled chat window is a Lua-managed `"chat"` instance registered under `/interface.config:panes`, with layout and scripts in `/interface/opensb/chat/`. There is no native Chat window fallback.
 
 ---
 
-#### `double` chat.send(`String` message, [`String` modeName], [`bool` speak], [`Json` data]))
+#### `void` chat.send(`String` message, [`String` modeName], [`bool` speak], [`Json` data])
 
 Sends a new message in the chat. Optionally specifies the modeName:
 
@@ -19,7 +19,7 @@ If `data` is provided, it will be sent as a JSON object with the message. This c
 
 #### `String[]` chat.command(`String` command)
 
-Executes the specified command and returns a list of strings with the result.
+Executes the specified command and returns its synchronous result strings; it does not automatically display those strings. Asynchronous command results retain their normal chat delivery. Script calls cannot authorize clipboard access by supplying additional arguments. Clipboard authorization is scoped to genuine native user submission/repeat handling and the existing clipboard policy.
 
 ---
 
@@ -56,7 +56,7 @@ Sets the current chat input text. If `moveCursor` is true, the cursor will be mo
 
 #### `void` chat.clear([`unsigned`] count)
 
-Clears the chat input text. If `count` is provided, it will clear the last `count` messages, all otherwise.
+Clears received messages, not input text. If `count` is provided, removes the newest `count` messages; otherwise clears all received messages. Use `chat.setInput("")` to clear input.
 
 ---
 
@@ -64,3 +64,16 @@ Clears the chat input text. If `count` is provided, it will clear the last `coun
 
 Parses a space-separated sequence of JSON values in a string into multiple values. Useful for parsing command arguments.
 Similar to `sb.parseJsonSequence`.
+
+## Presentation and storage
+
+Lua owns slash-command detection, post-send input behavior, channel selection,
+filtering, portraits, scrolling, input history, expansion and fade. Messages
+retain their raw fields; text layout is a separate cache. `showPane = false`
+does not wake the display. Native logging does not depend on rendering.
+
+Input drafts and messages use the pane's standard `storage`, surviving script
+reload while that instance exists. Input history retains the existing
+PlayerStorage `"chatHistory"` metadata through the generic
+`client.storage("chatHistory")` service. Party availability uses
+`player.teamMembers()`, not a chat-specific native callback.

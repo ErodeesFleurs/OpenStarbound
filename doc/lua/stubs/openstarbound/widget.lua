@@ -22,6 +22,33 @@ function widget.getCursorPosition(widgetName) end
 ---@param cursorPosition number
 function widget.setCursorPosition(widgetName, cursorPosition) end
 
+--- Disable native drawing only, retaining text input and focus.
+---@param widgetName string
+---@param enabled boolean
+function widget.setTextEditorRendering(widgetName, enabled) end
+
+---@class TextEditorState
+---@field text string
+---@field displayText string
+---@field cursor integer Zero-based Unicode codepoint index.
+---@field anchor integer Zero-based Unicode codepoint index.
+---@field selectionStart integer Inclusive codepoint index.
+---@field selectionEnd integer Exclusive codepoint index.
+---@field cursorOffset number Interface units relative to the text anchor, before scrolling.
+
+---@param widgetName string
+---@return TextEditorState?
+function widget.getTextEditorState(widgetName) end
+
+---@param widgetName string
+---@param anchor integer
+---@param cursor integer
+function widget.setTextSelection(widgetName, anchor, cursor) end
+
+---@param widgetName string
+---@param style TextStyle
+function widget.setTextStyle(widgetName, style) end
+
 --- Sets the allowed range for a slider, optionally overriding the step used when the slider value is changed. The step defaults to `1` when omitted. --- ### ImageStretchWidget helpers
 ---@param widgetName string
 ---@param minimum number

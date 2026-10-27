@@ -113,3 +113,158 @@ allowing scripts to immediately operate on it without a separate `widget` lookup
 #### `bool` pane.removeWidget(`String` widgetName)
 
 `pane.removeWidget` now returns whether the named widget existed and was removed.
+
+## Shared script pane runtime
+
+Script panes have the standard `storage` table. Its JSON-compatible contents
+survive script reinitialization, asset reload, and replacement of the underlying
+Lua engine while the pane instance exists. `uninit()` runs before storage is
+captured. No explicit checkpoint call is required; modify `storage` directly.
+Use `jarray()` when an empty array must remain an array across a JSON round trip.
+Storage belongs to the instance, not global configuration or a player save.
+The Lua interface manager decides when an instance is discarded.
+
+`pane.isVisible()` queries drawing visibility. `pane.show()` and `pane.hide()`
+change drawing visibility independently of display membership, reported by
+`pane.isDisplayed()`. PaneManager continues ticking hidden displayed panes.
+
+`render()` is an optional hook called immediately before drawing child widgets.
+Canvas commands produced there are drawn in the same frame and persist until
+cleared. The usual `init`, `update(dt)`, `uninit`, `displayed`, and `dismissed`
+hooks remain available. Define functions at script top level and use bindings in
+`init`, after callback tables have been installed.
+
+A pane configuration can specify top-level `size: [width, height]` in interface
+pixels. Otherwise initial root bounds include declarative children and any
+native background. When a script changes Canvas or layout dimensions, update
+the root with `pane.setSize(size)` to keep drawing bounds and input geometry in
+sync.
+
+### Consuming input
+
+The optional `onInput(event)` hook runs before normal input routing while the
+pane is visible. Hidden panes reject input before invoking the hook or routing
+to focused widgets; global open/toggle actions belong to the Lua interface
+manager's controller, not hidden instances. Return `true` to consume the event
+or `false` to let ordinary GuiClose handling and focused-widget routing run.
+Missing hooks do not consume input. This lets Lua handle submit/cancel actions
+while keeping real TextBox editing, keyboard capture, selection, and
+committed-text IME input.
+
+Every event has an `actions` array containing the engine's interface-action
+names for that event, without a pane-specific semantic mapping. Key releases
+have no resolved actions; scripts that require press/release pairing retain the
+press's action names in Lua. Input events contain:
+
+* `type`: `keyDown`, `keyUp`, `textInput`, `move`, `buttonDown`, `buttonUp`,
+  `wheel`, or `controller`.
+* `key` for key events, numeric `mods` for key presses, and `text` for committed
+  text.
+* Pane-local `position` and interface-pixel `screenPosition` for pointer events.
+* Zero-based `button` for mouse-button events or `direction` (`1` up, `-1` down)
+  for wheel events.
+
+```lua
+function init()
+  storage.enabled = storage.enabled ~= false
+end
+
+function onInput(event)
+  for _, action in ipairs(event.actions) do
+    if event.type == "keyDown" and action == "InterfaceShowHelp" then
+      storage.enabled = not storage.enabled
+      return true
+    end
+  end
+  return false
+end
+```
+
+### Native integration
+
+Module `star.base_script_pane` exports the generic `BaseScriptPane` host.
+`create(context, config)` constructs its widgets without initializing scripts.
+Install service tables using `addCallbacks(name, callbacks)` and choose the
+existing shared engine with `setLuaRoot(root)` before `displayed()` (normally
+called by PaneManager). `dismissed()` invokes dismissal and uninitialization
+hooks. It must finish while all borrowed service targets are still alive.
+Component-owned callback group names take precedence over inherited LuaRoot
+tables, including on reinitialization and when added to a live context. Scripts
+must not define replacement tables under those reserved group names. An explicit
+empty callback group shadows an inherited service without exposing its old
+functions; groups not owned by the component remain inherited. Replacing a
+table does not revive old callback references: their original lifetime guards
+continue to reject calls after their targets detach.
+
+`removeCallbacks(name)` removes a service table. To rebind services, centrally
+stop the instance, replace callback groups/root, then display it again.
+`LuaRoot::generation()` identifies successful engine replacements even when the
+root pointer is unchanged. `LuaBaseComponent` handles generation and asset reload
+before invoking script entry points; panes do not maintain a second reload
+protocol.
+
+`call(method, JsonArray)` spreads JSON arguments positionally and returns
+`expected<optional<Json>, StarException>`; missing methods and uninitialized
+scripts return an empty optional. `hasMethod(method)` checks for a function
+without calling it. `inputJson(event)` exposes the generic event representation,
+including coordinates relative to that pane. `forwardEvent(event)` directly
+uses Pane's native widget routing without invoking `onInput` or the script
+pane's default GuiClose policy; an external Lua controller can therefore own
+input routing without duplicating TextBox behavior.
+
+Registration, opening and closing, session/world scope, ordering, input policy,
+semantic action mapping, and event queues belong to the Lua interface manager,
+not pane configuration parsing or native per-pane policy fields. Deliver
+manager events by invoking the selected script method through `call`.
+Keep displayed instances in PaneManager for native focus, layers, geometry,
+rendering, and child-widget updates; do not tick them a second time.
+
+## Lua-owned instance registration
+
+`/interface.config:panes` is read by the client-side Lua manager:
+
+```json
+{
+  "example": {
+    "config": "/interface/example/example.config",
+    "layer": "Hud",
+    "scope": "session",
+    "open": true,
+    "order": 20,
+    "actions": {"InterfaceShowHelp": "toggle"},
+    "events": {"refresh": "refresh"}
+  }
+}
+```
+
+`config` is an asset path or resolved pane JSON. `scope` is `"session"` or
+`"world"`; world instances open only in-world and are released on world changes.
+`open` controls initial/automatic opening. `order` controls initial creation
+order; native layers, capture, modal barriers and current stacking determine
+input priority. A normal window uses the same runtime with `"layer": "Window"`.
+Use existing `gui.panefeature` anchor/offset declarations so initial native
+placement is correct before script `init`.
+
+Action mappings call `onAction(name, pressed, event)` and consume input only
+when the handler returns true. The manager preserves press/release pairing
+through controller reload; closing an instance cancels its outstanding
+presses with `event.cancelled = true`. Native TextBox routing remains available
+for unconsumed editing events. Event mappings invoke the named function with
+one payload; unmapped events invoke `onEvent(name, payload)`.
+
+The public helpers in `/interface/opensb/ui/api.lua` provide
+`ui.register(id, definition)`, `ui.open(id)`, `ui.close(id)`, and
+`ui.send(id, event, payload)`. Requests are queued until the calling script
+returns. Events posted by a handler wait for a later delivery boundary, rather
+than recursively mutating interface state. Native registered IDs cannot be
+replaced by Lua registrations.
+
+### Client metadata service
+
+`client.storage(namespace)` returns callbacks `get(fallback?)` and `set(value)`
+for one PlayerStorage metadata namespace. It is separate from instance
+`storage`: metadata persists across instance destruction and application
+restart. Names must be nonempty; `"order"` is reserved. Values must be
+JSON-compatible. This service does not expose arbitrary paths, files, or root
+configuration. For example, chat uses `"chatHistory"` to retain its existing
+input-history storage; new consumers should choose unique mod-prefixed names.

@@ -137,6 +137,22 @@ template <typename T, typename Function>
   return std::invoke(std::forward<Function>(function), std::move(*widget));
 }
 
+std::expected<TextStyle, StarException> canvasTextStyle(Json const& sizeOrStyle, std::optional<Color> const& color,
+    std::optional<float> spacing, std::optional<String> const& font, std::optional<String> const& directives) {
+  if (sizeOrStyle.isType(Json::Type::Object))
+    return TextStyle::create(sizeOrStyle);
+  auto size = sizeOrStyle.toUInt();
+  if (!size)
+    return std::unexpected(std::move(size.error()));
+  TextStyle style;
+  style.fontSize = *size;
+  style.color = color.value_or(Color::White).toRgba();
+  style.lineSpacing = spacing.value_or(DefaultLineSpacing);
+  style.font = font.value_or("");
+  style.directives = directives.value_or("");
+  return style;
+}
+
 }
 
 std::expected<LuaMethods<std::shared_ptr<CanvasWidget>>, StarException> LuaUserDataMethods<std::shared_ptr<CanvasWidget>>::make() {
@@ -236,12 +252,25 @@ std::expected<LuaMethods<std::shared_ptr<CanvasWidget>>, StarException> LuaUserD
     return {};
   }); !registered)
     return std::unexpected(std::move(registered.error()));
-  if (auto registered = methods.registerMethod("drawText", [](std::shared_ptr<CanvasWidget> canvas, String text, Json config, unsigned size, std::optional<Color> color, std::optional<float> spacing, std::optional<String> font, std::optional<String> directives) -> std::expected<void, StarException> {
+  if (auto registered = methods.registerMethod("drawText", [](std::shared_ptr<CanvasWidget> canvas, String text, Json config, Json sizeOrStyle, std::optional<Color> color, std::optional<float> spacing, std::optional<String> font, std::optional<String> directives) -> std::expected<void, StarException> {
     auto positioning = TextPositioning::create(config);
     if (!positioning)
       return std::unexpected(std::move(positioning.error()));
-    canvas->drawText(text, *positioning, size, color.value_or(Color::White).toRgba(), FontMode::Normal, spacing.value_or(DefaultLineSpacing), font.value_or(""), directives.value_or(""));
+    auto style = canvasTextStyle(sizeOrStyle, color, spacing, font, directives);
+    if (!style)
+      return std::unexpected(std::move(style.error()));
+    canvas->drawText(std::move(text), *positioning, std::move(*style));
     return {};
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("measureText", [](std::shared_ptr<CanvasWidget> canvas, String text, Json config, Json sizeOrStyle, std::optional<Color> color, std::optional<float> spacing, std::optional<String> font, std::optional<String> directives) -> std::expected<RectF, StarException> {
+    auto positioning = TextPositioning::create(config);
+    if (!positioning)
+      return std::unexpected(std::move(positioning.error()));
+    auto style = canvasTextStyle(sizeOrStyle, color, spacing, font, directives);
+    if (!style)
+      return std::unexpected(std::move(style.error()));
+    return canvas->measureText(text, *positioning, *style);
   }); !registered)
     return std::unexpected(std::move(registered.error()));
   return methods;
@@ -405,6 +434,35 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
   if (auto registered = callbacks.registerCallback("getCursorPosition", [parentWidget](String const& widgetName) -> std::expected<std::optional<int>, StarException> {
     return withWidget<TextBoxWidget>(parentWidget, widgetName, [&](std::shared_ptr<TextBoxWidget> widget) -> std::expected<std::optional<int>, StarException> {
       return widget->getCursorPosition();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setTextEditorRendering", [parentWidget](String const& name, bool enabled) -> std::expected<void, StarException> {
+    return withWidget<TextBoxWidget>(parentWidget, name, [&](std::shared_ptr<TextBoxWidget> editor) -> std::expected<void, StarException> {
+      editor->setEditorRendering(enabled);
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getTextEditorState", [parentWidget](String const& name) -> std::expected<Json, StarException> {
+    return withWidget<TextBoxWidget>(parentWidget, name, [&](std::shared_ptr<TextBoxWidget> editor) {
+      return editor->editorState();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setTextSelection", [parentWidget](String const& name, int anchor, int cursor) -> std::expected<void, StarException> {
+    return withWidget<TextBoxWidget>(parentWidget, name, [&](std::shared_ptr<TextBoxWidget> editor) {
+      return editor->setSelection(anchor, cursor);
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setTextStyle", [parentWidget](String const& name, Json const& config) -> std::expected<void, StarException> {
+    auto style = TextStyle::create(config);
+    if (!style)
+      return std::unexpected(std::move(style.error()));
+    return withWidget<TextBoxWidget>(parentWidget, name, [&](std::shared_ptr<TextBoxWidget> editor) -> std::expected<void, StarException> {
+      editor->setTextStyle(*style);
+      return {};
     });
   }); !registered)
     return std::unexpected(std::move(registered.error()));

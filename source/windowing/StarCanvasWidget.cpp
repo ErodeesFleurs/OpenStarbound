@@ -144,6 +144,20 @@ void CanvasWidget::drawText(String s, TextPositioning position, TextStyle style)
   m_renderOps.append(std::make_tuple(std::move(s), std::move(position), std::move(style)));
 }
 
+std::expected<RectF, StarException> CanvasWidget::measureText(String const& s, TextPositioning const& position, TextStyle const& style) const {
+  auto& context = this->context();
+  auto applied = context.setTextStyle(style, m_ignoreInterfaceScale ? 1 : context.interfaceScale());
+  if (!applied)
+    return std::unexpected(std::move(applied.error()));
+  auto result = m_ignoreInterfaceScale ? context.determineTextSize(s, position) : context.determineInterfaceTextSize(s, position);
+  auto cleared = context.clearTextStyle();
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  if (!cleared)
+    return std::unexpected(std::move(cleared.error()));
+  return *result;
+}
+
 Vec2I CanvasWidget::mousePosition() const {
   return m_mousePosition;
 }
