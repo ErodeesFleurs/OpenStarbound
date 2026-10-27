@@ -44,3 +44,5 @@ unfocused or the operation is blocked.
 Copies an image to the clipboard. When an `Image` userdata is provided it is exported as-is; when a string path is supplied the
 image asset is loaded before exporting. The image is written as PNG data and `false` is returned if the clipboard cannot be
 modified.
+
+On Windows, the native clipboard also receives an RGBA32 DIB representation for applications that do not consume PNG clipboard data.

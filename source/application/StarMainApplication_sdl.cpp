@@ -1586,9 +1586,7 @@ private:
       if (png)
         copyPngToClipboard(png->get().span());
       auto converted = image.convert(PixelFormat::RGBA32);
-      if (!converted)
-        return std::unexpected(std::move(converted.error()));
-      copyDibToClipboard(converted->data(), converted->width(), converted->height());
+      copyDibToClipboard(converted.data(), converted.width(), converted.height());
       return {};
     });
     #else
