@@ -67,7 +67,7 @@ On native Linux, the installer adapts only the host target to the complete syste
 
 All presets chainload the repository's [toolchain wrapper](triplets/toolchain.cmake). On macOS it explicitly selects bundled `ld64.lld` so CMake and vcpkg's Meson ports use the same linker as the compiler driver.
 
-The ARM64 ALSA, jemalloc and gperf overlays normalize vcpkg-make's staged `/usr` or `/usr/local` installation trees before package validation, keeping gperf executable at `tools/gperf/gperf` for fontconfig.
+The pinned `vcpkg-make` overlay preserves default configure options when CMake leaves an empty `EXCLUDE_FILTER` undefined (CMake before 3.31/CMP0174). This keeps installation prefixes, release/debug directories and shared/static linkage options intact for all autotools ports, without per-package staging relocation.
 
 Linux/macOS, from the repository root; choose your preset from the table:
 
