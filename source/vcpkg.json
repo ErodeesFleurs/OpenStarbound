@@ -11,8 +11,7 @@
     "libpng",
     "opus",
     "zstd",
-    "mimalloc",
-    { "name": "jemalloc", "platform": "linux" },
+    { "name": "mimalloc", "default-features": false },
     "re2",
     { "name": "imgui", "features": ["sdl3-binding", "opengl3-binding", "freetype"] },
     { "name": "cpr", "version>=": "1.10.5", "features": ["ssl"] }

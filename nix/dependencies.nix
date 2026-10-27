@@ -33,6 +33,39 @@ let
         + (old.preConfigure or "");
     });
 
+  # nixpkgs pins mimalloc 3.4.5 and exports the mimalloc-static CMake target.
+  # Keep it in the same xclang/runtime closure, without C malloc interposition
+  # or a second set of global C++ operators (StarMemory owns those).
+  mimalloc = instrument (
+    (pkgs.mimalloc.override { inherit stdenv; }).overrideAttrs (old: {
+      dontDisableStatic = true;
+      cmakeFlags =
+        (old.cmakeFlags or [ ])
+        ++ [
+          (lib.cmakeBool "MI_BUILD_STATIC" true)
+          (lib.cmakeBool "MI_BUILD_SHARED" false)
+          (lib.cmakeBool "MI_BUILD_OBJECT" false)
+          (lib.cmakeBool "MI_OVERRIDE" false)
+          (lib.cmakeBool "MI_USE_CXX" false)
+          (lib.cmakeBool "MI_TRACK_ASAN" sanitizers)
+        ]
+        # Tracking enables padding; validate pointers before reading that metadata.
+        # Without MI_DEBUG, upstream's invalid-realloc API test corrupts free lists.
+        ++ lib.optional sanitizers (lib.cmakeBool "MI_DEBUG" true);
+      # Upstream otherwise silently drops tracking if ASan headers are absent.
+      # Poison/unpoison annotations cover access errors, not LSan registration
+      # of individual allocations in mimalloc's private heaps.
+      postPatch =
+        (old.postPatch or "")
+        + lib.optionalString sanitizers ''
+          substituteInPlace CMakeLists.txt \
+            --replace-fail \
+              "message(WARNING \"Cannot find the 'sanitizer/asan_interface.h' -- install address sanitizer support first\")" \
+              'message(FATAL_ERROR "OpenStarbound requires mimalloc ASan tracking; sanitizer/asan_interface.h is missing")'
+        '';
+    })
+  );
+
   # Test helpers have C++ interfaces too; using nixpkgs' shared gtest here
   # would introduce a second, incompatible C++ runtime into dependency tests.
   gtest = instrument (
@@ -221,6 +254,7 @@ in
     cc
     stdenv
     instrument
+    mimalloc
     gtest
     gbenchmark
     abseil-cpp

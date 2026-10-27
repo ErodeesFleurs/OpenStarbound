@@ -130,10 +130,3 @@ set_target_properties (star_core PROPERTIES CXX_SCAN_FOR_MODULES ON)
 if(STAR_COMPILER_CLANG AND STAR_SYSTEM_MACOS)
   set_source_files_properties(StarColor.cpp PROPERTIES COMPILE_OPTIONS "-fno-fast-math;-fassociative-math;-freciprocal-math")
 endif()
-
-if(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)
-  set_source_files_properties(StarMemory.cpp PROPERTIES
-          COMPILE_DEFINITIONS STAR_JEMALLOC_IS_PREFIXED
-          )
-endif()
-

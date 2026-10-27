@@ -6,8 +6,9 @@ namespace Star {
 
 inline constexpr std::size_t NPos = static_cast<std::size_t>(-1);
 
-// Don't want to override global C allocation functions, as our API is
-// different.
+// Engine-owned storage uses mimalloc, independently of third-party C heaps.
+// Sized free takes the allocation's requested capacity in bytes, not its used
+// length. Realloc failure leaves the original allocation owned by the caller.
 
 void* malloc(std::size_t size);
 void* realloc(void* ptr, std::size_t size);

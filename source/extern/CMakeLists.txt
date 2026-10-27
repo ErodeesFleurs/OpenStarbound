@@ -20,17 +20,6 @@ set (star_extern_SOURCES
     imgui_lua_bindings.cpp
   )
 
-  
-if (STAR_USE_RPMALLOC)
-  set(star_extern_HEADERS ${star_extern_HEADERS}
-    rpmalloc.h
-    rpnew.h
-  )
-  set(star_extern_SOURCES ${star_extern_SOURCES}
-    rpmalloc.c
-  )
-endif()
-
 add_library (star_extern OBJECT ${star_extern_SOURCES} ${star_extern_HEADERS})
 target_include_directories (star_extern PRIVATE
     ${STAR_EXTERN_INCLUDES}

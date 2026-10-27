@@ -134,9 +134,6 @@ endif()
 option(STAR_BUILD_DEV_TOOLS "Build the maintenance utilities (map_grep, tileset tools)" OFF)
 
 option(STAR_LUA_APICHECK "Use lua api checks" OFF)
-option(STAR_USE_JEMALLOC "Use jemalloc allocators" OFF)
-option(STAR_USE_MIMALLOC "Use mimalloc allocators" OFF)
-option(STAR_USE_RPMALLOC "Use rpmalloc allocators" OFF)
 
 # "default" preserves Clang's line-table-only RelWithDebInfo behavior; "full"
 # requests full symbols and "minimal" is useful for sanitizer/assert packages.
@@ -178,9 +175,7 @@ if(DEFINED STAR_ENABLE_DISCORD_INTEGRATION)
 endif()
 
 message(STATUS "Using Lua API checks: ${STAR_LUA_APICHECK}")
-message(STATUS "Using jemalloc: ${STAR_USE_JEMALLOC}")
-message(STATUS "Using mimalloc: ${STAR_USE_MIMALLOC}")
-message(STATUS "Using rpmalloc: ${STAR_USE_RPMALLOC}")
+message(STATUS "Allocator: mimalloc (static)")
 
 # Set C defines and cmake variables based on the build settings we have now
 # determined...
@@ -241,13 +236,6 @@ if(STAR_ENABLE_DISCORD_INTEGRATION)
   target_compile_definitions(star_build_config INTERFACE STAR_ENABLE_DISCORD_INTEGRATION)
 endif()
 
-if(STAR_USE_JEMALLOC)
-  target_compile_definitions(star_build_config INTERFACE STAR_USE_JEMALLOC)
-elseif(STAR_USE_MIMALLOC)
-  target_compile_definitions(star_build_config INTERFACE STAR_USE_MIMALLOC)
-elseif(STAR_USE_RPMALLOC)
-  target_compile_definitions(star_build_config INTERFACE STAR_USE_RPMALLOC ENABLE_PRELOAD)
-endif()
 
 # Compiler/configuration defaults belong only to in-tree compiled targets.
 include(StarBuildOptions)
@@ -284,20 +272,8 @@ endif()
 target_link_libraries(star_module_dependencies INTERFACE ${CMAKE_DL_LIBS})
 target_link_libraries(star_extern_dependencies INTERFACE ${CMAKE_DL_LIBS})
 
-if(STAR_USE_JEMALLOC)
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET GLOBAL jemalloc)
-  target_link_libraries(star_core_dependencies INTERFACE PkgConfig::JEMALLOC)
-  if(STAR_SYSTEM_WINDOWS OR STAR_SYSTEM_MACOS)
-    set_flag(STAR_JEMALLOC_IS_PREFIXED)
-  endif()
-endif()
-
-if(STAR_USE_MIMALLOC)
-  find_package(mimalloc CONFIG REQUIRED)
-  target_link_libraries(star_core_dependencies INTERFACE
-    $<IF:$<TARGET_EXISTS:mimalloc-static>,mimalloc-static,mimalloc>)
-endif()
+find_package(mimalloc CONFIG REQUIRED)
+target_link_libraries(star_core_dependencies INTERFACE mimalloc-static)
 
 find_package(zlib-ng CONFIG REQUIRED)
 # Keep project-wide definitions identical across module providers and importers.
@@ -394,6 +370,9 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
   string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_SOURCE_DIR}/../dist)
 endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
+
+configure_file("${PROJECT_SOURCE_DIR}/../doc/OPENSOURCE.md"
+  "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/OPENSOURCE.md" COPYONLY)
 
 if(STAR_SYSTEM_WINDOWS AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
   # vcpkg's Windows app-local helper requires a Windows PowerShell host.

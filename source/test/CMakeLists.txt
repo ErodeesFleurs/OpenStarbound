@@ -29,6 +29,7 @@ set (star_core_tests_SOURCES
       lua_json_test.cpp
       lua_syntax_test.cpp
       math_test.cpp
+      memory_test.cpp
       multi_table_test.cpp
       net_states_test.cpp
       ordered_map_test.cpp

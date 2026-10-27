@@ -188,12 +188,10 @@ jobs:
           - arch: x86_64
             runner: ubuntu-24.04
             preset: linux-release
-            triplet: x64-linux
             artifact: OpenStarbound-Linux-xclang
           - arch: arm64
             runner: ubuntu-24.04-arm
             preset: linux-arm-release
-            triplet: arm64-linux
             artifact: OpenStarbound-Linux-ARM-xclang
     steps:
       - name: Checkout
@@ -257,8 +255,10 @@ jobs:
           configurePreset: '${{ matrix.preset }}'
           buildPreset: '${{ matrix.preset }}'
 
-      - name: Prepare jemalloc runtime
-        run: scripts/ci/linux/prepare-jemalloc-runtime.sh build/${{ matrix.preset }}/vcpkg_installed/${{ matrix.triplet }}
+      - name: Smoke test Linux executables
+        run: |
+          ./dist/asset_packer -version
+          ./dist/starbound_server -version
 
       - name: Prepare Artifacts
         run: tarlz -c9vf ${{ matrix.artifact }}.tar.lz dist

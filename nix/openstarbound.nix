@@ -46,6 +46,7 @@
 
 let
   inherit (dependencies)
+    mimalloc
     libcpr
     re2
     cpptrace
@@ -222,6 +223,7 @@ stdenv.mkDerivation {
   ]
   ++ lib.optional qtSupport qt5.qttools;
   buildInputs = [
+    mimalloc
     zlib-ng
     libcpr
     libpng
@@ -287,8 +289,7 @@ stdenv.mkDerivation {
     # Include maintenance utilities (map_grep and tileset tools) in package builds.
     (lib.cmakeBool "STAR_BUILD_DEV_TOOLS" true)
     (lib.cmakeBool "BUILD_TESTING" withTests)
-    (lib.cmakeFeature "STAR_STD_MODULE_MANIFEST"
-      "${stdenv.cc.bundledRuntime}/${stdenv.hostPlatform.config}/usr/lib/libc++.modules.json")
+    (lib.cmakeFeature "STAR_STD_MODULE_MANIFEST" "${stdenv.cc.bundledRuntime}/${stdenv.hostPlatform.config}/usr/lib/libc++.modules.json")
     (lib.cmakeFeature "CMAKE_C_COMPILER" "${stdenv.cc}/bin/clang")
     (lib.cmakeFeature "CMAKE_CXX_COMPILER" "${stdenv.cc}/bin/clang++")
     (lib.cmakeBool "STAR_ENABLE_STEAM_INTEGRATION" steamSupport)
@@ -311,9 +312,6 @@ stdenv.mkDerivation {
   ]
   ++ lib.optionals discordSupport [
     (lib.cmakeFeature "DISCORD_API_LIBRARY" "${sdks}/lib/libdiscord_game_sdk${sdkExtension}")
-  ]
-  ++ lib.optionals sanitizers [
-    (lib.cmakeBool "STAR_USE_JEMALLOC" false)
   ];
 
   # core_tests carries the "NoAssets" label and runs without any game assets.
@@ -321,9 +319,8 @@ stdenv.mkDerivation {
   # built and installed but never run here: the package ships
   # bin/run-game-tests (nix run .#game-tests) for that.
   #
-  # The sanitized build also runs the leak checker; core_tests holds on to
-  # nothing that LeakSanitizer reports (it used to keep ~22KB alive through a
-  # Lua reference cycle in the require test).
+  # ASan annotates mimalloc storage; debug checks validate pointers and padding.
+  # LSan sees system allocations, not individual mimalloc private-heap blocks.
   doCheck = withTests;
   checkPhase = ''
     runHook preCheck
@@ -335,6 +332,7 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
     mkdir -p "$out/bin" "$out/libexec" "$out/share/openstarbound/assets"
+    install -Dm644 ../doc/OPENSOURCE.md "$out/share/doc/openstarbound/OPENSOURCE.md"
 
     for binary in ${lib.escapeShellArgs distBinaries}; do
       install -m755 "../dist/$binary" "$out/libexec/$binary"
@@ -373,7 +371,12 @@ stdenv.mkDerivation {
   # needed (nor may the ordinary shared Qt/Wayland scope enter the closure).
 
   passthru = {
-    inherit imgui luaSource dependencies runtimeLibraries;
+    inherit
+      imgui
+      luaSource
+      dependencies
+      runtimeLibraries
+      ;
     inherit
       guiSupport
       steamSupport

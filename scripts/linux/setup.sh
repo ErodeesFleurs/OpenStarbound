@@ -9,8 +9,8 @@ fi
 export XCLANG_ROOT
 export PATH="$XCLANG_ROOT/bin:$PATH"
 case "$(uname -m)" in
-  aarch64|arm64) preset=linux-arm-release; triplet=arm64-linux ;;
-  x86_64) preset=linux-release; triplet=x64-linux ;;
+  aarch64|arm64) preset=linux-arm-release ;;
+  x86_64) preset=linux-release ;;
   *) echo "Unsupported Linux architecture" >&2; exit 1 ;;
 esac
 mkdir -p dist
@@ -18,5 +18,6 @@ cp scripts/linux/sbinit.config dist/
 cmake -S source --preset "$preset"
 if [ "$#" -ne 0 ]; then
   cmake --build "build/$preset" --parallel "$1"
-  scripts/ci/linux/prepare-jemalloc-runtime.sh "build/$preset/vcpkg_installed/$triplet"
+  ./dist/asset_packer -version
+  ./dist/starbound_server -version
 fi

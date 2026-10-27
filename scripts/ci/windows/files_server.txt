@@ -1,3 +1,4 @@
+dist\OPENSOURCE.md
 dist\btree_repacker.exe
 dist\starbound_server.exe
 scripts\ci\windows\sbinit.config

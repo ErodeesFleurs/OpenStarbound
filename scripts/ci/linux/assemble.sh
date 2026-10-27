@@ -11,6 +11,7 @@ touch client_distribution/mods/mods_go_here
 
 mkdir client_distribution/linux
 cp \
+  dist/OPENSOURCE.md \
   dist/starbound \
   dist/btree_repacker \
   dist/asset_packer \
@@ -24,9 +25,6 @@ cp \
   scripts/steam_appid.txt \
   client_distribution/linux/
 
-if [ -f dist/libjemalloc.so.2 ]; then
-  cp dist/libjemalloc.so.2 dist/jemalloc-LICENSE client_distribution/linux/
-fi
   
 mkdir client_distribution/linux/.icon
 cp \
@@ -44,16 +42,13 @@ touch server_distribution/mods/mods_go_here
 mkdir server_distribution/linux
 
 cp \
+  dist/OPENSOURCE.md \
   dist/starbound_server \
   dist/btree_repacker \
   scripts/ci/linux/run-server.sh \
   scripts/ci/linux/sbinit.config \
   scripts/steam_appid.txt \
   server_distribution/linux/
-
-if [ -f dist/libjemalloc.so.2 ]; then
-  cp dist/libjemalloc.so.2 dist/jemalloc-LICENSE server_distribution/linux/
-fi
 
 tarlz -c9vf client.tar.lz client_distribution
 tarlz -c9vf server.tar.lz server_distribution

@@ -15,6 +15,7 @@ mkdir client_distribution/osx/Starbound.app/Contents/MacOS
 cp dist/starbound client_distribution/osx/Starbound.app/Contents/MacOS/
 cp dist/*.dylib client_distribution/osx/Starbound.app/Contents/MacOS/
 cp \
+  dist/OPENSOURCE.md \
   dist/starbound_server \
   dist/btree_repacker \
   dist/asset_packer \

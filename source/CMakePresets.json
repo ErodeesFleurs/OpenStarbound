@@ -45,9 +45,7 @@
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "VCPKG_HOST_TRIPLET": "x64-windows",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/windows/include",
-        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/windows",
-        "STAR_USE_RPMALLOC": true,
-        "STAR_USE_JEMALLOC": false
+        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/windows"
       }
     },
     {
@@ -78,8 +76,7 @@
         "VCPKG_TARGET_TRIPLET": "x64-linux",
         "VCPKG_HOST_TRIPLET": "x64-linux",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/linux/include",
-        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/linux",
-        "STAR_USE_JEMALLOC": true
+        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/linux"
       }
     },
     {
@@ -107,7 +104,6 @@
         "VCPKG_HOST_TRIPLET": "arm64-osx",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/osx/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/osx/arm64;${sourceParentDir}/lib/osx",
-        "STAR_USE_JEMALLOC": false,
         "STAR_ENABLE_DISCORD_INTEGRATION": false
       }
     }

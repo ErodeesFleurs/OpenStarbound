@@ -140,10 +140,9 @@
           program = "${(packagesFor pkgs).default}/bin/run-game-tests";
           meta.description = "Run OpenStarbound's game_tests against your Starbound assets";
         };
-        # Same sweep, but against the ASan+UBSan build, with the sanitizers
-        # halting on the first report (so a report fails the run), the leak
-        # checker enabled, and a 900s per case timeout because world generation
-        # is several times slower under ASan.
+        # Same sweep with ASan/UBSan halting on the first error and a 900s per
+        # case timeout. LSan sees intercepted system allocations, not individual
+        # mimalloc private-heap blocks (which use MI_TRACK_ASAN annotations).
         sanitized-tests = {
           type = "app";
           program = "${pkgs.writeShellScript "openstarbound-sanitized-tests" ''
@@ -152,7 +151,7 @@
             export OPENSTARBOUND_TEST_TIMEOUT="''${OPENSTARBOUND_TEST_TIMEOUT:-900}"
             exec ${(packagesFor pkgs).sanitized}/bin/run-game-tests "$@"
           ''}";
-          meta.description = "Run OpenStarbound's game_tests with AddressSanitizer, UndefinedBehaviorSanitizer and the leak checker";
+          meta.description = "Run OpenStarbound's game_tests with ASan/UBSan and system-allocation leak checks";
         };
         # Same sweep against the assert-enabled build, so a violated invariant
         # fails the run instead of being compiled out.
