@@ -51,7 +51,7 @@ function pane.setAnchorOffset(offset) end
 
 --- Returns the pane's current position on the screen, taking into account its anchor and offset. ---
 ---@return Vec2I
-function pane.screenPosition() end
+function pane.getScreenPosition() end
 
 --- Moves the pane to the specified screen position, automatically calculating the appropriate position, anchor, and offset values. ---
 ---@param position Vec2I

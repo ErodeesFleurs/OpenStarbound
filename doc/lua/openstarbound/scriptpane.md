@@ -79,7 +79,7 @@ Sets the pane's anchor offset to the specified value.
 
 ---
 
-#### `Vec2I` pane.screenPosition()
+#### `Vec2I` pane.getScreenPosition()
 
 Returns the pane's current position on the screen, taking into account its anchor and offset.
 
@@ -139,6 +139,11 @@ pixels. Otherwise initial root bounds include declarative children and any
 native background. When a script changes Canvas or layout dimensions, update
 the root with `pane.setSize(size)` to keep drawing bounds and input geometry in
 sync.
+
+For Canvas tooltips, `createTooltip(screenPosition)` can return a label string
+or `nil`. Its argument is a screen position in interface pixels, not physical
+window pixels. Subtract `pane.getScreenPosition()` before comparing it with
+Canvas-local geometry.
 
 ### Consuming input
 

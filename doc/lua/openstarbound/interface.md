@@ -23,7 +23,7 @@ Returns the HUD's visibility.
 ---
 
 #### `PaneId` interface.bindRegisteredPane(`String` paneName)
-Binds a native registered pane or a dynamically created string-ID pane to its pane/widget callbacks. Returns `nil` if no instance exists. Native identifiers are listed below; the bundled Lua chat uses the dynamic identifier `"chat"`, not a native `"Chat"` pane.
+Binds a native registered pane or a dynamically created string-ID pane to its pane/widget callbacks. Returns `nil` if no instance exists. Native identifiers are listed below; the bundled Lua panes use the dynamic identifiers `"chat"` and `"status"`.
 <details><summary><b>Panes</b></summary>
 EscapeDialog<br>
 Inventory<br>
@@ -39,7 +39,6 @@ Options<br>
 QuestLog<br>
 ActionBar<br>
 TeamBar<br>
-StatusPane<br>
 WireInterface<br>
 PlanetText<br>
 RadioMessagePopup<br>
@@ -98,6 +97,22 @@ the registration's `events` map, or `onEvent(name, payload)` when unmapped.
 Messages sent by handlers are deferred to a subsequent delivery boundary.
 World-scoped events and instances are discarded at world changes; session
 instances retain standard `storage` through capability rebinding.
+
+### Bundled status-effect HUD
+
+The `"status"` session-scoped `"Hud"` registration loads
+`/interface/opensb/status/status.config` and its `status.lua` script. Lua owns
+icon filtering, ordering, layout, duration masks and tooltip hit testing, using
+the shared `BaseScriptPane` and Canvas widgets. Status application and lifetime
+calculation remain in the native `status` service.
+
+The script reads the existing `/interface.config` settings `statusIconPos`,
+`statusIconShift` and `statusIconDarkenImage`. Iconless effects do not occupy
+layout slots; mixed image sizes and overlapping icons are supported. Top-left
+anchoring follows window resizing and interface scaling without a separate
+screen-size tracker. All presentation state is derived from the current
+`status.activeUniqueStatusEffectSummary()` and rebuilt on script initialization.
+Patch the registered pane configuration or script to customize this HUD.
 
 ### Low-level instance bridge
 

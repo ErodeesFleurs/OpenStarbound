@@ -82,7 +82,6 @@ extern std::expected<EnumMap<MainInterfacePanes>, StarException> const MainInter
   {MainInterfacePanes::QuestLog, "QuestLog"},
   {MainInterfacePanes::ActionBar, "ActionBar"},
   {MainInterfacePanes::TeamBar, "TeamBar"},
-  {MainInterfacePanes::StatusPane, "StatusPane"},
   {MainInterfacePanes::WireInterface, "WireInterface"},
   {MainInterfacePanes::PlanetText, "PlanetText"},
   {MainInterfacePanes::RadioMessagePopup, "RadioMessagePopup"},

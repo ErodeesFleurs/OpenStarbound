@@ -1021,4 +1021,82 @@ const GameTestRegistration uiInputAndQueue("LuaUiManager", "NativePriorityReload
   EXPECT_FALSE(panes.topPane());
 });
 
+const GameTestRegistration statusPresentation("LuaStatusPresentation", "LayoutMasksAndOverlappingTooltips", [](GameTest& fixture) {
+  auto root = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(root) << root.error().what();
+  auto script = (*root)->createContext("/interface/opensb/status/status.lua");
+  ASSERT_TRUE(script) << script.error().what();
+  // Exercise the production presentation algorithm independently of a display.
+  // The GUI smoke separately checks these commands against real effect pixels.
+  auto result = script->eval<Json>(R"LUA(
+    local effects = {{"hidden", 1}, {"wide", 1}, {"timed", 0.45}}
+    local definitions = {
+      hidden = {},
+      wide = {icon = "/wide.png", label = ""},
+      timed = {icon = "/timed.png", label = "Timed"}
+    }
+    local dimensions = {["/wide.png"] = {16, 10}, ["/timed.png"] = {8, 6}}
+    local frame, bounds, anchor
+    local surface = {
+      clear = function() frame = {} end,
+      drawImage = function(_, image, position)
+        frame[#frame + 1] = {image, {position[1], position[2]}}
+      end
+    }
+    widget = {bindCanvas = function() return surface end, setSize = function() end}
+    pane = {
+      setSize = function(size) bounds = size end,
+      setAnchorOffset = function(position) anchor = position end,
+      getScreenPosition = function() return {100, 200} end
+    }
+    root = {
+      assetJson = function(path)
+        if path == "/interface.config:statusIconPos" then return {5, 20} end
+        if path == "/interface.config:statusIconShift" then return {8, -2} end
+        if path == "/interface.config:statusIconDarkenImage" then return "/dark.png" end
+        error("Unexpected asset: " .. path)
+      end,
+      effectConfig = function(name) return definitions[name] end,
+      imageSize = function(path) return dimensions[path] end
+    }
+    status = {activeUniqueStatusEffectSummary = function() return effects end}
+    init()
+    render()
+    local initial = {bounds, anchor, frame,
+      createTooltip({110, 203}), createTooltip({117, 203}) == nil}
+    effects = {}
+    update(0)
+    render()
+    local empty = {bounds, createTooltip({110, 203}) == nil}
+    effects = {{"timed", 0}}
+    update(0)
+    render()
+    local zero = frame[1][1]
+    effects = {{"timed"}}
+    update(0)
+    render()
+    local absent = {frame[1][1], createTooltip({108, 206})}
+    -- This is the exact double representation of native float(0.7).
+    -- float32 multiplication rounds to 7; double multiplication truncates to 6.
+    effects = {{"wide", 0.699999988079071}}
+    update(0)
+    render()
+    return {initial, empty, zero, absent[1], absent[2], frame[1][1]}
+  )LUA");
+  ASSERT_TRUE(result) << result.error().what();
+  auto expected = Json::parseJson(R"JSON([
+    [[16,12],[5,-10],[
+      ["/wide.png?blendmult=/dark.png;0;-10",[0,2]],
+      ["/timed.png?blendmult=/dark.png;0;-2",[8,0]]
+    ],"Timed",true],
+    [[0,0],true],
+    "/timed.png?blendmult=/dark.png;0;0",
+    "/timed.png",
+    "Timed",
+    "/wide.png?blendmult=/dark.png;0;-7"
+  ])JSON");
+  ASSERT_TRUE(expected) << expected.error().what();
+  EXPECT_EQ(*result, *expected);
+});
+
 }

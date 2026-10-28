@@ -265,7 +265,6 @@ import star.team_bar;
 
 
 
-import star.status_pane;
 import star.canvas_widget;
 import star.item_slot_widget;
 import star.button_group;
@@ -613,10 +612,7 @@ std::expected<void, StarException> MainInterface::initScriptAndHudPanes(std::sha
   m_teamBar = *team;
   if (auto result = m_paneManager.registerPane(MainInterfacePanes::TeamBar, PaneLayer::Hud, *team); !result)
     return std::unexpected(std::move(result.error()));
-  auto status = StatusPane::create(context(), m_client);
-  if (!status)
-    return std::unexpected(std::move(status.error()));
-  return m_paneManager.registerPane(MainInterfacePanes::StatusPane, PaneLayer::Hud, *status);
+  return {};
 }
 
 std::expected<void, StarException> MainInterface::initPlanetHud() {
@@ -2284,7 +2280,7 @@ std::expected<void, StarException> MainInterface::reviveScriptPanes(List<ScriptP
 }
 
 std::expected<void, StarException> MainInterface::displayDefaultPanes() {
-  for (auto pane : {MainInterfacePanes::ActionBar, MainInterfacePanes::TeamBar, MainInterfacePanes::StatusPane}) {
+  for (auto pane : {MainInterfacePanes::ActionBar, MainInterfacePanes::TeamBar}) {
     auto displayed = m_paneManager.displayRegisteredPane(pane);
     if (!displayed)
       return std::unexpected(std::move(displayed.error()));

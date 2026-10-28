@@ -17,6 +17,13 @@
         "ChatPageDown" : "pageDown"
       },
       "events" : {"messages" : "receiveMessages"}
+    },
+    "status" : {
+      "config" : "/interface/opensb/status/status.config",
+      "layer" : "Hud",
+      "scope" : "session",
+      "open" : true,
+      "order" : 20
     }
   },
   "font" : {

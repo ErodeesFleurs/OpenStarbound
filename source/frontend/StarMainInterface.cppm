@@ -106,7 +106,6 @@ class OptionsMenu;
 class WirePane;
 class ActionBar;
 class TeamBar;
-class StatusPane;
 class ContainerPane;
 class CraftingPane;
 class MerchantPane;
@@ -372,7 +371,6 @@ export namespace Star {
   using ::Star::WirePane;
   using ::Star::ActionBar;
   using ::Star::TeamBar;
-  using ::Star::StatusPane;
   using ::Star::ContainerPane;
   using ::Star::CraftingPane;
   using ::Star::MerchantPane;

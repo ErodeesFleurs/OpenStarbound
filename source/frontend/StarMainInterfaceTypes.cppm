@@ -61,7 +61,6 @@ enum class MainInterfacePanes {
   QuestLog,
   ActionBar,
   TeamBar,
-  StatusPane,
   WireInterface,
   PlanetText,
   RadioMessagePopup,
