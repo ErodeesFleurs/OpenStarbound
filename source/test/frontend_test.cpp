@@ -858,7 +858,7 @@ const GameTestRegistration uiWorldScope("LuaUiManager", "WorldAndPlayerTransitio
   ASSERT_TRUE(callbacks.registerCallback("paneIdAvailable", &MainInterface::paneIdAvailable));
   unsigned destroyed = 0;
   ASSERT_TRUE(callbacks.registerCallback("destroyPane", [&](String const& id) -> std::expected<void, StarException> {
-    if (id == "worldOpen" && worldPane) {
+    if ((id == "worldOpen" || id == "playerOpen") && worldPane) {
       if (auto dismissed = panes.dismissPane(worldPane); !dismissed)
         return std::unexpected(std::move(dismissed.error()));
       worldPane.reset();
@@ -866,9 +866,19 @@ const GameTestRegistration uiWorldScope("LuaUiManager", "WorldAndPlayerTransitio
     }
     return {};
   }));
+  ASSERT_TRUE(callbacks.registerCallback("bindRegisteredPane", [&](String const&) -> std::expected<std::optional<LuaCallbacks>, StarException> {
+    if (!worldPane) return std::optional<LuaCallbacks>{};
+    auto bound = worldPane->makePaneCallbacks();
+    if (!bound) return std::unexpected(std::move(bound.error()));
+    return std::optional<LuaCallbacks>(std::move(*bound));
+  }));
+  ASSERT_TRUE(callbacks.registerCallback("displayRegisteredPane", [&](String const&) -> std::expected<void, StarException> {
+    if (!worldPane) return std::unexpected(GuiException("Missing scoped pane"));
+    return worldPane->show();
+  }));
   ASSERT_TRUE(script->setCallbacks("interface", callbacks));
-  // Only the native destroy operation is needed here, and it releases a real
-  // displayed Pane. No callPane echo exists: dispatch before teardown fails.
+  // Suspension releases a real displayed Pane before any queued dispatch.
+  // No callPane echo exists: dispatch before teardown fails.
   auto suspended = script->eval<Json>(R"LUA(
     local state = {
       session = {inWorld = true, worldGeneration = 1, playerGeneration = 1},
@@ -926,6 +936,57 @@ const GameTestRegistration uiWorldScope("LuaUiManager", "WorldAndPlayerTransitio
   EXPECT_EQ(destroyed, 2u);
   EXPECT_TRUE(released.expired());
   EXPECT_FALSE(panes.topPane());
+
+  // Player scope survives a warp (including controller restore) but must drop
+  // both direct events and control requests before another player can see them.
+  for (bool restoreTransition : {false, true}) {
+    created = ScriptTestPane::create(**context);
+    ASSERT_TRUE(created) << created.error().what();
+    worldPane = std::move(*created);
+    ASSERT_TRUE(worldPane->setLuaRoot(*luaRoot));
+    worldPane->setAnchor(PaneAnchor::BottomLeft);
+    ASSERT_TRUE(panes.displayPane(PaneLayer::Window, worldPane, {}));
+    released = worldPane;
+    auto survived = script->eval<Json>(R"LUA(
+      checkpoint = {
+        session = {hasPlayer = true, inWorld = true, worldGeneration = 1, playerGeneration = 1},
+        open = {playerOpen = true},
+        queue = jarray()
+      }
+      definitions = {playerOpen = {config = {}, scope = "player", open = false}}
+      manager = UiManager.new(checkpoint, definitions, checkpoint.session)
+      manager:enqueue("playerOpen", "show", {message = "old player"})
+      manager:enqueue("$ui", "open", {id = "playerOpen"})
+      manager:suspend({hasPlayer = true, inWorld = false, worldGeneration = 2, playerGeneration = 1})
+      manager = UiManager.new(checkpoint, definitions,
+        {hasPlayer = true, inWorld = true, worldGeneration = 3, playerGeneration = 1})
+      manager:restore()
+      return {checkpoint.open.playerOpen, #checkpoint.queue}
+    )LUA");
+    ASSERT_TRUE(survived) << survived.error().what();
+    EXPECT_EQ(*survived, (Json(JsonArray{true, 2})));
+    EXPECT_FALSE(released.expired());
+    EXPECT_EQ(panes.topPane(), worldPane);
+    auto dropped = script->eval<Json>(String(std::string_view(restoreTransition ? R"LUA(
+      manager = UiManager.new(checkpoint, definitions,
+        {hasPlayer = true, inWorld = true, worldGeneration = 3, playerGeneration = 2})
+      manager:restore()
+      return {checkpoint.open.playerOpen == nil, #checkpoint.queue}
+    )LUA" : R"LUA(
+      manager:suspend({hasPlayer = true, inWorld = true, worldGeneration = 3, playerGeneration = 2})
+      return {checkpoint.open.playerOpen == nil, #checkpoint.queue}
+    )LUA")));
+    ASSERT_TRUE(dropped) << dropped.error().what();
+    EXPECT_EQ(*dropped, (Json(JsonArray{true, 0})));
+    EXPECT_TRUE(released.expired());
+    EXPECT_FALSE(panes.topPane());
+  }
+  auto unavailable = script->eval<bool>(R"LUA(
+    manager = UiManager.new({}, definitions, {hasPlayer = false, inWorld = false, playerGeneration = 2})
+    return manager:open("playerOpen")
+  )LUA");
+  ASSERT_TRUE(unavailable) << unavailable.error().what();
+  EXPECT_FALSE(*unavailable);
 });
 
 const GameTestRegistration uiInputAndQueue("LuaUiManager", "NativePriorityReloadPairingAndDeferredHandlerEvents", [](GameTest& fixture) {
@@ -1377,6 +1438,136 @@ const GameTestRegistration bookmarkEditor("LuaBookmarkEditor", "NativeTextEditin
   ASSERT_TRUE(saved);
   ASSERT_EQ(saved->size(), 1u);
   EXPECT_EQ((*saved)[0], *firstTarget);
+  ASSERT_TRUE(panes.dismissAllPanes());
+});
+
+// Observe only the final speaker boundary; production Lua still chooses the
+// sound, updates real native text/title state, and owns its reload checkpoint.
+class PopupSoundTestPane : public BaseScriptPane {
+public:
+  static std::expected<std::shared_ptr<PopupSoundTestPane>, StarException> create(
+      GuiContext& context, Json config, StringList& sounds) {
+    auto pane = std::shared_ptr<PopupSoundTestPane>(new PopupSoundTestPane(context, sounds));
+    if (auto initialized = pane->init(std::move(config)); !initialized)
+      return std::unexpected(std::move(initialized.error()));
+    return pane;
+  }
+
+  std::expected<LuaCallbacks, StarException> makePaneCallbacks() override {
+    auto callbacks = BaseScriptPane::makePaneCallbacks();
+    if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+    callbacks->removeCallback("playSound");
+    if (auto added = callbacks->registerCallback("playSound", [this](String const& sound) {
+          m_sounds.append(sound);
+        }); !added)
+      return std::unexpected(std::move(added.error()));
+    return callbacks;
+  }
+
+private:
+  PopupSoundTestPane(GuiContext& context, StringList& sounds) : BaseScriptPane(context), m_sounds(sounds) {}
+  StringList& m_sounds;
+};
+
+const GameTestRegistration popupPresentation("LuaPopup", "NativeTitleLatestTextSoundPrecedenceAndReloadLifecycle", [](GameTest& fixture) {
+  auto context = textEditorContext(fixture);
+  ASSERT_TRUE(context) << context.error().what();
+  auto configuration = fixture.root().configuration();
+  ASSERT_TRUE(configuration) << configuration.error().what();
+  ASSERT_TRUE((*configuration)->set("bindings", JsonObject{
+      {"GuiClose", JsonArray{JsonObject{{"type", "key"}, {"value", "Esc"}, {"mods", JsonArray{}}}}}}));
+  ASSERT_TRUE((*context)->refreshKeybindings());
+  auto luaRoot = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto assets = fixture.root().assets();
+  ASSERT_TRUE(assets) << assets.error().what();
+  auto config = (*assets)->json("/interface/opensb/popup/popup.config");
+  ASSERT_TRUE(config) << config.error().what();
+  auto paneConfig = config->toObject();
+  ASSERT_TRUE(paneConfig) << paneConfig.error().what();
+  // Glyph layout/images require the GUI fixture. Use a real native TextBox as
+  // the text sink here; pane.setTitle remains the actual native Pane binding.
+  paneConfig->set("gui", JsonObject{});
+  StringList sounds;
+  auto created = PopupSoundTestPane::create(**context, *paneConfig, sounds);
+  ASSERT_TRUE(created) << created.error().what();
+  auto popup = std::move(*created);
+  ASSERT_TRUE(popup->setLuaRoot(*luaRoot));
+  popup->setAnchor(PaneAnchor::BottomLeft);
+  auto message = textEditor(**context, "");
+  ASSERT_TRUE(message) << message.error().what();
+  (*message)->setMaxWidth(-1);
+  ASSERT_TRUE(popup->addChild("message", *message));
+  PaneManager panes(**context);
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Window, popup, {}));
+  ASSERT_TRUE(popup->call("showPopup", {JsonObject{
+      {"message", "^red;First café Ω^reset;\nSecond line"}, {"title", "Native title"},
+      {"subtitle", "Native subtitle"}, {"sound", ""}}}));
+  EXPECT_EQ(popup->title(), String("Native title"));
+  EXPECT_EQ(popup->subTitle(), String("Native subtitle"));
+  EXPECT_EQ((*message)->getText(), String("^red;First café Ω^reset;\nSecond line"));
+  EXPECT_TRUE(sounds.empty());
+
+  auto back = ScriptTestPane::create(**context);
+  ASSERT_TRUE(back) << back.error().what();
+  (*back)->setAnchor(PaneAnchor::BottomLeft);
+  ASSERT_TRUE((*back)->setLuaRoot(*luaRoot));
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Window, *back, {}));
+  ASSERT_TRUE(popup->hide());
+  ASSERT_TRUE(popup->call("showPopup", {JsonObject{{"message", "Latest"}, {"sound", "/override.ogg"}}}));
+  EXPECT_EQ((*message)->getText(), String("Latest"));
+  EXPECT_EQ(popup->title(), String(""));
+  EXPECT_EQ(popup->subTitle(), String(""));
+  EXPECT_TRUE(popup->visibility());
+  EXPECT_EQ(panes.topPane(), *back); // Replacing a displayed popup does not raise it.
+  EXPECT_EQ(sounds, (StringList{"/override.ogg"}));
+  ASSERT_TRUE(popup->call("showPopup", {JsonObject{{"message", "Random default"}}}));
+  auto defaults = (*assets)->json("/interface/windowconfig/popup.config:onShowSound");
+  ASSERT_TRUE(defaults) << defaults.error().what();
+  auto defaultSounds = defaults->toArray();
+  ASSERT_TRUE(defaultSounds) << defaultSounds.error().what();
+  if (defaultSounds->empty()) {
+    EXPECT_EQ(sounds.size(), 1u);
+  } else {
+    ASSERT_EQ(sounds.size(), 2u);
+    auto chosen = sounds.last();
+    ASSERT_TRUE(chosen) << chosen.error().what();
+    EXPECT_TRUE(defaultSounds->contains(Json(chosen->get())));
+  }
+  auto count = sounds.size();
+  ASSERT_TRUE(popup->call("showPopup", {JsonObject{
+      {"message", "Retained latest"}, {"title", "Reload title"}, {"subtitle", "Reload subtitle"}, {"sound", ""}}}));
+  popup->setTitleString("Displaced title", "Displaced subtitle");
+  ASSERT_TRUE((*message)->setText("Displaced text"));
+  ASSERT_TRUE(fixture.root().reload());
+  ASSERT_TRUE(popup->tick(0));
+  EXPECT_EQ((*message)->getText(), String("Retained latest"));
+  EXPECT_EQ(popup->title(), String("Reload title"));
+  EXPECT_EQ(popup->subTitle(), String("Reload subtitle"));
+  EXPECT_EQ(sounds.size(), count);
+  popup->setTitleString("Displaced again", "");
+  ASSERT_TRUE((*message)->setText("Displaced again"));
+  ASSERT_TRUE((*luaRoot)->restart());
+  ASSERT_TRUE(popup->tick(0));
+  EXPECT_EQ((*message)->getText(), String("Retained latest"));
+  EXPECT_EQ(popup->title(), String("Reload title"));
+  EXPECT_EQ(sounds.size(), count);
+
+  auto escaped = popup->sendEvent(KeyDownEvent{Key::Escape, KeyMod::NoMod});
+  ASSERT_TRUE(escaped) << escaped.error().what();
+  EXPECT_TRUE(*escaped);
+  EXPECT_TRUE(popup->isDismissed());
+  ASSERT_TRUE(panes.dismissPane(popup));
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Window, popup, {}));
+  EXPECT_EQ(panes.topPane(), popup); // A genuine reopen returns to the front.
+  ASSERT_TRUE(popup->call("ok", {}));
+  EXPECT_TRUE(popup->isDismissed());
+  ASSERT_TRUE(panes.dismissPane(popup));
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Window, popup, {}));
+  ASSERT_TRUE(popup->call("showPopup", {JsonObject{{"message", "Close button"}, {"sound", ""}}}));
+  ASSERT_TRUE(popup->call("close", {}));
+  EXPECT_TRUE(popup->isDismissed());
+  EXPECT_EQ(sounds.size(), count);
   ASSERT_TRUE(panes.dismissAllPanes());
 });
 

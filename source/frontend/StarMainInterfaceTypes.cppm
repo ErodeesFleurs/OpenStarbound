@@ -53,7 +53,6 @@ enum class MainInterfacePanes {
   Tech,
   Songbook,
   Ai,
-  Popup,
   Confirmation,
   HttpTrustDialog, // sorry i need it here
   JoinRequest,

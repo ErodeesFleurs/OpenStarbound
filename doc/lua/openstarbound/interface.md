@@ -32,7 +32,6 @@ Cockpit<br>
 Tech<br>
 Songbook<br>
 Ai<br>
-Popup<br>
 Confirmation<br>
 JoinRequest<br>
 Options<br>
@@ -95,8 +94,10 @@ These helpers enqueue requests; they do not mutate the pane stack inside the
 calling script. Native IDs and `"$ui"` are reserved. `ui.send` dispatches through
 the registration's `events` map, or `onEvent(name, payload)` when unmapped.
 Messages sent by handlers are deferred to a subsequent delivery boundary.
-World-scoped events and instances are discarded at world changes; session
-instances retain standard `storage` through capability rebinding.
+World-scoped events and instances are discarded at world or player changes.
+Player-scoped instances survive world changes but are discarded when their
+player changes or becomes unavailable; session instances retain standard
+`storage` through capability rebinding.
 
 ### Bundled status-effect HUD
 
@@ -147,6 +148,23 @@ The editor preserves its draft across script reload, but closes when its
 interaction source disappears or its player/world context changes. World-scoped
 instances and queued events are discarded on either player or world generation
 changes. Teleport eligibility, reachability and warp execution remain native.
+
+### Bundled ordinary popup
+
+The `"popup"` registration uses the ordinary `"Window"` layer and `"player"`
+scope. Its `show` event accepts `{message, title?, subtitle?, sound?}` through
+the generic event bridge; native `ShowPopup` interactions use this same path.
+Lua uses the original `/interface/windowconfig/popup.config` layout and sound
+list, and the existing `pane.setTitle(title, subtitle)` for native title drawing.
+
+Missing `sound` chooses a configured random default, `""` is silent, and a
+nonempty value overrides the default. Each show replaces the current content
+and plays its sound once; script reload restores content without replaying it.
+Updating an already displayed popup does not raise it; closing and reopening
+uses normal window stacking. World transitions retain the popup, while player
+changes and interface teardown discard it.
+
+This registration does not handle confirmation, join requests or HTTP trust.
 
 ### Low-level instance bridge
 

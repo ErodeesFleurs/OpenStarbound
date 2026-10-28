@@ -113,7 +113,6 @@ class CodexInterface;
 class SongbookInterface;
 class QuestLogInterface;
 class AiInterface;
-class PopupInterface;
 class ConfirmationDialog;
 class JoinRequestDialog;
 class TeleportDialog;
@@ -291,7 +290,6 @@ private:
   std::shared_ptr<CodexInterface> m_codexInterface;
   std::shared_ptr<OptionsMenu> m_optionsMenu;
   std::shared_ptr<ContainerPane> m_containerPane;
-  std::shared_ptr<PopupInterface> m_popupInterface;
   std::shared_ptr<ConfirmationDialog> m_confirmationDialog;
   std::shared_ptr<JoinRequestDialog> m_joinRequestDialog;
   std::shared_ptr<TeleportDialog> m_teleportDialog;
@@ -306,6 +304,7 @@ private:
   std::unique_ptr<LuaUpdateScript> m_uiController;
   Map<String, LuaCallbacks> m_uiCapabilities;
   std::shared_ptr<Player> m_uiPlayer;
+  std::optional<Uuid> m_uiPlayerUuid;
   std::shared_ptr<WorldClient> m_uiWorld;
   std::shared_ptr<TeamClient> m_uiTeam;
   std::shared_ptr<LuaRoot> m_uiRoot;
@@ -377,7 +376,6 @@ export namespace Star {
   using ::Star::SongbookInterface;
   using ::Star::QuestLogInterface;
   using ::Star::AiInterface;
-  using ::Star::PopupInterface;
   using ::Star::ConfirmationDialog;
   using ::Star::JoinRequestDialog;
   using ::Star::TeleportDialog;

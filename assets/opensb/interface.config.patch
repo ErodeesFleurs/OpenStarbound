@@ -39,6 +39,14 @@
       "open" : false,
       "order" : 40,
       "events" : {"edit" : "editBookmark"}
+    },
+    "popup" : {
+      "config" : "/interface/opensb/popup/popup.config",
+      "layer" : "Window",
+      "scope" : "player",
+      "open" : false,
+      "order" : 50,
+      "events" : {"show" : "showPopup"}
     }
   },
   "font" : {

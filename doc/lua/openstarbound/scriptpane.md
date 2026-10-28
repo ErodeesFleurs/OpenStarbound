@@ -248,8 +248,10 @@ rendering, and child-widget updates; do not tick them a second time.
 }
 ```
 
-`config` is an asset path or resolved pane JSON. `scope` is `"session"` or
-`"world"`; world instances open only in-world and are released on world changes.
+`config` is an asset path or resolved pane JSON. `scope` is `"session"`,
+`"player"` or `"world"`. Player instances require a player and survive world
+changes, but are released when the player changes or becomes unavailable.
+World instances open only in-world and are released on world or player changes.
 `open` controls initial/automatic opening. `order` controls initial creation
 order; native layers, capture, modal barriers and current stacking determine
 input priority. A normal window uses the same runtime with `"layer": "Window"`.

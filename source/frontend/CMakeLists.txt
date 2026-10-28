@@ -14,7 +14,6 @@ target_sources (star_frontend_module_interfaces PUBLIC FILE_SET CXX_MODULES FILE
     StarKeybindingsMenu.cppm
     StarModsMenu.cppm
     StarOptionsMenu.cppm
-    StarPopupInterface.cppm
     StarRadioMessagePopup.cppm
     StarShadersMenu.cppm
     StarTeleportDialog.cppm
@@ -75,7 +74,6 @@ add_library (star_frontend_modules STATIC
     StarKeybindingsMenu.cpp
     StarModsMenu.cpp
     StarOptionsMenu.cpp
-    StarPopupInterface.cpp
     StarRadioMessagePopup.cpp
     StarShadersMenu.cpp
     StarTeleportDialog.cpp

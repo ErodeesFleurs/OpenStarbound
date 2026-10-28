@@ -204,7 +204,6 @@ import star.quest_interface;
 
 
 
-import star.popup_interface;
 
 
 
@@ -544,10 +543,6 @@ std::expected<void, StarException> MainInterface::initMainBarPanes() {
                                 OptionsMenu::create(context(), m_paneManager, m_client), m_optionsMenu);
       !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = installPane(m_paneManager, MainInterfacePanes::Popup, PaneLayer::Window,
-                                PopupInterface::create(context()), m_popupInterface);
-      !result)
-    return std::unexpected(std::move(result.error()));
   if (auto result = installPane(m_paneManager, MainInterfacePanes::Confirmation, PaneLayer::ModalWindow,
                                 ConfirmationDialog::create(context()), m_confirmationDialog);
       !result)
@@ -766,12 +761,20 @@ std::expected<void, StarException> MainInterface::synchronizeUiSession() {
   auto worldId = m_client->clientContext() ? m_client->clientContext()->playerWorldId() : WorldId{};
   bool inWorld = world && world->inWorld();
   auto generation = luaRoot->generation();
-  if (player == m_uiPlayer && world == m_uiWorld && team == m_uiTeam && luaRoot == m_uiRoot
+  // /swap disk-loads another character into the existing Player allocation.
+  // Keep identity separately from the borrowed object, whose UUID can mutate.
+  std::optional<Uuid> playerUuid;
+  if (player) {
+    auto uuid = player->uuid();
+    if (!uuid) return std::unexpected(std::move(uuid.error()));
+    playerUuid = *uuid;
+  }
+  bool playerChanged = player != m_uiPlayer || playerUuid != m_uiPlayerUuid;
+  if (!playerChanged && world == m_uiWorld && team == m_uiTeam && luaRoot == m_uiRoot
       && generation == m_uiRootGeneration && worldId == m_uiWorldId && inWorld == m_uiInWorld)
     return {};
 
   bool worldChanged = world != m_uiWorld || worldId != m_uiWorldId || inWorld != m_uiInWorld;
-  bool playerChanged = player != m_uiPlayer;
   Json next = JsonObject{{"hasPlayer", static_cast<bool>(player)}, {"inWorld", inWorld},
       {"playerGeneration", m_uiPlayerGeneration + (playerChanged ? 1 : 0)},
       {"worldGeneration", m_uiWorldGeneration + (worldChanged ? 1 : 0)}};
@@ -792,6 +795,7 @@ std::expected<void, StarException> MainInterface::synchronizeUiSession() {
     return std::unexpected(std::move(stopped.error()));
   m_uiCapabilities.clear();
   m_uiPlayer = std::move(player);
+  m_uiPlayerUuid = std::move(playerUuid);
   m_uiWorld = std::move(world);
   m_uiTeam = std::move(team);
   m_uiRoot = std::move(luaRoot);
@@ -1502,10 +1506,10 @@ std::expected<void, StarException> MainInterface::handleInteractAction(InteractA
     auto sound = interactAction.data.optString("sound");
     if (!sound)
       return std::unexpected(std::move(sound.error()));
-    auto displayed = m_paneManager.displayRegisteredPane(MainInterfacePanes::Popup);
-    if (!displayed)
-      return std::unexpected(std::move(displayed.error()));
-    return m_popupInterface->displayMessage(*message, *title, *subtitle, *sound);
+    JsonObject payload{{"message", std::move(*message)}, {"title", std::move(*title)}, {"subtitle", std::move(*subtitle)}};
+    if (*sound)
+      payload.set("sound", std::move(**sound));
+    return sendPaneEvent("popup", "show", std::move(payload));
   } else if (interactAction.type == InteractActionType::ScriptPane) {
     auto sourceEntity = interactAction.entityId;
     if (sourceEntity != NullEntityId && m_interactionScriptPanes.contains(sourceEntity) && m_paneManager.isDisplayed(m_interactionScriptPanes[sourceEntity])) {

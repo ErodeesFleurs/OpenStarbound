@@ -3,6 +3,15 @@
 UiManager = {}
 UiManager.__index = UiManager
 
+local function scopeExpired(definition, session, previous)
+  if definition.scope == "player" then
+    return not session.hasPlayer or not previous or previous.playerGeneration ~= session.playerGeneration
+  end
+  return definition.scope == "world" and
+      (not session.inWorld or not previous or previous.worldGeneration ~= session.worldGeneration
+        or previous.playerGeneration ~= session.playerGeneration)
+end
+
 function UiManager.new(checkpoint, definitions, session)
   checkpoint.pressed = checkpoint.pressed or {}
   local self = setmetatable({state = checkpoint, definitions = {}, pressed = checkpoint.pressed, flushing = false}, UiManager)
@@ -25,15 +34,13 @@ function UiManager:restore()
     self.definitions[id] = definition
   end
   -- A controller reload adopts session instances instead of creating a second
-  -- presentation owner. World-scoped instances are never adopted across worlds.
+  -- presentation owner. Scoped instances are never adopted across their owner.
   local stale = {}
   for id in pairs(checkpoint.open) do
     if not self.definitions[id] then stale[id] = true end
   end
   for id, definition in pairs(self.definitions) do
-    if definition.scope == "world" and
-        (not session.inWorld or not previous or previous.worldGeneration ~= session.worldGeneration
-          or previous.playerGeneration ~= session.playerGeneration) then
+    if scopeExpired(definition, session, previous) then
       stale[id] = true
     end
   end
@@ -63,7 +70,8 @@ end
 function UiManager:validate(id, definition)
   assert(type(id) == "string" and interface.paneIdAvailable(id), "Invalid or reserved UI instance id")
   assert(type(definition) == "table" and definition.config, "A UI registration requires config")
-  assert(definition.scope == nil or definition.scope == "session" or definition.scope == "world", "Invalid UI scope")
+  assert(definition.scope == nil or definition.scope == "session" or definition.scope == "player"
+      or definition.scope == "world", "Invalid UI scope")
 end
 
 function UiManager:register(id, definition)
@@ -78,6 +86,7 @@ end
 function UiManager:open(id)
   local definition = assert(self.definitions[id], "Unknown UI registration: " .. id)
   if definition.scope == "world" and not self.state.session.inWorld then return false end
+  if definition.scope == "player" and not self.state.session.hasPlayer then return false end
   if not interface.bindRegisteredPane(id) then
     local config = type(definition.config) == "string" and root.assetJson(definition.config) or definition.config
     interface.createPane(id, config, definition.layer or "Window")
@@ -116,9 +125,7 @@ function UiManager:suspend(session)
   local previous = self.state.session
   local closed = {}
   for id, definition in pairs(self.definitions) do
-    if definition.scope == "world" and
-        (not session.inWorld or session.worldGeneration ~= previous.worldGeneration
-          or session.playerGeneration ~= previous.playerGeneration) then
+    if scopeExpired(definition, session, previous) then
       closed[id] = true
     end
   end
