@@ -140,6 +140,12 @@ native background. When a script changes Canvas or layout dimensions, update
 the root with `pane.setSize(size)` to keep drawing bounds and input geometry in
 sync.
 
+Canvas configurations may set `ignoreInterfaceScale: true` to use physical
+pixel drawing coordinates. This forwards the existing Canvas scale mode;
+pane and widget bounds still use interface pixels and must be sized accordingly.
+Top-level `interactive: false` keeps a displayed pane rendering and ticking
+while excluding it from input dispatch, capture and hit testing.
+
 For Canvas tooltips, `createTooltip(screenPosition)` can return a label string
 or `nil`. Its argument is a screen position in interface pixels, not physical
 window pixels. Subtract `pane.getScreenPosition()` before comparing it with

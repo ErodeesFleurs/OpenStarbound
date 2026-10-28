@@ -235,7 +235,7 @@ std::expected<void, StarException> BaseScriptPane::tick(float dt) {
 }
 
 std::expected<bool, StarException> BaseScriptPane::sendEvent(InputEvent const& event) {
-  if (!visibility())
+  if (!visibility() || !interactive())
     return false;
   auto handlesInput = m_script.hasMethod("onInput");
   if (!handlesInput)

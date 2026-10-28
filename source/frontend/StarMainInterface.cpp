@@ -2077,7 +2077,7 @@ std::expected<void, StarException> MainInterface::render() {
     return {};
   if (auto cleared = context().clearTextStyle(); !cleared)
     return std::unexpected(std::move(cleared.error()));
-  if (auto result = renderBreath(); !result)
+  if (auto result = m_paneManager.renderLayers(PaneLayer::Background, PaneLayer::Background); !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = renderMessages(); !result)
     return std::unexpected(std::move(result.error()));
@@ -2361,51 +2361,6 @@ std::expected<Vec2F, StarException> MainInterface::mainBarPosition() const {
   if (!height)
     return std::unexpected(std::move(height.error()));
   return Vec2F(*width, *height) - Vec2F(m_config->mainBarSize) * interfaceScale();
-}
-
-std::expected<void, StarException> MainInterface::renderBreath() {
-  auto assets = context().root().assets();
-  if (!assets) return std::unexpected(std::move(assets.error()));
-  auto imgMetadata = context().root().imageMetadataDatabase();
-  if (!imgMetadata) return std::unexpected(std::move(imgMetadata.error()));
-  auto size = context().textureSize("/interface/breath/empty.png");
-  if (!size) return std::unexpected(std::move(size.error()));
-  Vec2I breathBarSize = Vec2I(*size) * interfaceScale();
-  auto offsetJson = (*assets)->json("/interface.config:breathPos");
-  if (!offsetJson) return std::unexpected(std::move(offsetJson.error()));
-  auto breathOffset = jsonToVec2I(*offsetJson);
-  if (!breathOffset) return std::unexpected(std::move(breathOffset.error()));
-  auto width = windowWidth();
-  if (!width) return std::unexpected(std::move(width.error()));
-  auto height = windowHeight();
-  if (!height) return std::unexpected(std::move(height.error()));
-  Vec2F breathBackgroundCenterPos(*width * 0.5f + (*breathOffset)[0] * interfaceScale(), *height - (*breathOffset)[1] * interfaceScale());
-  auto barPosJson = (*assets)->json("/interface.config:breathBarPos");
-  if (!barPosJson) return std::unexpected(std::move(barPosJson.error()));
-  auto barOffset = jsonToVec2I(*barPosJson);
-  if (!barOffset) return std::unexpected(std::move(barOffset.error()));
-  Vec2F breathBarPos = breathBackgroundCenterPos + Vec2F(*barOffset * interfaceScale());
-  float breath = m_client->mainPlayer()->breath();
-  auto breathMax = m_client->mainPlayer()->maxBreath();
-  if (!breathMax) return std::unexpected(std::move(breathMax.error()));
-  std::size_t blocks = std::round((10 * breath) / *breathMax);
-  if (blocks < 10) {
-    String breathPath = "/interface/breath/breath.png";
-    auto backgroundSize = (*imgMetadata)->imageSize(breathPath);
-    if (!backgroundSize) return std::unexpected(std::move(backgroundSize.error()));
-    if (auto r = context().drawQuad(breathPath, RectF::withCenter(breathBackgroundCenterPos, Vec2F(*backgroundSize) * interfaceScale())); !r)
-      return std::unexpected(std::move(r.error()));
-    for (std::size_t i = 0; i < 10; i++) {
-      String path;
-      if (i >= blocks)
-        path = blocks == 0 && Time::monotonicMilliseconds() % 500 > 250 ? std::string_view("/interface/breath/warning.png") : std::string_view("/interface/breath/empty.png");
-      else
-        path = "/interface/breath/breathbar.png";
-      if (auto r = context().drawQuad(path, breathBarPos + Vec2F(breathBarSize[0] * i, 0), interfaceScale()); !r)
-        return std::unexpected(std::move(r.error()));
-    }
-  }
-  return {};
 }
 
 std::expected<void, StarException> MainInterface::renderMessages() {
@@ -2794,7 +2749,7 @@ std::expected<void, StarException> MainInterface::renderMainBar() {
 }
 
 std::expected<void, StarException> MainInterface::renderWindows() {
-  return m_paneManager.render();
+  return m_paneManager.renderLayers(PaneLayer::Tooltip, PaneLayer::World);
 }
 
 std::expected<void, StarException> MainInterface::renderDebug() {

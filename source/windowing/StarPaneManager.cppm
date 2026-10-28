@@ -65,7 +65,10 @@ enum class PaneLayer {
   Hud,
   // Layer for interface elements which are logically part of the world but
   // handled by GUI panes (such as wires)
-  World
+  World,
+  // Behind the regular GUI layers; may be rendered separately before native
+  // overlays by an interface with multiple compositing phases.
+  Background
 };
 extern std::expected<EnumMap<PaneLayer>, StarException> const PaneLayerNames;
 
@@ -124,6 +127,8 @@ public:
   [[nodiscard]] std::expected<bool, StarException> sendInputEvent(InputEvent const& event);
 
   [[nodiscard]] std::expected<void, StarException> render();
+  // Draw an inclusive front-to-back layer range, without the background widget.
+  [[nodiscard]] std::expected<void, StarException> renderLayers(PaneLayer front, PaneLayer back);
   [[nodiscard]] std::expected<void, StarException> update(float dt);
 
 protected:

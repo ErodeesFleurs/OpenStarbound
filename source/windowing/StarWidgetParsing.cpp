@@ -1690,6 +1690,10 @@ std::expected<WidgetConstructResult, StarException> WidgetParser::canvasHandler(
     return std::unexpected(std::move(mouse.error()));
   canvas->setCaptureKeyboardEvents(*keyboard);
   canvas->setCaptureMouseEvents(*mouse);
+  auto ignoreInterfaceScale = config.getBool("ignoreInterfaceScale", false);
+  if (!ignoreInterfaceScale)
+    return std::unexpected(std::move(ignoreInterfaceScale.error()));
+  canvas->setIgnoreInterfaceScale(*ignoreInterfaceScale);
   auto result1 = common(canvas, config);
   if (!result1)
     return std::unexpected(std::move(result1.error()));

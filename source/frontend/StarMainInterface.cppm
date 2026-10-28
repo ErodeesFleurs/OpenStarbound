@@ -250,7 +250,6 @@ private:
   [[nodiscard]] std::expected<unsigned, StarException> windowWidth() const;
   [[nodiscard]] std::expected<Vec2F, StarException> mainBarPosition() const;
 
-  [[nodiscard]] std::expected<void, StarException> renderBreath();
   [[nodiscard]] std::expected<void, StarException> renderMessages();
   [[nodiscard]] std::expected<void, StarException> renderMonsterHealthBar();
   [[nodiscard]] std::expected<void, StarException> renderSpecialDamageBar();

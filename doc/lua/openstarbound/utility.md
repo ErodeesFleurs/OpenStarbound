@@ -39,6 +39,14 @@ It is also useful for working with sound setClockStart and setClockStop, which h
 
 ---
 
+#### `int` sb.monotonicMilliseconds()
+
+Returns monotonic milliseconds for elapsed-time animations. Unlike
+`millisecondsSinceEpoch()`, this clock is not a wall-clock timestamp and must
+not be stored as a portable date or compared across application runs.
+
+---
+
 #### `pair<RpcPromise<Json>,RpcPromiseKeeper<Json>>` sb.makePromise()
 
 Returns a promise and its keeper.

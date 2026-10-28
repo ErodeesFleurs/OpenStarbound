@@ -137,6 +137,10 @@ function sb.stripEscapeCodes(text) end
 ---@return integer
 function sb.millisecondsSinceEpoch() end
 
+--- Returns monotonic milliseconds for elapsed-time animations, not a wall-clock date.
+---@return integer
+function sb.monotonicMilliseconds() end
+
 --- A promise fulfiller returned by sb.makePromise.
 ---@class RpcPromiseKeeper<T>
 ---@field chain fun(self: RpcPromiseKeeper<T>, promise: RpcPromise<T>)

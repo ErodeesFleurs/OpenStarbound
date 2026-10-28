@@ -326,9 +326,9 @@ const GameTestRegistration textEditorLegacy("TextEditor", "UnselectedEditingFocu
 
 class ScriptTestPane : public BaseScriptPane {
 public:
-  static std::expected<std::shared_ptr<ScriptTestPane>, StarException> create(GuiContext& context) {
+  static std::expected<std::shared_ptr<ScriptTestPane>, StarException> create(GuiContext& context, bool interactive = true) {
     auto pane = std::shared_ptr<ScriptTestPane>(new ScriptTestPane(context));
-    auto configured = pane->init(JsonObject{{"gui", JsonObject{}}});
+    auto configured = pane->init(JsonObject{{"gui", JsonObject{}}, {"interactive", interactive}});
     if (!configured)
       return std::unexpected(std::move(configured.error()));
     return pane;
@@ -638,6 +638,82 @@ const GameTestRegistration scriptHiddenInput("ScriptPane", "HiddenDisplayedPaneR
   EXPECT_EQ(**inputs, Json(0));
   EXPECT_EQ((*editor)->getText(), String("A中"));
   ASSERT_TRUE(pane.dismissed());
+});
+
+const GameTestRegistration scriptTransparentInput("ScriptPane", "NoninteractivePaneRejectsInputAndHitTests", [](GameTest& fixture) {
+  auto context = textEditorContext(fixture);
+  ASSERT_TRUE(context) << context.error().what();
+  auto luaRoot = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto created = ScriptTestPane::create(**context, false);
+  ASSERT_TRUE(created) << created.error().what();
+  auto& pane = **created;
+  pane.setAnchor(PaneAnchor::BottomLeft);
+  pane.setSize({100, 100});
+  ASSERT_TRUE(pane.setLuaRoot(*luaRoot));
+  PaneManager manager(**context);
+  ASSERT_TRUE(manager.displayPane(PaneLayer::Background, *created));
+  ASSERT_TRUE(pane.evaluate(R"LUA(
+    storage.inputs = 0
+    function onInput(event)
+      storage.inputs = storage.inputs + 1
+      return true
+    end
+  )LUA"));
+  EXPECT_TRUE(pane.isDisplayed());
+  EXPECT_FALSE(manager.getPaneAt({1, 1}));
+  EXPECT_FALSE(manager.getPaneAt({PaneLayer::Background}, {1, 1}));
+  auto editor = textEditor(**context, "A中");
+  ASSERT_TRUE(editor) << editor.error().what();
+  ASSERT_TRUE(pane.addChild("editor", *editor));
+  ASSERT_TRUE((*editor)->focus());
+  auto captured = manager.keyboardCapturedPane();
+  ASSERT_TRUE(captured) << captured.error().what();
+  EXPECT_FALSE(*captured);
+  auto capturedWidget = manager.keyboardCapturedWidget();
+  ASSERT_TRUE(capturedWidget) << capturedWidget.error().what();
+  EXPECT_FALSE(*capturedWidget);
+  auto targets = manager.inputTargetPanes();
+  ASSERT_TRUE(targets) << targets.error().what();
+  EXPECT_TRUE(targets->empty());
+  pane.setDragActive(true, {1, 1});
+  for (InputEvent const& event : {
+      InputEvent{MouseButtonDownEvent{MouseButton::Left, {1, 1}}},
+      InputEvent{MouseButtonUpEvent{MouseButton::Left, {1, 1}}},
+      InputEvent{KeyDownEvent{Key::A, KeyMod::NoMod}},
+      InputEvent{TextInputEvent{"🙂"}}}) {
+    auto directlyConsumed = pane.sendEvent(event);
+    ASSERT_TRUE(directlyConsumed) << directlyConsumed.error().what();
+    EXPECT_FALSE(*directlyConsumed);
+    auto consumed = manager.sendInputEvent(event);
+    ASSERT_TRUE(consumed) << consumed.error().what();
+    EXPECT_FALSE(*consumed);
+  }
+  auto inputs = pane.evaluate("return storage.inputs");
+  ASSERT_TRUE(inputs) << inputs.error().what();
+  ASSERT_TRUE(*inputs);
+  EXPECT_EQ(**inputs, Json(0));
+  EXPECT_EQ((*editor)->getText(), String("A中"));
+
+  // A normal pane still participates in hit testing and real keyboard capture.
+  auto back = Pane::create(**context);
+  ASSERT_TRUE(back) << back.error().what();
+  (*back)->setAnchor(PaneAnchor::BottomLeft);
+  (*back)->setSize({100, 100});
+  auto backEditor = textEditor(**context, "B");
+  ASSERT_TRUE(backEditor) << backEditor.error().what();
+  ASSERT_TRUE((*back)->addChild("editor", *backEditor));
+  ASSERT_TRUE(manager.displayPane(PaneLayer::Hud, *back));
+  ASSERT_TRUE((*backEditor)->focus());
+  EXPECT_EQ(manager.getPaneAt({1, 1}), *back);
+  captured = manager.keyboardCapturedPane();
+  ASSERT_TRUE(captured) << captured.error().what();
+  EXPECT_EQ(*captured, *back);
+  auto committed = manager.sendInputEvent(TextInputEvent{"界"});
+  ASSERT_TRUE(committed) << committed.error().what();
+  EXPECT_TRUE(*committed);
+  EXPECT_EQ((*backEditor)->getText(), String("B界"));
+  ASSERT_TRUE(manager.dismissAllPanes());
 });
 
 const GameTestRegistration scriptInputEditor("ScriptPane", "ConsumingInputPrecedesFocusedNativeEditor", [](GameTest& fixture) {
@@ -1097,6 +1173,54 @@ const GameTestRegistration statusPresentation("LuaStatusPresentation", "LayoutMa
   ])JSON");
   ASSERT_TRUE(expected) << expected.error().what();
   EXPECT_EQ(*result, *expected);
+});
+
+const GameTestRegistration breathPresentation("LuaBreathPresentation", "FloatBlockEdgesPhysicalGeometryAndWarningClock", [](GameTest& fixture) {
+  auto root = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(root) << root.error().what();
+  auto script = (*root)->createContext("/interface/opensb/breath/breath.lua");
+  ASSERT_TRUE(script) << script.error().what();
+
+  // Compare the production numeric policy against the former float renderer at
+  // both sides of every half-block boundary, including float-rounding ties.
+  for (float maximum : {1.0f, 100.0f, 137.3f}) {
+    for (int block = 0; block < 10; ++block) {
+      float edge = maximum * ((block + 0.5f) / 10.0f);
+      for (float value : {std::nextafter(edge, 0.0f), edge, std::nextafter(edge, maximum)}) {
+        auto blocks = script->invokePath<int>("breathPresentation.blocks", value, maximum);
+        ASSERT_TRUE(blocks) << blocks.error().what();
+        EXPECT_EQ(*blocks, static_cast<int>(std::round((10 * value) / maximum)))
+            << "value=" << value << ", maximum=" << maximum;
+      }
+    }
+    auto full = script->invokePath<int>("breathPresentation.blocks", maximum, maximum);
+    ASSERT_TRUE(full) << full.error().what();
+    EXPECT_EQ(*full, 10);
+  }
+
+  Vec2I position{3, 20};
+  Vec2I barPosition{-17, -2};
+  for (auto size : {Vec2U{801, 601}, Vec2U{800, 600}}) {
+    for (float scale : {1.0f, 1.25f, 1.3f, 1.75f, 2.5f}) {
+      auto layout = script->invokePath<Json>("breathPresentation.layout",
+          JsonArray{size[0], size[1]}, scale, JsonArray{position[0], position[1]},
+          JsonArray{barPosition[0], barPosition[1]}, 3);
+      ASSERT_TRUE(layout) << layout.error().what();
+      Vec2F center{size[0] * 0.5f + position[0] * scale, size[1] - position[1] * scale};
+      Vec2F bar = center + Vec2F(barPosition * scale);
+      Vec2I iconSize = Vec2I{3, 5} * scale;
+      EXPECT_EQ(*layout, (JsonObject{
+          {"center", JsonArray{center[0], center[1]}},
+          {"bar", JsonArray{bar[0], bar[1]}},
+          {"step", iconSize[0]}}));
+    }
+  }
+
+  for (auto milliseconds : {0, 250, 251, 499, 500, 750, 751}) {
+    auto warning = script->invokePath<bool>("breathPresentation.warning", milliseconds);
+    ASSERT_TRUE(warning) << warning.error().what();
+    EXPECT_EQ(*warning, milliseconds % 500 > 250);
+  }
 });
 
 }

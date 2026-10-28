@@ -114,6 +114,20 @@ screen-size tracker. All presentation state is derived from the current
 `status.activeUniqueStatusEffectSummary()` and rebuilt on script initialization.
 Patch the registered pane configuration or script to customize this HUD.
 
+### Bundled breath HUD
+
+The `"breath"` session instance loads `/interface/opensb/breath/breath.config`.
+Lua owns the ten-block display, rounded visibility threshold and zero-breath
+warning flash; resource regeneration, depletion and damage remain native.
+The existing `breathPos` and `breathBarPos` settings remain supported.
+
+The generic `"Background"` pane layer renders before notifications and other
+native HUD elements, below the later World/Hud/window stack. This preserves
+the original breath ordering without a dedicated native breath host.
+The pane uses `interactive: false` so its screen-sized Canvas does not capture
+input. Its physical-pixel Canvas preserves the original centering and integer
+icon-step behavior at fractional interface scales.
+
 ### Low-level instance bridge
 
 * `interface.createPane(id, config, layer)` constructs an undisplayed script

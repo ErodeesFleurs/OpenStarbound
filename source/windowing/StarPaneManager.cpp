@@ -68,7 +68,8 @@ extern std::expected<EnumMap<PaneLayer>, StarException> const PaneLayerNames = E
   {PaneLayer::ModalWindow, "ModalWindow"},
   {PaneLayer::Window, "Window"},
   {PaneLayer::Hud, "Hud"},
-  {PaneLayer::World, "World"}
+  {PaneLayer::World, "World"},
+  {PaneLayer::Background, "Background"}
 });
 
 PaneManager::PaneManager(GuiContext& context)
@@ -216,7 +217,7 @@ std::shared_ptr<Pane> PaneManager::getPaneAt(Set<PaneLayer> const& paneLayers, V
       continue;
 
     for (auto const& panePair : layerPair.second) {
-      if (panePair.first->inWindow(position) && panePair.first->active())
+      if (panePair.first->interactive() && panePair.first->inWindow(position) && panePair.first->active())
         return panePair.first;
     }
   }
@@ -228,6 +229,7 @@ std::shared_ptr<Pane> PaneManager::getPaneAt(Vec2I const& position) const {
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {
       if (panePair.first != m_activeTooltip
+        && panePair.first->interactive()
         && panePair.first->inWindow(position)
         && panePair.first->active())
         return panePair.first;
@@ -282,6 +284,8 @@ std::expected<void, StarException> PaneManager::dismissWhere(std::function<std::
 std::expected<std::shared_ptr<Pane>, StarException> PaneManager::keyboardCapturedPane() const {
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {
+      if (!panePair.first->interactive())
+        continue;
       auto capturer = panePair.first->keyboardCapturer();
       if (!capturer)
         return std::unexpected(std::move(capturer.error()));
@@ -296,6 +300,8 @@ std::expected<std::shared_ptr<Pane>, StarException> PaneManager::keyboardCapture
 std::expected<std::shared_ptr<Widget>, StarException> PaneManager::keyboardCapturedWidget() const {
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {
+      if (!panePair.first->interactive())
+        continue;
       auto capturer = panePair.first->keyboardCapturer();
       if (!capturer)
         return std::unexpected(std::move(capturer.error()));
@@ -325,6 +331,8 @@ std::expected<List<std::shared_ptr<Pane>>, StarException> PaneManager::inputTarg
   List<std::shared_ptr<Pane>> targets;
   for (auto const& layer : m_displayedPanes) {
     for (auto const& entry : layer.second) {
+      if (!entry.first->interactive())
+        continue;
       targets.append(entry.first);
       if (layer.first == PaneLayer::ModalWindow)
         return targets;
@@ -340,7 +348,7 @@ std::expected<bool, StarException> PaneManager::sendInputEvent(InputEvent const&
 
     for (auto const& layerPair : m_displayedPanes) {
       for (auto const& panePair : layerPair.second) {
-        if (panePair.first->dragActive()) {
+        if (panePair.first->interactive() && panePair.first->dragActive()) {
           panePair.first->drag(*m_context.mousePosition(event));
           return true;
         }
@@ -363,7 +371,7 @@ std::expected<bool, StarException> PaneManager::sendInputEvent(InputEvent const&
   if (std::holds_alternative<MouseButtonUpEvent>(event)) {
     for (auto const& layerPair : m_displayedPanes) {
       for (auto const& panePair : layerPair.second) {
-        if (panePair.first->dragActive()) {
+        if (panePair.first->interactive() && panePair.first->dragActive()) {
           panePair.first->setDragActive(false, {});
           return true;
         }
@@ -376,11 +384,17 @@ std::expected<bool, StarException> PaneManager::sendInputEvent(InputEvent const&
   // a normal event. This is so a window can control its own closing if it
   // really needs to (like the keybindings window).
   if (std::holds_alternative<KeyDownEvent>(event) && m_context.actions(event).contains(InterfaceAction::GuiClose)) {
-    if (auto top = topPane({PaneLayer::ModalWindow, PaneLayer::Window})) {
-      auto dismissed = dismiss(top);
-      if (!dismissed)
-        return std::unexpected(std::move(dismissed.error()));
-      return true;
+    for (auto const& layerPair : m_displayedPanes) {
+      if (layerPair.first != PaneLayer::ModalWindow && layerPair.first != PaneLayer::Window)
+        continue;
+      for (auto const& panePair : layerPair.second) {
+        if (!panePair.first->interactive())
+          continue;
+        auto dismissed = dismiss(panePair.first);
+        if (!dismissed)
+          return std::unexpected(std::move(dismissed.error()));
+        return true;
+      }
     }
   }
 
@@ -395,6 +409,8 @@ std::expected<bool, StarException> PaneManager::sendInputEvent(InputEvent const&
   bool foundModal = false;
   for (auto& layerPair : m_displayedPanes) {
     for (auto const& panePair : copy(layerPair.second)) {
+      if (!panePair.first->interactive())
+        continue;
       auto consumed = panePair.first->sendEvent(event);
       if (!consumed)
         return std::unexpected(std::move(consumed.error()));
@@ -433,17 +449,35 @@ std::expected<void, StarException> PaneManager::render() {
     if (!rendered)
       return std::unexpected(std::move(rendered.error()));
   }
+  return renderLayers(PaneLayer::Tooltip, PaneLayer::Background);
+}
+
+std::expected<void, StarException> PaneManager::renderLayers(PaneLayer front, PaneLayer back) {
+  auto bounds = windowSize();
+  if (!bounds)
+    return std::unexpected(std::move(bounds.error()));
+
+  // A split render must not let its first phase consume a scale change before
+  // panes in later phases have had their relative positions adjusted.
+  if (m_prevInterfaceScale != m_context.interfaceScale()) {
+    for (auto const& layerPair : m_displayedPanes) {
+      for (auto const& panePair : layerPair.second) {
+        if (!panePair.first->active())
+          continue;
+        auto position = calculateNewInterfacePosition(panePair.first, m_context.interfaceScale() / m_prevInterfaceScale);
+        if (!position)
+          return std::unexpected(std::move(position.error()));
+        panePair.first->setPosition(*position);
+      }
+    }
+    m_prevInterfaceScale = m_context.interfaceScale();
+  }
 
   for (auto const& layerPair : std::views::reverse(m_displayedPanes)) {
+    if (layerPair.first < front || layerPair.first > back)
+      continue;
     for (auto const& panePair : std::views::reverse(layerPair.second)) {
       if (panePair.first->active()) {
-        if (m_prevInterfaceScale != m_context.interfaceScale()) {
-          auto position = calculateNewInterfacePosition(panePair.first, m_context.interfaceScale() / m_prevInterfaceScale);
-          if (!position)
-            return std::unexpected(std::move(position.error()));
-          panePair.first->setPosition(*position);
-        }
-
         auto offset = calculatePaneOffset(panePair.first);
         if (!offset)
           return std::unexpected(std::move(offset.error()));
