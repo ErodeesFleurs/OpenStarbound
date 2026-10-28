@@ -128,6 +128,26 @@ The pane uses `interactive: false` so its screen-sized Canvas does not capture
 input. Its physical-pixel Canvas preserves the original centering and integer
 icon-step behavior at fractional interface scales.
 
+### Bundled bookmark editor
+
+The `"bookmarkEditor"` world-scoped `"ModalWindow"` registration loads
+`/interface/opensb/bookmarks/bookmarkeditor.config`. Its `edit` event accepts
+`{bookmark, sourceEntityId, sourceUniqueId?}`; bookmark data uses the canonical
+JSON returned by `player.teleportBookmarks()`. Native flag/teleporter
+interactions and teleport-list edit buttons deliver this event through the
+generic interface bridge, without a native editor class.
+
+Lua owns new/edit mode, stored-name lookup, icon/target labels, focused name
+editing, empty-name fallback, confirmation, deletion and cancellation.
+Identity is the bookmark's target, never its name or current list index.
+Persistence uses the existing player bookmark APIs. The original asset's
+textbox naming constraints remain in effect.
+
+The editor preserves its draft across script reload, but closes when its
+interaction source disappears or its player/world context changes. World-scoped
+instances and queued events are discarded on either player or world generation
+changes. Teleport eligibility, reachability and warp execution remain native.
+
 ### Low-level instance bridge
 
 * `interface.createPane(id, config, layer)` constructs an undisplayed script

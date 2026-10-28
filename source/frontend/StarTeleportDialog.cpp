@@ -98,7 +98,6 @@ import star.system_world;
 import star.player_universe_map;
 
 
-import star.bookmark_interface;
 
 
 import star.teleport_dialog;
@@ -183,7 +182,6 @@ import star.player;
 import star.widget_parsing;
 import star.gui_reader;
 import star.game_timers;
-import star.pane_manager;
 import star.button_group;
 import star.button_widget;
 import star.image_widget;
@@ -221,13 +219,34 @@ namespace {
   if (!editButton) return std::unexpected(std::move(editButton.error()));
   return (*editButton)->hide();
 }
+
+[[nodiscard]] std::expected<void, StarException> setupBookmarkEntry(Widget& entry, TeleportBookmark const& bookmark) {
+  auto nameWidget = entry.fetchChild<LabelWidget>("name");
+  if (!nameWidget) return std::unexpected(std::move(nameWidget.error()));
+  auto name = (*nameWidget)->setText(bookmark.bookmarkName);
+  if (!name) return std::unexpected(std::move(name.error()));
+  auto planetNameWidget = entry.fetchChild<LabelWidget>("planetName");
+  if (!planetNameWidget) return std::unexpected(std::move(planetNameWidget.error()));
+  auto planetName = (*planetNameWidget)->setText(bookmark.targetName);
+  if (!planetName) return std::unexpected(std::move(planetName.error()));
+  auto iconWidget = entry.fetchChild<ImageWidget>("icon");
+  if (!iconWidget) return std::unexpected(std::move(iconWidget.error()));
+  auto icon = (*iconWidget)->setImage(strf("/interface/bookmarks/icons/{}.png", bookmark.icon));
+  if (!icon) return std::unexpected(std::move(icon.error()));
+  auto editButton = entry.fetchChild<ButtonWidget>("editButton");
+  if (!editButton) return std::unexpected(std::move(editButton.error()));
+  auto data = bookmark.toJson();
+  if (!data) return std::unexpected(std::move(data.error()));
+  (*editButton)->setData(std::move(*data));
+  return {};
+}
 }
 
-TeleportDialog::TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, PaneManager& paneManager, EntityId sourceEntityId, TeleportBookmark currentLocation)
-  : Pane(guiContext), m_sourceEntityId(sourceEntityId), m_client(std::move(client)), m_paneManager(paneManager), m_currentLocation(std::move(currentLocation)) {}
+TeleportDialog::TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, SendPaneEvent sendPaneEvent, EntityId sourceEntityId, TeleportBookmark currentLocation)
+  : Pane(guiContext), m_sourceEntityId(sourceEntityId), m_client(std::move(client)), m_sendPaneEvent(std::move(sendPaneEvent)), m_currentLocation(std::move(currentLocation)) {}
 
-std::expected<std::shared_ptr<TeleportDialog>, StarException> TeleportDialog::create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, PaneManager& paneManager, Json config, EntityId sourceEntityId, TeleportBookmark currentLocation) {
-  auto pane = std::shared_ptr<TeleportDialog>(new TeleportDialog(guiContext, std::move(client), paneManager, sourceEntityId, std::move(currentLocation)));
+std::expected<std::shared_ptr<TeleportDialog>, StarException> TeleportDialog::create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, SendPaneEvent sendPaneEvent, Json config, EntityId sourceEntityId, TeleportBookmark currentLocation) {
+  auto pane = std::shared_ptr<TeleportDialog>(new TeleportDialog(guiContext, std::move(client), std::move(sendPaneEvent), sourceEntityId, std::move(currentLocation)));
   auto base = pane->initializePane();
   if (!base) return std::unexpected(std::move(base.error()));
   auto initialized = pane->initialize(std::move(config));
@@ -251,7 +270,7 @@ std::expected<void, StarException> TeleportDialog::initialize(Json config) {
   config = std::move(*fetched);
   auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
   if (!destList) return std::unexpected(std::move(destList.error()));
-  (*destList)->registerMemberCallback("editBookmark", [this](Widget&) { return editBookmark(); });
+  (*destList)->registerMemberCallback("editBookmark", [this](Widget& button) { return editBookmark(button); });
   auto destinations = config.getArray("destinations", JsonArray());
   if (!destinations) return std::unexpected(std::move(destinations.error()));
   for (auto const& dest : *destinations) {
@@ -334,7 +353,7 @@ std::expected<void, StarException> TeleportDialog::initialize(Json config) {
     for (auto const& bookmark : *bookmarks) {
       auto entry = (*destList)->addItem();
       if (!entry) return std::unexpected(std::move(entry.error()));
-      auto setup = setupBookmarkEntry(*entry, bookmark);
+      auto setup = setupBookmarkEntry(**entry, bookmark);
       if (!setup) return std::unexpected(std::move(setup.error()));
       if (bookmark == m_currentLocation) {
         auto disabled = (*destList)->setEnabled((*destList)->itemPosition(*entry), false);
@@ -386,27 +405,21 @@ std::expected<void, StarException> TeleportDialog::teleport() {
   return {};
 }
 
-std::expected<void, StarException> TeleportDialog::editBookmark() {
-  auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
-  if (!destList) return std::unexpected(std::move(destList.error()));
-  if ((*destList)->selectedItem() != NPos) {
-    std::size_t selectedItem = (*destList)->selectedItem();
-    auto bookmarks = m_client->mainPlayer()->universeMap()->teleportBookmarks();
-    if (!bookmarks) return std::unexpected(std::move(bookmarks.error()));
-    auto sorted = sortByComputedValue(*bookmarks, [](TeleportBookmark const& bookmark) { return bookmark.bookmarkName.toLower(); });
-    if (!sorted) return std::unexpected(std::move(sorted.error()));
-    selectedItem = selectedItem - (m_destinations.size() - bookmarks->size());
-    if (bookmarks->size() > selectedItem) {
-      auto dialog = EditBookmarkDialog::create(context(), m_client->mainPlayer()->universeMap());
-      if (!dialog) return std::unexpected(std::move(dialog.error()));
-      auto set = (*dialog)->setBookmark((*bookmarks)[selectedItem]);
-      if (!set) return std::unexpected(std::move(set.error()));
-      if (!m_paneManager) return std::unexpected(StarException("Teleport dialog is detached from its interface"));
-      auto displayed = m_paneManager->get().displayPane(PaneLayer::ModalWindow, *dialog);
-      if (!displayed) return std::unexpected(std::move(displayed.error()));
-    }
+std::expected<void, StarException> TeleportDialog::editBookmark(Widget& button) {
+  if (!m_sendPaneEvent) return std::unexpected(StarException("Teleport dialog is detached from its interface"));
+  // The clicked row owns its canonical target identity. Re-reading and sorting
+  // the live bookmark set can map an old row to a different bookmark.
+  JsonObject payload{{"bookmark", button.data()}, {"sourceEntityId", m_sourceEntityId}};
+  if (auto source = m_client->worldClient()->entity(m_sourceEntityId)) {
+    if (auto uniqueId = source->uniqueId())
+      payload["sourceUniqueId"] = *uniqueId;
+  } else {
     dismiss();
+    return {};
   }
+  auto sent = m_sendPaneEvent("bookmarkEditor", "edit", std::move(payload));
+  if (!sent) return std::unexpected(std::move(sent.error()));
+  dismiss();
   return {};
 }
 

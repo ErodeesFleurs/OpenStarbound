@@ -31,6 +31,14 @@
       "scope" : "session",
       "open" : true,
       "order" : 30
+    },
+    "bookmarkEditor" : {
+      "config" : "/interface/opensb/bookmarks/bookmarkeditor.config",
+      "layer" : "ModalWindow",
+      "scope" : "world",
+      "open" : false,
+      "order" : 40,
+      "events" : {"edit" : "editBookmark"}
     }
   },
   "font" : {

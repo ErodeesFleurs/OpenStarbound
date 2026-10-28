@@ -57,13 +57,11 @@ import star.uuid;
 import star.celestial_coordinate;
 import star.warping;
 import star.player_universe_map;
-import star.bookmark_interface;
 import star.format;
 
 namespace Star {
 
 class UniverseClient;
-class PaneManager;
 
 class TeleportDialog : public Pane {
 public:
@@ -74,22 +72,23 @@ public:
     return Star::typeName<TeleportDialog>();
   }
 
+  using SendPaneEvent = std::function<std::expected<void, StarException>(String const&, String const&, Json)>;
   [[nodiscard]] static std::expected<std::shared_ptr<TeleportDialog>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client,
-      PaneManager& paneManager, Json config, EntityId sourceEntityId, TeleportBookmark currentLocation);
-  void detachInterface() { m_paneManager.reset(); }
+      SendPaneEvent sendPaneEvent, Json config, EntityId sourceEntityId, TeleportBookmark currentLocation);
+  void detachInterface() { m_sendPaneEvent = {}; }
 
   [[nodiscard]] std::expected<void, StarException> tick(float dt) override;
 
   [[nodiscard]] std::expected<void, StarException> selectDestination();
   [[nodiscard]] std::expected<void, StarException> teleport();
-  [[nodiscard]] std::expected<void, StarException> editBookmark();
+  [[nodiscard]] std::expected<void, StarException> editBookmark(Widget& button);
 
 private:
-  TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, PaneManager& paneManager, EntityId sourceEntityId, TeleportBookmark currentLocation);
+  TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, SendPaneEvent sendPaneEvent, EntityId sourceEntityId, TeleportBookmark currentLocation);
   [[nodiscard]] std::expected<void, StarException> initialize(Json config);
   EntityId m_sourceEntityId;
   std::shared_ptr<UniverseClient> m_client;
-  std::optional<std::reference_wrapper<PaneManager>> m_paneManager;
+  SendPaneEvent m_sendPaneEvent;
   List<std::pair<WarpAction, bool>> m_destinations;
   TeleportBookmark m_currentLocation;
 };
@@ -100,6 +99,5 @@ export module star.teleport_dialog;
 
 export namespace Star {
   using ::Star::UniverseClient;
-  using ::Star::PaneManager;
   using ::Star::TeleportDialog;
 }

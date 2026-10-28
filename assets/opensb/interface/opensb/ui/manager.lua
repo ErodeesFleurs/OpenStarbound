@@ -32,7 +32,8 @@ function UiManager:restore()
   end
   for id, definition in pairs(self.definitions) do
     if definition.scope == "world" and
-        (not session.inWorld or not previous or previous.worldGeneration ~= session.worldGeneration) then
+        (not session.inWorld or not previous or previous.worldGeneration ~= session.worldGeneration
+          or previous.playerGeneration ~= session.playerGeneration) then
       stale[id] = true
     end
   end
@@ -116,7 +117,8 @@ function UiManager:suspend(session)
   local closed = {}
   for id, definition in pairs(self.definitions) do
     if definition.scope == "world" and
-        (not session.inWorld or session.worldGeneration ~= previous.worldGeneration) then
+        (not session.inWorld or session.worldGeneration ~= previous.worldGeneration
+          or session.playerGeneration ~= previous.playerGeneration) then
       closed[id] = true
     end
   end

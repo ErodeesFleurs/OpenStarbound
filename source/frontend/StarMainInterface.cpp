@@ -313,7 +313,6 @@ import star.tool_user_entity;
 import star.player_universe_map;
 
 
-import star.bookmark_interface;
 
 
 import star.teleport_dialog;
@@ -1461,18 +1460,26 @@ std::expected<void, StarException> MainInterface::handleInteractAction(InteractA
           if (!bookmarks)
             return std::unexpected(std::move(bookmarks.error()));
           if (!bookmarks->contains(currentLocation) || !*canTeleport) {
-            auto dialog = EditBookmarkDialog::create(context(), m_client->mainPlayer()->universeMap());
-            if (!dialog)
-              return std::unexpected(std::move(dialog.error()));
-            if (auto set = (*dialog)->setBookmark(currentLocation); !set)
-              return std::unexpected(std::move(set.error()));
-            return m_paneManager.displayPane(PaneLayer::ModalWindow, *dialog);
+            auto bookmark = currentLocation.toJson();
+            if (!bookmark)
+              return std::unexpected(std::move(bookmark.error()));
+            return sendPaneEvent("bookmarkEditor", "edit", JsonObject{
+                {"bookmark", std::move(*bookmark)}, {"sourceEntityId", interactAction.entityId},
+                {"sourceUniqueId", *uniqueEntityId}});
           }
         }
       }
     }
     if (*canTeleport) {
-      auto dialog = TeleportDialog::create(context(), m_client, m_paneManager, interactAction.data, interactAction.entityId, currentLocation);
+      auto sendEvent = [this, lifetime = m_callbackStopSource.get_token(), session = uiSession()](
+          String const& id, String const& event, Json payload) -> std::expected<void, StarException> {
+        if (lifetime.stop_requested())
+          return std::unexpected(GuiException("Interface is detached"));
+        if (session != uiSession())
+          return {};
+        return sendPaneEvent(id, event, std::move(payload));
+      };
+      auto dialog = TeleportDialog::create(context(), m_client, std::move(sendEvent), interactAction.data, interactAction.entityId, currentLocation);
       if (!dialog)
         return std::unexpected(std::move(dialog.error()));
       m_teleportDialog = std::move(*dialog);

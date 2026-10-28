@@ -7,7 +7,6 @@ target_sources (star_frontend_module_interfaces PUBLIC FILE_SET CXX_MODULES FILE
     StarVoiceLuaBindings.cppm
     StarInterfaceLuaBindings.cppm
     StarBindingsMenu.cppm
-    StarBookmarkInterface.cppm
     StarConfirmationDialog.cppm
     StarErrorScreen.cppm
     StarGraphicsMenu.cppm
@@ -69,7 +68,6 @@ add_library (star_frontend_modules STATIC
     StarVoiceLuaBindings.cpp
     StarClipboardLuaBindings.cpp
     StarBindingsMenu.cpp
-    StarBookmarkInterface.cpp
     StarConfirmationDialog.cpp
     StarErrorScreen.cpp
     StarGraphicsMenu.cpp

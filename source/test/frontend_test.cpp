@@ -27,6 +27,10 @@ import star.map;
 import star.pane;
 import star.pane_manager;
 import star.main_interface;
+import star.assets;
+import star.player_universe_map;
+import star.uuid;
+import star.game_types;
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
@@ -831,7 +835,7 @@ const GameTestRegistration stableHudOrder("ScriptedHud", "PointerConsumptionRais
   }
 });
 
-const GameTestRegistration uiWorldScope("LuaUiManager", "WorldTransitionDropsScopedEventsBeforeReleasingNativePane", [](GameTest& fixture) {
+const GameTestRegistration uiWorldScope("LuaUiManager", "WorldAndPlayerTransitionsDropScopedEventsBeforeReleasingNativePane", [](GameTest& fixture) {
   auto context = textEditorContext(fixture);
   ASSERT_TRUE(context) << context.error().what();
   auto luaRoot = LuaRoot::create(fixture.root());
@@ -867,7 +871,7 @@ const GameTestRegistration uiWorldScope("LuaUiManager", "WorldTransitionDropsSco
   // displayed Pane. No callPane echo exists: dispatch before teardown fails.
   auto suspended = script->eval<Json>(R"LUA(
     local state = {
-      session = {inWorld = true, worldGeneration = 1},
+      session = {inWorld = true, worldGeneration = 1, playerGeneration = 1},
       open = {worldOpen = true, worldClosed = false, sessionPane = true}
     }
     local definitions = {
@@ -883,7 +887,7 @@ const GameTestRegistration uiWorldScope("LuaUiManager", "WorldTransitionDropsSco
     manager:enqueue("sessionPane", "message", {keep = true})
     manager:enqueue("$ui", "open", {id = "sessionPane"})
     manager:enqueue("$ui", "register", {id = "worldOpen", definition = definitions.worldOpen})
-    manager:suspend({inWorld = true, worldGeneration = 2})
+    manager:suspend({inWorld = true, worldGeneration = 1, playerGeneration = 2})
     local alive = pcall(retained.isDisplayed)
     return {#state.queue, state.queue[1].id, state.queue[2].payload.id,
       state.queue[3].event, state.open.worldOpen == nil,
@@ -1221,6 +1225,159 @@ const GameTestRegistration breathPresentation("LuaBreathPresentation", "FloatBlo
     ASSERT_TRUE(warning) << warning.error().what();
     EXPECT_EQ(*warning, milliseconds % 500 > 250);
   }
+});
+
+const GameTestRegistration bookmarkEditor("LuaBookmarkEditor", "NativeTextEditingIdentityPersistenceAndSessionGuards", [](GameTest& fixture) {
+  auto context = textEditorContext(fixture);
+  ASSERT_TRUE(context) << context.error().what();
+  auto luaRoot = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto assets = fixture.root().assets();
+  ASSERT_TRUE(assets) << assets.error().what();
+  auto config = (*assets)->json("/interface/opensb/bookmarks/bookmarkeditor.config");
+  ASSERT_TRUE(config) << config.error().what();
+  auto paneConfig = config->toObject();
+  ASSERT_TRUE(paneConfig) << paneConfig.error().what();
+  auto textboxLayout = (*assets)->json("/interface/windowconfig/editbookmark.config:paneLayout.name");
+  ASSERT_TRUE(textboxLayout) << textboxLayout.error().what();
+  // Keep the real configured TextBox and production script/domain model. The
+  // display-only image/label widgets need a renderer and are covered by GUI smoke.
+  paneConfig->set("gui", JsonObject{{"name", *textboxLayout}});
+  PlayerUniverseMap model;
+  model.setServerUuid(Uuid::nil());
+  Json session = JsonObject{{"hasPlayer", true}, {"inWorld", true}, {"playerGeneration", 1}, {"worldGeneration", 1}};
+  bool sourceExists = true;
+  LuaCallbacks player;
+  ASSERT_TRUE(player.registerCallback("teleportBookmarks", [&]() -> std::expected<JsonArray, StarException> {
+    auto bookmarks = model.teleportBookmarks();
+    if (!bookmarks) return std::unexpected(std::move(bookmarks.error()));
+    JsonArray result;
+    for (auto const& bookmark : *bookmarks) {
+      auto json = bookmark.toJson();
+      if (!json) return std::unexpected(std::move(json.error()));
+      result.append(std::move(*json));
+    }
+    return result;
+  }));
+  ASSERT_TRUE(player.registerCallback("addTeleportBookmark", [&](Json const& value) -> std::expected<bool, StarException> {
+    auto bookmark = TeleportBookmark::fromJson(value);
+    if (!bookmark) return std::unexpected(std::move(bookmark.error()));
+    return model.addTeleportBookmark(std::move(*bookmark));
+  }));
+  ASSERT_TRUE(player.registerCallback("removeTeleportBookmark", [&](Json const& value) -> std::expected<bool, StarException> {
+    auto bookmark = TeleportBookmark::fromJson(value);
+    if (!bookmark) return std::unexpected(std::move(bookmark.error()));
+    return model.removeTeleportBookmark(*bookmark);
+  }));
+  LuaCallbacks interface;
+  ASSERT_TRUE(interface.registerCallback("session", [&]() { return session; }));
+  LuaCallbacks world;
+  ASSERT_TRUE(world.registerCallback("entityExists", [&](EntityId) { return sourceExists; }));
+  ASSERT_TRUE(world.registerCallback("entityUniqueId", [](EntityId) { return String("local-source"); }));
+  PaneManager panes(**context);
+  std::shared_ptr<BaseScriptPane> editor;
+  auto open = [&](Json bookmark) -> std::expected<void, StarException> {
+    if (editor) {
+      if (auto dismissed = panes.dismissPane(editor); !dismissed) return std::unexpected(std::move(dismissed.error()));
+    }
+    auto created = BaseScriptPane::create(**context, *paneConfig);
+    if (!created) return std::unexpected(std::move(created.error()));
+    editor = std::move(*created);
+    editor->setAnchor(PaneAnchor::BottomLeft);
+    if (auto added = editor->setLuaRoot(*luaRoot); !added) return std::unexpected(std::move(added.error()));
+    auto textbox = editor->fetchChild<TextBoxWidget>("name");
+    if (!textbox) return std::unexpected(std::move(textbox.error()));
+    // No glyph measurement is available in this renderer-free input fixture.
+    (*textbox)->setMaxWidth(-1);
+    if (auto added = editor->addCallbacks("player", player); !added) return std::unexpected(std::move(added.error()));
+    if (auto added = editor->addCallbacks("interface", interface); !added) return std::unexpected(std::move(added.error()));
+    if (auto added = editor->addCallbacks("world", world); !added) return std::unexpected(std::move(added.error()));
+    if (auto displayed = panes.displayPane(PaneLayer::ModalWindow, editor, {}); !displayed)
+      return std::unexpected(std::move(displayed.error()));
+    auto edited = editor->call("editBookmark", {JsonObject{
+        {"bookmark", std::move(bookmark)}, {"sourceEntityId", 42}, {"sourceUniqueId", "local-source"}}});
+    if (!edited) return std::unexpected(std::move(edited.error()));
+    return {};
+  };
+  auto makeBookmark = [](String target, String name) {
+    return Json(JsonObject{{"target", JsonArray{"InstanceWorld:bookmarktest:-:-", target}},
+        {"targetName", "Remote Planet"}, {"bookmarkName", name}, {"icon", "default"}});
+  };
+  auto first = makeBookmark("first", "Duplicate");
+  auto second = makeBookmark("second", "Duplicate");
+  ASSERT_TRUE(open(first));
+  auto textbox = editor->fetchChild<TextBoxWidget>("name");
+  ASSERT_TRUE(textbox) << textbox.error().what();
+  EXPECT_TRUE((*textbox)->hasFocus().value_or(false));
+  ASSERT_TRUE((*textbox)->setSelection(0, 9));
+  sendEditorEvent(**textbox, TextInputEvent{"Saved"});
+  ASSERT_TRUE(fixture.root().reload());
+  ASSERT_TRUE(editor->call("name", {}));
+  EXPECT_EQ((*textbox)->getText(), String("Saved"));
+  sendEditorEvent(**textbox, KeyDownEvent{Key::Return, KeyMod::NoMod});
+  auto saved = model.teleportBookmarks();
+  ASSERT_TRUE(saved) << saved.error().what();
+  ASSERT_EQ(saved->size(), 1u);
+  EXPECT_EQ((*saved)[0].bookmarkName, String("Saved"));
+  ASSERT_TRUE(open(second));
+  ASSERT_TRUE(editor->call("ok", {}));
+  ASSERT_TRUE(open(first)); // The stored name wins over the caller's stale name.
+  textbox = editor->fetchChild<TextBoxWidget>("name");
+  ASSERT_TRUE(textbox);
+  EXPECT_EQ((*textbox)->getText(), String("Saved"));
+  ASSERT_TRUE((*textbox)->setText(""));
+  sendEditorEvent(**textbox, KeyDownEvent{Key::Return, KeyMod::NoMod});
+  saved = model.teleportBookmarks();
+  ASSERT_TRUE(saved);
+  ASSERT_EQ(saved->size(), 2u);
+  auto firstTarget = TeleportBookmark::fromJson(first);
+  auto secondTarget = TeleportBookmark::fromJson(second);
+  ASSERT_TRUE(firstTarget);
+  ASSERT_TRUE(secondTarget);
+  for (auto const& bookmark : *saved) {
+    EXPECT_EQ(bookmark.bookmarkName, bookmark == *firstTarget ? String("Remote Planet") : String("Duplicate"));
+  }
+  ASSERT_TRUE(open(first));
+  textbox = editor->fetchChild<TextBoxWidget>("name");
+  ASSERT_TRUE(textbox);
+  ASSERT_TRUE((*textbox)->setText("Cancelled"));
+  sendEditorEvent(**textbox, KeyDownEvent{Key::Escape, KeyMod::NoMod});
+  auto stored = model.toJson();
+  ASSERT_TRUE(stored) << stored.error().what();
+  auto restored = PlayerUniverseMap::create(*stored);
+  ASSERT_TRUE(restored) << restored.error().what();
+  restored->setServerUuid(Uuid::nil());
+  auto persisted = restored->teleportBookmarks();
+  ASSERT_TRUE(persisted);
+  ASSERT_EQ(persisted->size(), 2u);
+  for (auto const& bookmark : *persisted)
+    EXPECT_NE(bookmark.bookmarkName, String("Cancelled"));
+  ASSERT_TRUE(open(first));
+  session = JsonObject{{"hasPlayer", true}, {"inWorld", true}, {"playerGeneration", 2}, {"worldGeneration", 1}};
+  ASSERT_TRUE(editor->call("remove", {}));
+  saved = model.teleportBookmarks();
+  ASSERT_TRUE(saved);
+  EXPECT_EQ(saved->size(), 2u);
+  ASSERT_TRUE(open(first));
+  session = JsonObject{{"hasPlayer", true}, {"inWorld", true}, {"playerGeneration", 2}, {"worldGeneration", 2}};
+  ASSERT_TRUE(editor->call("ok", {}));
+  saved = model.teleportBookmarks();
+  ASSERT_TRUE(saved);
+  EXPECT_EQ(saved->size(), 2u);
+  ASSERT_TRUE(open(first));
+  sourceExists = false;
+  ASSERT_TRUE(editor->call("ok", {}));
+  saved = model.teleportBookmarks();
+  ASSERT_TRUE(saved);
+  EXPECT_EQ(saved->size(), 2u);
+  sourceExists = true;
+  ASSERT_TRUE(open(second));
+  ASSERT_TRUE(editor->call("remove", {}));
+  saved = model.teleportBookmarks();
+  ASSERT_TRUE(saved);
+  ASSERT_EQ(saved->size(), 1u);
+  EXPECT_EQ((*saved)[0], *firstTarget);
+  ASSERT_TRUE(panes.dismissAllPanes());
 });
 
 }
