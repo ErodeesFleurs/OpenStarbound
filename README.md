@@ -102,7 +102,11 @@ Then use the `windows-cross` preset with the same vcpkg/bootstrap steps. Tests r
 
 ## Tests and benchmarks
 
-CTest presets run asset-free core tests. For real-asset tests:
+CTest presets run asset-free core tests.
+
+Allocator tests cover 8 KiB-aligned types (within the Windows x64 ABI limit) and separate 128 KiB dynamically aligned allocations, including ownership transfer and release across threads.
+
+For real-asset tests:
 
 ```sh
 OPENSTARBOUND_ASSETS=/path/to/Starbound/assets nix run .#game-tests

@@ -22,7 +22,8 @@ TEST(MemoryTest, FailedReallocationPreservesOwnedBytes) {
 }
 
 TEST(MemoryTest, LargeAlignedObjectsTransferAcrossThreads) {
-  struct alignas(131072) Value {
+  // Keep type alignment within the Windows x64 ABI limit; test larger allocations below.
+  struct alignas(8192) Value {
     std::array<unsigned char, 257> bytes{};
   };
   auto values = std::make_unique<Value[]>(2);
@@ -37,6 +38,29 @@ TEST(MemoryTest, LargeAlignedObjectsTransferAcrossThreads) {
     for (std::size_t i = 0; i < owned[0].bytes.size(); ++i) {
       intact &= owned[0].bytes[i] == static_cast<unsigned char>(i);
       intact &= owned[1].bytes[i] == static_cast<unsigned char>(i + 17);
+    }
+  });
+  consumer.join();
+  EXPECT_TRUE(intact);
+}
+
+TEST(MemoryTest, LargeDynamicAlignmentTransfersAcrossThreads) {
+  constexpr std::size_t alignment = 131072;
+  constexpr std::size_t payloadSize = 257;
+  auto release = [](unsigned char* ptr) { ::operator delete[](ptr, std::align_val_t{alignment}); };
+  std::unique_ptr<unsigned char[], decltype(release)> bytes(
+      static_cast<unsigned char*>(::operator new[](2 * alignment, std::align_val_t{alignment})), release);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(bytes.get()) % alignment, 0u);
+  for (std::size_t i = 0; i < payloadSize; ++i) {
+    bytes[i] = static_cast<unsigned char>(i);
+    bytes[alignment + i] = static_cast<unsigned char>(i + 17);
+  }
+
+  bool intact = true;
+  std::thread consumer([owned = std::move(bytes), &intact] {
+    for (std::size_t i = 0; i < payloadSize; ++i) {
+      intact &= owned[i] == static_cast<unsigned char>(i);
+      intact &= owned[alignment + i] == static_cast<unsigned char>(i + 17);
     }
   });
   consumer.join();
