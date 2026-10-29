@@ -346,7 +346,6 @@ import star.radio_message_popup;
 
 
 
-import star.quest_tracker;
 
 
 
@@ -547,8 +546,7 @@ std::expected<void, StarException> MainInterface::initMainBarPanes() {
                                 ActionBar::create(context(), m_paneManager, m_client->mainPlayer()), m_actionBar);
       !result)
     return std::unexpected(std::move(result.error()));
-  return installPane(m_paneManager, MainInterfacePanes::QuestTracker, PaneLayer::Hud,
-                     QuestTrackerPane::create(context()), m_questTracker);
+  return {};
 }
 
 std::expected<void, StarException> MainInterface::initScriptAndHudPanes(std::shared_ptr<WorldPainter> painter) {
@@ -1954,17 +1952,6 @@ std::expected<void, StarException> MainInterface::update(float dt) {
         }
       }
     }
-  }
-
-  if (auto currentQuest = m_client->questManager()->currentQuest()) {
-    auto displayed = m_paneManager.displayRegisteredPane(MainInterfacePanes::QuestTracker);
-    if (!displayed)
-      return std::unexpected(std::move(displayed.error()));
-    m_questTracker->setQuest(*currentQuest);
-  } else {
-    auto dismissed = m_paneManager.dismissRegisteredPane(MainInterfacePanes::QuestTracker);
-    if (!dismissed)
-      return std::unexpected(std::move(dismissed.error()));
   }
 
   auto cursorState = updateCursor();

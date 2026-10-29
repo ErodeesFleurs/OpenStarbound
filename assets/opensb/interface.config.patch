@@ -64,6 +64,13 @@
       "open" : false,
       "order" : 70,
       "globalActions" : {"InterfaceCodex" : "toggle"}
+    },
+    "QuestTracker" : {
+      "config" : "/interface/opensb/questtracker/questtracker.config",
+      "layer" : "Hud",
+      "scope" : "session",
+      "open" : true,
+      "order" : 80
     }
   },
   "font" : {

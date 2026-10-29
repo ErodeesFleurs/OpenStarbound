@@ -524,13 +524,26 @@ Returns `true` if the player can turn in the specified quest.
 
 #### `Maybe<Json>` player.currentQuest()
 
-Returns the current quest as JSON, or `nil` if no quest is active.
+Returns the effective current quest's persisted JSON representation, or `nil` if none is eligible. This is not a lightweight live HUD view; use `currentQuestView` for objectives, progress and compass state.
+
+---
+
+#### `Maybe<Json>` player.currentQuestView()
+
+Returns `nil` when the native quest manager has no eligible current quest, otherwise a compact table:
+
+* `id`: the effective quest ID.
+* `objectives`: optional live objective array, normally entries `{text, complete}`. An empty array remains distinct from an absent field.
+* `progress`: optional native progress fraction; `0` is a present value.
+* `compassDirection`: optional native direction in radians; `0` is a present value.
+
+Absent optional fields are omitted. Selection uses `QuestManager.currentQuest()`, including its on-world preference and active/show-in-log eligibility, rather than reconstructing selection from the manually tracked ID. This query does not serialize rewards, portraits, script storage or other quest save data, and does not alter tracking or quest state.
 
 ---
 
 #### `Maybe<String>` player.currentQuestId()
 
-Returns the current quest ID, or `nil` if no quest is active.
+Returns the manually tracked quest ID, or `nil` when none is selected. It is not necessarily the effective on-world quest, and a returned ID does not itself guarantee active/show-in-log eligibility. Use `currentQuestView().id` after checking for `nil` when displaying the effective quest.
 
 ---
 

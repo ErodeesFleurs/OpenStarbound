@@ -62,7 +62,6 @@ enum class MainInterfacePanes {
   PlanetText,
   RadioMessagePopup,
   CraftingPlain,
-  QuestTracker,
   MmUpgrade,
   Collections,
   CharacterSwap

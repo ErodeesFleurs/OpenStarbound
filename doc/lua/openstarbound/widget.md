@@ -10,6 +10,20 @@ An existing callback, now returns the played sound instance.
 
 ---
 
+## Geometry and clipping
+
+#### `void` widget.setDrawingOffset(`String` widgetName, `Vec2I` offset)
+
+Sets the native drawing offset in interface pixels, additional to the widget's base position. It affects drawing and native screen geometry without changing the base position returned by `widget.getPosition`. `widget.setPosition` does not clear this offset.
+
+#### `void` widget.setScissoringEnabled(`String` widgetName, `bool` enabled)
+
+Enables or disables clipping to the widget's own bounds. Ancestor clipping regions still apply. This does not change visibility, size or input policy. Disable the containing pane's clipping with `pane.setScissoringEnabled(false)` when children must extend beyond its root bounds.
+
+For pointer geometry, reuse the existing `widget.inMember(widgetName, screenPosition)` with screen coordinates in interface pixels, such as `onInput`'s `event.screenPosition`. Native hit testing includes the drawing offset and the clipping area established by rendering; an undrawn headless widget does not model that rendered area.
+
+---
+
 ## Widget specific callbacks
 
 These callbacks only work for some widget types.

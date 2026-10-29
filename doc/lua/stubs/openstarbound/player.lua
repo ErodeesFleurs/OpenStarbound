@@ -357,12 +357,16 @@ function player.callQuest(questId, functionName, ...) end
 ---@return Bool
 function player.canTurnInQuest(questId) end
 
---- Returns the current quest as JSON, or `nil` if no quest is active. ---
+--- Returns the effective quest's persisted JSON, or nil. Use currentQuestView for lightweight live HUD data. ---
 ---@return Json?
 function player.currentQuest() end
 
---- Returns the current quest ID, or `nil` if no quest is active. ---
----@return String?
+--- Returns the native effective quest view; absent optional fields are omitted, while numeric zero remains present.
+---@return {id:string, objectives?:Json[], progress?:number, compassDirection?:number}|nil
+function player.currentQuestView() end
+
+--- Returns the manually tracked ID, not necessarily the effective on-world quest; does not guarantee eligibility. ---
+---@return string?
 function player.currentQuestId() end
 
 --- Makes the player perform a dance. Pass `nil` to stop dancing. ---

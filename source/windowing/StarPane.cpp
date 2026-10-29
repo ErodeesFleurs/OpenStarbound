@@ -641,6 +641,15 @@ std::expected<LuaCallbacks, StarException> Pane::makePaneCallbacks() {
   });
   if (!setSizeCallback)
     return std::unexpected(std::move(setSizeCallback.error()));
+  auto setScissoring = registerPaneCallback("setScissoringEnabled", [](Pane& pane, bool enabled) -> std::expected<void, StarException> {
+    if (enabled)
+      pane.enableScissoring();
+    else
+      pane.disableScissoring();
+    return {};
+  });
+  if (!setScissoring)
+    return std::unexpected(std::move(setScissoring.error()));
 
   auto addWidget = registerPaneCallback("addWidget",
     [](Pane& pane, Json const& config, std::optional<String> const& widgetName) -> std::expected<std::optional<LuaCallbacks>, StarException> {

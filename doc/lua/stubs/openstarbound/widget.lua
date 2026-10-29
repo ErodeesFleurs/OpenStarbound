@@ -2,6 +2,16 @@
 
 --- widget API
 
+--- Sets an additional native drawing/screen-geometry offset without changing the base getPosition value.
+---@param widgetName string
+---@param offset Vec2I
+function widget.setDrawingOffset(widgetName, offset) end
+
+--- Controls clipping to this widget's bounds; ancestor clipping and input policy remain unchanged.
+---@param widgetName string
+---@param enabled boolean
+function widget.setScissoringEnabled(widgetName, enabled) end
+
 --- Gets the hint text of a TextBoxWidget. ---
 ---@param widgetName string
 ---@return string

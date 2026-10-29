@@ -36,7 +36,6 @@ target_sources (star_frontend_module_interfaces PUBLIC FILE_SET CXX_MODULES FILE
     StarMerchantInterface.cppm
     StarNameplatePainter.cppm
     StarQuestIndicatorPainter.cppm
-    StarQuestTracker.cppm
     StarScriptPane.cppm
     StarTeamBar.cppm
     StarWireInterface.cppm
@@ -94,7 +93,6 @@ add_library (star_frontend_modules STATIC
     StarMerchantInterface.cpp
     StarNameplatePainter.cpp
     StarQuestIndicatorPainter.cpp
-    StarQuestTracker.cpp
     StarScriptPane.cpp
     StarTeamBar.cpp
     StarWireInterface.cpp

@@ -325,6 +325,23 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
     });
   }); !registered)
     return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setDrawingOffset", [parentWidget](String const& widgetName, Vec2I const& offset) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      widget->setDrawingOffset(offset);
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setScissoringEnabled", [parentWidget](String const& widgetName, bool enabled) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      if (enabled)
+        widget->enableScissoring();
+      else
+        widget->disableScissoring();
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
   if (auto registered = callbacks.registerCallback("setVisible", [parentWidget](String const& widgetName, bool visible) -> std::expected<void, StarException> {
     return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
       return widget->setVisibility(visible);

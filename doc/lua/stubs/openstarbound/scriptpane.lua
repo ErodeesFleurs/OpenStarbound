@@ -22,6 +22,10 @@ function pane.getSize() end
 ---@param size Vec2I
 function pane.setSize(size) end
 
+--- Controls clipping to the pane's own bounds; ancestor/window and child clipping still apply.
+---@param enabled boolean
+function pane.setScissoringEnabled(enabled) end
+
 --- Returns the interface scale currently applied to the pane. This mirrors `interface.scale()` but is available directly on the pane object. ---
 ---@return number
 function pane.scale() end

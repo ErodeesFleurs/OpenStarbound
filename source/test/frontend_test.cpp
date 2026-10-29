@@ -43,6 +43,14 @@ import star.player_factory;
 import star.player_codexes;
 import star.codex;
 import star.player_lua_bindings;
+import star.quests;
+import star.quest_manager;
+import star.quest_descriptor;
+import star.versioning_database;
+import star.image_widget;
+import star.image_stretch_widget;
+import star.progress_widget;
+import star.math_common;
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
@@ -343,8 +351,11 @@ const GameTestRegistration textEditorLegacy("TextEditor", "UnselectedEditingFocu
 class ScriptTestPane : public BaseScriptPane {
 public:
   static std::expected<std::shared_ptr<ScriptTestPane>, StarException> create(GuiContext& context, bool interactive = true) {
+    return create(context, JsonObject{{"gui", JsonObject{}}, {"interactive", interactive}});
+  }
+  static std::expected<std::shared_ptr<ScriptTestPane>, StarException> create(GuiContext& context, Json config) {
     auto pane = std::shared_ptr<ScriptTestPane>(new ScriptTestPane(context));
-    auto configured = pane->init(JsonObject{{"gui", JsonObject{}}, {"interactive", interactive}});
+    auto configured = pane->init(std::move(config));
     if (!configured)
       return std::unexpected(std::move(configured.error()));
     return pane;
@@ -2303,6 +2314,270 @@ const GameTestRegistration codexPresentation("LuaCodex", "DomainIdentityReadReor
   ASSERT_TRUE(controller->eval<LuaValue>("CodexUnread.update(manager)"));
   EXPECT_TRUE(domain->codexRead("zzcodex-two"));
   EXPECT_EQ((*text)->getText(), String("Other book"));
+  ASSERT_TRUE(panes.dismissAllPanes());
+});
+
+const GameTestRegistration questTrackerPresentation("LuaQuestTracker", "EffectiveDomainOptionalValuesNativeBoundsSpringAndReload", [](GameTest& fixture) {
+  auto directory = File::temporaryDirectory(fixture.root().random());
+  ASSERT_TRUE(directory) << directory.error().what();
+  auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directory)); });
+  auto overlay = File::relativeTo(*directory, "assets");
+  ASSERT_TRUE(File::makeDirectory(overlay));
+  ASSERT_TRUE(File::makeDirectory(File::relativeTo(overlay, "interface")));
+  ASSERT_TRUE(File::makeDirectory(File::relativeTo(overlay, "interface/questtracker")));
+  ASSERT_TRUE(File::writeFile(String(R"JSON({
+    "incompleteObjectiveTemplate":"P[<objective>] <objective>\n",
+    "completeObjectiveTemplate":"C(<objective>)\n"
+  })JSON"), File::relativeTo(overlay, "interface/questtracker/questtracker.config.patch")));
+  ASSERT_TRUE(File::writeFile(String(R"JSON({"id":"zztracker","showInLog":true})JSON"),
+      File::relativeTo(overlay, "visible.questtemplate")));
+  ASSERT_TRUE(File::writeFile(String(R"JSON({"id":"zztracker-hidden","showInLog":false})JSON"),
+      File::relativeTo(overlay, "hidden.questtemplate")));
+  auto settings = fixture.rootSettings();
+  settings.assetSources.append(overlay);
+  settings.storageDirectory = File::relativeTo(*directory, "storage");
+  settings.runtimeConfigFile = String("tracker.config");
+  settings.logDirectory = {};
+  settings.logFile = {};
+  settings.includeUGC = false;
+  auto createdRoot = Root::create(settings);
+  ASSERT_TRUE(createdRoot) << createdRoot.error().what();
+  auto& root = **createdRoot;
+  auto configuration = root.configuration();
+  ASSERT_TRUE(configuration) << configuration.error().what();
+  ASSERT_TRUE((*configuration)->set("bindings", JsonObject{
+      {"GuiClose", JsonArray{JsonObject{{"type", "key"}, {"value", "Esc"}, {"mods", JsonArray{}}}}}}));
+  auto context = GuiContext::create(root, {}, {});
+  ASSERT_TRUE(context) << context.error().what();
+  auto luaRoot = LuaRoot::create(root);
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto factory = root.playerFactory();
+  ASSERT_TRUE(factory) << factory.error().what();
+  auto player = (*factory)->create();
+  ASSERT_TRUE(player) << player.error().what();
+  auto versions = root.versioningDatabase();
+  ASSERT_TRUE(versions) << versions.error().what();
+  JsonObject quests;
+  for (auto const& templateId : {String("zztracker"), String("zztracker-hidden")}) {
+    auto arc = QuestArcDescriptor::fromJson(root, JsonObject{{"quests", JsonArray{
+        JsonObject{{"questId", templateId}, {"templateId", templateId}, {"parameters", JsonObject{}}}}}});
+    ASSERT_TRUE(arc) << arc.error().what();
+    auto storedArc = arc->diskStore(root);
+    ASSERT_TRUE(storedArc) << storedArc.error().what();
+    auto storedQuest = (*versions)->makeCurrentVersionedJson("Quest", JsonObject{
+        {"state", "Active"}, {"arc", *storedArc}, {"arcPos", 0}, {"parameters", JsonObject{}},
+        {"money", 0}, {"rewards", JsonArray{}}, {"lastUpdatedOn", 0}});
+    ASSERT_TRUE(storedQuest) << storedQuest.error().what();
+    quests.set(templateId, storedQuest->toJson());
+  }
+  auto manager = (*player)->questManager();
+  ASSERT_TRUE(manager->diskLoad(JsonObject{{"quests", quests}, {"currentQuest", "zztracker"}}));
+  auto quest = manager->getQuest("zztracker");
+  ASSERT_TRUE(quest) << quest.error().what();
+  JsonArray objectives{JsonArray{"Done <literal>", true}, JsonArray{"First pending", false}, JsonArray{"Later pending", false}};
+  (*quest)->setObjectiveList(objectives);
+  (*quest)->setProgress(0.0f);
+  (*quest)->setCompassDirection(0.0f);
+  auto playerCallbacks = LuaBindings::makePlayerCallbacks(root, **player);
+  ASSERT_TRUE(playerCallbacks) << playerCallbacks.error().what();
+  auto probe = (*luaRoot)->createContext(StringList{});
+  ASSERT_TRUE(probe) << probe.error().what();
+  ASSERT_TRUE(probe->setCallbacks("player", *playerCallbacks));
+  auto compact = probe->eval<Json>("return player.currentQuestView()");
+  ASSERT_TRUE(compact) << compact.error().what();
+  EXPECT_EQ(*compact, (Json(JsonObject{{"id", "zztracker"}, {"objectives", objectives},
+      {"progress", 0.0}, {"compassDirection", 0.0}})));
+  // A tracked active quest may deliberately be excluded from the effective UI
+  // selection. Do not substitute currentQuestId for QuestManager.currentQuest.
+  manager->setAsTracked("zztracker-hidden");
+  auto hidden = probe->eval<Json>("return {player.currentQuestId(), player.currentQuestView() == nil}");
+  ASSERT_TRUE(hidden) << hidden.error().what();
+  EXPECT_EQ(*hidden, (Json(JsonArray{"zztracker-hidden", true})));
+  manager->setAsTracked("zztracker");
+
+  auto assets = root.assets();
+  ASSERT_TRUE(assets) << assets.error().what();
+  auto style = (*assets)->json("/interface/questtracker/questtracker.config");
+  ASSERT_TRUE(style) << style.error().what();
+  auto layoutJson = style->getObject("paneLayout");
+  ASSERT_TRUE(layoutJson) << layoutJson.error().what();
+  auto progressLayout = style->query("paneLayout.questProgress");
+  ASSERT_TRUE(progressLayout) << progressLayout.error().what();
+  auto headlessProgress = progressLayout->set("background", "");
+  ASSERT_TRUE(headlessProgress) << headlessProgress.error().what();
+  layoutJson->set("questProgress", *headlessProgress);
+  layoutJson->erase("panefeature");
+  layoutJson->erase("lblQuestObjectiveList");
+  auto config = (*assets)->json("/interface/opensb/questtracker/questtracker.config");
+  ASSERT_TRUE(config) << config.error().what();
+  auto paneConfig = config->toObject();
+  ASSERT_TRUE(paneConfig) << paneConfig.error().what();
+  paneConfig->set("gui", *layoutJson);
+  auto createdPane = ScriptTestPane::create(**context, Json(*paneConfig));
+  ASSERT_TRUE(createdPane) << createdPane.error().what();
+  auto pane = std::move(*createdPane);
+  pane->setAnchor(PaneAnchor::BottomLeft);
+  ASSERT_TRUE(pane->setLuaRoot(*luaRoot));
+  ASSERT_TRUE(pane->addCallbacks("player", *playerCallbacks));
+  LuaCallbacks interface;
+  bool hasPlayer = true;
+  ASSERT_TRUE(interface.registerCallback("session", [&] { return JsonObject{{"hasPlayer", hasPlayer}}; }));
+  ASSERT_TRUE(pane->addCallbacks("interface", interface));
+  // Headless GuiContext has no font painter. Keep actual image/stretch/progress
+  // widgets and a native text-capable TextBox; supply its measured bounds here.
+  // Real label wrapping and pixels are covered by the renderer-backed GUI run.
+  auto label = textEditor(**context, "");
+  ASSERT_TRUE(label) << label.error().what();
+  (*label)->setMaxWidth(-1);
+  (*label)->setPosition({-125, -3});
+  (*label)->setSize({110, 45});
+  ASSERT_TRUE(pane->addChild("lblQuestObjectiveList", *label));
+  PaneManager panes(**context);
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Hud, pane, {}));
+  auto publicCallbacks = pane->makePaneCallbacks();
+  ASSERT_TRUE(publicCallbacks) << publicCallbacks.error().what();
+  ASSERT_TRUE(probe->setCallbacks("tracker", *publicCallbacks));
+  ASSERT_TRUE(probe->eval<LuaValue>("cachedWidgets = tracker.toWidget()"));
+  auto frame = pane->fetchChild<ImageWidget>("imgFrame");
+  auto expanded = pane->fetchChild<ImageStretchWidget>("imgFrameExpanded");
+  auto progress = pane->fetchChild<ProgressWidget>("questProgress");
+  auto progressFrame = pane->fetchChild<ImageWidget>("imgProgressFrame");
+  auto compassFrame = pane->fetchChild<ImageWidget>("imgCompassFrame");
+  ASSERT_TRUE(frame && *frame);
+  ASSERT_TRUE(expanded && *expanded);
+  ASSERT_TRUE(progress && *progress);
+  ASSERT_TRUE(progressFrame && *progressFrame);
+  ASSERT_TRUE(compassFrame && *compassFrame);
+  EXPECT_EQ((*label)->getText(), String("P[First pending] First pending\n"));
+  EXPECT_TRUE((*progress)->visibility());
+  EXPECT_TRUE((*compassFrame)->visibility());
+  EXPECT_EQ((*progress)->drawingOffset(), (Vec2I{0, -(*frame)->size()[1]}));
+  auto frameImage = (*compassFrame)->image();
+  ASSERT_TRUE(frameImage) << frameImage.error().what();
+  EXPECT_EQ(*frameImage, *style->getString("expandedCompassFrameImage"));
+
+  // Widget hit testing uses the drawing area established by rendering. Exercise
+  // real pointer boundaries in the GL smoke, not an undrawn headless widget.
+  ASSERT_TRUE(pane->evaluate("storage.expanded = true"));
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  EXPECT_EQ((*label)->getText(), String("C(Done <literal>)\nP[First pending] First pending\nP[Later pending] Later pending\n"));
+  EXPECT_FALSE((*frame)->visibility());
+  EXPECT_TRUE((*expanded)->visibility());
+  EXPECT_EQ((*expanded)->size()[1], 55);
+  EXPECT_EQ((*expanded)->relativePosition(), (Vec2I{-131, -55}));
+  EXPECT_EQ((*progress)->drawingOffset(), (Vec2I{0, -55}));
+  (*label)->setSize({110, 75});
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  EXPECT_EQ((*expanded)->size()[1], 85);
+  EXPECT_EQ((*expanded)->relativePosition()[1], -85);
+  EXPECT_EQ((*progressFrame)->drawingOffset(), (Vec2I{0, -85}));
+  (*quest)->setObjectiveList(JsonArray{});
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  EXPECT_FALSE((*label)->visibility());
+  EXPECT_EQ((*expanded)->size()[1], 85); // Empty is not absent.
+  (*quest)->setObjectiveList({});
+  (*quest)->setProgress({});
+  (*quest)->setCompassDirection({});
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  EXPECT_EQ((*label)->getText(), String(""));
+  EXPECT_FALSE((*progress)->visibility());
+  EXPECT_FALSE((*compassFrame)->visibility());
+  auto absent = probe->eval<Json>("return player.currentQuestView()");
+  ASSERT_TRUE(absent) << absent.error().what();
+  EXPECT_EQ(*absent, (Json(JsonObject{{"id", "zztracker"}})));
+  (*quest)->setObjectiveList(JsonArray{JsonArray{"First complete", true}, JsonArray{"Second complete", true}});
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  ASSERT_TRUE(pane->evaluate("storage.expanded = false"));
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  EXPECT_EQ((*label)->getText(), String("C(First complete)\n"));
+  auto close = pane->sendEvent(KeyDownEvent{Key::Escape, KeyMod::NoMod});
+  ASSERT_TRUE(close) << close.error().what();
+  EXPECT_FALSE(*close);
+  EXPECT_FALSE(pane->isDismissed());
+  (*quest)->setCompassDirection(0.0f);
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  auto compactCompass = (*compassFrame)->image();
+  ASSERT_TRUE(compactCompass) << compactCompass.error().what();
+  EXPECT_EQ(*compactCompass, *style->getString("compassFrameImage"));
+
+  auto acceleration = style->getFloat("compassAcceleration");
+  auto friction = style->getFloat("compassFriction");
+  ASSERT_TRUE(acceleration && friction);
+  float direction = 0, speed = 0;
+  for (float target : {6.2f, 0.01f, 3.2f, -3.2f, 0.0f}) {
+    (*quest)->setCompassDirection(target);
+    for (int step = 0; step < 13; ++step) {
+      float diff = pfmod(target - direction, static_cast<float>(std::numbers::pi) * 2);
+      if (std::abs(diff) < *acceleration && std::abs(speed) < *acceleration) {
+        speed = 0;
+        direction = target;
+      } else {
+        if (std::abs(diff) > std::numbers::pi)
+          diff -= std::copysign(2 * std::numbers::pi, diff);
+        float ratio = std::abs(diff) / std::numbers::pi;
+        float change = *acceleration * ratio;
+        speed += std::copysign(change, diff);
+        speed -= speed * *friction;
+        direction += speed;
+      }
+      if (step == 6)
+        ASSERT_TRUE(root.reload());
+      ASSERT_TRUE(pane->tick(step % 2 ? 0.001f : 0.1f));
+      auto state = pane->evaluate("return {storage.compassDirection, storage.compassSpeed}");
+      ASSERT_TRUE(state && *state);
+      EXPECT_EQ(**state, (Json(JsonArray{direction, speed})));
+    }
+  }
+  (*quest)->setCompassDirection({});
+  ASSERT_TRUE(pane->evaluate("storage.expanded = true"));
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  auto spring = pane->evaluate("return {storage.compassDirection, storage.compassSpeed}");
+  ASSERT_TRUE(spring && *spring);
+  hasPlayer = false;
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  EXPECT_FALSE(pane->visibility());
+  EXPECT_FALSE((*frame)->active());
+  EXPECT_FALSE((*expanded)->active());
+  EXPECT_FALSE((*progressFrame)->active());
+  EXPECT_FALSE((*compassFrame)->active());
+  // The same native object/children and escaped callbacks survive a domain
+  // rebind, no-quest interval and script reload, as session overlays require.
+  auto replacement = (*factory)->create();
+  ASSERT_TRUE(replacement) << replacement.error().what();
+  auto replacementCallbacks = LuaBindings::makePlayerCallbacks(root, **replacement);
+  ASSERT_TRUE(replacementCallbacks) << replacementCallbacks.error().what();
+  ASSERT_TRUE(pane->dismissed());
+  ASSERT_TRUE(pane->removeCallbacks("player"));
+  ASSERT_TRUE(pane->addCallbacks("player", *replacementCallbacks));
+  hasPlayer = true;
+  ASSERT_TRUE(pane->displayed());
+  ASSERT_TRUE(root.reload());
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  EXPECT_FALSE(pane->visibility());
+  auto restoredSpring = pane->evaluate("return {storage.compassDirection, storage.compassSpeed}");
+  ASSERT_TRUE(restoredSpring && *restoredSpring);
+  EXPECT_EQ(**restoredSpring, **spring);
+  auto retainedPublicHandle = probe->eval<Json>(
+      "return {tracker.isDisplayed(), cachedWidgets.active('imgFrame'), cachedWidgets.active('imgFrameExpanded')}");
+  ASSERT_TRUE(retainedPublicHandle) << retainedPublicHandle.error().what();
+  EXPECT_EQ(*retainedPublicHandle, (Json(JsonArray{true, false, false})));
+  ASSERT_TRUE(pane->dismissed());
+  ASSERT_TRUE(pane->removeCallbacks("player"));
+  ASSERT_TRUE(pane->addCallbacks("player", *playerCallbacks));
+  ASSERT_TRUE(pane->displayed());
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  EXPECT_TRUE(pane->visibility());
+  EXPECT_EQ(pane->fetchChild<ImageWidget>("imgFrame")->get(), frame->get());
+  EXPECT_EQ((*label)->getText(), String("C(First complete)\nC(Second complete)\n"));
+  auto retainedExpanded = probe->eval<bool>("return cachedWidgets.active('imgFrameExpanded') and not cachedWidgets.active('imgFrame')");
+  ASSERT_TRUE(retainedExpanded) << retainedExpanded.error().what();
+  EXPECT_TRUE(*retainedExpanded);
+  ASSERT_TRUE((*quest)->fail());
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  EXPECT_FALSE(pane->visibility());
+  auto finished = probe->eval<Json>("return {player.currentQuestId(), player.currentQuestView() == nil}");
+  ASSERT_TRUE(finished) << finished.error().what();
+  EXPECT_EQ(*finished, (Json(JsonArray{"zztracker", true})));
   ASSERT_TRUE(panes.dismissAllPanes());
 });
 

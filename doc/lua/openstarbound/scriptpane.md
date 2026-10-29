@@ -36,6 +36,12 @@ Resizes the pane to the supplied dimensions.
 
 ---
 
+#### `void` pane.setScissoringEnabled(`bool` enabled)
+
+Enables or disables clipping to the pane's own bounds. Ancestor/window clipping still applies; child widgets retain their own scissoring policy. Use the corresponding `widget.setScissoringEnabled` for a child. This does not change root size, visibility or input routing.
+
+---
+
 #### `float` pane.scale()
 
 Returns the interface scale currently applied to the pane. This mirrors `interface.scale()` but is available directly on the pane
@@ -139,12 +145,17 @@ pixels. Otherwise initial root bounds include declarative children and any
 native background. When a script changes Canvas or layout dimensions, update
 the root with `pane.setSize(size)` to keep drawing bounds and input geometry in
 sync.
+Anchored composite HUDs may deliberately keep an explicit zero-sized root and
+negative child positions. Disable root scissoring for their out-of-bounds
+drawing and hit-test the actual child geometry rather than inventing root bounds.
 
 Canvas configurations may set `ignoreInterfaceScale: true` to use physical
 pixel drawing coordinates. This forwards the existing Canvas scale mode;
 pane and widget bounds still use interface pixels and must be sized accordingly.
 Top-level `interactive: false` keeps a displayed pane rendering and ticking
 while excluding it from input dispatch, capture and hit testing.
+An interactive persistent HUD can set `dismissable: false` to disable the
+default GuiClose dismissal without consuming Esc or disabling pointer input.
 
 For Canvas tooltips, `createTooltip(screenPosition)` can return a label string
 or `nil`. Its argument is a screen position in interface pixels, not physical

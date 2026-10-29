@@ -120,8 +120,6 @@ class Cinematic;
 class NameplatePainter;
 class QuestIndicatorPainter;
 class RadioMessagePopup;
-class Quest;
-class QuestTrackerPane;
 class ContainerInteractor;
 class ScriptPane;
 class ChatBubbleManager;
@@ -292,7 +290,6 @@ private:
   std::shared_ptr<ConfirmationDialog> m_confirmationDialog;
   std::shared_ptr<JoinRequestDialog> m_joinRequestDialog;
   std::shared_ptr<TeleportDialog> m_teleportDialog;
-  std::shared_ptr<QuestTrackerPane> m_questTracker;
   std::shared_ptr<ScriptPane> m_mmUpgrade;
   std::shared_ptr<ScriptPane> m_collections;
   Map<EntityId, std::shared_ptr<Pane>> m_interactionScriptPanes;
@@ -383,8 +380,6 @@ export namespace Star {
   using ::Star::NameplatePainter;
   using ::Star::QuestIndicatorPainter;
   using ::Star::RadioMessagePopup;
-  using ::Star::Quest;
-  using ::Star::QuestTrackerPane;
   using ::Star::ContainerInteractor;
   using ::Star::ScriptPane;
   using ::Star::ChatBubbleManager;

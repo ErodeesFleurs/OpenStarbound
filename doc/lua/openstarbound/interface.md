@@ -40,7 +40,6 @@ WireInterface<br>
 PlanetText<br>
 RadioMessagePopup<br>
 CraftingPlain<br>
-QuestTracker<br>
 MmUpgrade<br>
 Collections<br>
 </details>
@@ -206,6 +205,33 @@ a modal window is present, selects the native first unread ID, and acknowledges
 it through `player.markCodexRead`. Reload does not replay already acknowledged
 books. Content parsing, unlocks, read flags and ordering remain native player
 domain services; known content follows the player's held Codex objects.
+
+### Bundled quest tracker
+
+The canonical `"QuestTracker"` dynamic registration loads
+`/interface/opensb/questtracker/questtracker.config` as an automatically opened,
+session-scoped `"Hud"`. The public identifier keeps its original spelling, but
+there is no native tracker window class or native registration.
+
+Lua reads one `player.currentQuestView()` per update and owns objective
+formatting, collapsed first-incomplete selection, expanded layout, progress
+frames and compass animation. Expanded mode lists every objective; when all
+are complete, collapsed mode shows the first. The compass preserves the native
+float32 spring and advances per update, not by `dt`.
+
+The original named widgets and negative-coordinate layout remain available.
+Only a left click on the active background toggles expansion; progress and
+compass extensions do not consume unrelated pointer input. Generic drawing
+offset and scissoring helpers allow these extensions outside the zero-sized
+anchored root, without HUD-specific host fields.
+
+With no effective quest the pane and its children are hidden, not destroyed.
+The instance keeps ticking, so a new eligible quest reappears automatically.
+Expansion and compass state survive reload and player/world transitions;
+current player services are centrally rebound. Cached pane/widget handles
+remain usable through these transitions. `isDisplayed()` reports retained
+display membership; use `isVisible()` or child activity to inspect visibility.
+Interface teardown ends the instance and its handles.
 
 ### Low-level instance bridge
 

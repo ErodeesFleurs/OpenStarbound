@@ -133,7 +133,7 @@ public:
   // The String returned by this method is an image path, not a reference to a configured indicator
   [[nodiscard]] std::expected<std::optional<String>, StarException> customIndicator(std::shared_ptr<Entity> const& entity) const;
 
-  std::optional<JsonArray> objectiveList() const;
+  std::optional<JsonArray> const& objectiveList() const;
   std::optional<float> progress() const;
   std::optional<float> compassDirection() const;
 

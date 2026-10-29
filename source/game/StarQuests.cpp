@@ -769,7 +769,7 @@ std::expected<std::optional<String>, StarException> Quest::customIndicator(std::
   return std::optional<String>();
 }
 
-std::optional<JsonArray> Quest::objectiveList() const {
+std::optional<JsonArray> const& Quest::objectiveList() const {
   return m_objectiveList;
 }
 

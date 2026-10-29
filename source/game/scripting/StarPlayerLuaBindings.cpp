@@ -1203,6 +1203,24 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makePlayerCallbacks(Root
   }); !registered)
     return std::unexpected(std::move(registered.error()));
 
+  if (auto registered = callbacks.registerCallback("currentQuestView", [&player]() -> Json {
+    auto current = player.questManager()->currentQuest();
+    if (!current)
+      return {};
+    auto const& quest = **current;
+    JsonObject view;
+    view.reserve(4);
+    view.set("id", quest.questId());
+    if (auto const& objectives = quest.objectiveList())
+      view.set("objectives", *objectives);
+    if (auto progress = quest.progress())
+      view.set("progress", *progress);
+    if (auto direction = quest.compassDirection())
+      view.set("compassDirection", *direction);
+    return view;
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
   if (auto registered = callbacks.registerCallback("currentQuestWorld", [&player]() -> std::expected<std::optional<String>, StarException> {
     if (auto quest = player.questManager()->currentQuest()) {
       if (auto worldId = (*quest)->worldId()) {
