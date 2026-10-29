@@ -208,7 +208,6 @@ import star.ai_interface;
 
 
 
-import star.quest_interface;
 
 
 
@@ -282,17 +281,14 @@ std::expected<bool, StarException> ClientCommandProcessor::adminCommandAllowed()
   return *enabled || m_universeClient->mainPlayer()->isAdmin();
 }
 
-std::expected<String, StarException> ClientCommandProcessor::previewQuestPane(StringList const& arguments, std::function<std::expected<std::shared_ptr<Pane>, StarException>(std::shared_ptr<Quest>)> createPane) {
+std::expected<String, StarException> ClientCommandProcessor::previewQuestDialog(StringList const& arguments, String const& kind) {
   if (arguments.size() < 3)
     return std::unexpected(StarException("Quest preview requires a template, title, and text"));
   auto quest = createPreviewQuest(m_context.root(), arguments[0], arguments[1], arguments[2], *m_universeClient->mainPlayer());
   if (!quest) return std::unexpected(std::move(quest.error()));
   if (*quest) {
-    auto pane = createPane(std::move(*quest));
-    if (!pane) return std::unexpected(std::move(pane.error()));
-    if (!m_paneManager) return std::unexpected(StarException("Command processor is detached from its interface"));
-    if (auto displayed = m_paneManager->get().displayPane(PaneLayer::ModalWindow, std::move(*pane)); !displayed)
-      return std::unexpected(std::move(displayed.error()));
+    auto previewed = m_universeClient->questManager()->previewDialog(std::move(*quest), kind);
+    if (!previewed) return std::unexpected(std::move(previewed.error()));
     return "Previewed quest";
   }
   return "No such quest";
@@ -601,11 +597,7 @@ std::expected<String, StarException> ClientCommandProcessor::previewNewQuest(Str
   auto allowed = adminCommandAllowed();
   if (!allowed) return std::unexpected(std::move(allowed.error()));
   if (!*allowed) return "You must be an admin to use this command.";
-  return previewQuestPane(*arguments, [this](std::shared_ptr<Quest> quest) -> std::expected<std::shared_ptr<Pane>, StarException> {
-    auto pane = NewQuestInterface::create(m_context, m_universeClient->questManager(), std::move(quest), m_universeClient->mainPlayer());
-    if (!pane) return std::unexpected(std::move(pane.error()));
-    return std::move(*pane);
-  });
+  return previewQuestDialog(*arguments, "offer");
 }
 
 std::expected<String, StarException> ClientCommandProcessor::previewQuestComplete(String const& argumentsString) {
@@ -614,11 +606,7 @@ std::expected<String, StarException> ClientCommandProcessor::previewQuestComplet
   auto allowed = adminCommandAllowed();
   if (!allowed) return std::unexpected(std::move(allowed.error()));
   if (!*allowed) return "You must be an admin to use this command.";
-  return previewQuestPane(*arguments, [this](std::shared_ptr<Quest> quest) -> std::expected<std::shared_ptr<Pane>, StarException> {
-    auto pane = QuestCompleteInterface::create(m_context, std::move(quest), m_universeClient->mainPlayer(), std::shared_ptr<Cinematic>{});
-    if (!pane) return std::unexpected(std::move(pane.error()));
-    return std::move(*pane);
-  });
+  return previewQuestDialog(*arguments, "complete");
 }
 
 std::expected<String, StarException> ClientCommandProcessor::previewQuestFailed(String const& argumentsString) {
@@ -627,11 +615,7 @@ std::expected<String, StarException> ClientCommandProcessor::previewQuestFailed(
   auto allowed = adminCommandAllowed();
   if (!allowed) return std::unexpected(std::move(allowed.error()));
   if (!*allowed) return "You must be an admin to use this command.";
-  return previewQuestPane(*arguments, [this](std::shared_ptr<Quest> quest) -> std::expected<std::shared_ptr<Pane>, StarException> {
-    auto pane = QuestFailedInterface::create(m_context, std::move(quest), m_universeClient->mainPlayer());
-    if (!pane) return std::unexpected(std::move(pane.error()));
-    return std::move(*pane);
-  });
+  return previewQuestDialog(*arguments, "failed");
 }
 
 std::expected<String, StarException> ClientCommandProcessor::clearScannedObjects() {

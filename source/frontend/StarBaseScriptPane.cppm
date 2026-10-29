@@ -66,6 +66,9 @@ public:
   [[nodiscard]] std::expected<void, StarException> addCallbacks(String name, LuaCallbacks callbacks);
   [[nodiscard]] std::expected<bool, StarException> removeCallbacks(String const& name);
   [[nodiscard]] std::expected<void, StarException> setLuaRoot(std::shared_ptr<LuaRoot> root);
+  // Retire borrowed script capabilities without dismissing the presentation.
+  [[nodiscard]] std::expected<void, StarException> stopScripts();
+  [[nodiscard]] std::expected<void, StarException> resumeScripts();
   [[nodiscard]] std::expected<std::optional<Json>, StarException> call(String const& method, JsonArray const& args = {});
   [[nodiscard]] std::expected<bool, StarException> hasMethod(String const& method);
   [[nodiscard]] std::expected<Json, StarException> inputJson(InputEvent const& event) const;

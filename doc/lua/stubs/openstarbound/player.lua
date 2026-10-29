@@ -434,6 +434,48 @@ function player.markQuestRead(questId) end
 ---@return boolean
 function player.abandonQuest(questId) end
 
+---@class QuestDialogView
+---@field id string
+---@field token integer Opaque process-local exact-quest/state decision lease.
+---@field kind "failed"|"complete"|"offer"
+---@field guiConfig? string Template override; Lua chooses default layouts.
+---@field title string
+---@field text string
+---@field portrait Json[]
+---@field portraitTitle string
+---@field objectivePortrait Json[] Offer only; otherwise empty.
+---@field objectivePortraitTitle string
+---@field rewards Json[]
+---@field money integer
+---@field canDecline boolean
+---@field preview boolean
+
+--- Acquires/reuses a native pending decision lease without acknowledging it.
+---@param kind "preview"|"failed"|"complete"|"offer"
+---@return QuestDialogView?
+function player.pendingQuestDialog(kind) end
+
+--- Rejects replaced quests and state cycles; acknowledged ephemeral quests may outlive the map entry.
+---@param token integer
+---@return boolean
+function player.questDialogValid(token) end
+
+--- Acknowledges a successfully displayed request; invalid tokens return false.
+---@param token integer
+---@return boolean
+function player.acknowledgeQuestDialog(token) end
+
+--- Resolves completion cinema species/gender tags and JSON without playing it; native errors propagate.
+---@param token integer
+---@return Json?
+function player.questDialogCinema(token) end
+
+--- Retires before executing a decision; invalid/repeated tokens return false, native errors do not guarantee rollback.
+---@param token integer
+---@param decision "accept"|"decline"|"cancel"|"close"
+---@return boolean
+function player.finishQuestDialog(token, decision) end
+
 --- Returns the objectives for the specified quest. ---
 ---@param questId string
 ---@return Json

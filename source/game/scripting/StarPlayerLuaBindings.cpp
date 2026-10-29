@@ -1221,6 +1221,27 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makePlayerCallbacks(Root
   }); !registered)
     return std::unexpected(std::move(registered.error()));
 
+  if (auto registered = callbacks.registerCallback("pendingQuestDialog", [&player](String const& kind) {
+    return player.questManager()->pendingDialog(kind);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("questDialogValid", [&player](std::uint64_t token) {
+    return player.questManager()->dialogValid(token);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("acknowledgeQuestDialog", [&player](std::uint64_t token) {
+    return player.questManager()->acknowledgeDialog(token);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("questDialogCinema", [&player](std::uint64_t token) {
+    return player.questManager()->dialogCinema(token);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("finishQuestDialog", [&player](std::uint64_t token, String const& decision) {
+    return player.questManager()->finishDialog(token, decision);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
   if (auto registered = callbacks.registerCallback("questLogEntries", [&player](bool completed) -> Json {
     auto manager = player.questManager();
     auto quests = completed ? manager->listCompletedQuests() : manager->listActiveQuests();

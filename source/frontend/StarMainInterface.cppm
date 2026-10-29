@@ -150,6 +150,7 @@ public:
   MainInterfacePaneManager& paneManager();
   GuiContext& context() const;
   [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> itemTooltip(std::shared_ptr<Item> const& item);
+  [[nodiscard]] std::expected<void, StarException> playCinematic(Json const& config);
   // Escaped callbacks borrow this interface only until terminal close.
   std::stop_token callbackStopToken() const;
 

@@ -78,7 +78,7 @@ public:
 
 private:
   [[nodiscard]] std::expected<bool, StarException> adminCommandAllowed() const;
-  [[nodiscard]] std::expected<String, StarException> previewQuestPane(StringList const& arguments, std::function<std::expected<std::shared_ptr<Pane>, StarException>(std::shared_ptr<Quest>)> createPane);
+  [[nodiscard]] std::expected<String, StarException> previewQuestDialog(StringList const& arguments, String const& kind);
   [[nodiscard]] std::expected<StringList, StarException> executeCommand(String const& commandLine);
 
   [[nodiscard]] std::expected<String, StarException> reload();

@@ -620,6 +620,69 @@ failure does not guarantee rollback of a quest script's state transition.
 
 ---
 
+#### `Maybe<Json>` player.pendingQuestDialog(`String` kind)
+
+Acquires a native decision lease for `"failed"`, `"complete"` or `"offer"`,
+using native server eligibility and ordering, or returns `nil`. `"preview"`
+queries queued administrator previews. Repeated queries for the same pending
+quest/kind reuse its token; acquiring a view does not acknowledge it.
+
+The view contains `id`, `token`, `kind`, optional `guiConfig` template override,
+`title`, `text`, `portrait`, `portraitTitle`, `objectivePortrait`,
+`objectivePortraitTitle`, `rewards`, `money`, `canDecline` and `preview`.
+`kind` is `"failed"`, `"complete"` or `"offer"` even for a preview.
+Objective fields describe an offer; other kinds return an empty Objective
+portrait/title. Lua chooses default layouts, not this domain query.
+
+Tokens are opaque process-local integers capturing the exact quest allocation
+and state transition. Do not persist them across game sessions or quest-manager
+loading. A state cycle back to Offer does not revive an old token.
+
+---
+
+#### `Bool` player.questDialogValid(`Integer` token)
+
+Tests whether a lease still belongs to its captured quest/state. Same-ID
+replacement, state transitions and manager loading invalidate old requests.
+An acknowledged ephemeral completion/failure quest may remain valid after its
+removal from the ordinary quest map, until the presentation finishes.
+
+---
+
+#### `Bool` player.acknowledgeQuestDialog(`Integer` token)
+
+Acknowledge only after successful presentation. Returns `false` for an invalid
+token; repeated acknowledgment of a valid token is harmless. Completed/failed
+quests have their native pending-dialog flag cleared. Offers remain pending
+until a decision; previews never acknowledge a player's quest.
+
+---
+
+#### `Maybe<Json>` player.questDialogCinema(`Integer` token)
+
+Resolves a valid completion request's cinematic, substituting the current
+player's `<species>` and `<gender>` tags and fetching its JSON definition.
+Returns `nil` for invalid requests, previews, other kinds or absent cinematics.
+Asset errors propagate. This query does not play anything; client UI scripts
+can pass the result to `interface.playCinematic`.
+
+---
+
+#### `Bool` player.finishQuestDialog(`Integer` token, `String` decision)
+
+Retires a lease exactly once. `decision` is `"accept"`, `"decline"`, `"cancel"`
+or `"close"`; unknown values raise an error. Returns `false` for unknown/stale
+tokens. For an offer, accept starts it, allowed decline declines it, and
+cancel/close or denied decline cancels it. Other kinds and previews only
+retire their lease. This operation does not play cinematics or replace
+acknowledgment.
+
+The lease retires before invoking quest scripts, preventing reentrant/repeated
+decisions. Native errors propagate without a rollback guarantee. Leaving the
+world cancels outstanding offer decisions and retires the remaining leases.
+
+---
+
 #### `Json` player.questObjectives(`String` questId)
 
 Returns the objectives for the specified quest.

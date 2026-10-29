@@ -54,7 +54,7 @@ import star.math_common;
 import star.item;
 import star.item_database;
 import star.drawable;
-import star.quest_interface;
+import star.cinematic;
 import star.world_server;
 import star.casting;
 import star.vertical_layout;
@@ -3015,26 +3015,65 @@ const GameTestRegistration questLogPresentation("LuaQuestLog", "StableSelectionR
   EXPECT_EQ(errors->messages.size(), 1u);
 });
 
-const GameTestRegistration questDialogPolling("QuestDialogs", "NativeModalGuardPriorityAcknowledgmentAndOfferCancellation", [](GameTest& fixture) {
+const GameTestRegistration questDialogs("QuestDialogs", "LuaModalDecisionsReloadIdentityTemplatesAndCinema", [](GameTest& fixture) {
   auto directory = File::temporaryDirectory(fixture.root().random());
   ASSERT_TRUE(directory);
   auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directory)); });
   auto overlay = File::relativeTo(*directory, "assets");
   ASSERT_TRUE(File::makeDirectory(overlay));
-  // Native dialogs still own all decisions. The headless fixture omits
-  // optional painted widgets, not domain behavior or their actual Pane types.
-  ASSERT_TRUE(File::writeFile(String(R"JSON({
-    "onShowSound":[],
-    "paneLayout":{"panefeature":{"type":"panefeature","anchor":"bottomLeft"}}
-  })JSON"), File::relativeTo(overlay, "zzdialog.config")));
-  for (auto const& id : {String("zzdialog-failed"), String("zzdialog-complete"), String("zzdialog-offer")}) {
-    Json config = JsonObject{{"id", id}, {"canBeAbandoned", true},
-        {"guiConfigs", JsonObject{{"newQuest", "/zzdialog.config"},
-            {"questComplete", "/zzdialog.config"}, {"questFailed", "/zzdialog.config"}}}};
-    auto printed = config.printJson();
-    ASSERT_TRUE(printed);
-    ASSERT_TRUE(File::writeFile(*printed, File::relativeTo(overlay, id + ".questtemplate")));
+  ASSERT_TRUE(File::makeDirectory(File::relativeTo(overlay, "quests")));
+  auto writeJson = [&](String const& path, Json const& json) -> std::expected<void, StarException> {
+    auto text = json.printJson();
+    if (!text) return std::unexpected(std::move(text.error()));
+    return File::writeFile(*text, File::relativeTo(overlay, path));
+  };
+  // Real widgets and production Lua, with only renderer-dependent ItemGrid
+  // omitted. Its native bag/capacity/tooltips are exercised in the GL client.
+  JsonObject layout{{"panefeature", JsonObject{{"type", "panefeature"}, {"anchor", "bottomLeft"}}}};
+  for (auto const& name : {String("marker"), String("lblQuestTitle"), String("lblQuestBody"),
+      String("portraitTitle"), String("objectivePortraitTitle"), String("lblMoneyAmount")})
+    layout.set(name, JsonObject{{"type", "textbox"}, {"callback", "null"}, {"maxWidth", -1}});
+  for (auto const& name : {String("portraitImage"), String("objectivePortraitImage"),
+      String("imgPolaroid"), String("imgPolaroidBack")})
+    layout.set(name, JsonObject{{"type", "image"}, {"file", ""}});
+  for (auto const& name : {String("short"), String("portrait"), String("complete"), String("failed"), String("custom")}) {
+    auto gui = layout;
+    gui.set("marker", JsonObject{{"type", "textbox"}, {"callback", "null"}, {"maxWidth", -1}, {"value", name}});
+    if (name == "short") {
+      gui.set("background", JsonObject{{"type", "background"}});
+      gui.set("unusedMoney", JsonObject{{"type", "image"}, {"file", ""}, {"position", JsonArray{60, 700}}});
+    }
+    ASSERT_TRUE(writeJson("zzdialog-" + name + ".config", JsonObject{{"onShowSound", JsonArray{}}, {"paneLayout", gui}}));
   }
+  ASSERT_TRUE(writeJson("quests/quests.config.patch", JsonArray{
+      JsonObject{{"op", "replace"}, {"path", "/defaultGuiConfigs/newQuest"}, {"value", "/zzdialog-short.config"}},
+      JsonObject{{"op", "replace"}, {"path", "/defaultGuiConfigs/newQuestPortrait"}, {"value", "/zzdialog-portrait.config"}},
+      JsonObject{{"op", "replace"}, {"path", "/defaultGuiConfigs/questComplete"}, {"value", "/zzdialog-complete.config"}},
+      JsonObject{{"op", "replace"}, {"path", "/defaultGuiConfigs/questFailed"}, {"value", "/zzdialog-failed.config"}}}));
+  ASSERT_TRUE(File::writeFile(String(R"LUA(
+    function questStart() player.setProperty("zzdialogDecision", "accept") end
+    function questDecline() player.setProperty("zzdialogDecision", "decline") end
+    function questCancel()
+      player.setProperty("zzdialogDecision", "cancel")
+      if player.getProperty("zzdialogThrow", false) then error("quest decision regression") end
+    end
+  )LUA"), File::relativeTo(overlay, "zzdialog.lua")));
+  for (auto const& id : {String("zzdialog-failed"), String("zzdialog-complete"), String("zzdialog-offer"),
+      String("zzdialog-locked"), String("zzdialog-custom"), String("zzdialog-missing"), String("zzdialog-malformed")}) {
+    JsonObject config{{"id", id}, {"title", id}, {"text", "Offer body"}, {"completionText", "Completion body"},
+        {"failureText", "Failure body"}, {"script", "/zzdialog.lua"}, {"canBeAbandoned", id != "zzdialog-locked"}};
+    if (id == "zzdialog-complete") {
+      config.set("completionCinema", "/zzdialog-<species>-<gender>.cinematic");
+      config.set("ephemeral", true);
+    }
+    if (id == "zzdialog-custom")
+      config.set("guiConfigs", JsonObject{{"newQuest", "/zzdialog-custom.config"},
+          {"questComplete", "/zzdialog-custom.config"}, {"questFailed", "/zzdialog-custom.config"}});
+    if (id == "zzdialog-missing") config.set("completionCinema", "/zzdialog-nonexistent.cinematic");
+    if (id == "zzdialog-malformed") config.set("completionCinema", "/zzdialog-malformed.cinematic");
+    ASSERT_TRUE(writeJson(id + ".questtemplate", config));
+  }
+  ASSERT_TRUE(writeJson("zzdialog-malformed.cinematic", JsonObject{{"panels", 7}}));
   auto settings = fixture.rootSettings();
   settings.assetSources.append(overlay);
   settings.storageDirectory = File::relativeTo(*directory, "storage");
@@ -3047,7 +3086,8 @@ const GameTestRegistration questDialogPolling("QuestDialogs", "NativeModalGuardP
   auto& root = **createdRoot;
   auto configuration = root.configuration();
   ASSERT_TRUE(configuration);
-  ASSERT_TRUE((*configuration)->set("bindings", JsonObject{}));
+  ASSERT_TRUE((*configuration)->set("bindings", JsonObject{{"GuiClose", JsonArray{
+      JsonObject{{"type", "key"}, {"value", "Esc"}, {"mods", JsonArray{}}}}}}));
   auto context = GuiContext::create(root, {}, {});
   ASSERT_TRUE(context);
   auto factory = root.playerFactory();
@@ -3056,62 +3096,348 @@ const GameTestRegistration questDialogPolling("QuestDialogs", "NativeModalGuardP
   ASSERT_TRUE(player);
   auto versions = root.versioningDatabase();
   ASSERT_TRUE(versions);
-  JsonObject storedQuests;
+  auto storedQuest = [&](String const& id, String const& templateId, String const& state, bool portrait) -> std::expected<Json, StarException> {
+    auto arc = QuestArcDescriptor::fromJson(root, JsonObject{{"quests", JsonArray{
+        JsonObject{{"questId", id}, {"templateId", templateId}, {"parameters", JsonObject{}}}}}});
+    if (!arc) return std::unexpected(std::move(arc.error()));
+    auto storedArc = arc->diskStore(root);
+    if (!storedArc) return std::unexpected(std::move(storedArc.error()));
+    JsonObject value{{"state", state}, {"arc", *storedArc}, {"arcPos", 0},
+        {"parameters", JsonObject{}}, {"money", 12345}, {"rewards", JsonArray{}},
+        {"lastUpdatedOn", 0}, {"showDialog", true}};
+    if (portrait) value.set("portraits", JsonObject{{"Objective", JsonArray{
+        JsonObject{{"line", JsonArray{JsonArray{2, 3}, JsonArray{7, 11}}}, {"width", 1}}}}});
+    auto stored = (*versions)->makeCurrentVersionedJson("Quest", value);
+    if (!stored) return std::unexpected(std::move(stored.error()));
+    return stored->toJson();
+  };
+  JsonObject initial;
   for (auto const& entry : {std::pair{String("zzdialog-failed"), String("Failed")},
       std::pair{String("zzdialog-complete"), String("Complete")}, std::pair{String("zzdialog-offer"), String("Offer")}}) {
-    auto arc = QuestArcDescriptor::fromJson(root, JsonObject{{"quests", JsonArray{
-        JsonObject{{"questId", entry.first}, {"templateId", entry.first}, {"parameters", JsonObject{}}}}}});
-    ASSERT_TRUE(arc);
-    auto storedArc = arc->diskStore(root);
-    ASSERT_TRUE(storedArc);
-    auto stored = (*versions)->makeCurrentVersionedJson("Quest", JsonObject{
-        {"state", entry.second}, {"arc", *storedArc}, {"arcPos", 0},
-        {"parameters", JsonObject{}}, {"money", 0}, {"rewards", JsonArray{}},
-        {"lastUpdatedOn", 0}, {"showDialog", true}});
+    auto stored = storedQuest(entry.first, entry.first, entry.second, entry.second == "Offer");
     ASSERT_TRUE(stored);
-    storedQuests.set(entry.first, stored->toJson());
+    initial.set(entry.first, *stored);
   }
   auto domain = (*player)->questManager();
-  ASSERT_TRUE(domain->diskLoad(JsonObject{{"quests", storedQuests}}));
+  ASSERT_TRUE(domain->diskLoad(JsonObject{{"quests", initial}}));
+  auto storage = File::ephemeralFile(root.random());
+  ASSERT_TRUE(storage);
+  auto world = WorldServer::create(root, Vec2U(2048, 2048), *storage);
+  ASSERT_TRUE(world) << world.error().what();
+  auto closeWorld = finally([&] { EXPECT_TRUE((*world)->close()); });
+  ASSERT_TRUE(domain->init(**player, **world));
+  auto uninitDomain = finally([&] { EXPECT_TRUE(domain->uninit()); });
   auto failed = domain->getQuest("zzdialog-failed");
   auto complete = domain->getQuest("zzdialog-complete");
   auto offered = domain->getQuest("zzdialog-offer");
   ASSERT_TRUE(failed && complete && offered);
+  auto cinemaFile = "zzdialog-" + (*player)->species() + "-" + ((*player)->gender() == Gender::Male ? String("male") : String("female")) + ".cinematic";
+  ASSERT_TRUE(writeJson(cinemaFile, JsonObject{
+      {"panels", JsonArray{JsonObject{{"keyframes", JsonArray{
+          JsonObject{{"timecode", 0}}, JsonObject{{"timecode", 1}}}}}}},
+      {"audio", JsonArray{}}, {"suppressInput", true}}));
+  // Discover the player's resolved species/gender asset before exercising
+  // native fetchJson and real Cinematic::load.
+  ASSERT_TRUE(root.reload());
+  auto luaRoot = LuaRoot::create(root);
+  ASSERT_TRUE(luaRoot);
+  auto playerCallbacks = LuaBindings::makePlayerCallbacks(root, **player);
+  ASSERT_TRUE(playerCallbacks);
+  auto rootCallbacks = LuaBindings::makeRootCallbacks(root);
+  ASSERT_TRUE(rootCallbacks);
+  auto cinematic = Cinematic::create(**context);
+  ASSERT_TRUE(cinematic);
+  int cinemaLoads = 0;
   PaneManager panes(**context);
+  std::shared_ptr<ScriptTestPane> pane;
+  LuaCallbacks interface;
+  ASSERT_TRUE(interface.registerCallback("paneIdAvailable", &MainInterface::paneIdAvailable));
+  ASSERT_TRUE(interface.registerCallback("paneLayerOccupied", [&](String const&) {
+    return static_cast<bool>(panes.topPane({PaneLayer::ModalWindow}));
+  }));
+  ASSERT_TRUE(interface.registerCallback("bindRegisteredPane", [&](String const&) -> std::expected<std::optional<LuaCallbacks>, StarException> {
+    if (!pane) return std::optional<LuaCallbacks>{};
+    auto bound = pane->makePaneCallbacks();
+    if (!bound) return std::unexpected(std::move(bound.error()));
+    return std::optional<LuaCallbacks>(std::move(*bound));
+  }));
+  ASSERT_TRUE(interface.registerCallback("playCinematic", [&](Json const& json) -> std::expected<void, StarException> {
+    auto loaded = (*cinematic)->load(json);
+    if (!loaded) return std::unexpected(std::move(loaded.error()));
+    ++cinemaLoads;
+    return {};
+  }));
+  ASSERT_TRUE(interface.registerCallback("createPane", [&](String const&, Json config, String const&) -> std::expected<void, StarException> {
+    auto created = ScriptTestPane::create(**context, std::move(config));
+    if (!created) return std::unexpected(std::move(created.error()));
+    pane = std::move(*created);
+    auto button = ButtonWidget::create(**context);
+    if (!button) return std::unexpected(std::move(button.error()));
+    if (auto added = pane->addChild("btnDecline", *button); !added) return std::unexpected(std::move(added.error()));
+    if (auto bound = pane->setLuaRoot(*luaRoot); !bound) return std::unexpected(std::move(bound.error()));
+    if (auto bound = pane->addCallbacks("player", *playerCallbacks); !bound) return std::unexpected(std::move(bound.error()));
+    return pane->addCallbacks("interface", interface);
+  }));
+  ASSERT_TRUE(interface.registerCallback("destroyPane", [&](String const&) -> std::expected<void, StarException> {
+    if (pane && panes.isDisplayed(pane)) {
+      auto dismissed = panes.dismissPane(pane);
+      if (!dismissed) return std::unexpected(std::move(dismissed.error()));
+    }
+    pane.reset();
+    return {};
+  }));
+  ASSERT_TRUE(interface.registerCallback("displayRegisteredPane", [&](String const&) -> std::expected<void, StarException> {
+    if (panes.isDisplayed(pane)) {
+      if (auto shown = pane->show(); !shown)
+        return std::unexpected(std::move(shown.error()));
+      return pane->resumeScripts();
+    }
+    return panes.displayPane(PaneLayer::ModalWindow, pane, {});
+  }));
+  auto controller = (*luaRoot)->createContext("/interface/opensb/ui/manager.lua");
+  ASSERT_TRUE(controller);
+  ASSERT_TRUE(controller->setCallbacks("root", *rootCallbacks));
+  ASSERT_TRUE(controller->setCallbacks("player", *playerCallbacks));
+  ASSERT_TRUE(controller->setCallbacks("interface", interface));
+  ASSERT_TRUE(controller->eval<LuaValue>(R"LUA(
+    require "/interface/opensb/questdialogs/pending.lua"
+    session = {hasPlayer=true,inWorld=true,playerGeneration=1,worldGeneration=1}
+    checkpoint = {session=session}
+    manager = UiManager.new(checkpoint, {}, session)
+  )LUA"));
+  auto update = [&] { return controller->eval<LuaValue>("manager:update(); QuestDialogs.update(manager)"); };
+  auto text = [&](String const& name) {
+    auto child = pane->fetchChild<TextBoxWidget>(name);
+    EXPECT_TRUE(child && *child);
+    return child && *child ? (*child)->getText() : String{};
+  };
+  auto token = [&]() { return pane->config().query("questDialog.token").and_then([](Json const& value) { return value.toUInt(); }); };
   auto blocker = Pane::create(**context);
   ASSERT_TRUE(blocker);
   (*blocker)->setAnchor(PaneAnchor::BottomLeft);
   ASSERT_TRUE(panes.displayPane(PaneLayer::ModalWindow, *blocker, {}));
-  ASSERT_TRUE(pollQuestDialog(**context, panes, domain, *player, {}));
-  EXPECT_EQ(panes.topPane({PaneLayer::ModalWindow}), *blocker);
+  ASSERT_TRUE(update());
+  EXPECT_FALSE(pane);
   EXPECT_TRUE((*failed)->showDialog());
   EXPECT_TRUE((*complete)->showDialog());
   ASSERT_TRUE(panes.dismissPane(*blocker));
-  auto polled = pollQuestDialog(**context, panes, domain, *player, {});
-  ASSERT_TRUE(polled) << polled.error().what();
-  auto failurePane = panes.topPane({PaneLayer::ModalWindow});
-  ASSERT_TRUE(failurePane);
-  EXPECT_TRUE(as<QuestFailedInterface>(failurePane));
+  ASSERT_TRUE(update());
+  ASSERT_TRUE(pane);
+  EXPECT_EQ(text("marker"), String("failed"));
+  EXPECT_EQ(text("lblQuestBody"), String("Failure body"));
   EXPECT_FALSE((*failed)->showDialog());
   EXPECT_TRUE((*complete)->showDialog());
-  ASSERT_TRUE(pollQuestDialog(**context, panes, domain, *player, {}));
-  EXPECT_EQ(panes.topPane({PaneLayer::ModalWindow}), failurePane);
-  ASSERT_TRUE(panes.dismissPane(failurePane));
-  ASSERT_TRUE(pollQuestDialog(**context, panes, domain, *player, {}));
-  auto completionPane = panes.topPane({PaneLayer::ModalWindow});
-  ASSERT_TRUE(completionPane);
-  EXPECT_TRUE(as<QuestCompleteInterface>(completionPane));
+  auto failurePane = pane;
+  ASSERT_TRUE(update());
+  EXPECT_EQ(pane, failurePane);
+  ASSERT_TRUE(panes.dismissPane(pane));
+  ASSERT_TRUE(update());
+  EXPECT_EQ(text("marker"), String("complete"));
+  EXPECT_EQ(text("lblMoneyAmount"), String("12345"));
   EXPECT_FALSE((*complete)->showDialog());
-  ASSERT_TRUE(panes.dismissPane(completionPane));
-  ASSERT_TRUE(pollQuestDialog(**context, panes, domain, *player, {}));
-  auto offerPane = panes.topPane({PaneLayer::ModalWindow});
-  ASSERT_TRUE(offerPane);
-  EXPECT_TRUE(as<NewQuestInterface>(offerPane));
+  // Acknowledgment can remove an ephemeral quest without invalidating its
+  // captured completion transaction.
+  auto completionToken = token();
+  ASSERT_TRUE(completionToken);
+  ASSERT_TRUE(domain->update(0));
+  EXPECT_FALSE(domain->hasQuest("zzdialog-complete"));
+  EXPECT_TRUE(domain->dialogValid(*completionToken));
+  auto resolved = domain->dialogCinema(*completionToken);
+  ASSERT_TRUE(resolved) << resolved.error().what();
+  EXPECT_EQ(resolved->getBool("suppressInput"), true);
+  ASSERT_TRUE(pane->call("close"));
+  EXPECT_TRUE((*cinematic)->suppressInput());
+  EXPECT_EQ(cinemaLoads, 1);
+  ASSERT_TRUE(pane->call("btnAccept"));
+  EXPECT_EQ(cinemaLoads, 1);
+  (*cinematic)->setTime(2);
+  EXPECT_FALSE((*cinematic)->suppressInput());
+  ASSERT_TRUE(panes.dismissPane(pane));
+  ASSERT_TRUE(update());
+  EXPECT_EQ(text("marker"), String("portrait"));
+  auto offerToken = token();
+  ASSERT_TRUE(offerToken);
+  auto repeatView = domain->pendingDialog("offer");
+  ASSERT_TRUE(repeatView);
+  EXPECT_EQ(repeatView->getUInt("token"), *offerToken);
+  auto objective = pane->fetchChild<ImageWidget>("objectivePortraitImage");
+  ASSERT_TRUE(objective && *objective);
+  EXPECT_NE((*objective)->size(), Vec2I{});
+  // This is the generic centralized capability-retirement primitive, not a
+  // dialog-specific reload path. Native display membership survives it.
+  ASSERT_TRUE(pane->stopScripts());
+  EXPECT_TRUE(panes.isDisplayed(pane));
   EXPECT_EQ((*offered)->state(), QuestState::Offer);
-  ASSERT_TRUE(panes.dismissPane(offerPane));
-  EXPECT_EQ((*offered)->state(), QuestState::New);
-  ASSERT_TRUE(pollQuestDialog(**context, panes, domain, *player, {}));
-  EXPECT_FALSE(panes.topPane({PaneLayer::ModalWindow}));
+  ASSERT_TRUE(pane->removeCallbacks("player"));
+  ASSERT_TRUE(pane->addCallbacks("player", *playerCallbacks));
+  ASSERT_TRUE(controller->eval<LuaValue>("manager:open('QuestDialog')"));
+  ASSERT_TRUE(pane->tick(0));
+  ASSERT_TRUE(root.reload());
+  ASSERT_TRUE(pane->tick(0));
+  EXPECT_TRUE(domain->dialogValid(*offerToken));
+  EXPECT_EQ((*offered)->state(), QuestState::Offer);
+  auto shown = pane->evaluate("return storage.shown and not storage.finished");
+  ASSERT_TRUE(shown && *shown);
+  EXPECT_EQ(**shown, Json(true));
+  ASSERT_TRUE(pane->call("btnAccept"));
+  EXPECT_EQ((*offered)->state(), QuestState::Offer);
+  ASSERT_TRUE(panes.dismissPane(pane));
+  EXPECT_EQ((*offered)->state(), QuestState::Active);
+  auto duplicate = domain->finishDialog(*offerToken, "cancel");
+  ASSERT_TRUE(duplicate);
+  EXPECT_FALSE(*duplicate);
+  auto decision = controller->eval<Json>("return player.getProperty('zzdialogDecision')");
+  ASSERT_TRUE(decision);
+  EXPECT_EQ(*decision, Json("accept"));
+
+  auto replace = [&](String const& templateId, String const& state, bool portrait = false) -> std::expected<void, StarException> {
+    auto stored = storedQuest("zzdialog-reused", templateId, state, portrait);
+    if (!stored) return std::unexpected(std::move(stored.error()));
+    auto loaded = domain->diskLoad(JsonObject{{"quests", JsonObject{{"zzdialog-reused", *stored}}}});
+    if (!loaded) return std::unexpected(std::move(loaded.error()));
+    return domain->init(**player, **world);
+  };
+  ASSERT_TRUE(replace("zzdialog-offer", "Offer"));
+  ASSERT_TRUE(update());
+  EXPECT_EQ(text("marker"), String("short"));
+  // Native QuestPane centers the background bounds, ignoring parked controls.
+  // Empty background art keeps this regression genuinely renderer-independent.
+  EXPECT_EQ(pane->size(), Vec2I{});
+  auto unusedMoney = pane->fetchChild<ImageWidget>("unusedMoney");
+  ASSERT_TRUE(unusedMoney && *unusedMoney);
+  EXPECT_EQ((*unusedMoney)->relativePosition(), (Vec2I{60, 700}));
+  auto stale = token();
+  ASSERT_TRUE(stale);
+  auto oldQuest = domain->getQuest("zzdialog-reused");
+  ASSERT_TRUE(oldQuest);
+  auto lockedStore = storedQuest("zzdialog-reused", "zzdialog-locked", "Offer", false);
+  ASSERT_TRUE(lockedStore);
+  auto locked = Quest::create(root, *lockedStore);
+  ASSERT_TRUE(locked);
+  ASSERT_TRUE(domain->offer(*locked));
+  ASSERT_TRUE(panes.dismissPane(pane));
+  auto replacement = domain->getQuest("zzdialog-reused");
+  ASSERT_TRUE(replacement);
+  EXPECT_EQ((*replacement)->state(), QuestState::Offer);
+  EXPECT_EQ((*oldQuest)->state(), QuestState::Offer);
+  EXPECT_FALSE(domain->dialogValid(*stale));
+  ASSERT_TRUE(update());
+  auto declineButton = pane->fetchChild<ButtonWidget>("btnDecline");
+  ASSERT_TRUE(declineButton && *declineButton);
+  EXPECT_EQ(pane->config().query("questDialog.canDecline"), Json(false));
+  ASSERT_TRUE(pane->call("btnDecline"));
+  ASSERT_TRUE(panes.dismissPane(pane));
+  EXPECT_EQ((*replacement)->state(), QuestState::New);
+  decision = controller->eval<Json>("return player.getProperty('zzdialogDecision')");
+  ASSERT_TRUE(decision);
+  EXPECT_EQ(*decision, Json("cancel"));
+  ASSERT_TRUE(replace("zzdialog-custom", "Offer"));
+  ASSERT_TRUE(update());
+  EXPECT_EQ(text("marker"), String("custom"));
+  ASSERT_TRUE(pane->call("btnDecline"));
+  ASSERT_TRUE(panes.dismissPane(pane));
+  decision = controller->eval<Json>("return player.getProperty('zzdialogDecision')");
+  ASSERT_TRUE(decision);
+  EXPECT_EQ(*decision, Json("decline"));
+  // The same allocation returning to Offer is a new decision, not a revival
+  // of an old response merely because its ID and current state match.
+  ASSERT_TRUE(replace("zzdialog-offer", "Offer"));
+  ASSERT_TRUE(update());
+  auto priorOffer = token();
+  ASSERT_TRUE(priorOffer);
+  auto reoffered = domain->getQuest("zzdialog-reused");
+  ASSERT_TRUE(reoffered);
+  ASSERT_TRUE((*reoffered)->cancelOffer());
+  ASSERT_TRUE((*reoffered)->offer());
+  EXPECT_EQ((*reoffered)->state(), QuestState::Offer);
+  EXPECT_FALSE(domain->dialogValid(*priorOffer));
+  ASSERT_TRUE(pane->call("btnAccept"));
+  ASSERT_TRUE(panes.dismissPane(pane));
+  EXPECT_EQ((*reoffered)->state(), QuestState::Offer);
+  ASSERT_TRUE(update());
+  auto renewedOffer = token();
+  ASSERT_TRUE(renewedOffer);
+  EXPECT_NE(*renewedOffer, *priorOffer);
+  ASSERT_TRUE(pane->call("btnAccept"));
+  ASSERT_TRUE(panes.dismissPane(pane));
+  EXPECT_EQ((*reoffered)->state(), QuestState::Active);
+  for (auto const& state : {String("Complete"), String("Failed")}) {
+    ASSERT_TRUE(replace("zzdialog-custom", state));
+    ASSERT_TRUE(update());
+    EXPECT_EQ(text("marker"), String("custom"));
+    EXPECT_EQ(text("lblQuestBody"), state == "Complete" ? String("Completion body") : String("Failure body"));
+    ASSERT_TRUE(panes.dismissPane(pane));
+  }
+  ASSERT_TRUE(replace("zzdialog-offer", "Offer"));
+  ASSERT_TRUE(update());
+  auto expired = domain->getQuest("zzdialog-reused");
+  ASSERT_TRUE(expired);
+  ASSERT_TRUE(controller->eval<LuaValue>("manager:suspend({hasPlayer=true,inWorld=true,playerGeneration=1,worldGeneration=2})"));
+  EXPECT_FALSE(pane);
+  EXPECT_EQ((*expired)->state(), QuestState::New);
+  ASSERT_TRUE(replace("zzdialog-complete", "Complete"));
+  ASSERT_TRUE(update());
+  auto escapedToken = token();
+  ASSERT_TRUE(escapedToken);
+  auto escaped = pane->sendEvent(KeyDownEvent{Key::Escape, KeyMod::NoMod});
+  ASSERT_TRUE(escaped && *escaped);
+  ASSERT_TRUE(panes.dismissPane(pane));
+  EXPECT_FALSE(domain->dialogValid(*escapedToken));
+  EXPECT_EQ(cinemaLoads, 1);
+  // Admin previews use the same real Lua layouts but cannot mutate a quest,
+  // acknowledge a player's quest, or run its completion cinema.
+  for (auto const& kind : {String("offer"), String("complete"), String("failed")}) {
+    auto previewStore = storedQuest("zzdialog-preview", "zzdialog-custom", "Offer", false);
+    ASSERT_TRUE(previewStore);
+    auto preview = Quest::create(root, *previewStore);
+    ASSERT_TRUE(preview);
+    ASSERT_TRUE(domain->previewDialog(*preview, kind));
+    ASSERT_TRUE(update());
+    EXPECT_EQ(text("marker"), String("custom"));
+    ASSERT_TRUE(pane->call("btnAccept"));
+    ASSERT_TRUE(panes.dismissPane(pane));
+    EXPECT_EQ((*preview)->state(), QuestState::Offer);
+    EXPECT_EQ(cinemaLoads, 1);
+  }
+  EXPECT_FALSE(domain->pendingDialog("invalid"));
+  EXPECT_FALSE(domain->finishDialog(0, "invalid"));
+
+  // Generic dismissal never executes cinema; explicit close propagates both
+  // asset-fetch and native Cinematic::load failures without dismissing.
+  ASSERT_TRUE(replace("zzdialog-missing", "Complete"));
+  ASSERT_TRUE(update());
+  auto missingToken = token();
+  ASSERT_TRUE(missingToken);
+  EXPECT_FALSE(domain->dialogCinema(*missingToken));
+  auto closeError = pane->evaluate("local ok = pcall(close); return ok");
+  ASSERT_TRUE(closeError && *closeError);
+  EXPECT_EQ(**closeError, Json(false));
+  EXPECT_TRUE(pane->isDisplayed());
+  EXPECT_TRUE(domain->dialogValid(*missingToken));
+  ASSERT_TRUE(panes.dismissPane(pane));
+  EXPECT_EQ(cinemaLoads, 1);
+  ASSERT_TRUE(replace("zzdialog-malformed", "Complete"));
+  ASSERT_TRUE(update());
+  closeError = pane->evaluate("local ok = pcall(btnAccept); return ok");
+  ASSERT_TRUE(closeError && *closeError);
+  EXPECT_EQ(**closeError, Json(false));
+  EXPECT_TRUE(pane->isDisplayed());
+  ASSERT_TRUE(panes.dismissPane(pane));
+  EXPECT_EQ(cinemaLoads, 1);
+  ASSERT_TRUE(replace("zzdialog-offer", "Offer"));
+  auto errorView = domain->pendingDialog("offer");
+  ASSERT_TRUE(errorView);
+  auto errorToken = errorView->getUInt("token");
+  ASSERT_TRUE(errorToken);
+  ASSERT_TRUE(controller->eval<LuaValue>("player.setProperty('zzdialogThrow', true)"));
+  // Invoke through Lua pcall so the intentional domain exception is observed,
+  // not converted to a component error/log or silently suppressed.
+  auto thrown = controller->eval<Json>(strf("local ok,err=pcall(player.finishQuestDialog,{},'cancel'); return {{ok,tostring(err):find('quest decision regression',1,true)~=nil}}", *errorToken));
+  ASSERT_TRUE(thrown);
+  EXPECT_EQ(*thrown, (Json(JsonArray{false, true})));
+  EXPECT_FALSE(domain->dialogValid(*errorToken));
+  ASSERT_TRUE(controller->eval<LuaValue>("player.setProperty('zzdialogThrow', false)"));
+  ASSERT_TRUE(controller->eval<LuaValue>("manager:shutdown()"));
 });
 
 }

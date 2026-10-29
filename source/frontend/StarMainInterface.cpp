@@ -198,7 +198,6 @@ import star.songbook;
 
 
 
-import star.quest_interface;
 
 
 
@@ -729,6 +728,10 @@ std::expected<std::shared_ptr<Pane>, StarException> MainInterface::itemTooltip(s
   return ItemTooltipBuilder::buildItemTooltip(context(), item, m_uiPlayer);
 }
 
+std::expected<void, StarException> MainInterface::playCinematic(Json const& config) {
+  return m_cinematicOverlay->load(config);
+}
+
 std::expected<void, StarException> MainInterface::initUiController() {
   m_uiController = std::make_unique<LuaUpdateScript>(context().root());
   // Session capability replacement is an integration boundary, not a policy
@@ -766,18 +769,15 @@ std::expected<void, StarException> MainInterface::synchronizeUiSession() {
   Json next = JsonObject{{"hasPlayer", static_cast<bool>(player)}, {"inWorld", inWorld},
       {"playerGeneration", m_uiPlayerGeneration + (playerChanged ? 1 : 0)},
       {"worldGeneration", m_uiWorldGeneration + (worldChanged ? 1 : 0)}};
-  if (m_uiController->initialized() && luaRoot == m_uiRoot && generation == m_uiRootGeneration) {
+  if (m_uiController->initialized()) {
     auto suspended = m_uiController->invoke<Json>("suspend", next);
     if (!suspended) return std::unexpected(std::move(suspended.error()));
   }
   // Uninit every borrowing context while the old targets are still retained.
-  for (auto const& entry : m_paneInstances) {
-    if (m_paneManager.isDisplayed(entry.second.first)) {
-      if (auto dismissed = m_paneManager.dismissPane(entry.second.first); !dismissed)
-        return std::unexpected(std::move(dismissed.error()));
-    } else if (auto dismissed = entry.second.first->dismissed(); !dismissed) {
-      return std::unexpected(std::move(dismissed.error()));
-    }
+  // Script hooks may change the registry; retain snapshot ownership.
+  for (auto const& instance : m_paneInstances.values()) {
+    if (auto stopped = instance.first->stopScripts(); !stopped)
+      return std::unexpected(std::move(stopped.error()));
   }
   if (auto stopped = m_uiController->uninit(); !stopped)
     return std::unexpected(std::move(stopped.error()));
@@ -847,6 +847,12 @@ std::expected<void, StarException> MainInterface::synchronizeUiSession() {
     return std::unexpected(std::move(bound.error()));
   auto initialized = m_uiController->init();
   if (!initialized) return std::unexpected(std::move(initialized.error()));
+  for (auto const& instance : m_paneInstances.values()) {
+    if (m_paneManager.isDisplayed(instance.first)) {
+      if (auto resumed = instance.first->resumeScripts(); !resumed)
+        return std::unexpected(std::move(resumed.error()));
+    }
+  }
   return {};
 }
 
@@ -921,9 +927,12 @@ std::expected<std::shared_ptr<Pane>, StarException> MainInterface::findRegistere
 
 std::expected<void, StarException> MainInterface::displayRegisteredPane(String const& id) {
   if (auto instance = m_paneInstances.maybeRef(id)) {
-    auto const& [pane, layer] = instance->get();
-    if (m_paneManager.isDisplayed(pane))
-      return pane->show();
+    auto [pane, layer] = instance->get();
+    if (m_paneManager.isDisplayed(pane)) {
+      if (auto shown = pane->show(); !shown)
+        return std::unexpected(std::move(shown.error()));
+      return pane->resumeScripts();
+    }
     return m_paneManager.displayPane(layer, pane);
   }
   if (!MainInterfacePanesNames) return std::unexpected(MainInterfacePanesNames.error());
@@ -1549,9 +1558,6 @@ std::expected<void, StarException> MainInterface::update(float dt) {
   if (auto synchronized = synchronizeUiSession(); !synchronized)
     return std::unexpected(std::move(synchronized.error()));
 
-  auto dialogPolled = pollQuestDialog(context(), m_paneManager, m_client->questManager(), m_client->mainPlayer(), m_cinematicOverlay);
-  if (!dialogPolled)
-    return std::unexpected(std::move(dialogPolled.error()));
   auto controlled = m_uiController->update<Json>(dt);
   if (!controlled) return std::unexpected(std::move(controlled.error()));
   auto panesUpdated = m_paneManager.update(dt);

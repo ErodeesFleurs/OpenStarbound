@@ -91,6 +91,7 @@ public:
   StringMap<QuestParam> const& parameters() const;
 
   QuestState state() const;
+  std::uint64_t stateRevision() const { return m_stateRevision; }
 
   // Whether to show the Complete / Failed dialog
   bool showDialog() const;
@@ -216,6 +217,7 @@ private:
   std::uint64_t m_presentationRevision;
   std::uint64_t m_portraitRevision;
   std::uint64_t m_rewardsRevision;
+  std::uint64_t m_stateRevision;
 
   std::optional<JsonArray> m_objectiveList;
   std::optional<float> m_progress;

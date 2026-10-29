@@ -213,7 +213,8 @@ Quest::Quest(Root& root)
     m_state(QuestState::New), m_inited(false), m_showDialog(false), m_arcPos(0),
     m_displayParameters{}, m_money(0), m_lastUpdatedOn(0),
     m_unread(true), m_canTurnIn(false), m_presentationRevision(nextQuestPresentationRevision()),
-    m_portraitRevision(m_presentationRevision), m_rewardsRevision(m_presentationRevision), m_scriptComponent(root) {}
+    m_portraitRevision(m_presentationRevision), m_rewardsRevision(m_presentationRevision),
+    m_stateRevision(m_presentationRevision), m_scriptComponent(root) {}
 
 std::expected<std::shared_ptr<Quest>, StarException> Quest::create(Root& root, QuestArcDescriptor const& arc, std::size_t arcPos, Player& player) {
   auto quest = std::shared_ptr<Quest>(new Quest(root));
@@ -856,6 +857,7 @@ bool Quest::hideCrossServer() const {
 
 void Quest::setState(QuestState state) {
   m_state = state;
+  m_stateRevision = nextQuestPresentationRevision();
   m_lastUpdatedOn = Time::monotonicMilliseconds();
 }
 

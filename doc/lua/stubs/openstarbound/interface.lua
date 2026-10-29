@@ -43,6 +43,10 @@ function interface.scale() end
 ---@return userdata
 function interface.itemTooltip(item) end
 
+--- Immediately loads a resolved client UI cinematic; native errors propagate, unlike deferred player playback.
+---@param definition Json
+function interface.playCinematic(definition) end
+
 --- Constructs an undisplayed generic script pane; Lua manages its lifetime.
 ---@param id string
 ---@param config Json

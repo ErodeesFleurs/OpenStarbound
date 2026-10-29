@@ -1,5 +1,6 @@
 require "/interface/opensb/ui/manager.lua"
 require "/interface/opensb/codex/unread.lua"
+require "/interface/opensb/questdialogs/pending.lua"
 
 local manager
 
@@ -36,6 +37,7 @@ end
 
 function update(dt)
   manager:update()
+  QuestDialogs.update(manager)
   CodexUnread.update(manager)
 end
 

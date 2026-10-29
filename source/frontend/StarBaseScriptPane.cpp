@@ -198,6 +198,19 @@ std::expected<void, StarException> BaseScriptPane::displayed() {
   return {};
 }
 
+std::expected<void, StarException> BaseScriptPane::stopScripts() {
+  return m_script.uninit();
+}
+
+std::expected<void, StarException> BaseScriptPane::resumeScripts() {
+  if (!m_script.initialized()) {
+    auto initialized = m_script.init();
+    if (!initialized)
+      return std::unexpected(std::move(initialized.error()));
+  }
+  return {};
+}
+
 std::expected<void, StarException> BaseScriptPane::dismissed() {
   auto dismissed = Pane::dismissed();
   auto uninitialized = m_script.uninit("dismissed");

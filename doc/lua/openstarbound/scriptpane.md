@@ -140,6 +140,13 @@ cleared. The usual `init`, `update(dt)`, `uninit`, `displayed`, and `dismissed`
 hooks remain available. Define functions at script top level and use bindings in
 `init`, after callback tables have been installed.
 
+`dismissed()` is a true presentation-removal hook. Asset/engine reload and
+centralized capability replacement run `uninit()` without issuing a false
+`dismissed()` or removing surviving panes from the native display stack.
+Scripts are explicitly resumed after rebinding; closed retained windows stay
+dormant until reopened. Put cancellation/commit of a presentation request in
+`dismissed()`, not in the general `uninit()` hook.
+
 A pane configuration can specify top-level `size: [width, height]` in interface
 pixels. Otherwise initial root bounds include declarative children and any
 native background. When a script changes Canvas or layout dimensions, update

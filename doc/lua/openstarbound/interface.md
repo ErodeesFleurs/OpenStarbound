@@ -72,6 +72,13 @@ builder uses the current UI player, including player-dependent armor previews.
 These handles are not JSON and cannot be persisted in script storage.
 This is not a return type supported by the Lua `createTooltip` hook.
 
+#### `void` interface.playCinematic(`Json` definition)
+
+Immediately loads a resolved cinematic definition into the client UI overlay.
+Native parsing/load errors propagate to the caller. Unlike the queued
+`player.playCinematic` API, this does not defer playback, resolve an asset path,
+or apply unique-playback history. Available in client UI script contexts.
+
 ## Lua-managed interface instances
 
 The session controller loads `/interface.config:panes` using the shared Lua
@@ -235,9 +242,35 @@ portraits use the generic drawable setter with horizontal mirroring.
 Quest state, eligibility, ordering, rewards and abandonment remain native
 player-domain operations.
 
-Quest acceptance, completion and failure dialogs remain native modal panes.
-Their polling is independent of opening the log and preserves the existing
-modal guard, failure/completion/offer priority and acknowledgments.
+### Bundled quest dialogs
+
+`/interface/opensb/questdialogs/pending.lua` schedules the canonical
+`"QuestDialog"` dynamic registration on `"ModalWindow"`, independently of the
+quest log. It waits for an in-world player and an unoccupied modal layer, then
+selects queued administrator previews, failed quests, completed quests and
+offers in that order.
+
+Lua selects the original short/Objective-portrait default configuration or the
+quest template's nested `guiConfigs.newQuest`, `questComplete` or `questFailed`
+override. It reuses `paneLayout` and named widgets, native reward ItemBag
+capacity **5**, money labels and player-aware item tooltips. Objective portraits
+are mirrored horizontally. `onShowSound` plays once per presentation, not on
+script reload.
+Window bounds explicitly retain the legacy background dimensions: maximum
+header/body/footer width and summed height. Off-panel placeholder controls do
+not enlarge the root or displace centering; authored anchors remain unchanged.
+
+Requests use native process-local decision tokens rather than IDs alone.
+Acknowledgment follows successful display. Accept/decline/cancel is committed
+on actual dismissal; script reload and capability rebinding do not cancel an
+offer. World/player expiration destroys the world-scoped instance and retires
+its request. Repeated or stale decisions cannot act on a replacement quest.
+
+For completed quests, named `close`, `btnAccept` and `btnDecline` actions resolve
+and immediately load the completion cinematic before closing. Escape and
+external dismissal do not play it. Administrator previews do not mutate quest
+state or run completion cinematics. There are no native quest-dialog window
+classes or separate presentation poller.
 
 ### Bundled quest tracker
 

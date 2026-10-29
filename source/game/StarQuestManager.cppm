@@ -69,6 +69,15 @@ public:
   std::optional<std::shared_ptr<Quest>> getFirstFailableQuest();
   std::optional<std::shared_ptr<Quest>> getFirstMainQuest();
 
+  // Decision leases retain the exact quest allocation, independently of its
+  // public ID and of ephemeral quest removal after acknowledgment.
+  [[nodiscard]] std::expected<Json, StarException> pendingDialog(String const& kind);
+  [[nodiscard]] std::expected<void, StarException> previewDialog(std::shared_ptr<Quest> quest, String const& kind);
+  bool dialogValid(std::uint64_t token) const;
+  bool acknowledgeDialog(std::uint64_t token);
+  [[nodiscard]] std::expected<Json, StarException> dialogCinema(std::uint64_t token) const;
+  [[nodiscard]] std::expected<bool, StarException> finishDialog(std::uint64_t token, String const& decision);
+
   List<std::shared_ptr<Quest>> listActiveQuests() const;
   List<std::shared_ptr<Quest>> listCompletedQuests() const;
   List<std::shared_ptr<Quest>> listFailedQuests() const;
@@ -97,6 +106,15 @@ private:
   std::optional<std::reference_wrapper<UniverseClient>> m_client;
 
   StringMap<std::shared_ptr<Quest>> m_quests;
+  struct DialogLease {
+    std::shared_ptr<Quest> quest;
+    String kind;
+    std::uint64_t stateRevision;
+    bool preview;
+    bool acknowledged = false;
+  };
+  [[nodiscard]] std::expected<Json, StarException> dialogView(std::uint64_t token, DialogLease const& lease) const;
+  std::map<std::uint64_t, DialogLease> m_dialogs;
 
   std::optional<String> m_trackedQuestId;
   bool m_trackOnWorldQuests;

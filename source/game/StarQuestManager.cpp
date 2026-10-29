@@ -21,6 +21,8 @@ import star.entity;
 import star.interactive_entity;
 import star.universe_client;
 import star.world;
+import star.drawable;
+import star.item;
 namespace Star {
 QuestManager::QuestManager(Root& root, Player& player)
   : m_root(root), m_player(player), m_trackOnWorldQuests(false) {}
@@ -64,6 +66,7 @@ std::expected<void, StarException> QuestManager::diskLoad(Json const& quests) {
   auto loaded = readQuests(m_root, *json);
   if (!loaded) return std::unexpected(std::move(loaded.error()));
   m_quests = std::move(*loaded);
+  m_dialogs.clear();
   auto current = quests.optString("currentQuest");
   if (!current) return std::unexpected(std::move(current.error()));
   m_trackedQuestId = std::move(*current);
@@ -99,6 +102,11 @@ std::expected<void, StarException> QuestManager::init(Player& player, World& wor
 }
 std::expected<void, StarException> QuestManager::uninit() {
   std::optional<StarException> error;
+  // Expiring a domain decision lease is cancellation, never acceptance.
+  while (!m_dialogs.empty()) {
+    auto cancelled = finishDialog(m_dialogs.begin()->first, "cancel");
+    if (!cancelled && !error) error = std::move(cancelled.error());
+  }
   for (auto const& quest : m_quests.values()) {
     auto result = quest->uninit();
     if (!result && !error) error = std::move(result.error());
@@ -110,6 +118,7 @@ std::expected<void, StarException> QuestManager::uninit() {
 void QuestManager::detachPlayer() {
   for (auto const& quest : m_quests.values())
     quest->detachPlayer();
+  m_dialogs.clear();
   m_world.reset();
   m_player.reset();
   m_client.reset();
@@ -187,6 +196,141 @@ std::optional<std::shared_ptr<Quest>> QuestManager::getFirstFailableQuest() {
   for (auto const& q : m_quests) if (questValidOnServer(q.second) && q.second->state() == QuestState::Failed && q.second->showDialog()) return q.second;
   return {};
 }
+namespace {
+std::uint64_t nextQuestDialogToken() {
+  static std::atomic<std::uint64_t> token{0};
+  return token.fetch_add(1, std::memory_order_relaxed) + 1;
+}
+bool questDialogKind(String const& kind) {
+  return kind == "offer" || kind == "complete" || kind == "failed";
+}
+}
+
+std::expected<Json, StarException> QuestManager::dialogView(std::uint64_t token, DialogLease const& lease) const {
+  auto const& quest = *lease.quest;
+  auto qt = quest.getTemplate();
+  if (!qt) return std::unexpected(std::move(qt.error()));
+  auto objective = lease.kind == "offer" ? quest.portrait("Objective") : std::optional<List<Drawable>>{};
+  auto const& override = lease.kind == "offer" ? (*qt)->newQuestGuiConfig
+      : lease.kind == "complete" ? (*qt)->questCompleteGuiConfig : (*qt)->questFailedGuiConfig;
+  String portraitName = lease.kind == "offer" ? String("QuestStarted") : lease.kind == "complete" ? String("QuestComplete") : String("QuestFailed");
+  auto portrait = jsonFromList(quest.portrait(portraitName).value_or(List<Drawable>{}),
+      [](Drawable const& drawable) { return drawable.toJson(); });
+  if (!portrait) return std::unexpected(std::move(portrait.error()));
+  auto objectiveJson = jsonFromList(std::move(objective).value_or(List<Drawable>{}),
+      [](Drawable const& drawable) { return drawable.toJson(); });
+  if (!objectiveJson) return std::unexpected(std::move(objectiveJson.error()));
+  JsonArray rewards;
+  rewards.reserve(quest.rewards().size());
+  for (auto const& item : quest.rewards()) rewards.emplace_back(item->descriptor().toJson());
+  bool canDecline = false;
+  if (lease.kind == "offer") {
+    auto allowed = quest.canBeAbandoned();
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    canDecline = *allowed;
+  }
+  JsonObject view{{"id", quest.questId()}, {"token", token}, {"kind", lease.kind},
+      {"title", quest.title()}, {"text", lease.kind == "offer" ? quest.text()
+          : lease.kind == "complete" ? quest.completionText() : quest.failureText()},
+      {"portrait", std::move(*portrait)}, {"portraitTitle", quest.portraitTitle(portraitName).value_or("")},
+      {"objectivePortrait", std::move(*objectiveJson)}, {"objectivePortraitTitle", lease.kind == "offer" ? quest.portraitTitle("Objective").value_or("") : String{}},
+      {"rewards", std::move(rewards)}, {"money", quest.money()},
+      {"canDecline", canDecline}, {"preview", lease.preview}};
+  if (override) view.set("guiConfig", *override);
+  return view;
+}
+
+std::expected<Json, StarException> QuestManager::pendingDialog(String const& kind) {
+  std::erase_if(m_dialogs, [this](auto const& entry) { return !dialogValid(entry.first); });
+  if (kind == "preview") {
+    for (auto const& [token, lease] : m_dialogs)
+      if (lease.preview && !lease.acknowledged) return dialogView(token, lease);
+    return Json{};
+  }
+  if (!questDialogKind(kind)) return std::unexpected(StarException("Unknown quest dialog kind"));
+  auto quest = kind == "failed" ? getFirstFailableQuest() : kind == "complete" ? getFirstCompletableQuest() : getFirstNewQuest();
+  if (!quest) return Json{};
+  for (auto const& [token, lease] : m_dialogs)
+    if (!lease.preview && lease.quest == *quest && lease.kind == kind) return dialogView(token, lease);
+  auto token = nextQuestDialogToken();
+  auto stateRevision = (*quest)->stateRevision();
+  DialogLease lease{std::move(*quest), kind, stateRevision, false};
+  auto view = dialogView(token, lease);
+  if (!view) return std::unexpected(std::move(view.error()));
+  m_dialogs.emplace(token, std::move(lease));
+  return view;
+}
+
+std::expected<void, StarException> QuestManager::previewDialog(std::shared_ptr<Quest> quest, String const& kind) {
+  if (!questDialogKind(kind)) return std::unexpected(StarException("Unknown quest dialog kind"));
+  auto stateRevision = quest->stateRevision();
+  m_dialogs.emplace(nextQuestDialogToken(), DialogLease{std::move(quest), kind, stateRevision, true});
+  return {};
+}
+
+bool QuestManager::dialogValid(std::uint64_t token) const {
+  auto found = m_dialogs.find(token);
+  if (found == m_dialogs.end()) return false;
+  auto const& lease = found->second;
+  if (lease.preview) return true;
+  if (lease.stateRevision != lease.quest->stateRevision()) return false;
+  auto current = m_quests.maybeRef(lease.quest->questId());
+  if (current && current->get() != lease.quest) return false;
+  if (!current && !(lease.acknowledged && lease.quest->ephemeral() && lease.kind != "offer")) return false;
+  auto state = lease.quest->state();
+  return questValidOnServer(lease.quest) && (lease.kind == "offer" ? state == QuestState::Offer
+      : lease.kind == "complete" ? state == QuestState::Complete : state == QuestState::Failed);
+}
+
+bool QuestManager::acknowledgeDialog(std::uint64_t token) {
+  if (!dialogValid(token)) return false;
+  auto& lease = m_dialogs.at(token);
+  lease.acknowledged = true;
+  if (!lease.preview && lease.kind != "offer") lease.quest->setDialogShown();
+  return true;
+}
+
+std::expected<Json, StarException> QuestManager::dialogCinema(std::uint64_t token) const {
+  if (!dialogValid(token)) return Json{};
+  auto const& lease = m_dialogs.at(token);
+  if (lease.preview || lease.kind != "complete" || !m_player) return Json{};
+  auto cinema = lease.quest->completionCinema();
+  if (!cinema) return std::unexpected(std::move(cinema.error()));
+  if (!*cinema) return Json{};
+  if (!GenderNames) return std::unexpected(GenderNames.error());
+  auto gender = GenderNames->getRight(m_player->get().gender());
+  if (!gender) return std::unexpected(std::move(gender.error()));
+  auto path = (**cinema).replaceTags(StringMap<String>{{"species", m_player->get().species()}, {"gender", gender->get()}});
+  auto assets = m_root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  return (*assets)->fetchJson(path);
+}
+
+std::expected<bool, StarException> QuestManager::finishDialog(std::uint64_t token, String const& decision) {
+  if (decision != "accept" && decision != "decline" && decision != "cancel" && decision != "close")
+    return std::unexpected(StarException("Unknown quest dialog decision"));
+  bool valid = dialogValid(token);
+  auto found = m_dialogs.find(token);
+  if (found == m_dialogs.end()) return false;
+  auto lease = std::move(found->second);
+  // Retire before invoking quest scripts, which may reenter or replace quests.
+  m_dialogs.erase(found);
+  if (!valid) return false;
+  if (lease.preview || lease.kind != "offer") return true;
+  std::expected<void, StarException> result;
+  if (decision == "accept") {
+    result = lease.quest->start();
+  } else if (decision == "decline") {
+    auto allowed = lease.quest->canBeAbandoned();
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    result = *allowed ? lease.quest->declineOffer() : lease.quest->cancelOffer();
+  } else {
+    result = lease.quest->cancelOffer();
+  }
+  if (!result) return std::unexpected(std::move(result.error()));
+  return true;
+}
+
 std::optional<std::shared_ptr<Quest>> QuestManager::getFirstMainQuest() {
   for (auto const& q : m_quests) if (questValidOnServer(q.second) && q.second->state() == QuestState::Active && q.second->mainQuest()) return q.second;
   return {};

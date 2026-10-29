@@ -208,6 +208,11 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeInterfaceCallbacks(M
     return handle.engine().createUserData(std::move(*tooltip));
   }); !r)
     return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("playCinematic", [&mainInterface, lifetime](Json const& config) -> std::expected<void, StarException> {
+    if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
+    return mainInterface.playCinematic(config);
+  }); !r)
+    return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallback("bindCanvas", [&mainInterface, lifetime](String const& name, std::optional<bool> ignoreScale) -> std::expected<std::optional<std::shared_ptr<CanvasWidget>>, StarException> {
     if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
     auto canvas = mainInterface.fetchCanvas(name, ignoreScale.value_or(false));
