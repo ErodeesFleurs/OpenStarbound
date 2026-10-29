@@ -71,6 +71,17 @@ Lua tooltip hooks are optional.
 
 ---
 
+### Text color
+
+#### `void` widget.setFontColor(`String` widgetName, `Color` color, [`float` alpha])
+
+Sets the color of a LabelWidget, ButtonWidget or TextBoxWidget. The optional
+`alpha` replaces the color's alpha using native clamped float precision before
+assignment, avoiding premature conversion to an eight-bit Lua color channel.
+Omitting it retains the supplied color's alpha.
+
+---
+
 ### TextBoxWidget helpers
 
 #### `String` widget.getHint(`String` widgetName)
@@ -110,7 +121,9 @@ Sets the selection and caret, clamping both to the text length. Equal indices cl
 
 #### `void` widget.setTextStyle(`String` widgetName, `Json` style)
 
-Sets the TextBoxWidget's complete text style: `fontSize`, `font`, `color`, `shadow`, `lineSpacing`, `directives` and `backDirectives`. This also controls caret measurement when native drawing is disabled.
+Sets a LabelWidget or TextBoxWidget's complete text style: `fontSize`, `font`,
+`color`, `shadow`, `lineSpacing`, `directives` and `backDirectives`. For a
+TextBoxWidget this also controls caret measurement when native drawing is disabled.
 
 The off-draw editor is still a real `textbox` child with a registered callback. Existing `widget.focus`, `blur`, `setText` and textbox callback/`enterKey`/`escapeKey` configuration apply. Callbacks retain their existing event semantics (including key release); scripts can also read the state while rendering. The containing pane must forward raw focused-widget events and report its keyboard capture mode/area. Set the widget's position and size to the actual input field so the platform receives the candidate-window area.
 

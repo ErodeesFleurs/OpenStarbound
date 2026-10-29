@@ -71,6 +71,7 @@ function widget.getTextEditorState(widgetName) end
 ---@param cursor integer
 function widget.setTextSelection(widgetName, anchor, cursor) end
 
+--- Applies full native TextStyle to LabelWidget or TextBoxWidget.
 ---@param widgetName string
 ---@param style TextStyle
 function widget.setTextStyle(widgetName, style) end

@@ -59,6 +59,11 @@ import star.world_server;
 import star.casting;
 import star.vertical_layout;
 import star.logging;
+import star.game_timers;
+import star.world_template;
+import star.world_lua_bindings;
+import star.celestial_parameters;
+import star.celestial_coordinate;
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
@@ -3438,6 +3443,251 @@ const GameTestRegistration questDialogs("QuestDialogs", "LuaModalDecisionsReload
   EXPECT_FALSE(domain->dialogValid(*errorToken));
   ASSERT_TRUE(controller->eval<LuaValue>("player.setProperty('zzdialogThrow', false)"));
   ASSERT_TRUE(controller->eval<LuaValue>("manager:shutdown()"));
+});
+
+const GameTestRegistration planetTextPresentation("LuaPlanetText", "NativeTimerDomainAndPersistentSessionPresentation", [](GameTest& fixture) {
+  auto directory = File::temporaryDirectory(fixture.root().random());
+  ASSERT_TRUE(directory);
+  auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directory)); });
+  auto overlay = File::relativeTo(*directory, "assets");
+  ASSERT_TRUE(File::makeDirectory(overlay));
+  auto patchPath = File::relativeTo(overlay, "interface.config.patch");
+  auto writeStyle = [&](float duration, float fade) -> std::expected<void, StarException> {
+    auto json = Json(JsonObject{
+        {"planetNameTime", duration}, {"planetNameFadeTime", fade},
+        {"planetNameFormatString", "[<worldName>] <worldName>"},
+        {"planetTextOffset", JsonArray{-7, 121}},
+        {"planetTextStyle", JsonObject{{"fontSize", 24}, {"shadow", "red"},
+            {"backDirectives", "border=1;000;000"}, {"color", "blue"}}}}).repr();
+    if (!json) return std::unexpected(std::move(json.error()));
+    return File::writeFile(*json, patchPath);
+  };
+  ASSERT_TRUE(writeStyle(0.7f, 0.3f));
+  auto settings = fixture.rootSettings();
+  settings.assetSources.append(overlay);
+  settings.storageDirectory = File::relativeTo(*directory, "storage");
+  settings.runtimeConfigFile = String("planettext.config");
+  settings.logDirectory = {};
+  settings.logFile = {};
+  settings.includeUGC = false;
+  auto createdRoot = Root::create(settings);
+  ASSERT_TRUE(createdRoot);
+  auto& root = **createdRoot;
+  auto configuration = root.configuration();
+  ASSERT_TRUE(configuration);
+  ASSERT_TRUE((*configuration)->set("bindings", JsonObject{}));
+  auto context = GuiContext::create(root, {}, {});
+  ASSERT_TRUE(context);
+  auto assets = root.assets();
+  ASSERT_TRUE(assets);
+  auto available = MainInterface::paneIdAvailable("PlanetText");
+  ASSERT_TRUE(available);
+  EXPECT_TRUE(*available);
+  auto config = (*assets)->json("/interface/opensb/planettext/planettext.config");
+  ASSERT_TRUE(config);
+  auto paneConfig = config->toObject();
+  ASSERT_TRUE(paneConfig);
+  // Real LabelWidget construction requires renderInit, even for an empty
+  // string. Use a real native TextBox for text/visibility policy, not a mock
+  // renderer or callback echo. Label metrics/style pixels are a GUI gate.
+  paneConfig->set("gui", JsonObject{});
+  auto createdPane = ScriptTestPane::create(**context, Json(*paneConfig));
+  ASSERT_TRUE(createdPane);
+  auto pane = *createdPane;
+  pane->setAnchor(PaneAnchor::Center);
+  auto text = textEditor(**context, "");
+  ASSERT_TRUE(text);
+  (*text)->setMaxWidth(-1);
+  ASSERT_TRUE(pane->addChild("planetText", *text));
+  auto luaRoot = LuaRoot::create(root);
+  ASSERT_TRUE(luaRoot);
+  ASSERT_TRUE(pane->setLuaRoot(*luaRoot));
+  auto factory = root.playerFactory();
+  ASSERT_TRUE(factory);
+  auto player = (*factory)->create();
+  ASSERT_TRUE(player);
+  auto playerCallbacks = LuaBindings::makePlayerCallbacks(root, **player);
+  ASSERT_TRUE(playerCallbacks);
+  ASSERT_TRUE(pane->addCallbacks("player", *playerCallbacks));
+  auto rootCallbacks = LuaBindings::makeRootCallbacks(root);
+  ASSERT_TRUE(rootCallbacks);
+  ASSERT_TRUE(pane->addCallbacks("root", *rootCallbacks));
+  auto cinematic = Cinematic::create(**context);
+  ASSERT_TRUE(cinematic);
+  // Cinematic uses a real clock. Keep it active through expensive Root reloads;
+  // each transition below stops it explicitly instead of racing a one-second end.
+  auto startCinema = [&] {
+    return (*cinematic)->load(JsonObject{{"panels", JsonArray{JsonObject{
+        {"keyframes", JsonArray{JsonObject{{"timecode", 0}},
+            JsonObject{{"timecode", std::numeric_limits<float>::max()}}}}}}},
+        {"audio", JsonArray{}}});
+  };
+  bool hasPlayer = true, worldAvailable = true;
+  float scale = 1.25f;
+  LuaCallbacks interface;
+  ASSERT_TRUE(interface.registerCallback("session", [&] {
+    return JsonObject{{"hasPlayer", hasPlayer}, {"inWorld", worldAvailable}};
+  }));
+  ASSERT_TRUE(interface.registerCallback("cinematicActive", [&] { return !(*cinematic)->completed(); }));
+  ASSERT_TRUE(interface.registerCallback("scale", [&] { return scale; }));
+  ASSERT_TRUE(pane->addCallbacks("interface", interface));
+
+  // Stored native templates let the name query read the exact domain name,
+  // including tag-like characters, without generating/serializing a planet.
+  auto blankTemplate = WorldTemplate::create(root, Vec2U{2048, 2048});
+  ASSERT_TRUE(blankTemplate);
+  auto storedTemplate = (*blankTemplate)->store();
+  ASSERT_TRUE(storedTemplate);
+  auto namedTemplate = [&](String const& name) -> std::expected<std::shared_ptr<WorldTemplate>, StarException> {
+    auto celestial = CelestialParameters::create(root, CelestialCoordinate{}, 1, name, JsonObject{});
+    if (!celestial) return std::unexpected(std::move(celestial.error()));
+    auto storedCelestial = celestial->diskStore();
+    if (!storedCelestial) return std::unexpected(std::move(storedCelestial.error()));
+    auto stored = storedTemplate->set("celestialParameters", *storedCelestial);
+    if (!stored) return std::unexpected(std::move(stored.error()));
+    return WorldTemplate::create(root, *stored);
+  };
+  auto templateA = namedTemplate("A <worldName> 中");
+  auto templateB = namedTemplate("B");
+  ASSERT_TRUE(templateA && templateB);
+  auto makeWorld = [&](std::shared_ptr<WorldTemplate> worldTemplate) -> std::expected<std::shared_ptr<WorldServer>, StarException> {
+    auto storage = File::ephemeralFile(root.random());
+    if (!storage) return std::unexpected(std::move(storage.error()));
+    return WorldServer::create(root, std::move(worldTemplate), *storage);
+  };
+  auto worldA = makeWorld(*templateA);
+  auto worldB = makeWorld(*templateB);
+  auto emptyWorld = makeWorld(*blankTemplate);
+  ASSERT_TRUE(worldA && worldB && emptyWorld);
+  auto closeWorlds = finally([&] {
+    if ((*player)->inWorld()) EXPECT_TRUE((*player)->uninit());
+    EXPECT_TRUE((*worldA)->close());
+    EXPECT_TRUE((*worldB)->close());
+    EXPECT_TRUE((*emptyWorld)->close());
+  });
+  auto bindWorld = [&](WorldServer& world) -> std::expected<void, StarException> {
+    auto callbacks = LuaBindings::makeWorldCallbacks(root, world);
+    if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+    auto removed = pane->removeCallbacks("world");
+    if (!removed) return std::unexpected(std::move(removed.error()));
+    return pane->addCallbacks("world", *callbacks);
+  };
+  ASSERT_TRUE(bindWorld(**worldA));
+  PaneManager panes(**context);
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Hud, pane, {}));
+  EXPECT_EQ(pane->size(), (Vec2I{0, 0}));
+  EXPECT_FALSE(pane->interactive());
+  EXPECT_FALSE(pane->visibility());
+  auto publicCallbacks = pane->makePaneCallbacks();
+  ASSERT_TRUE(publicCallbacks);
+  auto probe = (*luaRoot)->createContext(StringList{});
+  ASSERT_TRUE(probe);
+  ASSERT_TRUE(probe->setCallbacks("planet", *publicCallbacks));
+  ASSERT_TRUE(probe->eval<LuaValue>("cached = planet.toWidget()"));
+
+  GameTimer expected(0.7f);
+  float fade = 0.3f;
+  auto activePlayer = *player;
+  auto step = [&](float dt) {
+    bool ready = false;
+    if ((*cinematic)->completed())
+      ready = expected.tick(dt);
+    else if (!hasPlayer || !activePlayer->inWorld())
+      expected.reset();
+    auto ticked = pane->tick(dt);
+    ASSERT_TRUE(ticked) << ticked.error().what();
+    auto timer = pane->evaluate("return storage.timer");
+    ASSERT_TRUE(timer && *timer);
+    auto timerValue = (**timer).toFloat();
+    ASSERT_TRUE(timerValue);
+    EXPECT_EQ(*timerValue, expected.timer);
+    if ((*cinematic)->completed() && !ready) {
+      float alpha = expected.timer < fade ? expected.timer / fade : 1.0f;
+      auto actual = pane->evaluate("return storage.alpha");
+      ASSERT_TRUE(actual && *actual);
+      auto actualAlpha = (**actual).toFloat();
+      ASSERT_TRUE(actualAlpha);
+      EXPECT_EQ(*actualAlpha, alpha);
+    }
+  };
+  ASSERT_TRUE(startCinema());
+  step(0.4f); // Off-world cinematic resets, without advancing.
+  EXPECT_FALSE(pane->visibility());
+  ASSERT_TRUE((*player)->init(**worldA, 1, EntityMode::Slave));
+  step(0.2f); // In-world cinematic pauses; no show or color change.
+  EXPECT_FALSE(pane->visibility());
+  (*cinematic)->stop();
+  step(0.1f);
+  EXPECT_TRUE(pane->visibility());
+  EXPECT_EQ((*text)->getText(), String("[A <worldName> 中] A <worldName> 中"));
+  EXPECT_EQ(pane->relativePosition(), (Vec2I{-7, 121} * (2.f / scale)));
+  ASSERT_TRUE(startCinema());
+  step(2.0f); // An in-world cinematic does not expire an already visible name.
+  EXPECT_TRUE(pane->visibility());
+  (*cinematic)->stop();
+  ASSERT_TRUE(bindWorld(**worldB)); // Animation-free world change does not reset.
+  scale = 3.0f;
+  step(0.1f);
+  EXPECT_EQ((*text)->getText(), String("[B] B"));
+  EXPECT_EQ(pane->relativePosition(), (Vec2I{-7, 121} * (2.f / scale)));
+  ASSERT_TRUE(bindWorld(**emptyWorld));
+  step(0.1f); // Empty name retains old displayed text.
+  EXPECT_TRUE(pane->visibility());
+  EXPECT_EQ((*text)->getText(), String("[B] B"));
+  worldAvailable = false; // No world capability/template, actor still present.
+  ASSERT_TRUE(pane->removeCallbacks("world"));
+  ASSERT_TRUE(pane->addCallbacks("world", LuaCallbacks{}));
+  step(0.1f);
+  EXPECT_TRUE(pane->visibility());
+  ASSERT_TRUE(root.reload());
+  step(0.01f); // Reload preserves timer/text/handle, no init-time tick.
+  EXPECT_EQ((*text)->getText(), String("[B] B"));
+  ASSERT_TRUE(pane->stopScripts());
+  auto replacement = (*factory)->create();
+  ASSERT_TRUE(replacement);
+  auto replacementCallbacks = LuaBindings::makePlayerCallbacks(root, **replacement);
+  ASSERT_TRUE(replacementCallbacks);
+  ASSERT_TRUE(pane->removeCallbacks("player"));
+  ASSERT_TRUE(pane->addCallbacks("player", *replacementCallbacks));
+  activePlayer = *replacement;
+  ASSERT_TRUE(pane->resumeScripts());
+  step(0.01f); // Off-world without a cinematic continues, never resets.
+  EXPECT_TRUE(pane->visibility());
+  step(1.0f);
+  EXPECT_FALSE(pane->visibility());
+  ASSERT_TRUE(startCinema());
+  step(0.1f); // Replacement actor is off-world: reset and hide.
+  ASSERT_TRUE(pane->stopScripts());
+  ASSERT_TRUE(pane->removeCallbacks("player"));
+  ASSERT_TRUE(pane->addCallbacks("player", *playerCallbacks));
+  activePlayer = *player;
+  ASSERT_TRUE(pane->resumeScripts());
+  worldAvailable = true;
+  ASSERT_TRUE(bindWorld(**worldA));
+  (*cinematic)->stop();
+  step(0.1f);
+  EXPECT_TRUE(pane->visibility());
+  auto retained = probe->eval<Json>("return {planet.isDisplayed(), cached.getText('planetText')}");
+  ASSERT_TRUE(retained);
+  EXPECT_EQ(*retained, (Json(JsonArray{true, "[A <worldName> 中] A <worldName> 中"})));
+  EXPECT_EQ(pane->fetchChild<TextBoxWidget>("planetText")->get(), text->get());
+
+  // Native approach handles signed duration/dt, and a zero/nonpositive fade
+  // never divides when timer >= fade. Exercise these asset values via reload.
+  ASSERT_TRUE((*player)->uninit());
+  for (auto [duration, fadeTime] : {std::pair{0.0f, 0.0f}, std::pair{-0.5f, 0.3f},
+      std::pair{0.7f, 0.0f}, std::pair{0.7f, -0.2f}, std::pair{0.7f, 1.3f}}) {
+    ASSERT_TRUE(writeStyle(duration, fadeTime));
+    ASSERT_TRUE(root.reload());
+    expected = GameTimer(duration);
+    fade = fadeTime;
+    ASSERT_TRUE(startCinema());
+    step(0.0f);
+    (*cinematic)->stop();
+    for (float dt : {0.0f, -0.1f, 0.1f, 0.2f, 1.0f})
+      step(dt);
+  }
+  ASSERT_TRUE(panes.dismissAllPanes());
 });
 
 }

@@ -36,7 +36,6 @@ Options<br>
 ActionBar<br>
 TeamBar<br>
 WireInterface<br>
-PlanetText<br>
 RadioMessagePopup<br>
 CraftingPlain<br>
 MmUpgrade<br>
@@ -78,6 +77,12 @@ Immediately loads a resolved cinematic definition into the client UI overlay.
 Native parsing/load errors propagate to the caller. Unlike the queued
 `player.playCinematic` API, this does not defer playback, resolve an asset path,
 or apply unique-playback history. Available in client UI script contexts.
+
+#### `bool` interface.cinematicActive()
+
+Returns whether the client UI cinematic overlay has not completed. This is
+independent of player/world attachment and input suppression; a cinematic can
+be active while the player is in a world.
 
 ## Lua-managed interface instances
 
@@ -271,6 +276,30 @@ and immediately load the completion cinematic before closing. Escape and
 external dismissal do not play it. Administrator previews do not mutate quest
 state or run completion cinematics. There are no native quest-dialog window
 classes or separate presentation poller.
+
+### Bundled world-name HUD
+
+The canonical `"PlanetText"` registration loads
+`/interface/opensb/planettext/planettext.config` as an automatically opened,
+session-scoped `"Hud"`. Lua owns its countdown, name formatting, visibility
+and final fade. The native initializer, timer and presentation updater are
+removed. The named `planetText` label and cached pane/widget handles survive
+world/player transitions and script reload while the interface exists.
+
+The original state transitions are preserved: when no cinematic is active,
+the float32 timer advances before display work and hides at zero. A cinematic
+pauses it while the player is attached; only an active cinematic with an
+off-world player resets and hides it. A world change alone does not restart
+the timer. Nonempty `world.name()` values update the label; missing/empty names
+retain any previous text while the remaining time continues to fade.
+
+The HUD reads `planetNameTime`, `planetNameFadeTime`, `planetNameFormatString`,
+`planetTextStyle` and `planetTextOffset` from `/interface.config`. Formatting
+uses strict `sb.formatTags` with `worldName`. It retains the native centered,
+zero-sized, unclipped root and full Label text style. Position preserves the
+legacy integer scalar operation: configured offset multiplied by
+`trunc(float32(2 / interface.scale()))`, not componentwise floating scaling.
+The HUD is noninteractive; hiding or reloading does not replay its countdown.
 
 ### Bundled quest tracker
 

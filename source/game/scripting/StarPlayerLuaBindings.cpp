@@ -188,6 +188,9 @@ namespace Star {
 std::expected<LuaCallbacks, StarException> LuaBindings::makePlayerCallbacks(Root& root, Player& player) {
   LuaCallbacks callbacks;
 
+  if (auto registered = callbacks.registerCallback("inWorld", [&player] { return player.inWorld(); }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
   if (auto registered = callbacks.registerCallback("save", [&player]() -> std::expected<Json, StarException> {
     return player.diskStore();
   }); !registered)

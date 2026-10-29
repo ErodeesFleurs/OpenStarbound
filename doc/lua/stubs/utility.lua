@@ -60,6 +60,13 @@ function sb.interpolateSinEase(offset, value1, value2) end
 ---@return string
 function sb.replaceTags(string, tags) end
 
+--- Strict native <name> substitution; << escapes <. Unknown/empty/unterminated tags raise errors.
+--- Replacement bytes are copied verbatim, including NULs; braces and % are literal.
+---@param text string
+---@param tags table<string, string>
+---@return string
+function sb.formatTags(text, tags) end
+
 --- Returns the result of merging the contents of b on top of a. ---
 ---@param a Json
 ---@param b Json

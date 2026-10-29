@@ -58,7 +58,6 @@ enum class MainInterfacePanes {
   ActionBar,
   TeamBar,
   WireInterface,
-  PlanetText,
   RadioMessagePopup,
   CraftingPlain,
   MmUpgrade,
@@ -161,12 +160,6 @@ struct MainInterfaceConfig {
   float monsterHealthBarTime;
 
   String hungerIcon;
-
-  float planetNameTime;
-  float planetNameFadeTime;
-  String planetNameFormatString;
-  TextStyle planetNameTextStyle;
-  Vec2I planetNameOffset;
 
   bool renderVirtualCursor;
   Json cursorItemSlot;

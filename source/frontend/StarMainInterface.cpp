@@ -458,7 +458,6 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
     return std::unexpected(std::move(cursorItem.error()));
   m_cursorItem = std::move(*cursorItem);
 
-  m_planetNameTimer = GameTimer(m_config->planetNameTime);
   m_debugSpatialClearTimer = GameTimer(m_config->debugSpatialClearTime);
   m_debugMapClearTimer = GameTimer(m_config->debugMapClearTime);
   m_stickyTargetingTimer = GameTimer(m_config->monsterHealthBarTime);
@@ -466,8 +465,6 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
   if (auto initialized = initMainBarPanes(); !initialized)
     return std::unexpected(std::move(initialized.error()));
   if (auto initialized = initScriptAndHudPanes(std::move(painter)); !initialized)
-    return std::unexpected(std::move(initialized.error()));
-  if (auto initialized = initPlanetHud(); !initialized)
     return std::unexpected(std::move(initialized.error()));
   if (auto initialized = initCharacterSwap(); !initialized)
     return std::unexpected(std::move(initialized.error()));
@@ -591,26 +588,6 @@ std::expected<void, StarException> MainInterface::initScriptAndHudPanes(std::sha
   return {};
 }
 
-std::expected<void, StarException> MainInterface::initPlanetHud() {
-  auto planetName = Pane::create(context());
-  if (!planetName)
-    return std::unexpected(std::move(planetName.error()));
-  auto planetText = LabelWidget::create(context());
-  if (!planetText)
-    return std::unexpected(std::move(planetText.error()));
-  m_planetText = std::move(*planetText);
-  if (auto result = m_planetText->setTextStyle(m_config->planetNameTextStyle); !result)
-    return std::unexpected(std::move(result.error()));
-  if (auto result = m_planetText->setAnchor(HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor); !result)
-    return std::unexpected(std::move(result.error()));
-  (*planetName)->disableScissoring();
-  (*planetName)->setPosition(m_config->planetNameOffset);
-  (*planetName)->setAnchor(PaneAnchor::Center);
-  if (auto result = (*planetName)->addChild("planetText", m_planetText); !result)
-    return std::unexpected(std::move(result.error()));
-  return m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, *planetName);
-}
-
 std::expected<void, StarException> MainInterface::initCharacterSwap() {
   auto selection = CharSelectionPane::create(context(), m_client->playerStorage(), []() -> std::expected<void, StarException> { return {}; },
     [this, lifetime = callbackStopToken()](std::shared_ptr<Player> mainPlayer) -> std::expected<void, StarException> {
@@ -730,6 +707,10 @@ std::expected<std::shared_ptr<Pane>, StarException> MainInterface::itemTooltip(s
 
 std::expected<void, StarException> MainInterface::playCinematic(Json const& config) {
   return m_cinematicOverlay->load(config);
+}
+
+bool MainInterface::cinematicActive() const {
+  return !m_cinematicOverlay->completed();
 }
 
 std::expected<void, StarException> MainInterface::initUiController() {
@@ -1882,47 +1863,6 @@ std::expected<void, StarException> MainInterface::update(float dt) {
       it++;
   }
 
-  bool playerInWorld = m_client->mainPlayer()->inWorld();
-  if (m_cinematicOverlay->completed()) {
-    if (m_planetNameTimer.tick(dt)) {
-      auto dismissed = m_paneManager.dismissRegisteredPane(MainInterfacePanes::PlanetText);
-      if (!dismissed)
-        return std::unexpected(std::move(dismissed.error()));
-    } else {
-      if (playerInWorld) {
-        String worldName;
-        if (auto worldTemplate = m_client->worldClient()->currentTemplate())
-          worldName = worldTemplate->worldName();
-
-        if (!worldName.empty()) {
-          if (auto parent = m_planetText->parent())
-            parent->get().setPosition(m_config->planetNameOffset * (2.f / interfaceScale()));
-          std::array<std::pair<std::string_view, std::string_view>, 1> tags{{{"worldName", worldName.utf8()}}};
-          auto planetName = formatTags(m_config->planetNameFormatString.utf8(), tags);
-          if (!planetName)
-            return std::unexpected(std::move(planetName.error()));
-          auto textSet = m_planetText->setText(String(std::move(*planetName)));
-          if (!textSet)
-            return std::unexpected(std::move(textSet.error()));
-          auto displayed = m_paneManager.displayRegisteredPane(MainInterfacePanes::PlanetText);
-          if (!displayed)
-            return std::unexpected(std::move(displayed.error()));
-        }
-      }
-
-      Color textColor = Color::White; // probably need to make this jsonable
-      float fadeTimer = m_planetNameTimer.timer;
-      if (fadeTimer < m_config->planetNameFadeTime)
-        textColor.setAlphaF(fadeTimer / m_config->planetNameFadeTime);
-
-      m_planetText->setColor(textColor);
-    }
-  } else if (!playerInWorld) {
-    m_planetNameTimer.reset();
-    auto dismissed = m_paneManager.dismissRegisteredPane(MainInterfacePanes::PlanetText);
-    if (!dismissed)
-      return std::unexpected(std::move(dismissed.error()));
-  }
 
   auto containerResults = m_containerInteractor->pullContainerResults();
   if (!containerResults)

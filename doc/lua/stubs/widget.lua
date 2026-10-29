@@ -100,7 +100,8 @@ function widget.setText(widgetName, text) end
 --- Sets the font color of: LabelWidget, ButtonWidget, TextBoxWidget ---
 ---@param widgetName string
 ---@param color Color
-function widget.setFontColor(widgetName, color) end
+---@param alpha? number Optional native float alpha override, clamped to [0,1].
+function widget.setFontColor(widgetName, color, alpha) end
 
 --- Sets the image of an ImageWidget. ---
 ---@param widgetName string

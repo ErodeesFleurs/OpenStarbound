@@ -10,6 +10,10 @@ function world.isServer() end
 ---@return boolean
 function world.isClient() end
 
+--- Actual client/server WorldTemplate name; nil without a template, possibly empty for unnamed worlds.
+---@return string?
+function world.name() end
+
 --- Attempts a wire connection between the two objects positioned at `outputPosition` and `inputPosition`. The `outputIndex` and `inputIndex` parameters specify which output and input nodes to connect. --- The following additional world bindings are available only for scripts running on the client. ---
 ---@param outputPosition Vec2I
 ---@param outputIndex number
@@ -26,7 +30,7 @@ function world.mainPlayer() end
 ---@return Vec2F
 function world.entityAimPosition(entityId) end
 
---- Returns whether any players are in the world. --- The following additional world bindings are available only for scripts running on the server. ---
+--- Client-only: whether the client world is started, not whether a player entity is attached.
 ---@return boolean
 function world.inWorld() end
 

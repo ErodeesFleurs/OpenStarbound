@@ -80,6 +80,13 @@
       "scope" : "session",
       "open" : true,
       "order" : 80
+    },
+    "PlanetText" : {
+      "config" : "/interface/opensb/planettext/planettext.config",
+      "layer" : "Hud",
+      "scope" : "session",
+      "open" : true,
+      "order" : 90
     }
   },
   "font" : {

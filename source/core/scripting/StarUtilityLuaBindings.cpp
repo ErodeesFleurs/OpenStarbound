@@ -193,6 +193,17 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeUtilityCallbacks(Ran
     return std::unexpected(std::move(result.error()));
   if (auto result = callbacks.registerCallback("replaceTags", UtilityCallbacks::replaceTags); !result)
     return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("formatTags", [](String const& text, StringMap<String> const& tags) -> std::expected<String, StarException> {
+        std::vector<std::pair<std::string_view, std::string_view>> bindings;
+        bindings.reserve(tags.size());
+        for (auto const& entry : tags)
+          bindings.emplace_back(entry.first.utf8(), entry.second.utf8());
+        auto formatted = Star::formatTags(text.utf8(), bindings);
+        if (!formatted)
+          return std::unexpected(std::move(formatted.error()));
+        return String(std::move(*formatted));
+      }); !result)
+    return std::unexpected(std::move(result.error()));
   if (auto result = callbacks.registerCallback("stripEscapeCodes", [](String const& text) { return Text::stripEscapeCodes(text); }); !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = callbacks.registerCallback("parseJsonSequence", [](String const& json) { return Json::parseSequence(json); }); !result)

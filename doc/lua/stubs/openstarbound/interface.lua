@@ -47,6 +47,10 @@ function interface.itemTooltip(item) end
 ---@param definition Json
 function interface.playCinematic(definition) end
 
+--- Whether the client cinematic overlay has not completed; independent of player/world attachment.
+---@return boolean
+function interface.cinematicActive() end
+
 --- Constructs an undisplayed generic script pane; Lua manages its lifetime.
 ---@param id string
 ---@param config Json

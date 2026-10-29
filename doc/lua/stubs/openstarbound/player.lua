@@ -2,6 +2,10 @@
 
 --- player API
 
+--- Whether this player entity is attached to a world, not client-world readiness.
+---@return boolean
+function player.inWorld() end
+
 --- Serializes the player to Json the same way Starbound does for disk storage and returns it. ---
 ---@return Json
 function player.save() end

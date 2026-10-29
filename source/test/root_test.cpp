@@ -243,6 +243,31 @@ const GameTestRegistration rootAll("RootTest", "All", [](GameTest& fixture) {
   return json->getString("rootIsolationOwner");
 }
 
+const GameTestRegistration strictLuaTags("RootTest", "StrictLuaTagFormatting", [](GameTest& fixture) {
+  auto lua = isolationLua(fixture.root(), true);
+  ASSERT_TRUE(lua) << lua.error().what();
+  auto context = (*lua)->createContext(StringList{});
+  ASSERT_TRUE(context) << context.error().what();
+  auto result = context->eval<Json>(R"LUA(
+    local rejected = {}
+    for i, text in ipairs({"<missing>", "<>", "<worldName"}) do
+      rejected[i] = not pcall(sb.formatTags, text, {worldName = "日"})
+    end
+    return {
+      text = sb.formatTags("<<worldName> <worldName> {not:std-format}",
+        {worldName = "日%<literal>"}),
+      binary = sb.formatTags("a\0<x>b", {x = "z\0q"}),
+      rejected = rejected,
+      recovered = sb.formatTags("<worldName>", {worldName = "again"})
+    }
+  )LUA");
+  ASSERT_TRUE(result) << result.error().what();
+  EXPECT_EQ(result->getString("text"), String("<worldName> 日%<literal> {not:std-format}"));
+  EXPECT_EQ(result->getString("binary"), String(std::string("a\0z\0qb", 6)));
+  EXPECT_EQ(result->get("rejected"), Json(JsonArray{true, true, true}));
+  EXPECT_EQ(result->getString("recovered"), String("again"));
+});
+
 const GameTestRegistration simultaneousRoots("RootTest", "SimultaneousRoots", [](GameTest& fixture) {
   auto directoryA = File::temporaryDirectory(fixture.root().random());
   ASSERT_TRUE(directoryA) << directoryA.error().what();

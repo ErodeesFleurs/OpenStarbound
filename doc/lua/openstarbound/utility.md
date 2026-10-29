@@ -18,6 +18,19 @@ Similar to `chat.parseArguments`.
 
 ---
 
+#### `String` sb.formatTags(`String` text, `Map<String, String>` tags)
+
+Strict native named-tag formatting. Replaces `<name>` with its supplied value;
+`<<` produces a literal `<`. Values are copied verbatim, including embedded
+NULs and tag-like text; they are not recursively expanded. Braces and percent
+signs have no special meaning.
+
+Unknown, empty and unterminated tags raise an error. Unlike `sb.replaceTags`,
+this does not preserve unknown placeholders. It is not standard-format or
+printf formatting.
+
+---
+
 #### `String` sb.stripEscapeCodes(`String` text)
 
 Removes escape codes from the string.

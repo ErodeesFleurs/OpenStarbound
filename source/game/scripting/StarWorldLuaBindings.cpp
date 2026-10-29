@@ -751,6 +751,18 @@ namespace LuaBindings {
     if (auto result = callbacks.registerCallbackWithSignature<std::shared_ptr<PlatformerAStar::PathFinder>, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("platformerPathStart", std::bind(WorldCallbacks::platformerPathStart, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
 
+    if (auto result = callbacks.registerCallback("name", [&world]() -> std::optional<String> {
+        if (auto serverWorld = asRef<WorldServer>(world)) {
+          if (auto worldTemplate = serverWorld->get().worldTemplate())
+            return worldTemplate->worldName();
+        } else if (auto clientWorld = asRef<WorldClient>(world)) {
+          if (auto worldTemplate = clientWorld->get().currentTemplate())
+            return worldTemplate->worldName();
+        }
+        return {};
+      }); !result)
+      return std::unexpected(std::move(result.error()));
+
     if (auto result = callbacks.registerCallback("type", [&world](LuaEngine& engine) -> std::expected<LuaString, StarException> {
         if (auto serverWorld = asRef<WorldServer>(world)) {
           if (auto worldParameters = serverWorld->get().worldTemplate()->worldParameters())

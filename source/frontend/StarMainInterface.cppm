@@ -151,6 +151,7 @@ public:
   GuiContext& context() const;
   [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> itemTooltip(std::shared_ptr<Item> const& item);
   [[nodiscard]] std::expected<void, StarException> playCinematic(Json const& config);
+  bool cinematicActive() const;
   // Escaped callbacks borrow this interface only until terminal close.
   std::stop_token callbackStopToken() const;
 
@@ -236,7 +237,6 @@ private:
   [[nodiscard]] std::expected<void, StarException> initScriptAndHudPanes(std::shared_ptr<WorldPainter> painter);
   [[nodiscard]] std::expected<void, StarException> initUiController();
   [[nodiscard]] std::expected<void, StarException> synchronizeUiSession();
-  [[nodiscard]] std::expected<void, StarException> initPlanetHud();
   [[nodiscard]] std::expected<void, StarException> initCharacterSwap();
   [[nodiscard]] std::expected<void, StarException> initWorldOverlays();
   [[nodiscard]] std::expected<void, StarException> handleInventoryDismissed();
@@ -319,9 +319,6 @@ private:
   Vec2I m_cursorScreenIPos{};
   std::shared_ptr<ItemSlotWidget> m_cursorItem;
   std::optional<String> m_cursorTooltip;
-
-  std::shared_ptr<LabelWidget> m_planetText;
-  GameTimer m_planetNameTimer;
 
   GameTimer m_debugSpatialClearTimer;
   GameTimer m_debugMapClearTimer;

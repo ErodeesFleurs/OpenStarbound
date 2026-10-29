@@ -4,6 +4,14 @@ The `player` table now contains bindings which contains functions to save/load, 
 
 ---
 
+#### `Bool` player.inWorld()
+
+Returns whether this player entity is attached to a world. This is the exact
+actor state, not the client-world readiness reported by `world.inWorld()` or
+`interface.session().inWorld`.
+
+---
+
 #### `Json` player.save()
 
 Serializes the player to Json the same way Starbound does for disk storage and returns it.

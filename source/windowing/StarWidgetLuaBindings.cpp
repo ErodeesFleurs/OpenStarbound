@@ -477,8 +477,11 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
     auto style = TextStyle::create(config);
     if (!style)
       return std::unexpected(std::move(style.error()));
-    return withWidget<TextBoxWidget>(parentWidget, name, [&](std::shared_ptr<TextBoxWidget> editor) -> std::expected<void, StarException> {
-      editor->setTextStyle(*style);
+    return withWidget<Widget>(parentWidget, name, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      if (auto label = as<LabelWidget>(widget))
+        return label->setTextStyle(*style);
+      if (auto editor = as<TextBoxWidget>(widget))
+        editor->setTextStyle(*style);
       return {};
     });
   }); !registered)
@@ -510,7 +513,9 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
     });
   }); !registered)
     return std::unexpected(std::move(registered.error()));
-  if (auto registered = callbacks.registerCallback("setFontColor", [parentWidget](String const& widgetName, Color const& color) -> std::expected<void, StarException> {
+  if (auto registered = callbacks.registerCallback("setFontColor", [parentWidget](String const& widgetName, Color color, std::optional<float> alpha) -> std::expected<void, StarException> {
+    if (alpha)
+      color.setAlphaF(*alpha);
     return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
       if (auto label = as<LabelWidget>(widget))
         label->setColor(color);

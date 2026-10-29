@@ -79,7 +79,6 @@ extern std::expected<EnumMap<MainInterfacePanes>, StarException> const MainInter
   {MainInterfacePanes::ActionBar, "ActionBar"},
   {MainInterfacePanes::TeamBar, "TeamBar"},
   {MainInterfacePanes::WireInterface, "WireInterface"},
-  {MainInterfacePanes::PlanetText, "PlanetText"},
   {MainInterfacePanes::RadioMessagePopup, "RadioMessagePopup"},
   {MainInterfacePanes::CraftingPlain, "CraftingPlain"},
   {MainInterfacePanes::MmUpgrade, "MmUpgrade"},
@@ -593,42 +592,6 @@ std::expected<std::unique_ptr<MainInterfaceConfig>, StarException> MainInterface
     auto value = json->toString();
     if (!value) return std::unexpected(std::move(value.error()));
     config->hungerIcon = std::move(*value);
-  }
-
-  {
-    auto json = (*assets)->json("/interface.config:planetNameTime");
-    if (!json) return std::unexpected(std::move(json.error()));
-    auto value = json->toFloat();
-    if (!value) return std::unexpected(std::move(value.error()));
-    config->planetNameTime = std::move(*value);
-  }
-  {
-    auto json = (*assets)->json("/interface.config:planetNameFadeTime");
-    if (!json) return std::unexpected(std::move(json.error()));
-    auto value = json->toFloat();
-    if (!value) return std::unexpected(std::move(value.error()));
-    config->planetNameFadeTime = std::move(*value);
-  }
-  {
-    auto json = (*assets)->json("/interface.config:planetNameFormatString");
-    if (!json) return std::unexpected(std::move(json.error()));
-    auto value = json->toString();
-    if (!value) return std::unexpected(std::move(value.error()));
-    config->planetNameFormatString = std::move(*value);
-  }
-  {
-    auto json = (*assets)->json("/interface.config:planetTextStyle");
-    if (!json) return std::unexpected(std::move(json.error()));
-    auto value = TextStyle::create(*json);
-    if (!value) return std::unexpected(std::move(value.error()));
-    config->planetNameTextStyle = std::move(*value);
-  }
-  {
-    auto json = (*assets)->json("/interface.config:planetTextOffset");
-    if (!json) return std::unexpected(std::move(json.error()));
-    auto value = jsonToVec2I(*json);
-    if (!value) return std::unexpected(std::move(value.error()));
-    config->planetNameOffset = std::move(*value);
   }
 
   {

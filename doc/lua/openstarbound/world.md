@@ -16,6 +16,15 @@ Returns whether the script is running on the server or client.
 
 ---
 
+#### `Maybe<String>` world.name()
+
+Returns the actual current WorldTemplate name on client and server worlds,
+or `nil` if no template is available. A template can legitimately return an
+empty name, for example an instance without a display name. This is not a
+celestial-coordinate approximation or an arbitrary world property.
+
+---
+
 #### `void` world.wire(`Vec2I` outputPosition, `int` outputIndex, `Vec2I` inputPosition, `int` inputIndex)
 
 Attempts a wire connection between the two objects positioned at `outputPosition` and `inputPosition`. The `outputIndex` and `inputIndex` parameters specify which output and input nodes to connect.
