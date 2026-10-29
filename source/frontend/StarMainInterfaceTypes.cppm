@@ -46,7 +46,6 @@ import star.registered_pane_manager;
 namespace Star {
 
 enum class MainInterfacePanes {
-  EscapeDialog,
   Inventory,
   Cockpit,
   Tech,

@@ -2246,7 +2246,7 @@ std::expected<void, StarException> ClientApplication::updateRunning(float dt) {
         }
       }
 
-      auto paused = m_mainInterface->escapeDialogOpen();
+      auto paused = m_mainInterface->pauseRequested();
       if (!paused)
         return std::unexpected(std::move(paused.error()));
       if (auto pause = m_universeServer->setPause(*paused); !pause)

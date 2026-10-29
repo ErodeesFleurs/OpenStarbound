@@ -4,6 +4,10 @@
 ---@class sb
 sb = {}
 
+--- Returns the engine build's version and architecture strings.
+---@return {version: string, architecture: string}
+function sb.buildInfo() end
+
 --- Returns a randomized value with a normal distribution using the specified standard deviation (default is 1.0) and mean (default is 0). ---
 ---@param standardDeviation? number
 ---@param mean? number

@@ -1,11 +1,16 @@
 require "/interface/opensb/ui/manager.lua"
 require "/interface/opensb/codex/unread.lua"
 require "/interface/opensb/questdialogs/pending.lua"
+require "/interface/opensb/escapemenu/layout.lua"
 
 local manager
 
 function init()
-  manager = UiManager.new(storage, root.assetJson("/interface.config:panes"), interface.session())
+  local definitions = root.assetJson("/interface.config:panes")
+  if definitions.EscapeDialog then
+    definitions.EscapeDialog.config = EscapeMenu.config(definitions.EscapeDialog.config)
+  end
+  manager = UiManager.new(storage, definitions, interface.session())
   manager:restore()
 end
 
@@ -32,6 +37,10 @@ function input(event)
 end
 function flush()
   manager:flush()
+end
+
+function pauseRequested()
+  return interface.paneDisplayed("EscapeDialog") or interface.paneDisplayed("Options")
 end
 
 

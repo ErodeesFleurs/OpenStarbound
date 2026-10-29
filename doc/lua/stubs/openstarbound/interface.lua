@@ -27,6 +27,12 @@ function interface.bindRegisteredPane(paneName) end
 ---@param paneName string
 function interface.displayRegisteredPane(paneName) end
 
+--- Queries lifecycle display state without opening/binding callbacks; false without an instance.
+--- A hidden pane that has not been dismissed still reports true.
+---@param paneName string
+---@return boolean
+function interface.paneDisplayed(paneName) end
+
 --- Binds the canvas widget on the main interface with the specified name as userdata for easy access. The `CanvasWidget` has the same methods as described in `widget.md`. - **ignoreInterfaceScale** is used to ignore the current interface scaling and bind the canvas with the screen size. ---
 ---@param name string
 ---@param ignoreInterfaceScale? boolean
@@ -50,6 +56,10 @@ function interface.playCinematic(definition) end
 --- Whether the client cinematic overlay has not completed; independent of player/world attachment.
 ---@return boolean
 function interface.cinematicActive() end
+
+--- Requests the normal client return-to-title flow; native saving/disconnect/teardown are preserved.
+--- Does not terminate the application. Requires a live game interface.
+function interface.returnToTitle() end
 
 --- Constructs an undisplayed generic script pane; Lua manages its lifetime.
 ---@param id string

@@ -146,6 +146,7 @@ public:
   [[nodiscard]] std::expected<void, StarException> close();
 
   RunningState currentState() const;
+  void returnToTitle();
 
   MainInterfacePaneManager& paneManager();
   GuiContext& context() const;
@@ -155,7 +156,7 @@ public:
   // Escaped callbacks borrow this interface only until terminal close.
   std::stop_token callbackStopToken() const;
 
-  [[nodiscard]] std::expected<bool, StarException> escapeDialogOpen() const;
+  [[nodiscard]] std::expected<bool, StarException> pauseRequested() const;
 
   [[nodiscard]] std::expected<void, StarException> openCraftingWindow(Json const& config, EntityId sourceEntityId = NullEntityId);
   [[nodiscard]] std::expected<void, StarException> openMerchantWindow(Json const& config, EntityId sourceEntityId = NullEntityId);
@@ -240,7 +241,6 @@ private:
   [[nodiscard]] std::expected<void, StarException> initCharacterSwap();
   [[nodiscard]] std::expected<void, StarException> initWorldOverlays();
   [[nodiscard]] std::expected<void, StarException> handleInventoryDismissed();
-  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createEscapeDialog();
   [[nodiscard]] std::expected<void, StarException> initHttpTrustDialog();
 
   float interfaceScale() const;

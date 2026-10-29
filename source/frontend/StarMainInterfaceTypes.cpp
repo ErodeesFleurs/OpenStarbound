@@ -67,7 +67,6 @@ import star.image_metadata_database;
 namespace Star {
 
 extern std::expected<EnumMap<MainInterfacePanes>, StarException> const MainInterfacePanesNames = EnumMap<MainInterfacePanes>::create({
-  {MainInterfacePanes::EscapeDialog, "EscapeDialog"},
   {MainInterfacePanes::Inventory, "Inventory"},
   {MainInterfacePanes::Cockpit, "Cockpit"},
   {MainInterfacePanes::Tech, "Tech"},

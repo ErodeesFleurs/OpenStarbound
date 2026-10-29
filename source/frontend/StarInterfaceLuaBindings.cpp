@@ -199,6 +199,12 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeInterfaceCallbacks(M
     return {};
   }); !r)
     return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("returnToTitle", [&mainInterface, lifetime]() -> std::expected<void, StarException> {
+    if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
+    mainInterface.returnToTitle();
+    return {};
+  }); !r)
+    return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallback("itemTooltip", [&mainInterface, lifetime](LuaUserData const& handle) -> std::expected<LuaUserData, StarException> {
     if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
     auto item = handle.get<std::shared_ptr<Item>>();
@@ -251,6 +257,12 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeInterfaceCallbacks(M
   if (auto r = callbacks.registerCallback("paneLayerOccupied", [&mainInterface, lifetime](String const& layer) -> std::expected<bool, StarException> {
     if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
     return mainInterface.paneLayerOccupied(layer);
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("paneDisplayed", [&mainInterface, lifetime](String const& name) -> std::expected<bool, StarException> {
+    if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
+    auto pane = mainInterface.findRegisteredPane(name);
+    if (!pane) return std::unexpected(std::move(pane.error()));
+    return *pane && (*pane)->isDisplayed();
   }); !r) return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallback("cinematicActive", [&mainInterface, lifetime]() -> std::expected<bool, StarException> {
     if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));

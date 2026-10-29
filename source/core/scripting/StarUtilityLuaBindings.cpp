@@ -25,6 +25,7 @@ import star.thread;
 import star.directives;
 import star.text;
 import star.time;
+import star.version;
 
 import star.static_random;
 namespace Star {
@@ -166,6 +167,10 @@ std::expected<String, StarException> LuaBindings::formatLua(String const& string
 
 std::expected<LuaCallbacks, StarException> LuaBindings::makeUtilityCallbacks(RandomService& random, Logger& logger, LogMap& logMap) {
   LuaCallbacks callbacks;
+  if (auto result = callbacks.registerCallback("buildInfo", []() -> Json {
+        return JsonObject{{"version", StarVersionString}, {"architecture", StarArchitectureString}};
+      }); !result)
+    return std::unexpected(std::move(result.error()));
 
   if (auto result = callbacks.registerCallback("nrand", [&random](std::optional<double> const& stdev, std::optional<double> const& mean) {
         return UtilityCallbacks::nrand(random, stdev, mean);

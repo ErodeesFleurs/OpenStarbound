@@ -87,6 +87,16 @@
       "scope" : "session",
       "open" : true,
       "order" : 90
+    },
+    "EscapeDialog" : {
+      "config" : "/interface/opensb/escapemenu/escapemenu.config",
+      "layer" : "ModalWindow",
+      "scope" : "session",
+      "open" : false,
+      "retain" : true,
+      "order" : 100,
+      "actions" : {"InterfaceEscapeMenu" : "close"},
+      "globalActions" : {"InterfaceEscapeMenu" : "toggle"}
     }
   },
   "font" : {

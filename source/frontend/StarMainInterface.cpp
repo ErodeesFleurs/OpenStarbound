@@ -49,7 +49,6 @@ import star.byte_array;
 import star.encode;
 import star.bytes;
 import star.format;
-import star.version;
 import star.strong_typedef;
 import star.ordered_set;
 import star.io_device;
@@ -508,11 +507,6 @@ std::expected<void, StarException> MainInterface::initMainBarPanes() {
                                                      m_client->mainPlayer()->entityId()),
                                 m_plainCraftingWindow);
       !result)
-    return std::unexpected(std::move(result.error()));
-  auto escape = createEscapeDialog();
-  if (!escape)
-    return std::unexpected(std::move(escape.error()));
-  if (auto result = m_paneManager.registerPane(MainInterfacePanes::EscapeDialog, PaneLayer::ModalWindow, *escape); !result)
     return std::unexpected(std::move(result.error()));
   auto ai = AiInterface::create(context(), m_client, m_cinematicOverlay);
   if (!ai)
@@ -999,6 +993,10 @@ MainInterface::RunningState MainInterface::currentState() const {
   return m_state;
 }
 
+void MainInterface::returnToTitle() {
+  m_state = ReturnToTitle;
+}
+
 MainInterfacePaneManager& MainInterface::paneManager() {
   return m_paneManager;
 }
@@ -1011,13 +1009,11 @@ std::stop_token MainInterface::callbackStopToken() const {
   return m_callbackStopSource.get_token();
 }
 
-std::expected<bool, StarException> MainInterface::escapeDialogOpen() const {
-  auto escape = m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::EscapeDialog);
-  if (!escape)
-    return std::unexpected(std::move(escape.error()));
-  if (*escape)
-    return true;
-  return m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Options);
+std::expected<bool, StarException> MainInterface::pauseRequested() const {
+  auto paused = m_uiController->invoke<bool>("pauseRequested");
+  if (!paused)
+    return std::unexpected(std::move(paused.error()));
+  return paused->value_or(false);
 }
 
 std::expected<void, StarException> MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntityId) {
@@ -1247,11 +1243,8 @@ std::expected<bool, StarException> MainInterface::handleInputEvent(InputEvent co
               return root.fullyLoad();
             case InterfaceAction::InterfaceCrafting:
               return togglePlainCraftingWindow();
-            case InterfaceAction::InterfaceEscapeMenu:
             case InterfaceAction::InterfaceInventory: {
-              auto pane = action == InterfaceAction::InterfaceEscapeMenu ? MainInterfacePanes::EscapeDialog
-                : MainInterfacePanes::Inventory;
-              auto toggled = m_paneManager.toggleRegisteredPane(pane);
+              auto toggled = m_paneManager.toggleRegisteredPane(MainInterfacePanes::Inventory);
               if (!toggled)
                 return std::unexpected(std::move(toggled.error()));
               return {};
@@ -2221,59 +2214,6 @@ std::expected<void, StarException> MainInterface::displayDefaultPanes() {
       return std::unexpected(std::move(displayed.error()));
   }
   return {};
-}
-
-std::expected<std::shared_ptr<Pane>, StarException> MainInterface::createEscapeDialog() {
-  auto assets = context().root().assets();
-  if (!assets)
-    return std::unexpected(std::move(assets.error()));
-  auto created = Pane::create(context());
-  if (!created)
-    return std::unexpected(std::move(created.error()));
-  auto escapeDialog = std::move(*created);
-  std::weak_ptr<Pane> escapeDialogWeak = escapeDialog;
-  GuiReader reader(context());
-  reader.registerCallback("returnToGame", [escapeDialogWeak](Widget&) -> std::expected<void, StarException> {
-    auto pane = escapeDialogWeak.lock();
-    if (!pane)
-      return std::unexpected(GuiException("Escape dialog is detached"));
-    pane->dismiss();
-    return {};
-  });
-  auto lifetime = callbackStopToken();
-  reader.registerCallback("showOptions", [escapeDialogWeak, lifetime, &mainInterface = *this](Widget&) -> std::expected<void, StarException> {
-    if (lifetime.stop_requested())
-      return std::unexpected(GuiException("Main interface is detached"));
-    auto pane = escapeDialogWeak.lock();
-    if (!pane)
-      return std::unexpected(GuiException("Escape dialog is detached"));
-    pane->dismiss();
-    auto displayed = mainInterface.m_paneManager.displayRegisteredPane(MainInterfacePanes::Options);
-    if (!displayed)
-      return std::unexpected(std::move(displayed.error()));
-    return {};
-  });
-  reader.registerCallback("saveAndQuit", [escapeDialogWeak, lifetime, &mainInterface = *this](Widget&) -> std::expected<void, StarException> {
-    if (lifetime.stop_requested())
-      return std::unexpected(GuiException("Main interface is detached"));
-    auto pane = escapeDialogWeak.lock();
-    if (!pane)
-      return std::unexpected(GuiException("Escape dialog is detached"));
-    mainInterface.m_state = ReturnToTitle;
-    pane->dismiss();
-    return {};
-  });
-  auto config = (*assets)->json("/interface.config:escapeDialog");
-  if (!config)
-    return std::unexpected(std::move(config.error()));
-  if (auto constructed = reader.construct(*config, *escapeDialog); !constructed)
-    return std::unexpected(std::move(constructed.error()));
-  auto label = escapeDialog->requireChild<LabelWidget>("lblversion");
-  if (!label)
-    return std::unexpected(std::move(label.error()));
-  if (auto text = (*label)->setText(strf("OpenStarbound - {} ({})", StarVersionString, StarArchitectureString)); !text)
-    return std::unexpected(std::move(text.error()));
-  return escapeDialog;
 }
 
 float MainInterface::interfaceScale() const {

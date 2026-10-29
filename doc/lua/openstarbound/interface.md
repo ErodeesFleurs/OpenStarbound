@@ -25,7 +25,6 @@ Returns the HUD's visibility.
 #### `PaneId` interface.bindRegisteredPane(`String` paneName)
 Binds a native registered pane or a dynamically created string-ID pane to its pane/widget callbacks. Returns `nil` if no instance exists. Native identifiers are listed below; bundled Lua registrations use their configured string identifiers, such as `"chat"` and `"songbook"`.
 <details><summary><b>Panes</b></summary>
-EscapeDialog<br>
 Inventory<br>
 Cockpit<br>
 Tech<br>
@@ -47,6 +46,15 @@ Collections<br>
 #### `void` interface.displayRegisteredPane(`String` paneName)
 
 Displays an existing instance. For a Lua registration without an instance, requests opening through the Lua interface manager.
+
+---
+
+#### `bool` interface.paneDisplayed(`String` paneName)
+
+Queries an existing native or Lua-managed instance without opening it or
+constructing its pane/widget callback table. Returns `false` without an
+instance. This is lifecycle display state, not visibility or focus: a hidden
+pane that has not been dismissed still reports `true`.
 
 ---
 
@@ -83,6 +91,12 @@ or apply unique-playback history. Available in client UI script contexts.
 Returns whether the client UI cinematic overlay has not completed. This is
 independent of player/world attachment and input suppression; a cinematic can
 be active while the player is in a world.
+
+#### `void` interface.returnToTitle()
+
+Requests the client's normal return-to-title transition. Saving, disconnecting
+and interface teardown remain owned by the native client lifecycle; this does
+not terminate the application. Available while a game interface exists.
 
 ## Lua-managed interface instances
 
@@ -276,6 +290,33 @@ and immediately load the completion cinematic before closing. Escape and
 external dismissal do not play it. Administrator previews do not mutate quest
 state or run completion cinematics. There are no native quest-dialog window
 classes or separate presentation poller.
+
+### Bundled pause menu
+
+The canonical `"EscapeDialog"` registration loads
+`/interface/opensb/escapemenu/escapemenu.config` as a session-scoped
+`"ModalWindow"`. It is created on first open and retained across ordinary
+dismissal/reopening; interface teardown destroys it. There is no native pause
+menu constructor, enum registration or Escape-toggle branch.
+
+Lua owns the three buttons, version label and pause selection. Return dismisses
+the menu; Options dismisses it before opening the registered `"Options"` pane;
+Save and Quit requests `interface.returnToTitle()` before dismissing.
+`sb.buildInfo()` supplies the engine version and architecture.
+
+The feature-owned layout builder reuses `/interface.config:escapeDialog`,
+including modded widgets. Unless an explicit wrapper size is supplied, it
+derives the legacy root size from background header/body/footer dimensions
+before display, avoiding child-union changes to centering.
+
+`InterfaceEscapeMenu` uses the manager's global toggle and a local close action.
+The local action lets a remapped opening key close its own modal even when that
+key is not also `GuiClose`. Native focused widgets
+and modal handling take priority, so the event that closes a window does not
+also reopen the pause menu. The controller's Lua `pauseRequested()` selects
+actual displayed `"EscapeDialog"` or `"Options"` instances, not checkpoint
+state and not all modal windows. The client applies that result through its
+existing local-server pause path; UI updates continue while the world is paused.
 
 ### Bundled world-name HUD
 

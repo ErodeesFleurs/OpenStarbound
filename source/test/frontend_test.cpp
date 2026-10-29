@@ -2005,13 +2005,17 @@ const GameTestRegistration uiGlobalActions("LuaUiManager", "LazyGlobalToggleResp
   ASSERT_TRUE(script) << script.error().what();
   PaneManager panes(**context);
   std::shared_ptr<ScriptTestPane> instance;
+  bool modalMenu = false;
   unsigned created = 0;
   LuaCallbacks callbacks;
   ASSERT_TRUE(callbacks.registerCallback("paneIdAvailable", &MainInterface::paneIdAvailable));
   ASSERT_TRUE(callbacks.registerCallback("paneLayerOccupied", [&](String const&) {
     return static_cast<bool>(panes.topPane({PaneLayer::ModalWindow}));
   }));
-  ASSERT_TRUE(callbacks.registerCallback("paneInputTargets", [] { return JsonArray{}; }));
+  ASSERT_TRUE(callbacks.registerCallback("paneInputTargets", [&] {
+    if (!instance || panes.topPane() != instance) return JsonArray{};
+    return modalMenu ? JsonArray{"EscapeDialog"} : JsonArray{"probe"};
+  }));
   ASSERT_TRUE(callbacks.registerCallback("createPane", [&](String const&, Json const&, String const&) -> std::expected<void, StarException> {
     auto result = ScriptTestPane::create(**context);
     if (!result) return std::unexpected(std::move(result.error()));
@@ -2028,7 +2032,14 @@ const GameTestRegistration uiGlobalActions("LuaUiManager", "LazyGlobalToggleResp
   }));
   ASSERT_TRUE(callbacks.registerCallback("displayRegisteredPane", [&](String const&) -> std::expected<void, StarException> {
     if (panes.isDisplayed(instance)) return instance->show();
-    return panes.displayPane(PaneLayer::Window, instance, {});
+    auto displayed = panes.displayPane(modalMenu ? PaneLayer::ModalWindow : PaneLayer::Window, instance, {});
+    if (!displayed) return std::unexpected(std::move(displayed.error()));
+    if (modalMenu) {
+      // Exercise the production action handler without initializing renderer-backed labels.
+      auto loaded = instance->evaluate("require '/interface/opensb/escapemenu/escapemenu.lua'");
+      if (!loaded) return std::unexpected(std::move(loaded.error()));
+    }
+    return {};
   }));
   ASSERT_TRUE(callbacks.registerCallback("destroyPane", [&](String const&) -> std::expected<void, StarException> {
     if (instance && panes.isDisplayed(instance)) {
@@ -2038,14 +2049,18 @@ const GameTestRegistration uiGlobalActions("LuaUiManager", "LazyGlobalToggleResp
     instance.reset();
     return {};
   }));
+  ASSERT_TRUE(callbacks.registerCallback("callPane", [&](String const&, String const& method, JsonArray const& arguments) {
+    return instance->call(method, arguments);
+  }));
   ASSERT_TRUE(script->setCallbacks("interface", callbacks));
   ASSERT_TRUE(script->eval<LuaValue>(R"LUA(
     state = {}
     definitions = {probe = {config = {}, scope = "player", retain = true, globalActions = {Probe = "toggle"}}}
     session = {hasPlayer = true, playerGeneration = 1, worldGeneration = 1}
+    engineAction = "Probe"
     manager = UiManager.new(state, definitions, session)
     function press(captured)
-      return manager:input({type = "keyDown", key = 7, keyboardCaptured = captured, actions = {"Probe"}})
+      return manager:input({type = "keyDown", key = 7, keyboardCaptured = captured, actions = {engineAction}})
     end
     function release()
       return manager:input({type = "keyUp", key = 7, actions = {}})
@@ -2096,6 +2111,100 @@ const GameTestRegistration uiGlobalActions("LuaUiManager", "LazyGlobalToggleResp
   EXPECT_FALSE(instance);
   EXPECT_EQ(panes.topPane(), *focused);
   ASSERT_TRUE(panes.dismissAllPanes());
+
+  // A remapped opener need not also be GuiClose. Its local action must close
+  // its own modal while unrelated modal barriers still block global opening.
+  modalMenu = true;
+  auto rootCallbacks = LuaBindings::makeRootCallbacks(fixture.root());
+  ASSERT_TRUE(rootCallbacks);
+  ASSERT_TRUE(script->setCallbacks("root", *rootCallbacks));
+  ASSERT_TRUE(script->eval<LuaValue>(R"LUA(
+    state = {}
+    definitions = {EscapeDialog = root.assetJson("/interface.config:panes.EscapeDialog")}
+    engineAction = "InterfaceEscapeMenu"
+    manager = UiManager.new(state, definitions, session)
+  )LUA"));
+  auto menuOpened = script->eval<bool>("return press(false)");
+  ASSERT_TRUE(menuOpened);
+  EXPECT_TRUE(*menuOpened);
+  EXPECT_FALSE(instance->isDismissed());
+  ASSERT_TRUE(script->eval<bool>("return press(false)"));
+  EXPECT_FALSE(instance->isDismissed());
+  ASSERT_TRUE(script->eval<bool>("return release()"));
+  auto menuClosed = script->eval<bool>("return press(false)");
+  ASSERT_TRUE(menuClosed);
+  EXPECT_TRUE(*menuClosed);
+  EXPECT_TRUE(instance->isDismissed());
+  ASSERT_TRUE(panes.update(0));
+  ASSERT_TRUE(script->eval<LuaValue>("manager:update(); release()"));
+  ASSERT_TRUE(script->eval<bool>("return press(false)"));
+  EXPECT_FALSE(instance->isDismissed());
+  EXPECT_EQ(created, 2u);
+  ASSERT_TRUE(script->eval<LuaValue>("release(); manager:shutdown()"));
+  ASSERT_TRUE(panes.dismissAllPanes());
+});
+
+const GameTestRegistration uiPausePolicy("LuaUiManager", "OnlyDisplayedPauseMenusPauseRegardlessOfOtherModals", [](GameTest& fixture) {
+  auto context = textEditorContext(fixture);
+  ASSERT_TRUE(context) << context.error().what();
+  auto luaRoot = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto script = (*luaRoot)->createContext("/interface/opensb/ui/controller.lua");
+  ASSERT_TRUE(script) << script.error().what();
+  PaneManager panes(**context);
+  std::shared_ptr<Pane> escape, options;
+  LuaCallbacks callbacks;
+  ASSERT_TRUE(callbacks.registerCallback("paneDisplayed", [&](String const& id) {
+    auto pane = id == "EscapeDialog" ? escape : id == "Options" ? options : nullptr;
+    return pane && pane->isDisplayed();
+  }));
+  ASSERT_TRUE(script->setCallbacks("interface", callbacks));
+  auto checkPause = [&](bool expected) {
+    auto paused = script->eval<bool>("return pauseRequested()");
+    ASSERT_TRUE(paused) << paused.error().what();
+    EXPECT_EQ(*paused, expected);
+  };
+  checkPause(false);
+
+  auto createPane = [&]() -> std::expected<std::shared_ptr<Pane>, StarException> {
+    auto pane = Pane::create(**context);
+    if (!pane) return std::unexpected(std::move(pane.error()));
+    (*pane)->setAnchor(PaneAnchor::BottomLeft);
+    return *pane;
+  };
+  auto escapePane = createPane();
+  auto optionsPane = createPane();
+  auto otherModal = createPane();
+  ASSERT_TRUE(escapePane);
+  ASSERT_TRUE(optionsPane);
+  ASSERT_TRUE(otherModal);
+  escape = *escapePane;
+  options = *optionsPane;
+  checkPause(false);
+  ASSERT_TRUE(panes.displayPane(PaneLayer::ModalWindow, *otherModal, {}));
+  checkPause(false);
+
+  ASSERT_TRUE(panes.displayPane(PaneLayer::ModalWindow, escape, {}));
+  checkPause(true);
+  ASSERT_TRUE(escape->hide());
+  checkPause(true);
+  ASSERT_TRUE(panes.dismissPane(escape));
+  checkPause(false);
+
+  ASSERT_TRUE(panes.displayPane(PaneLayer::ModalWindow, options, {}));
+  checkPause(true);
+  ASSERT_TRUE(panes.displayPane(PaneLayer::ModalWindow, escape, {}));
+  checkPause(true);
+  ASSERT_TRUE(panes.dismissPane(options));
+  checkPause(true);
+  ASSERT_TRUE(panes.dismissPane(escape));
+  checkPause(false);
+
+  ASSERT_TRUE(panes.displayPane(PaneLayer::ModalWindow, options, {}));
+  checkPause(true);
+  ASSERT_TRUE(panes.dismissPane(options));
+  checkPause(false);
+  ASSERT_TRUE(panes.dismissPane(*otherModal));
 });
 
 const GameTestRegistration codexPresentation("LuaCodex", "DomainIdentityReadReorderPageBoundsModalDeferralAndReload", [](GameTest& fixture) {

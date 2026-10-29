@@ -4,6 +4,14 @@ A few additional utiliy callbacks are added by OpenStarbound.
 
 ---
 
+#### `Json` sb.buildInfo()
+
+Returns the engine build's version and architecture strings as
+`{version = String, architecture = String}`. These are build identifiers, not
+runtime configuration values.
+
+---
+
 #### `Json` sb.parseJson(`String` json)
 
 Parses a JSON string.
