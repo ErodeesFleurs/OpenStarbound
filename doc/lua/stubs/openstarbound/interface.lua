@@ -68,6 +68,11 @@ function interface.paneIdAvailable(id) end
 ---@return string[]
 function interface.paneInputTargets() end
 
+--- Reports a top pane on the named native layer, including native windows; invalid layer names raise an error.
+---@param layer string
+---@return boolean
+function interface.paneLayerOccupied(layer) end
+
 ---@return {hasPlayer:boolean, inWorld:boolean, playerGeneration:integer, worldGeneration:integer}
 function interface.session() end
 
@@ -88,11 +93,15 @@ function client.storage(namespace) end
 ui = {}
 
 ---@param id string
----@param definition {config:Json|string, layer?:string, scope?:string, open?:boolean, order?:number, actions?:table<string,string>, events?:table<string,string>}
+---@param definition {config:Json|string, layer?:string, scope?:string, open?:boolean, retain?:boolean, order?:number, actions?:table<string,string>, globalActions?:table<string,string>, events?:table<string,string>}
 function ui.register(id, definition) end
 
 ---@param id string
 function ui.open(id) end
+
+--- Ordinary dismissal when displayed (honoring retain), otherwise opens the registered instance.
+---@param id string
+function ui.toggle(id) end
 
 ---@param id string
 function ui.close(id) end

@@ -189,10 +189,8 @@ import star.crafting_interface;
 import star.merchant_interface;
 
 import star.uuid;
-import star.player_codexes;
 
 
-import star.codex_interface;
 
 
 
@@ -530,10 +528,6 @@ std::expected<void, StarException> MainInterface::initMainBarPanes() {
   if (!ai)
     return std::unexpected(std::move(ai.error()));
   if (auto result = m_paneManager.registerPane(MainInterfacePanes::Ai, PaneLayer::Window, *ai); !result)
-    return std::unexpected(std::move(result.error()));
-  if (auto result = installPane(m_paneManager, MainInterfacePanes::Codex, PaneLayer::Window,
-                                CodexInterface::create(context(), m_client->mainPlayer()), m_codexInterface);
-      !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = installPane(m_paneManager, MainInterfacePanes::Options, PaneLayer::ModalWindow,
                                 OptionsMenu::create(context(), m_paneManager, m_client), m_optionsMenu);
@@ -878,6 +872,13 @@ std::expected<JsonArray, StarException> MainInterface::paneInputTargets() const 
     }
   }
   return ids;
+}
+
+std::expected<bool, StarException> MainInterface::paneLayerOccupied(String const& layer) const {
+  if (!PaneLayerNames) return std::unexpected(PaneLayerNames.error());
+  auto parsed = PaneLayerNames->getLeft(layer);
+  if (!parsed) return std::unexpected(std::move(parsed.error()));
+  return static_cast<bool>(m_paneManager.topPane({parsed->get()}));
 }
 
 std::expected<void, StarException> MainInterface::createPane(String const& id, Json config, String const& layer) {
@@ -1261,11 +1262,9 @@ std::expected<bool, StarException> MainInterface::handleInputEvent(InputEvent co
               return togglePlainCraftingWindow();
             case InterfaceAction::InterfaceEscapeMenu:
             case InterfaceAction::InterfaceInventory:
-            case InterfaceAction::InterfaceCodex:
             case InterfaceAction::InterfaceQuest: {
               auto pane = action == InterfaceAction::InterfaceEscapeMenu ? MainInterfacePanes::EscapeDialog
-                : action == InterfaceAction::InterfaceInventory ? MainInterfacePanes::Inventory
-                : action == InterfaceAction::InterfaceCodex ? MainInterfacePanes::Codex : MainInterfacePanes::QuestLog;
+                : action == InterfaceAction::InterfaceInventory ? MainInterfacePanes::Inventory : MainInterfacePanes::QuestLog;
               auto toggled = m_paneManager.toggleRegisteredPane(pane);
               if (!toggled)
                 return std::unexpected(std::move(toggled.error()));
@@ -1553,6 +1552,10 @@ std::expected<void, StarException> MainInterface::preUpdate(float) {
 std::expected<void, StarException> MainInterface::update(float dt) {
   if (auto synchronized = synchronizeUiSession(); !synchronized)
     return std::unexpected(std::move(synchronized.error()));
+
+  auto dialogPolled = m_questLogInterface->pollDialog(m_paneManager);
+  if (!dialogPolled)
+    return std::unexpected(std::move(dialogPolled.error()));
   auto controlled = m_uiController->update<Json>(dt);
   if (!controlled) return std::unexpected(std::move(controlled.error()));
   auto panesUpdated = m_paneManager.update(dt);
@@ -1562,20 +1565,6 @@ std::expected<void, StarException> MainInterface::update(float dt) {
   if (!cursorUpdated)
     return std::unexpected(std::move(cursorUpdated.error()));
 
-  auto dialogPolled = m_questLogInterface->pollDialog(m_paneManager);
-  if (!dialogPolled)
-    return std::unexpected(std::move(dialogPolled.error()));
-
-  if (!m_paneManager.topPane({PaneLayer::ModalWindow})) {
-    auto newCodex = m_codexInterface->showNewCodex();
-    if (!newCodex)
-      return std::unexpected(std::move(newCodex.error()));
-    if (*newCodex) {
-      auto displayed = m_paneManager.displayRegisteredPane(MainInterfacePanes::Codex);
-      if (!displayed)
-        return std::unexpected(std::move(displayed.error()));
-    }
-  }
 
   auto player = m_client->mainPlayer();
   auto cursorWorldPos = cursorWorldPosition();
@@ -2663,12 +2652,20 @@ std::expected<void, StarException> MainInterface::renderMainBar() {
     if (!tooltip) return std::unexpected(std::move(tooltip.error()));
     m_cursorTooltip = std::move(*tooltip);
   }
-  auto drawStateButton = [this, &tooltipAt](MainInterfacePanes paneType, Vec2F pos, PolyI const& poly,
+  auto drawStateButton = [this, &tooltipAt](auto const& paneType, Vec2F pos, PolyI const& poly,
       String const& image, String const& hoverImage, String const& openImage, String const& hoverOpenImage,
       std::string_view tooltipPath) -> std::expected<void, StarException> {
     auto tooltip = tooltipAt(tooltipPath);
     if (!tooltip) return std::unexpected(std::move(tooltip.error()));
-    auto displayed = m_paneManager.registeredPaneIsDisplayed(paneType);
+    auto displayed = [&]() -> std::expected<bool, StarException> {
+      if constexpr (std::is_same_v<std::decay_t<decltype(paneType)>, String>) {
+        auto pane = findRegisteredPane(paneType);
+        if (!pane) return std::unexpected(std::move(pane.error()));
+        return *pane && m_paneManager.isDisplayed(*pane);
+      } else {
+        return m_paneManager.registeredPaneIsDisplayed(paneType);
+      }
+    }();
     if (!displayed) return std::unexpected(std::move(displayed.error()));
     auto hovered = overButton(poly, m_cursorScreenPos);
     if (!hovered) return std::unexpected(std::move(hovered.error()));
@@ -2685,7 +2682,8 @@ std::expected<void, StarException> MainInterface::renderMainBar() {
       "/interface.config:cursorTooltip.craftingText"); !r) return std::unexpected(std::move(r.error()));
 
   Vec2F codexButtonPos = barPos + Vec2F(m_config->mainBarCodexButtonOffset) * interfaceScale();
-  if (auto r = drawStateButton(MainInterfacePanes::Codex,
+  static String const codexPaneId = "codex";
+  if (auto r = drawStateButton(codexPaneId,
       codexButtonPos, m_config->mainBarCodexButtonPoly, m_config->codexImage,
       m_config->codexImageHover, m_config->codexImageOpen, m_config->codexImageHoverOpen,
       "/interface.config:cursorTooltip.codexText"); !r) return std::unexpected(std::move(r.error()));
@@ -3000,7 +2998,8 @@ std::expected<bool, StarException> MainInterface::overlayClick(Vec2F const& mous
   auto codex = overButton(m_config->mainBarCodexButtonPoly, mousePos);
   if (!codex) return std::unexpected(std::move(codex.error()));
   if (*codex) {
-    if (auto r = m_paneManager.toggleRegisteredPane(MainInterfacePanes::Codex); !r) return std::unexpected(std::move(r.error()));
+    auto toggled = m_uiController->invoke<Json>("toggle", "codex");
+    if (!toggled) return std::unexpected(std::move(toggled.error()));
     return true;
   }
   auto deploy = overButton(m_config->mainBarDeployButtonPoly, mousePos);

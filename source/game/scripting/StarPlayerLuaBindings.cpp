@@ -1530,6 +1530,37 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makePlayerCallbacks(Root
   }); !registered)
     return std::unexpected(std::move(registered.error()));
 
+  if (auto registered = callbacks.registerCallback("getCodex", [&player](String const& id) -> std::expected<Json, StarException> {
+    auto codex = player.codexes()->codex(id);
+    if (!codex) return Json();
+    JsonArray pages;
+    auto count = codex->pageCount();
+    pages.reserve(count);
+    for (std::size_t index = 0; index < count; ++index)
+      pages.append(codex->page(index));
+    return JsonObject{{"id", codex->id()}, {"species", codex->species()},
+        {"title", codex->title()}, {"description", codex->description()},
+        {"icon", codex->icon()}, {"contentPages", std::move(pages)}};
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
+  if (auto registered = callbacks.registerCallback("getCodexList", [&player]() -> std::expected<JsonArray, StarException> {
+    JsonArray result;
+    auto entries = player.codexes()->codexes();
+    result.reserve(entries.size());
+    for (auto const& entry : entries)
+      result.append(JsonObject{{"id", entry.first->id()}, {"read", entry.second}});
+    return result;
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
+  if (auto registered = callbacks.registerCallback("getNewCodexId", [&player]() -> std::expected<std::optional<String>, StarException> {
+    if (auto codex = player.codexes()->firstNewCodex())
+      return codex->id();
+    return {};
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
   if (auto registered = callbacks.registerCallback("getNewCodex", [&player]() -> std::expected<std::optional<String>, StarException> {
     auto codexPtr = player.codexes()->firstNewCodex();
     if (codexPtr)

@@ -38,6 +38,11 @@ import star.list_widget;
 import star.songbook;
 import star.songbook_lua_bindings;
 import star.root_lua_bindings;
+import star.player;
+import star.player_factory;
+import star.player_codexes;
+import star.codex;
+import star.player_lua_bindings;
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
@@ -1035,6 +1040,9 @@ const GameTestRegistration uiInputAndQueue("LuaUiManager", "NativePriorityReload
     instances.remove(id);
     return {};
   }));
+  ASSERT_TRUE(callbacks.registerCallback("paneLayerOccupied", [&](String const&) {
+    return static_cast<bool>(panes.topPane({PaneLayer::ModalWindow}));
+  }));
   ASSERT_TRUE(callbacks.registerCallback("paneInputTargets", [&]() -> std::expected<JsonArray, StarException> {
     auto targets = panes.inputTargetPanes();
     if (!targets) return std::unexpected(std::move(targets.error()));
@@ -1961,6 +1969,340 @@ const GameTestRegistration scriptReloadDuringEditorCallback("ScriptPane", "Reloa
   EXPECT_EQ(**restored, (Json(JsonArray{1, "after reload", "after reload"})));
   EXPECT_FALSE(escapedGetText->invoke<String>("input"));
   EXPECT_EQ((*editor)->getText(), String("after reload"));
+  ASSERT_TRUE(panes.dismissAllPanes());
+});
+
+const GameTestRegistration uiGlobalActions("LuaUiManager", "LazyGlobalToggleRespectsNativeModalFocusRepeatAndReload", [](GameTest& fixture) {
+  auto context = textEditorContext(fixture);
+  ASSERT_TRUE(context) << context.error().what();
+  auto luaRoot = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto script = (*luaRoot)->createContext("/interface/opensb/ui/manager.lua");
+  ASSERT_TRUE(script) << script.error().what();
+  PaneManager panes(**context);
+  std::shared_ptr<ScriptTestPane> instance;
+  unsigned created = 0;
+  LuaCallbacks callbacks;
+  ASSERT_TRUE(callbacks.registerCallback("paneIdAvailable", &MainInterface::paneIdAvailable));
+  ASSERT_TRUE(callbacks.registerCallback("paneLayerOccupied", [&](String const&) {
+    return static_cast<bool>(panes.topPane({PaneLayer::ModalWindow}));
+  }));
+  ASSERT_TRUE(callbacks.registerCallback("paneInputTargets", [] { return JsonArray{}; }));
+  ASSERT_TRUE(callbacks.registerCallback("createPane", [&](String const&, Json const&, String const&) -> std::expected<void, StarException> {
+    auto result = ScriptTestPane::create(**context);
+    if (!result) return std::unexpected(std::move(result.error()));
+    instance = std::move(*result);
+    instance->setAnchor(PaneAnchor::BottomLeft);
+    ++created;
+    return instance->setLuaRoot(*luaRoot);
+  }));
+  ASSERT_TRUE(callbacks.registerCallback("bindRegisteredPane", [&](String const&) -> std::expected<std::optional<LuaCallbacks>, StarException> {
+    if (!instance) return std::optional<LuaCallbacks>{};
+    auto bound = instance->makePaneCallbacks();
+    if (!bound) return std::unexpected(std::move(bound.error()));
+    return std::optional<LuaCallbacks>(std::move(*bound));
+  }));
+  ASSERT_TRUE(callbacks.registerCallback("displayRegisteredPane", [&](String const&) -> std::expected<void, StarException> {
+    if (panes.isDisplayed(instance)) return instance->show();
+    return panes.displayPane(PaneLayer::Window, instance, {});
+  }));
+  ASSERT_TRUE(callbacks.registerCallback("destroyPane", [&](String const&) -> std::expected<void, StarException> {
+    if (instance && panes.isDisplayed(instance)) {
+      if (auto dismissed = panes.dismissPane(instance); !dismissed)
+        return std::unexpected(std::move(dismissed.error()));
+    }
+    instance.reset();
+    return {};
+  }));
+  ASSERT_TRUE(script->setCallbacks("interface", callbacks));
+  ASSERT_TRUE(script->eval<LuaValue>(R"LUA(
+    state = {}
+    definitions = {probe = {config = {}, scope = "player", retain = true, globalActions = {Probe = "toggle"}}}
+    session = {hasPlayer = true, playerGeneration = 1, worldGeneration = 1}
+    manager = UiManager.new(state, definitions, session)
+    function press(captured)
+      return manager:input({type = "keyDown", key = 7, keyboardCaptured = captured, actions = {"Probe"}})
+    end
+    function release()
+      return manager:input({type = "keyUp", key = 7, actions = {}})
+    end
+  )LUA"));
+  auto modal = InputOrderPane::create(**context, false);
+  ASSERT_TRUE(modal) << modal.error().what();
+  ASSERT_TRUE(panes.displayPane(PaneLayer::ModalWindow, *modal, {}));
+  auto blocked = script->eval<bool>("return press(false)");
+  ASSERT_TRUE(blocked) << blocked.error().what();
+  EXPECT_FALSE(*blocked);
+  EXPECT_EQ(created, 0u);
+  ASSERT_TRUE(panes.dismissPane(*modal));
+  auto focused = InputOrderPane::create(**context, false);
+  ASSERT_TRUE(focused) << focused.error().what();
+  auto editor = textEditor(**context, "");
+  ASSERT_TRUE(editor) << editor.error().what();
+  ASSERT_TRUE((*focused)->addChild("editor", *editor));
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Window, *focused, {}));
+  ASSERT_TRUE((*editor)->focus());
+  auto captured = panes.keyboardCapturedPane();
+  ASSERT_TRUE(captured) << captured.error().what();
+  EXPECT_EQ(*captured, *focused);
+  blocked = script->eval<bool>("return press(true)");
+  ASSERT_TRUE(blocked) << blocked.error().what();
+  EXPECT_FALSE(*blocked);
+  EXPECT_EQ(created, 0u);
+  ASSERT_TRUE((*editor)->blur());
+  auto opened = script->eval<bool>("return press(false)");
+  ASSERT_TRUE(opened) << opened.error().what();
+  EXPECT_TRUE(*opened);
+  EXPECT_EQ(created, 1u);
+  EXPECT_EQ(panes.topPane(), instance);
+  // Reconstruct the production manager checkpoint while a key remains held.
+  auto repeated = script->eval<bool>("manager = UiManager.new(state, definitions, session); manager:restore(); return press(false)");
+  ASSERT_TRUE(repeated) << repeated.error().what();
+  EXPECT_TRUE(*repeated);
+  EXPECT_FALSE(instance->isDismissed());
+  ASSERT_TRUE(script->eval<bool>("return release()"));
+  ASSERT_TRUE(script->eval<bool>("return press(false)"));
+  EXPECT_TRUE(instance->isDismissed());
+  ASSERT_TRUE(panes.update(0));
+  ASSERT_TRUE(script->eval<LuaValue>("manager:update(); release()"));
+  ASSERT_TRUE(script->eval<bool>("return press(false)"));
+  EXPECT_EQ(created, 1u);
+  EXPECT_FALSE(instance->isDismissed());
+  ASSERT_TRUE(script->eval<LuaValue>("release(); manager:suspend({hasPlayer=true, playerGeneration=2})"));
+  EXPECT_FALSE(instance);
+  EXPECT_EQ(panes.topPane(), *focused);
+  ASSERT_TRUE(panes.dismissAllPanes());
+});
+
+const GameTestRegistration codexPresentation("LuaCodex", "DomainIdentityReadReorderPageBoundsModalDeferralAndReload", [](GameTest& fixture) {
+  auto directory = File::temporaryDirectory(fixture.root().random());
+  ASSERT_TRUE(directory) << directory.error().what();
+  auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directory)); });
+  auto overlay = File::relativeTo(*directory, "assets");
+  ASSERT_TRUE(File::makeDirectory(overlay));
+  ASSERT_TRUE(File::makeDirectory(File::relativeTo(overlay, "interface")));
+  String firstPath = File::relativeTo(overlay, "interface/zzcodex-one.codex");
+  ASSERT_TRUE(File::writeFile(String(R"JSON({
+    "id":"zzcodex-one","title":"Duplicate","species":"apex","icon":"codex/iconBook.png",
+    "contentPages":["First α","Second β"]
+  })JSON"), firstPath));
+  ASSERT_TRUE(File::writeFile(String(R"JSON({
+    "id":"zzcodex-two","title":"Duplicate","species":"apex","contentPages":["Other book"]
+  })JSON"), File::relativeTo(overlay, "interface/zzcodex-two.codex")));
+  ASSERT_TRUE(File::writeFile(String(R"JSON({
+    "id":"zzcodex-empty","title":"Empty","contentPages":[]
+  })JSON"), File::relativeTo(overlay, "interface/zzcodex-empty.codex")));
+  auto settings = fixture.rootSettings();
+  settings.assetSources.append(overlay);
+  settings.storageDirectory = File::relativeTo(*directory, "storage");
+  settings.runtimeConfigFile = String("codex.config");
+  settings.logDirectory = {};
+  settings.logFile = {};
+  settings.includeUGC = false;
+  auto createdRoot = Root::create(settings);
+  ASSERT_TRUE(createdRoot) << createdRoot.error().what();
+  auto& root = **createdRoot;
+  auto configuration = root.configuration();
+  ASSERT_TRUE(configuration) << configuration.error().what();
+  ASSERT_TRUE((*configuration)->set("bindings", JsonObject{
+      {"GuiClose", JsonArray{JsonObject{{"type", "key"}, {"value", "Esc"}, {"mods", JsonArray{}}}}}}));
+  auto context = GuiContext::create(root, {}, {});
+  ASSERT_TRUE(context) << context.error().what();
+  auto luaRoot = LuaRoot::create(root);
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto factory = root.playerFactory();
+  ASSERT_TRUE(factory) << factory.error().what();
+  auto player = (*factory)->create();
+  ASSERT_TRUE(player) << player.error().what();
+  auto domain = (*player)->codexes();
+  auto first = domain->learnCodex("zzcodex-one", false);
+  auto second = domain->learnCodex("zzcodex-two", false);
+  auto empty = domain->learnCodex("zzcodex-empty", true);
+  ASSERT_TRUE(first) << first.error().what();
+  ASSERT_TRUE(second) << second.error().what();
+  ASSERT_TRUE(empty) << empty.error().what();
+  ASSERT_TRUE(*first);
+  ASSERT_TRUE(*second);
+  ASSERT_TRUE(*empty);
+  EXPECT_EQ((*first)->icon(), String("/interface/codex/iconBook.png"));
+  auto playerCallbacks = LuaBindings::makePlayerCallbacks(root, **player);
+  ASSERT_TRUE(playerCallbacks) << playerCallbacks.error().what();
+  auto assets = root.assets();
+  ASSERT_TRUE(assets) << assets.error().what();
+  auto config = (*assets)->json("/interface/opensb/codex/codex.config");
+  ASSERT_TRUE(config) << config.error().what();
+  auto paneConfig = config->toObject();
+  ASSERT_TRUE(paneConfig) << paneConfig.error().what();
+  paneConfig->set("gui", JsonObject{});
+  auto createdPane = BaseScriptPane::create(**context, *paneConfig);
+  ASSERT_TRUE(createdPane) << createdPane.error().what();
+  auto pane = std::move(*createdPane);
+  pane->setAnchor(PaneAnchor::BottomLeft);
+  ASSERT_TRUE(pane->setLuaRoot(*luaRoot));
+  ASSERT_TRUE(pane->addCallbacks("player", *playerCallbacks));
+  // Actual native controls and domain callbacks; only renderer-dependent label
+  // drawing is replaced by the same widget.setText-capable native TextBox.
+  for (auto const& name : {String("pageText"), String("titleLabel"), String("pageLabel"), String("pageNum"), String("selectLabel")}) {
+    auto text = textEditor(**context, "");
+    ASSERT_TRUE(text) << text.error().what();
+    (*text)->setMaxWidth(-1);
+    ASSERT_TRUE(pane->addChild(name, *text));
+  }
+  for (auto const& name : {String("prevButton"), String("nextButton")}) {
+    auto button = ButtonWidget::create(**context);
+    ASSERT_TRUE(button) << button.error().what();
+    ASSERT_TRUE(pane->addChild(name, *button));
+  }
+  auto group = std::make_shared<ButtonGroupWidget>(**context);
+  for (auto const& entry : {std::pair{-1, String("apex")}, std::pair{5, String("other")}}) {
+    auto button = ButtonWidget::create(**context);
+    ASSERT_TRUE(button) << button.error().what();
+    (*button)->setData(JsonObject{{"species", entry.second}});
+    (*button)->setButtonGroup(group, entry.first);
+    ASSERT_TRUE(group->addChild(entry.second, *button));
+  }
+  ASSERT_TRUE(group->select(-1));
+  ASSERT_TRUE(pane->addChild("speciesTabs", group));
+  group->setCallback([&](Widget&) -> std::expected<void, StarException> {
+    auto result = pane->call("updateSpecies", {});
+    if (!result) return std::unexpected(std::move(result.error()));
+    return {};
+  });
+  auto scroll = std::make_shared<Widget>(**context);
+  auto schema = Json::parseJson(R"JSON({
+    "spacing":[0,0],"memberSize":[160,12],
+    "listTemplate":{
+      "bookName":{"type":"textbox","position":[0,0],"maxWidth":-1},
+      "bookIcon":{"type":"image","position":[0,0],"file":""}
+    }
+  })JSON");
+  ASSERT_TRUE(schema) << schema.error().what();
+  auto list = ListWidget::create(**context, *schema);
+  ASSERT_TRUE(list) << list.error().what();
+  (*list)->registerMemberCallback("bookName", [](Widget&) -> std::expected<void, StarException> { return {}; });
+  (*list)->setCallback([&](Widget&) -> std::expected<void, StarException> {
+    auto result = pane->call("selectCodex", {});
+    if (!result) return std::unexpected(std::move(result.error()));
+    return {};
+  });
+  ASSERT_TRUE(scroll->addChild("bookList", *list));
+  ASSERT_TRUE(pane->addChild("scrollArea", scroll));
+  PaneManager panes(**context);
+  auto controller = (*luaRoot)->createContext("/interface/opensb/ui/manager.lua");
+  ASSERT_TRUE(controller) << controller.error().what();
+  auto rootCallbacks = LuaBindings::makeRootCallbacks(root);
+  ASSERT_TRUE(rootCallbacks) << rootCallbacks.error().what();
+  ASSERT_TRUE(controller->setCallbacks("root", *rootCallbacks));
+  ASSERT_TRUE(controller->setCallbacks("player", *playerCallbacks));
+  LuaCallbacks interface;
+  ASSERT_TRUE(interface.registerCallback("paneIdAvailable", &MainInterface::paneIdAvailable));
+  ASSERT_TRUE(interface.registerCallback("paneLayerOccupied", [&](String const&) {
+    return static_cast<bool>(panes.topPane({PaneLayer::ModalWindow}));
+  }));
+  ASSERT_TRUE(interface.registerCallback("bindRegisteredPane", [&](String const&) -> std::expected<std::optional<LuaCallbacks>, StarException> {
+    auto result = pane->makePaneCallbacks();
+    if (!result) return std::unexpected(std::move(result.error()));
+    return std::optional<LuaCallbacks>(std::move(*result));
+  }));
+  ASSERT_TRUE(interface.registerCallback("displayRegisteredPane", [&](String const&) -> std::expected<void, StarException> {
+    if (panes.isDisplayed(pane)) return pane->show();
+    return panes.displayPane(PaneLayer::Window, pane, {});
+  }));
+  ASSERT_TRUE(interface.registerCallback("callPane", [&](String const&, String const& method, JsonArray const& args) {
+    return pane->call(method, args);
+  }));
+  ASSERT_TRUE(controller->setCallbacks("interface", interface));
+  auto initialized = controller->eval<LuaValue>(R"LUA(
+    require "/interface/opensb/codex/unread.lua"
+    definitions = {codex = root.assetJson("/interface.config:panes.codex")}
+    session = {hasPlayer=true, playerGeneration=1, worldGeneration=1}
+    checkpoint = {session = session}
+    manager = UiManager.new(checkpoint, definitions, session)
+    manager:restore()
+  )LUA");
+  ASSERT_TRUE(initialized) << initialized.error().what();
+  auto modal = InputOrderPane::create(**context, false);
+  ASSERT_TRUE(modal) << modal.error().what();
+  ASSERT_TRUE(panes.displayPane(PaneLayer::ModalWindow, *modal, {}));
+  auto pendingId = domain->firstNewCodex()->id();
+  ASSERT_TRUE(controller->eval<LuaValue>("CodexUnread.update(manager)"));
+  EXPECT_FALSE(panes.isDisplayed(pane));
+  EXPECT_FALSE(domain->codexRead(pendingId));
+  ASSERT_TRUE(panes.dismissPane(*modal));
+  ASSERT_TRUE(controller->eval<LuaValue>("CodexUnread.update(manager)"));
+  EXPECT_TRUE(panes.isDisplayed(pane));
+  EXPECT_TRUE(domain->codexRead(pendingId));
+  ASSERT_TRUE((*list)->selectedWidget());
+  EXPECT_EQ((*list)->selectedWidget()->data(), Json(pendingId));
+  // Selecting either identical title must retain ID, even when marking it read
+  // changes unread-first domain order and synchronously rebuilds the real list.
+  auto remainingId = domain->firstNewCodex()->id();
+  ASSERT_EQ((*list)->listSize(), 2u);
+  EXPECT_EQ((*list)->itemAt(0)->data(), Json(remainingId));
+  ASSERT_TRUE((*list)->setSelected(0));
+  EXPECT_TRUE(domain->codexRead(remainingId));
+  ASSERT_TRUE((*list)->selectedWidget());
+  EXPECT_EQ((*list)->selectedWidget()->data(), Json(remainingId));
+  ASSERT_TRUE(pane->call("showCodex", {"zzcodex-one"}));
+  EXPECT_TRUE(domain->codexRead("zzcodex-one"));
+  ASSERT_TRUE((*list)->selectedWidget());
+  EXPECT_EQ((*list)->selectedWidget()->data(), Json("zzcodex-one"));
+  ASSERT_TRUE(pane->call("showCodex", {"zzcodex-two"}));
+  EXPECT_TRUE(domain->codexRead("zzcodex-two"));
+  EXPECT_EQ((*list)->selectedWidget()->data(), Json("zzcodex-two"));
+  ASSERT_TRUE(pane->call("showCodex", {"zzcodex-one"}));
+  ASSERT_TRUE(pane->call("nextButton", {}));
+  ASSERT_TRUE(pane->call("nextButton", {}));
+  auto text = pane->fetchChild<TextBoxWidget>("pageText");
+  ASSERT_TRUE(text);
+  EXPECT_EQ((*text)->getText(), String("Second β"));
+  ASSERT_TRUE(panes.dismissPane(pane));
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Window, pane, {}));
+  EXPECT_EQ((*text)->getText(), String("Second β"));
+  EXPECT_EQ((*list)->selectedWidget()->data(), Json("zzcodex-one"));
+  // Scope survival on warp/controller reload cannot re-consume any read entry.
+  ASSERT_TRUE(controller->eval<LuaValue>(R"LUA(
+    manager = UiManager.new(checkpoint, definitions, {hasPlayer=true, playerGeneration=1, worldGeneration=2})
+    manager:restore()
+    CodexUnread.update(manager)
+  )LUA"));
+  EXPECT_EQ((*text)->getText(), String("Second β"));
+  ASSERT_TRUE(panes.dismissPane(pane));
+  ASSERT_TRUE(controller->eval<LuaValue>("manager:update(); CodexUnread.update(manager)"));
+  EXPECT_FALSE(panes.isDisplayed(pane));
+  ASSERT_TRUE(controller->eval<LuaValue>("manager:open('codex')"));
+  ASSERT_TRUE(pane->call("showCodex", {"zzcodex-empty"}));
+  ASSERT_TRUE(pane->call("nextButton", {}));
+  ASSERT_TRUE(pane->call("prevButton", {}));
+  EXPECT_EQ((*text)->getText(), String(""));
+  auto pageNumber = pane->fetchChild<TextBoxWidget>("pageNum");
+  ASSERT_TRUE(pageNumber) << pageNumber.error().what();
+  EXPECT_EQ((*pageNumber)->getText(), String("0 of 0"));
+  ASSERT_TRUE(group->select(-1));
+  EXPECT_FALSE((*list)->selectedWidget());
+  EXPECT_EQ((*text)->getText(), String(""));
+  ASSERT_TRUE(pane->call("showCodex", {"zzcodex-one"}));
+  ASSERT_TRUE(pane->call("nextButton", {}));
+  ASSERT_TRUE(File::writeFile(String(R"JSON({
+    "id":"zzcodex-one","title":"Duplicate","species":"apex","icon":"codex/iconBook.png",
+    "contentPages":["Reloaded only page"]
+  })JSON"), firstPath));
+  ASSERT_TRUE(root.reload());
+  ASSERT_TRUE(pane->call("update", {}));
+  // Known content is held by the native player domain, just like the old
+  // reader, rather than replaced by a newer database generation on reload.
+  EXPECT_EQ((*text)->getText(), String("Second β"));
+  EXPECT_TRUE(domain->codexRead("zzcodex-one"));
+  // Compatibility API still returns title; the additive API returns identity.
+  EXPECT_TRUE(domain->markCodexUnread("zzcodex-two"));
+  auto stable = controller->eval<Json>("return {player.getNewCodex(), player.getNewCodexId(), player.getCodex('missing') == nil}");
+  ASSERT_TRUE(stable) << stable.error().what();
+  EXPECT_EQ(*stable, (Json(JsonArray{"Duplicate", "zzcodex-two", true})));
+  ASSERT_TRUE(File::remove(File::relativeTo(overlay, "interface/zzcodex-two.codex")));
+  ASSERT_TRUE(root.reload());
+  ASSERT_TRUE(controller->eval<LuaValue>("CodexUnread.update(manager)"));
+  EXPECT_TRUE(domain->codexRead("zzcodex-two"));
+  EXPECT_EQ((*text)->getText(), String("Other book"));
   ASSERT_TRUE(panes.dismissAllPanes());
 });
 

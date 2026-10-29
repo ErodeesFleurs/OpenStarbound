@@ -486,7 +486,27 @@ Returns a JSON object of key-value pairs, which are the codex ID and read status
 
 #### `String` player.getNewCodex()
 
-Returns the codex ID of the newest codex not read and `nil` otherwise.
+Returns the **title** of the native first unread codex, or `nil`. This compatibility API does not return an ID and does not promise newest-first ordering. Use `getNewCodexId` when identifying a book.
+
+---
+
+#### `Json` player.getCodex(`String` codexId)
+
+Returns a known book as `{id, species, title, description, icon, contentPages}`, or `nil` for an unknown ID. The icon includes the database's default and relative-path resolution. Reading this view does not unlock the book or mark it read.
+
+Content comes from the parsed Codex object held by the player, matching native reader behavior. Asset reload does not replace already held book content; this is not a fresh lookup into the reloaded asset database.
+
+---
+
+#### `Json[]` player.getCodexList()
+
+Returns known books as `{id, read}` entries in native reader order: unread before read, then by title. Equal titles are not unique identities; use `id` for selection. This query does not mark books read.
+
+---
+
+#### `String` player.getNewCodexId()
+
+Returns the stable ID of the native first unread codex, or `nil`. It uses the same unread choice as `getNewCodex`, without substituting its title. Call `markCodexRead` to acknowledge reading.
 
 ---
 

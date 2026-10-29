@@ -26,6 +26,7 @@ public:
   Json toJson() const;
 
   List<CodexEntry> codexes() const;
+  std::shared_ptr<Codex const> codex(String const& codexId) const;
 
   bool codexKnown(String const& codexId) const;
   [[nodiscard]] std::expected<std::shared_ptr<Codex const>, StarException> learnCodex(String const& codexId, bool markRead = false);

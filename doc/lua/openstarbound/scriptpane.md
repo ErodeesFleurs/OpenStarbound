@@ -269,6 +269,7 @@ preserving its native widgets and script storage. This is Lua manager policy,
 not a native pane flag. Explicit `ui.close`, registration replacement, scope
 expiry and interface shutdown destroy the instance, including one that is
 currently closed but retained.
+Toggling a displayed window uses ordinary dismissal and honors `retain`.
 
 Action mappings call `onAction(name, pressed, event)` and consume input only
 when the handler returns true. The manager preserves press/release pairing
@@ -277,8 +278,14 @@ presses with `event.cancelled = true`. Native TextBox routing remains available
 for unconsumed editing events. Event mappings invoke the named function with
 one payload; unmapped events invoke `onEvent(name, payload)`.
 
+`globalActions` maps engine action names to manager operations `"open"` or
+`"toggle"`, for example `{"InterfaceCodex": "toggle"}`. Unlike local `actions`,
+it can create an unopened instance and does not invoke `onAction`. Native
+keyboard capture and modal windows take precedence. Held-key repeats do not
+reapply the operation; press/release state survives controller reload.
+
 The public helpers in `/interface/opensb/ui/api.lua` provide
-`ui.register(id, definition)`, `ui.open(id)`, `ui.close(id)`, and
+`ui.register(id, definition)`, `ui.open(id)`, `ui.toggle(id)`, `ui.close(id)`, and
 `ui.send(id, event, payload)`. Requests are queued until the calling script
 returns. Events posted by a handler wait for a later delivery boundary, rather
 than recursively mutating interface state. Native registered IDs cannot be

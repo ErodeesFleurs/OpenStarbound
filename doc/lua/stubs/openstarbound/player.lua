@@ -328,9 +328,22 @@ function player.learnCodex(codexId, markRead) end
 ---@return Json
 function player.getCodexes() end
 
---- Returns the codex ID of the newest codex not read and `nil` otherwise. ---
----@return string
+--- Returns the title of the native first unread codex, or nil; use getNewCodexId for identity. ---
+---@return string?
 function player.getNewCodex() end
+
+--- Returns a known player-held parsed book, or nil. Does not unlock or mark read; held content survives asset database reload.
+---@param codexId string
+---@return {id:string, species:string, title:string, description:string, icon:string, contentPages:string[]}|nil
+function player.getCodex(codexId) end
+
+--- Returns known IDs/read flags in native unread-first, then title order.
+---@return {id:string, read:boolean}[]
+function player.getCodexList() end
+
+--- Returns the native first unread book's stable ID, or nil; does not acknowledge it.
+---@return string?
+function player.getNewCodexId() end
 
 --- Calls a function in the specified quest script. ---
 ---@param questId string

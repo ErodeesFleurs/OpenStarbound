@@ -10,6 +10,10 @@ function ui.open(id)
   interface.sendPaneEvent("$ui", "open", {id = id})
 end
 
+function ui.toggle(id)
+  interface.sendPaneEvent("$ui", "toggle", {id = id})
+end
+
 function ui.close(id)
   interface.sendPaneEvent("$ui", "close", {id = id})
 end

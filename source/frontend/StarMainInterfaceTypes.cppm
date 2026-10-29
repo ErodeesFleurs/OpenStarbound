@@ -48,7 +48,6 @@ namespace Star {
 enum class MainInterfacePanes {
   EscapeDialog,
   Inventory,
-  Codex,
   Cockpit,
   Tech,
   Ai,

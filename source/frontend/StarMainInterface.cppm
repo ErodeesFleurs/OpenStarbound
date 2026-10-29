@@ -109,7 +109,6 @@ class TeamBar;
 class ContainerPane;
 class CraftingPane;
 class MerchantPane;
-class CodexInterface;
 class Songbook;
 class QuestLogInterface;
 class AiInterface;
@@ -198,6 +197,7 @@ public:
   Json uiSession() const;
   [[nodiscard]] static std::expected<bool, StarException> paneIdAvailable(String const& id);
   [[nodiscard]] std::expected<JsonArray, StarException> paneInputTargets() const;
+  [[nodiscard]] std::expected<bool, StarException> paneLayerOccupied(String const& layer) const;
   [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> findRegisteredPane(String const& id);
   [[nodiscard]] std::expected<void, StarException> displayRegisteredPane(String const& id);
 
@@ -287,7 +287,6 @@ private:
   std::shared_ptr<CraftingPane> m_plainCraftingWindow;
   std::shared_ptr<CraftingPane> m_craftingWindow;
   std::shared_ptr<MerchantPane> m_merchantWindow;
-  std::shared_ptr<CodexInterface> m_codexInterface;
   std::shared_ptr<OptionsMenu> m_optionsMenu;
   std::shared_ptr<ContainerPane> m_containerPane;
   std::shared_ptr<ConfirmationDialog> m_confirmationDialog;
@@ -373,7 +372,6 @@ export namespace Star {
   using ::Star::ContainerPane;
   using ::Star::CraftingPane;
   using ::Star::MerchantPane;
-  using ::Star::CodexInterface;
   using ::Star::Songbook;
   using ::Star::QuestLogInterface;
   using ::Star::AiInterface;

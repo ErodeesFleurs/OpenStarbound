@@ -78,6 +78,12 @@ List<PlayerCodexes::CodexEntry> PlayerCodexes::codexes() const {
   return result;
 }
 
+std::shared_ptr<Codex const> PlayerCodexes::codex(String const& codexId) const {
+  if (auto entry = m_codexes.maybeRef(codexId))
+    return entry->get().first;
+  return {};
+}
+
 bool PlayerCodexes::codexKnown(String const& codexId) const {
   return m_codexes.contains(codexId);
 }

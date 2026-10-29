@@ -96,10 +96,20 @@ function UiManager:open(id)
   return true
 end
 
+function UiManager:toggle(id)
+  local pane = interface.bindRegisteredPane(id)
+  if pane and pane.isDisplayed() then
+    pane.dismiss()
+    self:close(id, self.definitions[id] and self.definitions[id].retain)
+    return true
+  end
+  return self:open(id)
+end
+
 function UiManager:close(id, retain)
   for key, action in pairs(self.pressed) do
     if action.id == id then
-      if self.state.open[id] and interface.bindRegisteredPane(id) then
+      if action.action and self.state.open[id] and interface.bindRegisteredPane(id) then
         interface.callPane(id, "onAction", {action.action, false, {type = "cancel", key = key, cancelled = true}})
       end
       self.pressed[key] = nil
@@ -154,6 +164,7 @@ function UiManager:flush()
         if message.event == "register" then self:register(message.payload.id, message.payload.definition)
         elseif message.event == "open" then self:open(message.payload.id)
         elseif message.event == "close" then self:close(message.payload.id)
+        elseif message.event == "toggle" then self:toggle(message.payload.id)
         else error("Unknown UI operation: " .. message.event) end
       else
         local definition = assert(self.definitions[message.id], "Unknown UI registration: " .. message.id)
@@ -190,9 +201,11 @@ function UiManager:input(event)
     local action = self.pressed[key]
     self.pressed[key] = nil
     if not action then return false end
-    if self.state.open[action.id] then interface.callPane(action.id, "onAction", {action.action, false, event}) end
+    if action.action and self.state.open[action.id] then interface.callPane(action.id, "onAction", {action.action, false, event}) end
     return true
   end
+  -- A held global toggle must not repeatedly close/open on native key repeat.
+  if self.pressed[key] and not self.pressed[key].action then return true end
   for _, id in ipairs(interface.paneInputTargets()) do
     local definition = self.definitions[id]
     local pane = self.state.open[id] and interface.bindRegisteredPane(id)
@@ -201,6 +214,22 @@ function UiManager:input(event)
         local action = definition.actions[engineAction]
         if action and interface.callPane(id, "onAction", {action, true, event}) then
           self.pressed[key] = {id = id, action = action}
+          return true
+        end
+      end
+    end
+  end
+  -- Native focus and modal barriers win even if their widgets declined the key.
+  -- This path runs only after local/native input, and can create unopened panes.
+  if event.keyboardCaptured or interface.paneLayerOccupied("ModalWindow") then return false end
+  for _, engineAction in ipairs(event.actions) do
+    for _, id in ipairs(self:ordered()) do
+      local definition = self.definitions[id]
+      local operation = definition.globalActions and definition.globalActions[engineAction]
+      if operation then
+        assert(operation == "open" or operation == "toggle", "Invalid global UI operation")
+        if self[operation](self, id) then
+          self.pressed[key] = {id = id}
           return true
         end
       end

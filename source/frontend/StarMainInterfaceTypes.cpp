@@ -69,7 +69,6 @@ namespace Star {
 extern std::expected<EnumMap<MainInterfacePanes>, StarException> const MainInterfacePanesNames = EnumMap<MainInterfacePanes>::create({
   {MainInterfacePanes::EscapeDialog, "EscapeDialog"},
   {MainInterfacePanes::Inventory, "Inventory"},
-  {MainInterfacePanes::Codex, "Codex"},
   {MainInterfacePanes::Cockpit, "Cockpit"},
   {MainInterfacePanes::Tech, "Tech"},
   {MainInterfacePanes::Ai, "Ai"},

@@ -27,7 +27,6 @@ Binds a native registered pane or a dynamically created string-ID pane to its pa
 <details><summary><b>Panes</b></summary>
 EscapeDialog<br>
 Inventory<br>
-Codex<br>
 Cockpit<br>
 Tech<br>
 Ai<br>
@@ -188,6 +187,26 @@ remain native services.
 Native `/swap` may reuse the current Songbook and continue its playback;
 discarding player-scoped UI does not add an implicit `songbook.stop()`.
 
+### Bundled codex
+
+The `"codex"` registration loads `/interface/opensb/codex/codex.config` as a
+player-scoped, retained `"Window"`, reusing the original species tabs, list,
+labels and paging buttons. Lua owns filtering, selection and paging; rows carry
+stable book IDs, including when identical titles or read-driven sorting change
+their positions. Empty books have no enabled page navigation.
+
+The main-bar button uses the generic manager toggle. The
+`globalActions.InterfaceCodex` registration opens or toggles the window even
+before an instance exists, without overriding native keyboard capture or modal
+barriers. Ordinary dismissal preserves species, book and page; world changes
+retain the window, while player changes and interface teardown destroy it.
+
+`/interface/opensb/codex/unread.lua` owns automatic unread opening. It waits while
+a modal window is present, selects the native first unread ID, and acknowledges
+it through `player.markCodexRead`. Reload does not replay already acknowledged
+books. Content parsing, unlocks, read flags and ordering remain native player
+domain services; known content follows the player's held Codex objects.
+
 ### Low-level instance bridge
 
 * `interface.createPane(id, config, layer)` constructs an undisplayed script
@@ -205,6 +224,9 @@ discarding player-scoped UI does not add an implicit `songbook.stop()`.
 * `interface.paneInputTargets()` returns dynamic IDs in current native input
   priority, including capture, layers, click-to-raise and modal barriers.
   The Lua manager uses this order rather than registration order for actions.
+* `interface.paneLayerOccupied(layer)` reports whether the native layer has
+  a top pane, including native windows. Layer names use the same spelling as
+  `createPane`; invalid names raise an error. It does not create an instance.
 * `interface.session()` returns `hasPlayer`, `inWorld`, `playerGeneration` and
   `worldGeneration`. Generations identify changes, not world or player IDs.
   Use `hasPlayer`/`inWorld` to test availability: unavailable session service

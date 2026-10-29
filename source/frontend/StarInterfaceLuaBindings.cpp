@@ -233,6 +233,10 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeInterfaceCallbacks(M
     if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
     return mainInterface.paneInputTargets();
   }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("paneLayerOccupied", [&mainInterface, lifetime](String const& layer) -> std::expected<bool, StarException> {
+    if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
+    return mainInterface.paneLayerOccupied(layer);
+  }); !r) return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallback("bindRegisteredPane", [&mainInterface, lifetime](String const& name) -> std::expected<std::optional<LuaCallbacks>, StarException> {
     if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
     auto pane = mainInterface.findRegisteredPane(name);

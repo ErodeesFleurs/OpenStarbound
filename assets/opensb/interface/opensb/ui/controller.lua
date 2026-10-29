@@ -1,4 +1,5 @@
 require "/interface/opensb/ui/manager.lua"
+require "/interface/opensb/codex/unread.lua"
 
 local manager
 
@@ -20,6 +21,11 @@ function open(id)
   return manager:open(id)
 end
 
+function toggle(id)
+  manager:flush()
+  return manager:toggle(id)
+end
+
 function input(event)
   return manager:input(event)
 end
@@ -30,6 +36,7 @@ end
 
 function update(dt)
   manager:update()
+  CodexUnread.update(manager)
 end
 
 function suspend(session)

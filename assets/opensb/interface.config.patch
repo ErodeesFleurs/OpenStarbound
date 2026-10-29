@@ -55,6 +55,15 @@
       "retain" : true,
       "open" : false,
       "order" : 60
+    },
+    "codex" : {
+      "config" : "/interface/opensb/codex/codex.config",
+      "layer" : "Window",
+      "scope" : "player",
+      "retain" : true,
+      "open" : false,
+      "order" : 70,
+      "globalActions" : {"InterfaceCodex" : "toggle"}
     }
   },
   "font" : {
