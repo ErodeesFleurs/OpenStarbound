@@ -31,10 +31,12 @@ struct Drawable {
     Line2F line;
     float width;
     std::optional<Color> endColor;
+    bool operator==(LinePart const&) const = default;
   };
 
   struct PolyPart {
     PolyF poly;
+    bool operator==(PolyPart const&) const = default;
   };
 
   struct ImagePart {
@@ -42,6 +44,7 @@ struct Drawable {
     // Transformation of the image in pixel space (0, 0) - (width, height) to
     // the final drawn space
     Mat3F transformation;
+    bool operator==(ImagePart const&) const = default;
 
     // Add directives to this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
@@ -116,6 +119,7 @@ struct Drawable {
   Vec2F position;
   Color color;
   bool fullbright;
+  bool operator==(Drawable const&) const = default;
 };
 
 [[nodiscard]] std::expected<std::reference_wrapper<DataStream>, StarException> operator>>(DataStream& ds, Drawable& drawable);

@@ -157,10 +157,17 @@ while excluding it from input dispatch, capture and hit testing.
 An interactive persistent HUD can set `dismissable: false` to disable the
 default GuiClose dismissal without consuming Esc or disabling pointer input.
 
-For Canvas tooltips, `createTooltip(screenPosition)` can return a label string
-or `nil`. Its argument is a screen position in interface pixels, not physical
-window pixels. Subtract `pane.getScreenPosition()` before comparing it with
-Canvas-local geometry.
+For Canvas tooltips, `createTooltip(screenPosition)` can return a label string,
+a GUI JSON definition, or `nil`. Its argument is a screen position in interface
+pixels, not physical window pixels. Subtract `pane.getScreenPosition()` before
+comparing it with Canvas-local geometry. The hook does not accept opaque
+native pane userdata.
+
+Without a custom result, native ItemGrid/ItemSlot children retain automatic
+item tooltips. Client UI panes consult the centralized `interface.itemTooltip`
+service, which uses the current UI player for armor and other previewable
+items. Standalone panes without that service keep the native no-viewer
+fallback. The host stores no window-specific player or tooltip factory.
 
 ### Consuming input
 

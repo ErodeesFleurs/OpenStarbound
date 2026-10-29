@@ -299,8 +299,21 @@ std::expected<std::shared_ptr<Pane>, StarException> BaseScriptPane::createToolti
       item = std::move(*selected);
     }
   }
-  if (item)
+  if (item) {
+    auto available = m_script.hasMethod("interface.itemTooltip");
+    if (!available) return std::unexpected(std::move(available.error()));
+    if (*available) {
+      auto handle = m_script.context()->createUserData(std::move(item));
+      if (!handle) return std::unexpected(std::move(handle.error()));
+      auto tooltip = m_script.invoke<LuaUserData>("interface.itemTooltip", *handle);
+      if (!tooltip) return std::unexpected(std::move(tooltip.error()));
+      if (!*tooltip) return std::unexpected(GuiException("Item tooltip service became unavailable"));
+      auto pane = (**tooltip).get<std::shared_ptr<Pane>>();
+      if (!pane) return std::unexpected(std::move(pane.error()));
+      return pane->get();
+    }
     return ItemTooltipBuilder::buildItemTooltip(context(), item);
+  }
   return std::shared_ptr<Pane>{};
 }
 

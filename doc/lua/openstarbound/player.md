@@ -577,15 +577,59 @@ Returns a list of all quest IDs the player has.
 
 ---
 
+#### `Json` player.questLogEntries(`Bool` completed)
+
+Returns `{entries, current?}`. `entries` contains native-ordered active or
+completed, show-in-log quests eligible for the current server. Each row has
+`id`, `title`, `main`, `unread`, `tracked`, `currentWorld` and
+`portraitRevision`. `current` is the optional effective current quest ID.
+`tracked` uses the manager's effective on-world-or-manual selection, not just
+the manually tracked ID returned by `currentQuestId()`.
+
+---
+
+#### `Maybe<Json>` player.questLogDetails(`String` questId, [`Integer` knownRevision], [`Integer` knownPortraitRevision], [`Integer` knownRewardsRevision])
+
+Returns `nil` for an unknown quest. Otherwise always returns `active`,
+`tracked`, `canAbandon`, `revision`, `portraitRevision` and `rewardsRevision`.
+The three revision arguments independently suppress unchanged categories:
+
+* `revision`: `title` and `text`.
+* `portraitRevision`: Objective `portraitTitle` and `portrait` drawables.
+* `rewardsRevision`: item `rewards` descriptors, including an empty array.
+
+Omit a known token to request that category. An invalidated absent portrait
+returns `portraitTitle = ""` and no `portrait`; clear any previous image.
+Control flags remain live even when all categories are unchanged. Tokens are
+opaque, process-local invalidation values, not persisted IDs or timestamps;
+same-ID native quest replacement invalidates cached categories.
+
+---
+
+#### `void` player.markQuestRead(`String` questId)
+
+Acknowledges the native quest read flag. Unknown IDs are ignored.
+
+---
+
+#### `Bool` player.abandonQuest(`String` questId)
+
+Returns `false` for unknown, inactive or non-abandonable quests. Otherwise
+invokes native abandonment and returns `true`. Native errors propagate;
+failure does not guarantee rollback of a quest script's state transition.
+
+---
+
 #### `Json` player.questObjectives(`String` questId)
 
 Returns the objectives for the specified quest.
 
 ---
 
-#### `String` player.questPortrait(`String` questId)
+#### `Maybe<JsonArray>` player.questPortrait(`String` questId, `String` portraitName)
 
-Returns the portrait for the specified quest.
+Returns native drawables for the named quest portrait, such as `"Objective"`
+or `"QuestStarted"`, or `nil` when absent.
 
 ---
 

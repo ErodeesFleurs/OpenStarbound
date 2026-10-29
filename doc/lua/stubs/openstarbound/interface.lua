@@ -37,6 +37,12 @@ function interface.bindCanvas(name, ignoreInterfaceScale) end
 ---@return number
 function interface.scale() end
 
+--- Internal native item-tooltip fallback service; uses the current UI player.
+--- Engine-produced opaque handles only, not item descriptors or createTooltip hook results.
+---@param item userdata
+---@return userdata
+function interface.itemTooltip(item) end
+
 --- Constructs an undisplayed generic script pane; Lua manages its lifetime.
 ---@param id string
 ---@param config Json

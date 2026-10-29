@@ -90,7 +90,7 @@ private:
   Root& m_root;
   [[nodiscard]] std::expected<void, StarException> startInitialQuests();
   void setMostRecentQuestCurrent();
-  bool questValidOnServer(std::shared_ptr<Quest> quest) const;
+  bool questValidOnServer(std::shared_ptr<Quest> const& quest) const;
 
   std::optional<std::reference_wrapper<Player>> m_player;
   std::optional<std::reference_wrapper<World>> m_world;

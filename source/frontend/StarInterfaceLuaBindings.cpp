@@ -117,6 +117,7 @@ import star.main_interface;
 
 
 import star.pane;
+import star.item;
 import star.lua_components;
 
 
@@ -196,6 +197,15 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeInterfaceCallbacks(M
     if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
     mainInterface.setHudVisible(visible);
     return {};
+  }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("itemTooltip", [&mainInterface, lifetime](LuaUserData const& handle) -> std::expected<LuaUserData, StarException> {
+    if (lifetime.stop_requested()) return std::unexpected(GuiException("Interface is detached"));
+    auto item = handle.get<std::shared_ptr<Item>>();
+    if (!item) return std::unexpected(std::move(item.error()));
+    auto tooltip = mainInterface.itemTooltip(item->get());
+    if (!tooltip) return std::unexpected(std::move(tooltip.error()));
+    return handle.engine().createUserData(std::move(*tooltip));
   }); !r)
     return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallback("bindCanvas", [&mainInterface, lifetime](String const& name, std::optional<bool> ignoreScale) -> std::expected<std::optional<std::shared_ptr<CanvasWidget>>, StarException> {

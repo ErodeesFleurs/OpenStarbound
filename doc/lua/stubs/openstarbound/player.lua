@@ -390,15 +390,60 @@ function player.quest(questId) end
 ---@return StringList
 function player.questIds() end
 
+---@class QuestLogEntry
+---@field id string
+---@field title string
+---@field main boolean
+---@field unread boolean
+---@field tracked boolean Effective on-world-or-manual selection.
+---@field currentWorld boolean
+---@field portraitRevision integer
+
+--- Native ordered, server-eligible active/completed show-in-log quests.
+---@param completed boolean
+---@return {entries:QuestLogEntry[], current?:string}
+function player.questLogEntries(completed) end
+
+---@class QuestLogDetails
+---@field active boolean
+---@field tracked boolean
+---@field canAbandon boolean
+---@field revision integer
+---@field portraitRevision integer
+---@field rewardsRevision integer
+---@field title? string Omitted when text revision is unchanged.
+---@field text? string
+---@field portraitTitle? string Empty when the invalidated portrait is absent.
+---@field portrait? Json[]
+---@field rewards? Json[] Empty clears previous item rewards.
+
+--- Live control flags plus independent text/portrait/reward deltas; tokens are process-local.
+---@param questId string
+---@param knownRevision? integer
+---@param knownPortraitRevision? integer
+---@param knownRewardsRevision? integer
+---@return QuestLogDetails?
+function player.questLogDetails(questId, knownRevision, knownPortraitRevision, knownRewardsRevision) end
+
+--- Acknowledges the native read flag; unknown IDs are ignored.
+---@param questId string
+function player.markQuestRead(questId) end
+
+--- False for unknown/inactive/denied quests; native errors propagate without a rollback guarantee.
+---@param questId string
+---@return boolean
+function player.abandonQuest(questId) end
+
 --- Returns the objectives for the specified quest. ---
 ---@param questId string
 ---@return Json
 function player.questObjectives(questId) end
 
---- Returns the portrait for the specified quest. ---
+--- Returns native drawables for the named portrait, or nil when absent.
 ---@param questId string
----@return string
-function player.questPortrait(questId) end
+---@param portraitName string
+---@return Json[]?
+function player.questPortrait(questId, portraitName) end
 
 --- Returns the state of the specified quest. ---
 ---@param questId string

@@ -604,6 +604,12 @@ std::expected<std::optional<Drawable>, StarException> LuaConverter<Drawable>::to
   if (!std::holds_alternative<LuaTable>(v))
     return std::nullopt;
   auto const& table = std::get<LuaTable>(v);
+  std::optional<Mat3F> transformation;
+  auto readTransformation = readFields(engine, table, "transformation", transformation);
+  if (!readTransformation)
+    return std::unexpected(std::move(readTransformation.error()));
+  if (!*readTransformation)
+    return std::nullopt;
   std::optional<Color> color;
   std::optional<Line2F> line;
   auto read = readFields(engine, table, "color", color, "line", line);
@@ -648,20 +654,19 @@ std::expected<std::optional<Drawable>, StarException> LuaConverter<Drawable>::to
       auto metadata = root->get().imageMetadataDatabase();
       if (!metadata)
         return std::unexpected(std::move(metadata.error()));
-      auto converted = Drawable::makeImage(**metadata, std::move(*image), 1.0f, centered.value_or(true), Vec2F(), color.value_or(Color::White));
+      auto converted = Drawable::makeImage(**metadata, std::move(*image), 1.0f, !transformation && centered.value_or(true), Vec2F(), color.value_or(Color::White));
       if (!converted)
         return std::unexpected(std::move(converted.error()));
       drawable = std::move(*converted);
     }
   }
-  std::optional<Mat3F> transformation;
-  auto readTransformation = readFields(engine, table, "transformation", transformation);
-  if (!readTransformation)
-    return std::unexpected(std::move(readTransformation.error()));
-  if (!*readTransformation)
-    return std::nullopt;
-  if (transformation)
-    drawable.transform(*transformation);
+  if (transformation) {
+    // Serialized image matrices already include centering.
+    if (auto image = std::get_if<Drawable::ImagePart>(&drawable.part))
+      image->transformation = *transformation;
+    else
+      drawable.transform(*transformation);
+  }
   std::optional<float> rotation;
   auto readRotation = readFields(engine, table, "rotation", rotation);
   if (!readRotation)

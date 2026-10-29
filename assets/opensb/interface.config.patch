@@ -65,6 +65,15 @@
       "order" : 70,
       "globalActions" : {"InterfaceCodex" : "toggle"}
     },
+    "QuestLog" : {
+      "config" : "/interface/opensb/questlog/questlog.config",
+      "layer" : "Window",
+      "scope" : "player",
+      "retain" : true,
+      "open" : false,
+      "order" : 75,
+      "globalActions" : {"InterfaceQuest" : "toggle"}
+    },
     "QuestTracker" : {
       "config" : "/interface/opensb/questtracker/questtracker.config",
       "layer" : "Hud",

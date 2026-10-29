@@ -110,7 +110,6 @@ class ContainerPane;
 class CraftingPane;
 class MerchantPane;
 class Songbook;
-class QuestLogInterface;
 class AiInterface;
 class ConfirmationDialog;
 class JoinRequestDialog;
@@ -150,6 +149,7 @@ public:
 
   MainInterfacePaneManager& paneManager();
   GuiContext& context() const;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> itemTooltip(std::shared_ptr<Item> const& item);
   // Escaped callbacks borrow this interface only until terminal close.
   std::stop_token callbackStopToken() const;
 
@@ -279,7 +279,6 @@ private:
   std::weak_ptr<TeamBar> m_teamBar;
   std::vector<std::weak_ptr<TeleportDialog>> m_teleportDialogs;
 
-  std::shared_ptr<QuestLogInterface> m_questLogInterface;
 
   std::shared_ptr<InventoryPane> m_inventoryWindow;
   std::shared_ptr<CraftingPane> m_plainCraftingWindow;
@@ -370,7 +369,6 @@ export namespace Star {
   using ::Star::CraftingPane;
   using ::Star::MerchantPane;
   using ::Star::Songbook;
-  using ::Star::QuestLogInterface;
   using ::Star::AiInterface;
   using ::Star::ConfirmationDialog;
   using ::Star::JoinRequestDialog;

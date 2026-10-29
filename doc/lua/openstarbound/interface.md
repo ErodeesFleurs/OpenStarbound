@@ -33,7 +33,6 @@ Ai<br>
 Confirmation<br>
 JoinRequest<br>
 Options<br>
-QuestLog<br>
 ActionBar<br>
 TeamBar<br>
 WireInterface<br>
@@ -63,6 +62,15 @@ Binds the canvas widget on the main interface with the specified name as userdat
 #### `float` interface.scale()
 
 Returns the scale used for interfaces.
+
+#### `NativePaneHandle` interface.itemTooltip(`NativeItemHandle` item)
+
+Internal client UI service used by script panes' native ItemGrid/ItemSlot
+tooltip fallback. It accepts an engine-produced opaque item userdata, not an
+item descriptor, and returns an owning opaque native pane userdata. The native
+builder uses the current UI player, including player-dependent armor previews.
+These handles are not JSON and cannot be persisted in script storage.
+This is not a return type supported by the Lua `createTooltip` hook.
 
 ## Lua-managed interface instances
 
@@ -205,6 +213,31 @@ a modal window is present, selects the native first unread ID, and acknowledges
 it through `player.markCodexRead`. Reload does not replay already acknowledged
 books. Content parsing, unlocks, read flags and ordering remain native player
 domain services; known content follows the player's held Codex objects.
+
+### Bundled quest log
+
+The canonical `"QuestLog"` registration loads
+`/interface/opensb/questlog/questlog.config` as a player-scoped, retained
+`"Window"`, reusing the original layout and named widgets. The main-bar button
+and `globalActions.InterfaceQuest` toggle it through the generic Lua manager;
+there is no native QuestLog window class or registration.
+
+Lua owns the active/completed filter, main/side lists, selection, read marks,
+details, tracking and abandon controls. Selection follows stable quest IDs,
+not row positions. Ordinary dismissal and reload retain the selected ID and
+filter; world changes retain the instance, while player changes and interface
+teardown destroy it. List queries refresh periodically; selected details use
+independent text, portrait and reward invalidation tokens.
+
+Rewards use a real native ItemGrid with ItemBag capacity **5**, independently
+of its two visible slots. Native stacking and tooltips remain in use. Objective
+portraits use the generic drawable setter with horizontal mirroring.
+Quest state, eligibility, ordering, rewards and abandonment remain native
+player-domain operations.
+
+Quest acceptance, completion and failure dialogs remain native modal panes.
+Their polling is independent of opening the log and preserves the existing
+modal guard, failure/completion/offer priority and acknowledgments.
 
 ### Bundled quest tracker
 

@@ -12,6 +12,22 @@ function widget.setDrawingOffset(widgetName, offset) end
 ---@param enabled boolean
 function widget.setScissoringEnabled(widgetName, enabled) end
 
+--- Runs a native Layout update with zero elapsed time after geometry changes.
+---@param widgetName string
+function widget.refreshLayout(widgetName) end
+
+--- Replaces native ImageWidget drawables; an empty array clears them.
+---@param widgetName string
+---@param drawables Json[]
+---@param scale? Vec2F Optional transform of all drawable geometry.
+function widget.setImageDrawables(widgetName, drawables, scale) end
+
+--- Assigns a native display ItemBag; stacking rules apply without changing inventory.
+---@param widgetName string
+---@param items Json[]
+---@param capacity? integer Defaults to visible slot count, not an implicit larger bag.
+function widget.setItemGridItems(widgetName, items, capacity) end
+
 --- Gets the hint text of a TextBoxWidget. ---
 ---@param widgetName string
 ---@return string

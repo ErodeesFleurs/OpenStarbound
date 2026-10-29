@@ -44,52 +44,12 @@ namespace Star {
 class QuestManager;
 class Player;
 class Cinematic;
-class UniverseClient;
 class PaneManager;
-class ItemBag;
 class Quest;
 
-class QuestLogInterface : public Pane {
-public:
-  void const* queryType(TypeKey key) const noexcept override {
-    return queryTypeOf<QuestLogInterface, Pane>(this, key);
-  }
-  std::string_view dynamicTypeName() const noexcept override {
-    return Star::typeName<QuestLogInterface>();
-  }
-
-  [[nodiscard]] static std::expected<std::shared_ptr<QuestLogInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client);
-  virtual ~QuestLogInterface() {}
-
-  [[nodiscard]] std::expected<void, StarException> displayed() override;
-  [[nodiscard]] std::expected<void, StarException> tick(float dt) override;
-  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
-
-  [[nodiscard]] std::expected<void, StarException> fetchData();
-
-  [[nodiscard]] std::expected<void, StarException> pollDialog(PaneManager& paneManager);
-
-private:
-  QuestLogInterface(GuiContext& guiContext, std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client);
-  [[nodiscard]] std::expected<void, StarException> initialize();
-  [[nodiscard]] std::expected<std::shared_ptr<Widget>, StarException> getSelected();
-  [[nodiscard]] std::expected<void, StarException> setSelected(std::shared_ptr<Widget> selected);
-  [[nodiscard]] std::expected<void, StarException> toggleTracking();
-  [[nodiscard]] std::expected<void, StarException> abandon();
-  [[nodiscard]] std::expected<void, StarException> showQuests(List<std::shared_ptr<Quest>> quests);
-
-  std::shared_ptr<QuestManager> m_manager;
-  std::shared_ptr<Player> m_player;
-  std::shared_ptr<Cinematic> m_cinematic;
-  std::shared_ptr<UniverseClient> m_client;
-
-  String m_trackLabel;
-  String m_untrackLabel;
-
-  std::shared_ptr<ItemBag> m_rewardItems;
-  int m_refreshRate;
-  int m_refreshTimer;
-};
+[[nodiscard]] std::expected<void, StarException> pollQuestDialog(GuiContext& context, PaneManager& paneManager,
+    std::shared_ptr<QuestManager> const& manager, std::shared_ptr<Player> const& player,
+    std::shared_ptr<Cinematic> const& cinematic);
 
 class QuestPane : public Pane {
 public:
@@ -187,11 +147,9 @@ export namespace Star {
   using ::Star::QuestManager;
   using ::Star::Player;
   using ::Star::Cinematic;
-  using ::Star::UniverseClient;
   using ::Star::PaneManager;
-  using ::Star::ItemBag;
   using ::Star::Quest;
-  using ::Star::QuestLogInterface;
+  using ::Star::pollQuestDialog;
   using ::Star::QuestPane;
   using ::Star::NewQuestInterface;
   using ::Star::QuestCompleteInterface;

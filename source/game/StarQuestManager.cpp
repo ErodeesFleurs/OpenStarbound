@@ -197,14 +197,16 @@ void sortQuests(List<std::shared_ptr<Quest>>& quests) {
   });
 }
 List<std::shared_ptr<Quest>> QuestManager::listActiveQuests() const {
-  auto result = serverQuests().values();
-  result.filter([](auto const& quest) { return quest->state() == QuestState::Active && quest->showInLog(); });
+  List<std::shared_ptr<Quest>> result;
+  for (auto const& [id, quest] : m_quests)
+    if (quest->state() == QuestState::Active && quest->showInLog() && questValidOnServer(quest)) result.append(quest);
   sortQuests(result);
   return result;
 }
 List<std::shared_ptr<Quest>> QuestManager::listCompletedQuests() const {
-  auto result = serverQuests().values();
-  result.filter([](auto const& quest) { return quest->state() == QuestState::Complete && quest->showInLog(); });
+  List<std::shared_ptr<Quest>> result;
+  for (auto const& [id, quest] : m_quests)
+    if (quest->state() == QuestState::Complete && quest->showInLog() && questValidOnServer(quest)) result.append(quest);
   sortQuests(result);
   return result;
 }
@@ -387,7 +389,7 @@ void QuestManager::setMostRecentQuestCurrent() {
   auto active = listActiveQuests();
   if (!active.empty()) setAsTracked(active[active.size() - 1]->questId());
 }
-bool QuestManager::questValidOnServer(std::shared_ptr<Quest> q) const {
+bool QuestManager::questValidOnServer(std::shared_ptr<Quest> const& q) const {
   return !(q->hideCrossServer() && q->serverUuid()
       && (!m_player || *q->serverUuid() != m_player->get().clientContext()->serverUuid()));
 }

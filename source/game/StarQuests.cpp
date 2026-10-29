@@ -199,11 +199,21 @@ extern std::expected<EnumMap<QuestState>, StarException> const QuestStateNames =
   {QuestState::Complete, "Complete"}, {QuestState::Failed, "Failed"}
 });
 
+namespace {
+std::uint64_t nextQuestPresentationRevision() {
+  // Replacing a quest with the same stable ID must invalidate its consumers,
+  // even when neither old nor new object has received a script mutation.
+  static std::atomic<std::uint64_t> revision{0};
+  return revision.fetch_add(1, std::memory_order_relaxed) + 1;
+}
+}
+
 Quest::Quest(Root& root)
   : m_root(root),
     m_state(QuestState::New), m_inited(false), m_showDialog(false), m_arcPos(0),
     m_displayParameters{}, m_money(0), m_lastUpdatedOn(0),
-    m_unread(true), m_canTurnIn(false), m_scriptComponent(root) {}
+    m_unread(true), m_canTurnIn(false), m_presentationRevision(nextQuestPresentationRevision()),
+    m_portraitRevision(m_presentationRevision), m_rewardsRevision(m_presentationRevision), m_scriptComponent(root) {}
 
 std::expected<std::shared_ptr<Quest>, StarException> Quest::create(Root& root, QuestArcDescriptor const& arc, std::size_t arcPos, Player& player) {
   auto quest = std::shared_ptr<Quest>(new Quest(root));
@@ -590,11 +600,11 @@ std::expected<bool, StarException> Quest::interactWithEntity(EntityId entity) {
 }
 
 String Quest::questId() const {
-  return questDescriptor().questId;
+  return m_arc.quests[m_arcPos].questId;
 }
 
 String Quest::templateId() const {
-  return questDescriptor().templateId;
+  return m_arc.quests[m_arcPos].templateId;
 }
 
 StringMap<QuestParam> const& Quest::parameters() const {
@@ -685,8 +695,20 @@ std::size_t Quest::money() const {
   return m_money;
 }
 
-List<std::shared_ptr<Item const>> Quest::rewards() const {
+List<std::shared_ptr<Item const>> const& Quest::rewards() const {
   return m_rewards;
+}
+
+std::uint64_t Quest::presentationRevision() const {
+  return m_presentationRevision;
+}
+
+std::uint64_t Quest::portraitRevision() const {
+  return m_portraitRevision;
+}
+
+std::uint64_t Quest::rewardsRevision() const {
+  return m_rewardsRevision;
 }
 
 std::int64_t Quest::lastUpdatedOn() const {
@@ -997,30 +1019,46 @@ std::expected<LuaCallbacks, StarException> Quest::makeQuestCallbacks(Player& pla
     return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallback("setCompassDirection", [&quest = *this](std::optional<float> const& value) { quest.setCompassDirection(value); }); !r)
     return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallback("setTitle", [&quest = *this](String const& value) { quest.m_title = value; }); !r)
+  if (auto r = callbacks.registerCallback("setTitle", [&quest = *this](String const& value) {
+    if (quest.m_title != value) { quest.m_title = value; quest.m_presentationRevision = nextQuestPresentationRevision(); }
+  }); !r)
     return std::unexpected(std::move(r.error()));
-  if (auto r = callbacks.registerCallback("setText", [&quest = *this](String const& value) { quest.m_text = value; }); !r)
+  if (auto r = callbacks.registerCallback("setText", [&quest = *this](String const& value) {
+    if (quest.m_text != value) { quest.m_text = value; quest.m_presentationRevision = nextQuestPresentationRevision(); }
+  }); !r)
     return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallback("setCompletionText", [&quest = *this](String const& value) { quest.m_completionText = value; }); !r)
     return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallback("setFailureText", [&quest = *this](String const& value) { quest.m_failureText = value; }); !r)
     return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallback("setPortrait", [&quest = *this](String const& name, std::optional<JsonArray> const& portrait) -> std::expected<void, StarException> {
-    if (!portrait) { quest.m_portraits.remove(name); return {}; }
+    if (!portrait) {
+      if (quest.m_portraits.contains(name)) {
+        quest.m_portraits.remove(name);
+        quest.m_portraitRevision = nextQuestPresentationRevision();
+      }
+      return {};
+    }
     auto metadata = quest.m_root.imageMetadataDatabase();
     if (!metadata) return std::unexpected(std::move(metadata.error()));
     List<Drawable> result;
+    result.reserve(portrait->size());
     for (auto const& json : *portrait) {
       auto drawable = Drawable::create(**metadata, json);
       if (!drawable) return std::unexpected(std::move(drawable.error()));
       result.append(std::move(*drawable));
     }
+    if (auto previous = quest.m_portraits.maybeRef(name); previous && previous->get() == result) return {};
     quest.m_portraits[name] = std::move(result);
+    quest.m_portraitRevision = nextQuestPresentationRevision();
     return {};
   }); !r) return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallback("setPortraitTitle", [&quest = *this](String const& name, std::optional<String> const& title) {
+    auto previous = quest.m_portraitTitles.maybeRef(name);
+    if ((!previous && !title) || (previous && title && previous->get() == *title)) return;
     if (title) quest.m_portraitTitles[name] = *title;
     else quest.m_portraitTitles.remove(name);
+    quest.m_portraitRevision = nextQuestPresentationRevision();
   }); !r) return std::unexpected(std::move(r.error()));
   if (auto r = callbacks.registerCallback("addReward", [&quest = *this](Json const& reward) -> std::expected<void, StarException> {
     auto descriptor = ItemDescriptor::create(reward);
@@ -1062,6 +1100,7 @@ std::expected<void, StarException> Quest::addReward(ItemDescriptor const& reward
   auto item = (*database)->item(reward);
   if (!item) return std::unexpected(std::move(item.error()));
   m_rewards.append(*item);
+  m_rewardsRevision = nextQuestPresentationRevision();
   return {};
 }
 

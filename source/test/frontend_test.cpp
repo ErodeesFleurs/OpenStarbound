@@ -51,6 +51,14 @@ import star.image_widget;
 import star.image_stretch_widget;
 import star.progress_widget;
 import star.math_common;
+import star.item;
+import star.item_database;
+import star.drawable;
+import star.quest_interface;
+import star.world_server;
+import star.casting;
+import star.vertical_layout;
+import star.logging;
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
@@ -2579,6 +2587,531 @@ const GameTestRegistration questTrackerPresentation("LuaQuestTracker", "Effectiv
   ASSERT_TRUE(finished) << finished.error().what();
   EXPECT_EQ(*finished, (Json(JsonArray{"zztracker", true})));
   ASSERT_TRUE(panes.dismissAllPanes());
+});
+
+const GameTestRegistration drawableGeometry("LuaDrawable", "SerializedImagesPreserveGeometryWithoutDoubleCentering", [](GameTest& fixture) {
+  auto luaRoot = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto context = (*luaRoot)->createContext(StringList{});
+  ASSERT_TRUE(context) << context.error().what();
+  auto metadata = fixture.root().imageMetadataDatabase();
+  ASSERT_TRUE(metadata) << metadata.error().what();
+  auto native = Drawable::create(**metadata, JsonObject{
+      {"image", "/objects/outpost/techlab/techlabscientistportrait.png"},
+      {"position", JsonArray{7, 11}}, {"mirrored", true}, {"scale", 2}});
+  ASSERT_TRUE(native) << native.error().what();
+  auto imagePoint = [](Drawable const& drawable, Vec2F point) {
+    return std::get<Drawable::ImagePart>(drawable.part).transformation.transformVec2(point) + drawable.position;
+  };
+  auto expectGeometry = [&](Drawable const& actual) {
+    ASSERT_TRUE(std::holds_alternative<Drawable::ImagePart>(actual.part));
+    for (auto point : {Vec2F{0, 0}, Vec2F{36, 0}, Vec2F{0, 36}})
+      EXPECT_EQ(imagePoint(actual, point), imagePoint(*native, point));
+  };
+
+  // QuestStarted portraits cross the native Drawable -> Lua -> Drawable boundary.
+  ASSERT_TRUE(context->set("portrait", *native));
+  auto portrait = context->eval<Drawable>("return portrait");
+  ASSERT_TRUE(portrait) << portrait.error().what();
+  expectGeometry(*portrait);
+
+  // Quest detail JSON carries the same absolute image transformation.
+  auto json = native->toJson();
+  ASSERT_TRUE(json) << json.error().what();
+  ASSERT_TRUE(context->set("portraitJson", *json));
+  auto portraitJson = context->eval<Drawable>("return portraitJson");
+  ASSERT_TRUE(portraitJson) << portraitJson.error().what();
+  expectGeometry(*portraitJson);
+
+  // Authored Lua without an explicit matrix must retain default centering.
+  auto authored = context->eval<Drawable>(R"LUA(
+    return {image="/objects/outpost/techlab/techlabscientistportrait.png",
+      position={7,11}, mirrored=true, scale=2}
+  )LUA");
+  ASSERT_TRUE(authored) << authored.error().what();
+  expectGeometry(*authored);
+});
+
+const GameTestRegistration questLogPresentation("LuaQuestLog", "StableSelectionReadOrderPresentationDeltasReplacementReloadAndPlayerScope", [](GameTest& fixture) {
+  auto directory = File::temporaryDirectory(fixture.root().random());
+  ASSERT_TRUE(directory) << directory.error().what();
+  auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directory)); });
+  auto overlay = File::relativeTo(*directory, "assets");
+  ASSERT_TRUE(File::makeDirectory(overlay));
+  ASSERT_TRUE(File::writeFile(String(R"LUA(
+    function mutate()
+      quest.setTitle("Changed title")
+      quest.setText("Changed body")
+      quest.setPortrait("Objective", {{line={{1,2},{5,9}},width=2}})
+      quest.setPortrait("QuestStarted", {{line={{3,4},{6,8}},width=1}})
+      quest.setPortraitTitle("Objective", "Changed portrait")
+      quest.addReward({name="dirtmaterial",count=1})
+    end
+    function unchanged()
+      quest.setTitle("Changed title")
+      quest.setText("Changed body")
+      quest.setPortrait("Objective", {{line={{1,2},{5,9}},width=2}})
+      quest.setPortrait("QuestStarted", {{line={{3,4},{6,8}},width=1}})
+      quest.setPortraitTitle("Objective", "Changed portrait")
+    end
+    function textOnly() quest.setText("Text-only change") end
+    function clearPortrait() quest.setPortrait("Objective", nil) end
+    function enableAbandonError() storage.failAbandon = true end
+    function questFail(abandoned)
+      if abandoned and storage.failAbandon then error("questlog abandon regression") end
+    end
+  )LUA"), File::relativeTo(overlay, "zzlog.lua")));
+  for (auto const& id : {String("zzlog-a"), String("zzlog-b"), String("zzlog-side"), String("zzlog-complete"), String("zzlog-hidden")}) {
+    Json config = JsonObject{{"id", id}, {"title", "Duplicate"}, {"text", id},
+        {"mainQuest", id == "zzlog-a" || id == "zzlog-b"},
+        {"script", "/zzlog.lua"}, {"canBeAbandoned", id != "zzlog-a"}, {"showInLog", id != "zzlog-hidden"}};
+    auto printed = config.printJson();
+    ASSERT_TRUE(printed) << printed.error().what();
+    ASSERT_TRUE(File::writeFile(*printed, File::relativeTo(overlay, id + ".questtemplate")));
+  }
+  auto settings = fixture.rootSettings();
+  settings.assetSources.append(overlay);
+  settings.storageDirectory = File::relativeTo(*directory, "storage");
+  settings.runtimeConfigFile = String("questlog.config");
+  settings.logDirectory = {};
+  settings.logFile = {};
+  settings.includeUGC = false;
+  auto createdRoot = Root::create(settings);
+  ASSERT_TRUE(createdRoot) << createdRoot.error().what();
+  auto& root = **createdRoot;
+  class Errors : public LogSink {
+  public:
+    Errors() { setLevel(LogLevel::Error); }
+    std::expected<void, StarException> log(std::string_view message, LogLevel) override {
+      messages.emplace_back(message);
+      return {};
+    }
+    std::vector<std::string> messages;
+  };
+  auto errors = std::make_shared<Errors>();
+  root.logger().addSink(errors);
+  auto configuration = root.configuration();
+  ASSERT_TRUE(configuration);
+  ASSERT_TRUE((*configuration)->set("bindings", JsonObject{}));
+  auto context = GuiContext::create(root, {}, {});
+  ASSERT_TRUE(context) << context.error().what();
+  auto luaRoot = LuaRoot::create(root);
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto factory = root.playerFactory();
+  ASSERT_TRUE(factory) << factory.error().what();
+  auto player = (*factory)->create();
+  ASSERT_TRUE(player) << player.error().what();
+  auto versions = root.versioningDatabase();
+  ASSERT_TRUE(versions) << versions.error().what();
+  auto items = root.itemDatabase();
+  ASSERT_TRUE(items) << items.error().what();
+  auto reward = (*items)->fromJson(JsonObject{{"name", "dirtmaterial"}, {"count", 2003}, {"parameters", JsonObject{}}});
+  ASSERT_TRUE(reward && *reward);
+  auto rewardStore = (*items)->diskStore(*reward);
+  ASSERT_TRUE(rewardStore) << rewardStore.error().what();
+  Json portrait = JsonObject{{"line", JsonArray{JsonArray{2, 3}, JsonArray{7, 11}}}, {"width", 1}};
+  JsonObject storedQuests;
+  int updated = 0;
+  for (auto const& id : {String("zzlog-a"), String("zzlog-side"), String("zzlog-b"), String("zzlog-complete"), String("zzlog-hidden")}) {
+    auto arc = QuestArcDescriptor::fromJson(root, JsonObject{{"quests", JsonArray{
+        JsonObject{{"questId", id}, {"templateId", id}, {"parameters", JsonObject{}}}}}});
+    ASSERT_TRUE(arc) << arc.error().what();
+    auto storedArc = arc->diskStore(root);
+    ASSERT_TRUE(storedArc) << storedArc.error().what();
+    auto stored = (*versions)->makeCurrentVersionedJson("Quest", JsonObject{
+        {"state", id == "zzlog-complete" ? Json("Complete") : Json("Active")}, {"arc", *storedArc},
+        {"arcPos", 0}, {"parameters", JsonObject{}}, {"money", 0}, {"lastUpdatedOn", ++updated},
+        {"rewards", JsonArray{*rewardStore, *rewardStore}},
+        {"portraits", JsonObject{{"Objective", JsonArray{portrait}}, {"QuestStarted", JsonArray{portrait}}}},
+        {"portraitTitles", JsonObject{{"Objective", id}}}});
+    ASSERT_TRUE(stored) << stored.error().what();
+    storedQuests.set(id, stored->toJson());
+  }
+  auto domain = (*player)->questManager();
+  ASSERT_TRUE(domain->diskLoad(JsonObject{{"quests", storedQuests}, {"currentQuest", "zzlog-b"}}));
+  auto playerCallbacks = LuaBindings::makePlayerCallbacks(root, **player);
+  ASSERT_TRUE(playerCallbacks) << playerCallbacks.error().what();
+  auto probe = (*luaRoot)->createContext(StringList{});
+  ASSERT_TRUE(probe) << probe.error().what();
+  ASSERT_TRUE(probe->setCallbacks("player", *playerCallbacks));
+  auto entries = probe->eval<Json>("local s = player.questLogEntries(false); return {s.entries[1].id,s.entries[2].id,s.entries[3].id,#s.entries,s.current}");
+  ASSERT_TRUE(entries) << entries.error().what();
+  EXPECT_EQ(*entries, (Json(JsonArray{"zzlog-a", "zzlog-side", "zzlog-b", 3, "zzlog-b"})));
+  auto blocked = probe->eval<Json>("return {player.abandonQuest('zzlog-a'),player.abandonQuest('missing'),player.abandonQuest('zzlog-complete')}");
+  ASSERT_TRUE(blocked) << blocked.error().what();
+  EXPECT_EQ(*blocked, (Json(JsonArray{false, false, false})));
+
+  auto assets = root.assets();
+  ASSERT_TRUE(assets);
+  auto config = (*assets)->json("/interface/opensb/questlog/questlog.config");
+  ASSERT_TRUE(config) << config.error().what();
+  auto paneConfig = config->toObject();
+  ASSERT_TRUE(paneConfig);
+  paneConfig->set("gui", JsonObject{});
+  auto createdPane = ScriptTestPane::create(**context, *paneConfig);
+  ASSERT_TRUE(createdPane) << createdPane.error().what();
+  auto pane = std::move(*createdPane);
+  pane->setAnchor(PaneAnchor::BottomLeft);
+  ASSERT_TRUE(pane->setLuaRoot(*luaRoot));
+  ASSERT_TRUE(pane->addCallbacks("player", *playerCallbacks));
+  for (auto const& name : {String("lblQuestTitle"), String("lblQuestBody"), String("lblPortraitTitle")}) {
+    auto text = textEditor(**context, "");
+    ASSERT_TRUE(text);
+    (*text)->setMaxWidth(-1);
+    ASSERT_TRUE(pane->addChild(name, *text));
+  }
+  for (auto const& name : {String("btnToggleTracking"), String("btnAbandon")}) {
+    auto button = ButtonWidget::create(**context);
+    ASSERT_TRUE(button);
+    ASSERT_TRUE(pane->addChild(name, *button));
+  }
+  for (auto const& name : {String("imgPortrait"), String("imgPolaroid"), String("imgPolaroidBack"), String("lblRewards")}) {
+    auto image = ImageWidget::create(**context, "");
+    ASSERT_TRUE(image);
+    ASSERT_TRUE(pane->addChild(name, *image));
+  }
+  // Native ItemGrid construction requires renderInit even with empty slot art.
+  // Real grid stacking, capacity and tooltips are exercised by the GL smoke.
+  auto group = std::make_shared<ButtonGroupWidget>(**context);
+  for (auto const& entry : {std::pair{0, String("inProgress")}, std::pair{1, String("completed")}}) {
+    auto button = ButtonWidget::create(**context);
+    ASSERT_TRUE(button);
+    (*button)->setData(entry.second);
+    (*button)->setButtonGroup(group, entry.first);
+    ASSERT_TRUE(group->addChild(entry.second, *button));
+  }
+  ASSERT_TRUE(group->select(0));
+  ASSERT_TRUE(pane->addChild("filter", group));
+  auto scroll = std::make_shared<Widget>(**context);
+  auto layout = std::make_shared<VerticalLayout>(**context);
+  layout->setFillDown(true);
+  auto schema = Json::parseJson(R"JSON({
+    "spacing":[0,1],"memberSize":[150,19],
+    "listTemplate":{
+      "lblQuestEntry":{"type":"textbox","maxWidth":-1},
+      "imgPortrait":{"type":"image","file":""},
+      "imgNew":{"type":"image","file":""},
+      "imgTracked":{"type":"image","file":""},
+      "imgCurrent":{"type":"image","file":""}
+    }
+  })JSON");
+  ASSERT_TRUE(schema);
+  for (auto const& name : {String("mainQuestList"), String("sideQuestList")}) {
+    auto list = ListWidget::create(**context, *schema);
+    ASSERT_TRUE(list);
+    (*list)->setPosition({0, name == "mainQuestList" ? 3 : 1});
+    (*list)->registerMemberCallback("lblQuestEntry", [](Widget&) -> std::expected<void, StarException> { return {}; });
+    (*list)->setCallback([&, name](Widget&) -> std::expected<void, StarException> {
+      auto called = pane->call(name, {});
+      if (!called) return std::unexpected(std::move(called.error()));
+      return {};
+    });
+    ASSERT_TRUE(layout->addChild(name, *list));
+  }
+  auto mainHeader = std::make_shared<Widget>(**context);
+  auto sideHeader = std::make_shared<Widget>(**context);
+  mainHeader->setPosition({0, 4});
+  sideHeader->setPosition({0, 2});
+  mainHeader->setSize({100, 15});
+  sideHeader->setSize({100, 15});
+  ASSERT_TRUE(layout->addChild("mainQuestHeader", mainHeader));
+  ASSERT_TRUE(layout->addChild("sideQuestHeader", sideHeader));
+  ASSERT_TRUE(scroll->addChild("verticalLayout", layout));
+  ASSERT_TRUE(pane->addChild("scrollArea", scroll));
+  PaneManager panes(**context);
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Window, pane, {}));
+  auto main = pane->fetchChild<ListWidget>("scrollArea.verticalLayout.mainQuestList");
+  auto side = pane->fetchChild<ListWidget>("scrollArea.verticalLayout.sideQuestList");
+  auto body = pane->fetchChild<TextBoxWidget>("lblQuestBody");
+  auto portraitTitle = pane->fetchChild<TextBoxWidget>("lblPortraitTitle");
+  ASSERT_TRUE(main && *main && side && *side && body && *body && portraitTitle && *portraitTitle);
+  ASSERT_EQ((*main)->listSize(), 2u);
+  ASSERT_EQ((*side)->listSize(), 1u);
+  EXPECT_EQ((*main)->itemAt(0)->data(), Json("zzlog-a"));
+  EXPECT_EQ((*main)->itemAt(1)->data(), Json("zzlog-b"));
+  ASSERT_TRUE((*main)->selectedWidget());
+  EXPECT_EQ((*main)->selectedWidget()->data(), Json("zzlog-b"));
+  EXPECT_EQ((*body)->getText(), String("zzlog-b"));
+  auto selectedQuest = domain->getQuest("zzlog-b");
+  auto lockedQuest = domain->getQuest("zzlog-a");
+  ASSERT_TRUE(selectedQuest && lockedQuest);
+  EXPECT_FALSE((*selectedQuest)->unread());
+  EXPECT_TRUE((*lockedQuest)->unread());
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  auto compact = probe->eval<Json>("local q = player.questLogDetails('zzlog-b'); local s = player.questLogDetails('zzlog-b',q.revision,q.portraitRevision,q.rewardsRevision); return {s.title == nil,s.rewards == nil,s.portrait == nil,s.active,s.tracked}");
+  ASSERT_TRUE(compact) << compact.error().what();
+  EXPECT_EQ(*compact, (Json(JsonArray{true, true, true, true, true})));
+  ASSERT_TRUE((*main)->clearSelected());
+  EXPECT_EQ((*body)->getText(), String(""));
+  ASSERT_TRUE((*side)->setSelected(0));
+  EXPECT_FALSE((*main)->selectedWidget());
+  EXPECT_EQ((*body)->getText(), String("zzlog-side"));
+  ASSERT_TRUE(pane->call("btnToggleTracking", {}));
+  EXPECT_EQ(domain->currentQuestId(), std::optional<String>("zzlog-side"));
+  ASSERT_TRUE(pane->call("btnToggleTracking", {}));
+  EXPECT_FALSE(domain->currentQuestId());
+  ASSERT_TRUE((*main)->setSelected(0));
+  EXPECT_FALSE((*side)->selectedWidget());
+  EXPECT_FALSE((*lockedQuest)->unread());
+  ASSERT_TRUE(pane->call("btnAbandon", {}));
+  EXPECT_TRUE(domain->isActive("zzlog-a"));
+  {
+    auto storage = File::ephemeralFile(root.random());
+    ASSERT_TRUE(storage) << storage.error().what();
+    auto world = WorldServer::create(root, Vec2U(2048, 2048), *storage);
+    ASSERT_TRUE(world) << world.error().what();
+    auto closeWorld = finally([&] { EXPECT_TRUE((*world)->close()); });
+    ASSERT_TRUE((*lockedQuest)->init(**player, **world, {}));
+    auto uninitQuest = finally([&] { EXPECT_TRUE((*lockedQuest)->uninit()); });
+    auto failingQuest = domain->getQuest("zzlog-side");
+    ASSERT_TRUE(failingQuest);
+    ASSERT_TRUE((*failingQuest)->init(**player, **world, {}));
+    auto uninitFailingQuest = finally([&] { EXPECT_TRUE((*failingQuest)->uninit()); });
+    ASSERT_TRUE((*failingQuest)->callScript("enableAbandonError", {}));
+    auto rejected = probe->eval<Json>("local ok,err=pcall(player.abandonQuest,'zzlog-side'); return {ok,tostring(err):find('questlog abandon regression',1,true)~=nil}");
+    ASSERT_TRUE(rejected) << rejected.error().what();
+    EXPECT_EQ(*rejected, (Json(JsonArray{false, true})));
+    EXPECT_EQ((*failingQuest)->state(), QuestState::Failed);
+    ASSERT_EQ(errors->messages.size(), 1u);
+    EXPECT_NE(errors->messages.front().find("questlog abandon regression"), std::string::npos);
+    auto before = (*lockedQuest)->presentationRevision();
+    ASSERT_TRUE((*lockedQuest)->callScript("mutate", {}));
+    EXPECT_NE((*lockedQuest)->presentationRevision(), before);
+    ASSERT_TRUE(pane->tick(1.0f / 60));
+    EXPECT_EQ((*body)->getText(), String("Changed body"));
+    EXPECT_EQ((*portraitTitle)->getText(), String("Changed portrait"));
+    auto after = (*lockedQuest)->presentationRevision();
+    ASSERT_TRUE((*lockedQuest)->callScript("unchanged", {}));
+    EXPECT_EQ((*lockedQuest)->presentationRevision(), after);
+    ASSERT_TRUE(pane->tick(1.0f / 60));
+    ASSERT_TRUE(probe->eval<LuaValue>("prior = player.questLogDetails('zzlog-a')"));
+    ASSERT_TRUE((*lockedQuest)->callScript("textOnly", {}));
+    ASSERT_TRUE(pane->tick(1.0f / 60));
+    EXPECT_EQ((*body)->getText(), String("Text-only change"));
+    auto delta = probe->eval<Json>("local q=player.questLogDetails('zzlog-a',prior.revision,prior.portraitRevision,prior.rewardsRevision); return {q.text,q.rewards==nil,q.portrait==nil}");
+    ASSERT_TRUE(delta) << delta.error().what();
+    EXPECT_EQ(*delta, (Json(JsonArray{"Text-only change", true, true})));
+    ASSERT_TRUE(pane->call("filter", {}));
+    auto row = (*main)->selectedWidget()->fetchChild<TextBoxWidget>("lblQuestEntry");
+    ASSERT_TRUE(row && *row);
+    EXPECT_EQ((*row)->getText(), String("Changed title"));
+    auto parsed = probe->eval<Json>("local q=player.questLogDetails('zzlog-a'); return {q.portrait[1].line,q.portraitTitle}");
+    ASSERT_TRUE(parsed) << parsed.error().what();
+    EXPECT_EQ(*parsed, (Json(JsonArray{JsonArray{JsonArray{1, 2}, JsonArray{5, 9}}, "Changed portrait"})));
+    ASSERT_TRUE(probe->eval<LuaValue>("prior = player.questLogDetails('zzlog-a')"));
+    ASSERT_TRUE((*lockedQuest)->callScript("clearPortrait", {}));
+    ASSERT_TRUE(pane->tick(1.0f / 60));
+    auto polaroid = pane->fetchChild("imgPolaroid");
+    ASSERT_TRUE(polaroid && *polaroid);
+    EXPECT_FALSE((*polaroid)->visibility());
+    EXPECT_EQ((*portraitTitle)->getText(), String(""));
+    auto portraitDelta = probe->eval<Json>(
+        "local q=player.questLogDetails('zzlog-a',prior.revision,prior.portraitRevision,prior.rewardsRevision); "
+        "return {q.title==nil,q.text==nil,q.portraitTitle,q.portrait==nil,q.rewards==nil}");
+    ASSERT_TRUE(portraitDelta) << portraitDelta.error().what();
+    EXPECT_EQ(*portraitDelta, (Json(JsonArray{true, true, "", true, true})));
+  }
+
+  // Stable identity, not title, survives reordered native rows. Replacing a
+  // Quest allocation with the same ID must also invalidate revision caches.
+  auto storedA = VersionedJson::fromJson(storedQuests["zzlog-a"]);
+  ASSERT_TRUE(storedA) << storedA.error().what();
+  auto aData = storedA->content.toObject();
+  ASSERT_TRUE(aData);
+  aData->set("text", "Replacement body");
+  aData->set("portraitTitles", JsonObject{{"Objective", "Replacement portrait"}});
+  aData->set("lastUpdatedOn", 100);
+  aData->set("rewards", JsonArray{});
+  auto replacementA = (*versions)->makeCurrentVersionedJson("Quest", *aData);
+  ASSERT_TRUE(replacementA);
+  storedQuests.set("zzlog-a", replacementA->toJson());
+  domain->setAsTracked("zzlog-b");
+  auto oldRevision = (*lockedQuest)->presentationRevision();
+  ASSERT_TRUE(domain->diskLoad(JsonObject{{"quests", storedQuests}, {"currentQuest", "zzlog-b"}}));
+  auto newA = domain->getQuest("zzlog-a");
+  ASSERT_TRUE(newA);
+  EXPECT_NE((*newA)->presentationRevision(), oldRevision);
+  ASSERT_TRUE(pane->call("filter", {}));
+  ASSERT_TRUE((*main)->selectedWidget());
+  EXPECT_EQ((*main)->selectedWidget()->data(), Json("zzlog-a"));
+  EXPECT_EQ((*main)->itemAt(0)->data(), Json("zzlog-b"));
+  EXPECT_EQ((*body)->getText(), String("Replacement body"));
+  EXPECT_EQ((*portraitTitle)->getText(), String("Replacement portrait"));
+  auto clearedRewards = probe->eval<bool>("local q=player.questLogDetails('zzlog-a'); return q.rewards~=nil and #q.rewards==0");
+  ASSERT_TRUE(clearedRewards) << clearedRewards.error().what();
+  EXPECT_TRUE(*clearedRewards);
+  ASSERT_TRUE(pane->dismissed());
+  ASSERT_TRUE(pane->displayed());
+  EXPECT_EQ((*body)->getText(), String("Replacement body"));
+  ASSERT_TRUE(root.reload());
+  ASSERT_TRUE(pane->tick(1.0f / 60));
+  EXPECT_EQ((*body)->getText(), String("Replacement body"));
+  ASSERT_TRUE(group->select(1));
+  ASSERT_TRUE(pane->call("filter", {}));
+  EXPECT_EQ((*body)->getText(), String(""));
+  ASSERT_EQ((*side)->listSize(), 1u);
+  EXPECT_EQ((*side)->itemAt(0)->data(), Json("zzlog-complete"));
+  ASSERT_TRUE((*side)->setSelected(0));
+  EXPECT_EQ((*body)->getText(), String("zzlog-complete"));
+  auto inactive = probe->eval<Json>("local q = player.questLogDetails('zzlog-complete'); return {q.active,q.canAbandon,player.questLogDetails('missing') == nil}");
+  ASSERT_TRUE(inactive);
+  EXPECT_EQ(*inactive, (Json(JsonArray{false, false, true})));
+  ASSERT_TRUE(group->select(0));
+  ASSERT_TRUE(pane->call("filter", {}));
+  EXPECT_EQ((*main)->selectedWidget()->data(), Json("zzlog-b"));
+  ASSERT_TRUE((*side)->setSelected(0));
+  ASSERT_TRUE(pane->call("btnAbandon", {}));
+  EXPECT_FALSE(domain->isActive("zzlog-side"));
+  EXPECT_EQ((*main)->selectedWidget()->data(), Json("zzlog-b"));
+
+  // Production registration and manager retention/scope policy, using the
+  // actual consumer pane and native pane stack rather than an echoed service.
+  auto controller = (*luaRoot)->createContext("/interface/opensb/ui/manager.lua");
+  ASSERT_TRUE(controller);
+  LuaCallbacks interface;
+  ASSERT_TRUE(interface.registerCallback("paneIdAvailable", &MainInterface::paneIdAvailable));
+  ASSERT_TRUE(interface.registerCallback("bindRegisteredPane", [&](String const&) -> std::expected<std::optional<LuaCallbacks>, StarException> {
+    if (!pane) return std::optional<LuaCallbacks>{};
+    auto bound = pane->makePaneCallbacks();
+    if (!bound) return std::unexpected(std::move(bound.error()));
+    return std::optional<LuaCallbacks>(std::move(*bound));
+  }));
+  ASSERT_TRUE(interface.registerCallback("createPane", [](String const&, Json const&, String const&) -> std::expected<void, StarException> {
+    return std::unexpected(StarException("Unexpected recreation of retained QuestLog"));
+  }));
+  ASSERT_TRUE(interface.registerCallback("destroyPane", [&](String const&) -> std::expected<void, StarException> {
+    if (pane && panes.isDisplayed(pane)) {
+      auto dismissed = panes.dismissPane(pane);
+      if (!dismissed) return std::unexpected(std::move(dismissed.error()));
+    }
+    pane.reset();
+    return {};
+  }));
+  ASSERT_TRUE(interface.registerCallback("displayRegisteredPane", [&](String const&) -> std::expected<void, StarException> {
+    if (panes.isDisplayed(pane)) return pane->show();
+    return panes.displayPane(PaneLayer::Window, pane, {});
+  }));
+  ASSERT_TRUE(controller->setCallbacks("interface", interface));
+  auto rootCallbacks = LuaBindings::makeRootCallbacks(root);
+  ASSERT_TRUE(rootCallbacks);
+  ASSERT_TRUE(controller->setCallbacks("root", *rootCallbacks));
+  ASSERT_TRUE(controller->eval<LuaValue>(R"LUA(
+    definitions = {QuestLog = root.assetJson('/interface.config:panes.QuestLog')}
+    session = {hasPlayer=true,inWorld=true,playerGeneration=1,worldGeneration=1}
+    checkpoint = {session=session}
+    manager = UiManager.new(checkpoint, definitions, session)
+    manager:open('QuestLog')
+  )LUA"));
+  ASSERT_TRUE(panes.dismissPane(pane));
+  ASSERT_TRUE(controller->eval<LuaValue>("manager:update()"));
+  ASSERT_TRUE(pane);
+  EXPECT_FALSE(panes.isDisplayed(pane));
+  ASSERT_TRUE(controller->eval<LuaValue>("manager:open('QuestLog')"));
+  EXPECT_TRUE(panes.isDisplayed(pane));
+  ASSERT_TRUE(controller->eval<LuaValue>("manager:suspend({hasPlayer=true,inWorld=true,playerGeneration=1,worldGeneration=2})"));
+  ASSERT_TRUE(pane);
+  ASSERT_TRUE(controller->eval<LuaValue>("manager:suspend({hasPlayer=true,inWorld=true,playerGeneration=2,worldGeneration=2})"));
+  EXPECT_FALSE(pane);
+  EXPECT_EQ(errors->messages.size(), 1u);
+});
+
+const GameTestRegistration questDialogPolling("QuestDialogs", "NativeModalGuardPriorityAcknowledgmentAndOfferCancellation", [](GameTest& fixture) {
+  auto directory = File::temporaryDirectory(fixture.root().random());
+  ASSERT_TRUE(directory);
+  auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directory)); });
+  auto overlay = File::relativeTo(*directory, "assets");
+  ASSERT_TRUE(File::makeDirectory(overlay));
+  // Native dialogs still own all decisions. The headless fixture omits
+  // optional painted widgets, not domain behavior or their actual Pane types.
+  ASSERT_TRUE(File::writeFile(String(R"JSON({
+    "onShowSound":[],
+    "paneLayout":{"panefeature":{"type":"panefeature","anchor":"bottomLeft"}}
+  })JSON"), File::relativeTo(overlay, "zzdialog.config")));
+  for (auto const& id : {String("zzdialog-failed"), String("zzdialog-complete"), String("zzdialog-offer")}) {
+    Json config = JsonObject{{"id", id}, {"canBeAbandoned", true},
+        {"guiConfigs", JsonObject{{"newQuest", "/zzdialog.config"},
+            {"questComplete", "/zzdialog.config"}, {"questFailed", "/zzdialog.config"}}}};
+    auto printed = config.printJson();
+    ASSERT_TRUE(printed);
+    ASSERT_TRUE(File::writeFile(*printed, File::relativeTo(overlay, id + ".questtemplate")));
+  }
+  auto settings = fixture.rootSettings();
+  settings.assetSources.append(overlay);
+  settings.storageDirectory = File::relativeTo(*directory, "storage");
+  settings.runtimeConfigFile = String("questdialogs.config");
+  settings.logDirectory = {};
+  settings.logFile = {};
+  settings.includeUGC = false;
+  auto createdRoot = Root::create(settings);
+  ASSERT_TRUE(createdRoot) << createdRoot.error().what();
+  auto& root = **createdRoot;
+  auto configuration = root.configuration();
+  ASSERT_TRUE(configuration);
+  ASSERT_TRUE((*configuration)->set("bindings", JsonObject{}));
+  auto context = GuiContext::create(root, {}, {});
+  ASSERT_TRUE(context);
+  auto factory = root.playerFactory();
+  ASSERT_TRUE(factory);
+  auto player = (*factory)->create();
+  ASSERT_TRUE(player);
+  auto versions = root.versioningDatabase();
+  ASSERT_TRUE(versions);
+  JsonObject storedQuests;
+  for (auto const& entry : {std::pair{String("zzdialog-failed"), String("Failed")},
+      std::pair{String("zzdialog-complete"), String("Complete")}, std::pair{String("zzdialog-offer"), String("Offer")}}) {
+    auto arc = QuestArcDescriptor::fromJson(root, JsonObject{{"quests", JsonArray{
+        JsonObject{{"questId", entry.first}, {"templateId", entry.first}, {"parameters", JsonObject{}}}}}});
+    ASSERT_TRUE(arc);
+    auto storedArc = arc->diskStore(root);
+    ASSERT_TRUE(storedArc);
+    auto stored = (*versions)->makeCurrentVersionedJson("Quest", JsonObject{
+        {"state", entry.second}, {"arc", *storedArc}, {"arcPos", 0},
+        {"parameters", JsonObject{}}, {"money", 0}, {"rewards", JsonArray{}},
+        {"lastUpdatedOn", 0}, {"showDialog", true}});
+    ASSERT_TRUE(stored);
+    storedQuests.set(entry.first, stored->toJson());
+  }
+  auto domain = (*player)->questManager();
+  ASSERT_TRUE(domain->diskLoad(JsonObject{{"quests", storedQuests}}));
+  auto failed = domain->getQuest("zzdialog-failed");
+  auto complete = domain->getQuest("zzdialog-complete");
+  auto offered = domain->getQuest("zzdialog-offer");
+  ASSERT_TRUE(failed && complete && offered);
+  PaneManager panes(**context);
+  auto blocker = Pane::create(**context);
+  ASSERT_TRUE(blocker);
+  (*blocker)->setAnchor(PaneAnchor::BottomLeft);
+  ASSERT_TRUE(panes.displayPane(PaneLayer::ModalWindow, *blocker, {}));
+  ASSERT_TRUE(pollQuestDialog(**context, panes, domain, *player, {}));
+  EXPECT_EQ(panes.topPane({PaneLayer::ModalWindow}), *blocker);
+  EXPECT_TRUE((*failed)->showDialog());
+  EXPECT_TRUE((*complete)->showDialog());
+  ASSERT_TRUE(panes.dismissPane(*blocker));
+  auto polled = pollQuestDialog(**context, panes, domain, *player, {});
+  ASSERT_TRUE(polled) << polled.error().what();
+  auto failurePane = panes.topPane({PaneLayer::ModalWindow});
+  ASSERT_TRUE(failurePane);
+  EXPECT_TRUE(as<QuestFailedInterface>(failurePane));
+  EXPECT_FALSE((*failed)->showDialog());
+  EXPECT_TRUE((*complete)->showDialog());
+  ASSERT_TRUE(pollQuestDialog(**context, panes, domain, *player, {}));
+  EXPECT_EQ(panes.topPane({PaneLayer::ModalWindow}), failurePane);
+  ASSERT_TRUE(panes.dismissPane(failurePane));
+  ASSERT_TRUE(pollQuestDialog(**context, panes, domain, *player, {}));
+  auto completionPane = panes.topPane({PaneLayer::ModalWindow});
+  ASSERT_TRUE(completionPane);
+  EXPECT_TRUE(as<QuestCompleteInterface>(completionPane));
+  EXPECT_FALSE((*complete)->showDialog());
+  ASSERT_TRUE(panes.dismissPane(completionPane));
+  ASSERT_TRUE(pollQuestDialog(**context, panes, domain, *player, {}));
+  auto offerPane = panes.topPane({PaneLayer::ModalWindow});
+  ASSERT_TRUE(offerPane);
+  EXPECT_TRUE(as<NewQuestInterface>(offerPane));
+  EXPECT_EQ((*offered)->state(), QuestState::Offer);
+  ASSERT_TRUE(panes.dismissPane(offerPane));
+  EXPECT_EQ((*offered)->state(), QuestState::New);
+  ASSERT_TRUE(pollQuestDialog(**context, panes, domain, *player, {}));
+  EXPECT_FALSE(panes.topPane({PaneLayer::ModalWindow}));
 });
 
 }

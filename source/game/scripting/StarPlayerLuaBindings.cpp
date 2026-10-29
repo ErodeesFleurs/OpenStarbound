@@ -1221,6 +1221,86 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makePlayerCallbacks(Root
   }); !registered)
     return std::unexpected(std::move(registered.error()));
 
+  if (auto registered = callbacks.registerCallback("questLogEntries", [&player](bool completed) -> Json {
+    auto manager = player.questManager();
+    auto quests = completed ? manager->listCompletedQuests() : manager->listActiveQuests();
+    auto playerWorld = player.clientContext() ? player.clientContext()->playerWorldId() : WorldId{};
+    JsonArray entries;
+    entries.reserve(quests.size());
+    for (auto const& quest : quests) {
+      auto world = quest->worldId();
+      entries.emplace_back(JsonObject{
+          {"id", quest->questId()}, {"title", quest->title()}, {"main", quest->mainQuest()},
+          {"unread", quest->unread()}, {"tracked", manager->isCurrent(quest->questId())},
+          {"currentWorld", world && playerWorld == *world},
+          {"portraitRevision", quest->portraitRevision()}});
+    }
+    JsonObject result{{"entries", std::move(entries)}};
+    if (auto current = manager->currentQuest()) result.set("current", (*current)->questId());
+    return result;
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
+  if (auto registered = callbacks.registerCallback("questLogDetails", [&player](String const& id,
+      std::optional<std::uint64_t> knownRevision, std::optional<std::uint64_t> knownPortraitRevision,
+      std::optional<std::uint64_t> knownRewardsRevision) -> std::expected<Json, StarException> {
+    auto manager = player.questManager();
+    if (!manager->hasQuest(id)) return Json{};
+    auto found = manager->getQuest(id);
+    if (!found) return std::unexpected(std::move(found.error()));
+    auto const& quest = **found;
+    bool active = manager->isActive(id);
+    bool abandonable = false;
+    if (active) {
+      auto allowed = quest.canBeAbandoned();
+      if (!allowed) return std::unexpected(std::move(allowed.error()));
+      abandonable = *allowed;
+    }
+    JsonObject result{{"active", active}, {"tracked", manager->isCurrent(id)},
+        {"canAbandon", abandonable}, {"revision", quest.presentationRevision()},
+        {"portraitRevision", quest.portraitRevision()}, {"rewardsRevision", quest.rewardsRevision()}};
+    if (!knownRevision || *knownRevision != quest.presentationRevision()) {
+      result.set("title", quest.title());
+      result.set("text", quest.text());
+    }
+    if (!knownPortraitRevision || *knownPortraitRevision != quest.portraitRevision()) {
+      result.set("portraitTitle", "");
+      if (auto portrait = quest.portrait("Objective")) {
+        auto json = jsonFromList(*portrait, [](Drawable const& drawable) { return drawable.toJson(); });
+        if (!json) return std::unexpected(std::move(json.error()));
+        result.set("portrait", std::move(*json));
+        result.set("portraitTitle", quest.portraitTitle("Objective").value_or(""));
+      }
+    }
+    if (!knownRewardsRevision || *knownRewardsRevision != quest.rewardsRevision()) {
+      JsonArray rewards;
+      rewards.reserve(quest.rewards().size());
+      for (auto const& reward : quest.rewards()) rewards.emplace_back(reward->descriptor().toJson());
+      result.set("rewards", std::move(rewards));
+    }
+    return result;
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
+  if (auto registered = callbacks.registerCallback("markQuestRead", [&player](String const& id) {
+    player.questManager()->markAsRead(id);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
+  if (auto registered = callbacks.registerCallback("abandonQuest", [&player](String const& id) -> std::expected<bool, StarException> {
+    auto manager = player.questManager();
+    if (!manager->isActive(id)) return false;
+    auto quest = manager->getQuest(id);
+    if (!quest) return std::unexpected(std::move(quest.error()));
+    auto allowed = (*quest)->canBeAbandoned();
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    if (!*allowed) return false;
+    auto abandoned = (*quest)->abandon();
+    if (!abandoned) return std::unexpected(std::move(abandoned.error()));
+    return true;
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
   if (auto registered = callbacks.registerCallback("currentQuestWorld", [&player]() -> std::expected<std::optional<String>, StarException> {
     if (auto quest = player.questManager()->currentQuest()) {
       if (auto worldId = (*quest)->worldId()) {

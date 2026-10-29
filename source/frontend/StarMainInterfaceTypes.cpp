@@ -76,7 +76,6 @@ extern std::expected<EnumMap<MainInterfacePanes>, StarException> const MainInter
   {MainInterfacePanes::HttpTrustDialog, "HttpTrustDialog"},
   {MainInterfacePanes::JoinRequest, "JoinRequest"},
   {MainInterfacePanes::Options, "Options"},
-  {MainInterfacePanes::QuestLog, "QuestLog"},
   {MainInterfacePanes::ActionBar, "ActionBar"},
   {MainInterfacePanes::TeamBar, "TeamBar"},
   {MainInterfacePanes::WireInterface, "WireInterface"},

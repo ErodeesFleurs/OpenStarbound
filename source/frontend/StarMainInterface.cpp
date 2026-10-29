@@ -291,6 +291,7 @@ import star.effect_emitter;
 import star.monster;
 import star.item_drop;
 import star.item;
+import star.item_tooltip;
 
 import star.quest_descriptor;
 import star.ai_types;
@@ -517,12 +518,6 @@ std::expected<void, StarException> MainInterface::initMainBarPanes() {
     return std::unexpected(std::move(escape.error()));
   if (auto result = m_paneManager.registerPane(MainInterfacePanes::EscapeDialog, PaneLayer::ModalWindow, *escape); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = installPane(m_paneManager, MainInterfacePanes::QuestLog, PaneLayer::Window,
-                                QuestLogInterface::create(context(), m_client->questManager(), m_client->mainPlayer(),
-                                                          m_cinematicOverlay, m_client),
-                                m_questLogInterface);
-      !result)
-    return std::unexpected(std::move(result.error()));
   auto ai = AiInterface::create(context(), m_client, m_cinematicOverlay);
   if (!ai)
     return std::unexpected(std::move(ai.error()));
@@ -728,6 +723,10 @@ std::expected<LuaCallbacks, StarException> MainInterface::makeClientCallbacks() 
 Json MainInterface::uiSession() const {
   return JsonObject{{"hasPlayer", static_cast<bool>(m_uiPlayer)}, {"inWorld", m_uiInWorld},
       {"playerGeneration", m_uiPlayerGeneration}, {"worldGeneration", m_uiWorldGeneration}};
+}
+
+std::expected<std::shared_ptr<Pane>, StarException> MainInterface::itemTooltip(std::shared_ptr<Item> const& item) {
+  return ItemTooltipBuilder::buildItemTooltip(context(), item, m_uiPlayer);
 }
 
 std::expected<void, StarException> MainInterface::initUiController() {
@@ -1259,10 +1258,9 @@ std::expected<bool, StarException> MainInterface::handleInputEvent(InputEvent co
             case InterfaceAction::InterfaceCrafting:
               return togglePlainCraftingWindow();
             case InterfaceAction::InterfaceEscapeMenu:
-            case InterfaceAction::InterfaceInventory:
-            case InterfaceAction::InterfaceQuest: {
+            case InterfaceAction::InterfaceInventory: {
               auto pane = action == InterfaceAction::InterfaceEscapeMenu ? MainInterfacePanes::EscapeDialog
-                : action == InterfaceAction::InterfaceInventory ? MainInterfacePanes::Inventory : MainInterfacePanes::QuestLog;
+                : MainInterfacePanes::Inventory;
               auto toggled = m_paneManager.toggleRegisteredPane(pane);
               if (!toggled)
                 return std::unexpected(std::move(toggled.error()));
@@ -1551,7 +1549,7 @@ std::expected<void, StarException> MainInterface::update(float dt) {
   if (auto synchronized = synchronizeUiSession(); !synchronized)
     return std::unexpected(std::move(synchronized.error()));
 
-  auto dialogPolled = m_questLogInterface->pollDialog(m_paneManager);
+  auto dialogPolled = pollQuestDialog(context(), m_paneManager, m_client->questManager(), m_client->mainPlayer(), m_cinematicOverlay);
   if (!dialogPolled)
     return std::unexpected(std::move(dialogPolled.error()));
   auto controlled = m_uiController->update<Json>(dt);
@@ -2741,7 +2739,8 @@ std::expected<void, StarException> MainInterface::renderMainBar() {
   }
 
   Vec2F questLogButtonPos = barPos + Vec2F(m_config->mainBarQuestLogButtonOffset) * interfaceScale();
-  if (auto r = drawStateButton(MainInterfacePanes::QuestLog,
+  static String const questLogPaneId = "QuestLog";
+  if (auto r = drawStateButton(questLogPaneId,
       questLogButtonPos, m_config->mainBarQuestLogButtonPoly, m_config->questLogImage,
       m_config->questLogImageHover, m_config->questLogImageOpen, m_config->questLogImageHoverOpen,
       "/interface.config:cursorTooltip.questsText"); !r) return std::unexpected(std::move(r.error()));
@@ -3018,7 +3017,8 @@ std::expected<bool, StarException> MainInterface::overlayClick(Vec2F const& mous
   auto questLog = overButton(m_config->mainBarQuestLogButtonPoly, mousePos);
   if (!questLog) return std::unexpected(std::move(questLog.error()));
   if (*questLog) {
-    if (auto r = m_paneManager.toggleRegisteredPane(MainInterfacePanes::QuestLog); !r) return std::unexpected(std::move(r.error()));
+    auto toggled = m_uiController->invoke<Json>("toggle", "QuestLog");
+    if (!toggled) return std::unexpected(std::move(toggled.error()));
     return true;
   }
   auto mmUpgrade = overButton(m_config->mainBarMmUpgradeButtonPoly, mousePos);

@@ -28,6 +28,47 @@ For pointer geometry, reuse the existing `widget.inMember(widgetName, screenPosi
 
 These callbacks only work for some widget types.
 
+### Layout helpers
+
+#### `void` widget.refreshLayout(`String` widgetName)
+
+Updates a native Layout with zero elapsed time, allowing its geometry to
+settle immediately after a batch of list or size changes.
+
+---
+
+### ImageWidget helpers
+
+#### `void` widget.setImageDrawables(`String` widgetName, `JsonArray` drawables, [`Vec2F` scale])
+
+Replaces an ImageWidget's native drawables. An empty array clears them.
+When supplied, `scale` transforms all drawable geometry before assignment;
+for example `{-1, 1}` mirrors horizontally without reversing the vertical axis.
+Omitting it applies no additional scale.
+
+An image drawable's explicit `transformation` is its complete image-local
+matrix, including any centering already encoded by native portrait APIs.
+Without a matrix, `centered` defaults to `true`. `position` remains a separate
+drawable offset. Native drawable tables and native drawable JSON therefore
+retain their image geometry when passed back through Lua.
+
+---
+
+### ItemGridWidget helpers
+
+#### `void` widget.setItemGridItems(`String` widgetName, `JsonArray` items, [`Integer` capacity])
+
+Builds a native ItemBag from item descriptors and assigns it to the grid.
+Items merge and split using native stacking rules; items beyond the bag
+capacity do not fit in the display bag. This does not alter player inventory.
+The default capacity is the grid's visible slot count. Pass an explicit
+capacity when the logical bag is larger; the bundled quest log uses **5** for
+its two visible reward slots. An empty array clears the bag.
+The existing `widget.itemGridItems` getter returns its native bag JSON.
+
+Native ItemGrid/ItemSlot tooltips work automatically in script panes; custom
+Lua tooltip hooks are optional.
+
 ---
 
 ### TextBoxWidget helpers

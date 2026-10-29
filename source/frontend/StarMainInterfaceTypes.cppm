@@ -55,7 +55,6 @@ enum class MainInterfacePanes {
   HttpTrustDialog, // sorry i need it here
   JoinRequest,
   Options,
-  QuestLog,
   ActionBar,
   TeamBar,
   WireInterface,

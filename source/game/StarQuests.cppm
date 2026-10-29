@@ -119,7 +119,10 @@ public:
   String failureText() const;
 
   std::size_t money() const;
-  List<std::shared_ptr<Item const>> rewards() const;
+  List<std::shared_ptr<Item const>> const& rewards() const;
+  std::uint64_t presentationRevision() const;
+  std::uint64_t portraitRevision() const;
+  std::uint64_t rewardsRevision() const;
 
   // The time when this quest last changed state (active/completed/failed)
   std::int64_t lastUpdatedOn() const;
@@ -209,6 +212,10 @@ private:
   String m_failureText;
   StringMap<List<Drawable>> m_portraits;
   StringMap<String> m_portraitTitles;
+
+  std::uint64_t m_presentationRevision;
+  std::uint64_t m_portraitRevision;
+  std::uint64_t m_rewardsRevision;
 
   std::optional<JsonArray> m_objectiveList;
   std::optional<float> m_progress;

@@ -732,6 +732,34 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
     });
   }); !registered)
     return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("refreshLayout", [parentWidget](String const& widgetName) -> std::expected<void, StarException> {
+    return withWidget<Layout>(parentWidget, widgetName, [](std::shared_ptr<Layout> widget) {
+      return widget->update(0);
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setImageDrawables", [parentWidget](String const& widgetName, List<Drawable> drawables, std::optional<Vec2F> scale) -> std::expected<void, StarException> {
+    return withWidget<ImageWidget>(parentWidget, widgetName, [&](std::shared_ptr<ImageWidget> widget) -> std::expected<void, StarException> {
+      if (scale) Drawable::scaleAll(drawables, *scale);
+      return widget->setDrawables(std::move(drawables));
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setItemGridItems", [parentWidget](String const& widgetName, JsonArray const& items, std::optional<std::size_t> size) -> std::expected<void, StarException> {
+    return withWidget<ItemGridWidget>(parentWidget, widgetName, [&](std::shared_ptr<ItemGridWidget> widget) -> std::expected<void, StarException> {
+      auto database = widget->context().root().itemDatabase();
+      if (!database) return std::unexpected(std::move(database.error()));
+      auto bag = std::make_shared<ItemBag>(widget->context().root(), size.value_or(widget->itemSlots()));
+      for (auto const& descriptor : items) {
+        auto item = (*database)->fromJson(descriptor);
+        if (!item) return std::unexpected(std::move(item.error()));
+        auto added = bag->addItems(std::move(*item));
+        if (!added) return std::unexpected(std::move(added.error()));
+      }
+      return widget->setItemBag(std::move(bag));
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
   if (auto registered = callbacks.registerCallback("itemGridItems", [parentWidget](String const& widgetName) -> std::expected<Json, StarException> {
     return withWidget<ItemGridWidget>(parentWidget, widgetName, [&](std::shared_ptr<ItemGridWidget> widget) -> std::expected<Json, StarException> {
       return widget->bag()->toJson();
