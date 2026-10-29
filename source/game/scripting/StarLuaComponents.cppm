@@ -18,6 +18,7 @@ import star.lua_converters;
 import star.lua_game_converters;
 import star.world;
 import star.root;
+import star.algorithm;
 
 namespace Star {
 
@@ -97,6 +98,8 @@ private:
   ListenerSubscription m_reloadSubscription;
   std::uint64_t m_rootGeneration = 0;
   std::optional<LuaContext> m_context;
+  std::stop_source m_callbackScope{std::nostopstate};
+  unsigned m_activeCalls = 0;
   std::optional<String> m_error;
   StringMap<std::shared_ptr<ScriptableThread>> m_threads;
 };
@@ -196,6 +199,8 @@ template <typename Ret, typename... V>
     return std::unexpected(std::move(initialized.error()));
   if (!*initialized)
     return std::optional<Ret>{};
+  ++m_activeCalls;
+  auto finished = finally([this] { --m_activeCalls; });
   auto result = [&]() -> std::expected<std::optional<Ret>, StarException> {
     auto method = m_context->getPath(name);
     if (!method)
@@ -226,6 +231,8 @@ template <typename Ret>
     return std::unexpected(std::move(initialized.error()));
   if (!*initialized)
     return std::optional<Ret>{};
+  ++m_activeCalls;
+  auto finished = finally([this] { --m_activeCalls; });
   auto result = m_context->template eval<Ret>(code);
   if (!result) {
     if (auto logged = root().logger().error("Exception while evaluating lua in context: {}", outputException(result.error(), true)); !logged)

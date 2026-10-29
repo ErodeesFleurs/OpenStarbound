@@ -51,7 +51,6 @@ enum class MainInterfacePanes {
   Codex,
   Cockpit,
   Tech,
-  Songbook,
   Ai,
   Confirmation,
   HttpTrustDialog, // sorry i need it here

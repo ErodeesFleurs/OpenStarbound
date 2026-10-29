@@ -76,7 +76,7 @@ end
 
 function UiManager:register(id, definition)
   self:validate(id, definition)
-  if self.state.open[id] then self:close(id) end
+  if self.state.open[id] ~= nil then self:close(id) end
   self.definitions[id] = definition
   self.state.registered[id] = definition
   self.state.open[id] = nil
@@ -96,7 +96,7 @@ function UiManager:open(id)
   return true
 end
 
-function UiManager:close(id)
+function UiManager:close(id, retain)
   for key, action in pairs(self.pressed) do
     if action.id == id then
       if self.state.open[id] and interface.bindRegisteredPane(id) then
@@ -105,7 +105,7 @@ function UiManager:close(id)
       self.pressed[key] = nil
     end
   end
-  interface.destroyPane(id)
+  if not retain then interface.destroyPane(id) end
   self.state.open[id] = false
 end
 
@@ -218,12 +218,16 @@ function UiManager:update()
       if not pane or not pane.isDisplayed() then closed[#closed + 1] = id end
     end
   end
-  for _, id in ipairs(closed) do self:close(id) end
+  for _, id in ipairs(closed) do
+    -- Ordinary dismissal may retain a window's native widgets and script
+    -- storage for reopening. Explicit close and scope expiry still destroy it.
+    self:close(id, self.definitions[id] and self.definitions[id].retain)
+  end
 end
 
 function UiManager:shutdown()
   local open = {}
-  for id, active in pairs(self.state.open) do if active then open[#open + 1] = id end end
+  for id in pairs(self.state.open) do open[#open + 1] = id end
   for _, id in ipairs(open) do self:close(id) end
   self.state.queue = jarray()
 end

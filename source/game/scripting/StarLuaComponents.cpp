@@ -38,6 +38,7 @@ import star.root;
 import star.utility_lua_bindings;
 import star.scriptable_thread;
 import star.root_lua_bindings;
+import star.algorithm;
 
 namespace Star {
 
@@ -46,6 +47,7 @@ LuaBaseComponent::LuaBaseComponent(Root& root) : m_root(root) {
 }
 
 LuaBaseComponent::~LuaBaseComponent() {
+  (void)m_callbackScope.request_stop();
   if (auto stopped = stopThreads(); !stopped)
     EmergencyLog::error("Error stopping Lua component threads: {}", outputException(stopped.error(), true));
   m_threads.clear();
@@ -72,7 +74,7 @@ std::expected<void, StarException> LuaBaseComponent::addCallbacks(String groupNa
     // Component-owned groups override inherited root/script tables.
     if (auto result = m_context->remove(groupName); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = m_context->setCallbacks(groupName, callbacks); !result)
+    if (auto result = m_context->setCallbacks(groupName, callbacks.withLifetime(m_callbackScope.get_token())); !result)
       return std::unexpected(std::move(result.error()));
   }
   m_callbacks.insert(std::move(groupName), std::move(callbacks));
@@ -155,6 +157,8 @@ std::expected<void, StarException> LuaBaseComponent::setLuaRoot(std::shared_ptr<
 std::shared_ptr<LuaRoot> const& LuaBaseComponent::luaRoot() { return m_luaRoot; }
 
 std::expected<bool, StarException> LuaBaseComponent::init() {
+  ++m_activeCalls;
+  auto finished = finally([this] { --m_activeCalls; });
   if (auto result = uninit({}); !result)
     return std::unexpected(std::move(result.error()));
   if (!m_luaRoot)
@@ -169,6 +173,7 @@ std::expected<bool, StarException> LuaBaseComponent::init() {
     return std::unexpected(std::move(context.error()));
   }
   m_context = std::move(*context);
+  m_callbackScope = std::stop_source{};
   auto result = [&]() -> std::expected<void, StarException> {
     if (auto setup = contextSetup(); !setup)
       return std::unexpected(std::move(setup.error()));
@@ -192,6 +197,8 @@ std::expected<bool, StarException> LuaBaseComponent::init() {
 }
 
 std::expected<void, StarException> LuaBaseComponent::uninit(String const& beforeUninit) {
+  ++m_activeCalls;
+  auto finished = finally([this] { --m_activeCalls; });
   // Consume reload identity before hooks: callbacks may reenter invoke(), and
   // must observe this lifecycle operation rather than recursively rebuilding.
   if (m_reloadTracker)
@@ -221,11 +228,11 @@ std::expected<void, StarException> LuaBaseComponent::uninit(String const& before
     if (m_context)
       invokeHook("uninit");
     // Reentrant invoke failures can already shut down and release this context.
-    if (m_context) {
+    if (m_context)
       remember(contextShutdown(), "Exception while shutting down script context");
-      m_context.reset();
-    }
   }
+  (void)m_callbackScope.request_stop();
+  m_context.reset();
   remember(stopThreads(), "Error stopping script threads");
   m_threads.clear();
   m_error.reset();
@@ -262,7 +269,7 @@ std::expected<void, StarException> LuaBaseComponent::contextSetup() {
   for (auto const& p : m_callbacks) {
     if (auto result = m_context->remove(p.first); !result)
       return std::unexpected(std::move(result.error()));
-    if (auto result = m_context->setCallbacks(p.first, p.second); !result)
+    if (auto result = m_context->setCallbacks(p.first, p.second.withLifetime(m_callbackScope.get_token())); !result)
       return std::unexpected(std::move(result.error()));
   }
   if (!hasCallbacks("sb")) {
@@ -295,12 +302,19 @@ std::expected<void, StarException> LuaBaseComponent::setError(String error) {
   std::expected<void, StarException> shutdown;
   if (m_context)
     shutdown = contextShutdown();
+  (void)m_callbackScope.request_stop();
   m_context.reset();
   m_error = std::move(error);
   return shutdown;
 }
 
 std::expected<bool, StarException> LuaBaseComponent::checkInitialization() {
+  // Native callbacks can synchronously reenter a component (for example a
+  // TextBox change callback after a command reloads assets). Retiring that
+  // context would invalidate the outer Lua frame's callbacks mid-execution.
+  // Leave reload signals pending until the next top-level entry boundary.
+  if (m_activeCalls != 0)
+    return initialized();
   bool shouldBeInitialized = initialized() || error();
   bool reloaded = m_reloadTracker && m_reloadTracker->pullTriggered();
   bool replaced = m_luaRoot && m_rootGeneration != m_luaRoot->generation();

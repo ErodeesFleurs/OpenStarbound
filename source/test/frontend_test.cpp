@@ -31,6 +31,13 @@ import star.assets;
 import star.player_universe_map;
 import star.uuid;
 import star.game_types;
+import star.file;
+import star.random;
+import star.algorithm;
+import star.list_widget;
+import star.songbook;
+import star.songbook_lua_bindings;
+import star.root_lua_bindings;
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
@@ -409,7 +416,6 @@ const GameTestRegistration componentCallbackOwnership("ScriptPane", "ComponentCa
   ASSERT_TRUE(previousLifetime.request_stop());
   auto retired = retainedSession->invoke<String>();
   ASSERT_FALSE(retired);
-  EXPECT_NE(std::string_view(retired.error().what()).find("Previous interface is detached"), std::string_view::npos);
 
   std::stop_source currentLifetime;
   LuaCallbacks current;
@@ -1568,6 +1574,393 @@ const GameTestRegistration popupPresentation("LuaPopup", "NativeTitleLatestTextS
   ASSERT_TRUE(popup->call("close", {}));
   EXPECT_TRUE(popup->isDismissed());
   EXPECT_EQ(sounds.size(), count);
+  ASSERT_TRUE(panes.dismissAllPanes());
+});
+
+const GameTestRegistration songbookPresentation("LuaSongbook", "NativeListLiteralFilteringResourceBytesBandAndReload", [](GameTest& fixture) {
+  auto directory = File::temporaryDirectory(fixture.root().random());
+  ASSERT_TRUE(directory) << directory.error().what();
+  auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directory)); });
+  auto overlay = File::relativeTo(*directory, "assets");
+  ASSERT_TRUE(File::makeDirectory(overlay));
+  ASSERT_TRUE(File::makeDirectory(File::relativeTo(overlay, "songs")));
+  ASSERT_TRUE(File::makeDirectory(File::relativeTo(overlay, "songs/Nested")));
+  String resource = "/songs/zzsongbook[A].Café[A].abc";
+  std::string bytes = "X:1\nT:Songbook bytes\nK:C\nCDEF|\n";
+  bytes.append("\0tail", 5);
+  String abc{std::string_view(bytes)};
+  ASSERT_TRUE(File::writeFile(abc, File::relativeTo(overlay, "songs/zzsongbook[A].Café[A].abc")));
+  ASSERT_TRUE(File::writeFile(String("X:2\nK:C\nC|\n"), File::relativeTo(overlay, "songs/Nested/zzsongbookB.abc")));
+  ASSERT_TRUE(File::writeFile(String("X:3\nK:C\nD|\n"), File::relativeTo(overlay, "songs/zzsongbookZ.abc")));
+  auto settings = fixture.rootSettings();
+  settings.assetSources.append(overlay);
+  settings.storageDirectory = File::relativeTo(*directory, "storage");
+  settings.runtimeConfigFile = String("songbook.config");
+  settings.logDirectory = {};
+  settings.logFile = {};
+  settings.includeUGC = false;
+  auto createdRoot = Root::create(settings);
+  ASSERT_TRUE(createdRoot) << createdRoot.error().what();
+  auto& root = **createdRoot;
+  auto configuration = root.configuration();
+  ASSERT_TRUE(configuration) << configuration.error().what();
+  ASSERT_TRUE((*configuration)->set("bindings", JsonObject{
+      {"GuiClose", JsonArray{JsonObject{{"type", "key"}, {"value", "Esc"}, {"mods", JsonArray{}}}}}}));
+  auto context = GuiContext::create(root, {}, {});
+  ASSERT_TRUE(context) << context.error().what();
+  auto luaRoot = LuaRoot::create(root);
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto assets = root.assets();
+  ASSERT_TRUE(assets) << assets.error().what();
+  auto config = (*assets)->json("/interface/opensb/songbook/songbook.config");
+  ASSERT_TRUE(config) << config.error().what();
+  auto paneConfig = config->toObject();
+  ASSERT_TRUE(paneConfig) << paneConfig.error().what();
+  // Use production Lua, real asset services, ListWidget and TextBox bindings.
+  // Renderer-only imagery/labels stay in the GUI smoke; row text uses TextBox.
+  paneConfig->set("gui", JsonObject{});
+  auto created = BaseScriptPane::create(**context, *paneConfig);
+  ASSERT_TRUE(created) << created.error().what();
+  auto pane = std::move(*created);
+  pane->setAnchor(PaneAnchor::BottomLeft);
+  ASSERT_TRUE(pane->setLuaRoot(*luaRoot));
+  for (auto const& name : {String("group"), String("search")}) {
+    auto textbox = textEditor(**context, "");
+    ASSERT_TRUE(textbox) << textbox.error().what();
+    (*textbox)->setMaxWidth(-1);
+    ASSERT_TRUE(pane->addChild(name, *textbox));
+  }
+  auto songs = std::make_shared<Widget>(**context);
+  auto schema = Json::parseJson(R"JSON({
+    "spacing":[0,0], "memberSize":[200,12],
+    "listTemplate":{"songName":{"type":"textbox","position":[0,0],"maxWidth":-1}}
+  })JSON");
+  ASSERT_TRUE(schema) << schema.error().what();
+  auto list = ListWidget::create(**context, *schema);
+  ASSERT_TRUE(list) << list.error().what();
+  (*list)->registerMemberCallback("songName", [](Widget&) -> std::expected<void, StarException> { return {}; });
+  ASSERT_TRUE(songs->addChild("list", *list));
+  ASSERT_TRUE(pane->addChild("songs", songs));
+  auto domain = Songbook::create(root, "human");
+  ASSERT_TRUE(domain) << domain.error().what();
+  auto callbacks = LuaBindings::makeSongbookCallbacks(**domain);
+  ASSERT_TRUE(callbacks) << callbacks.error().what();
+  ASSERT_TRUE(pane->addCallbacks("songbook", *callbacks));
+  PaneManager panes(**context);
+  auto displayed = panes.displayPane(PaneLayer::Window, pane, {});
+  ASSERT_TRUE(displayed) << displayed.error().what();
+  ASSERT_TRUE(pane->call("btnPlay", {}));
+  EXPECT_FALSE(pane->isDismissed());
+  EXPECT_FALSE((*domain)->active());
+  auto search = pane->fetchChild<TextBoxWidget>("search");
+  auto group = pane->fetchChild<TextBoxWidget>("group");
+  ASSERT_TRUE(search) << search.error().what();
+  ASSERT_TRUE(group) << group.error().what();
+  ASSERT_TRUE((*search)->setText("zzsongbook"));
+  ASSERT_TRUE(pane->call("search", {}));
+  StringList visibleResources;
+  for (std::size_t index = 0; index < (*list)->listSize(); ++index) {
+    auto path = (*list)->itemAt(index)->data().toString();
+    ASSERT_TRUE(path) << path.error().what();
+    visibleResources.append(std::move(*path));
+  }
+  ASSERT_EQ(visibleResources, (StringList{"/songs/Nested/zzsongbookB.abc", resource, "/songs/zzsongbookZ.abc"}));
+  ASSERT_TRUE((*search)->setText("CAFÉ"));
+  ASSERT_TRUE(pane->call("search", {}));
+  EXPECT_EQ((*list)->listSize(), 0u); // Native case folding is not Unicode folding.
+  ASSERT_TRUE((*search)->setText("CAFé"));
+  ASSERT_TRUE(pane->call("search", {}));
+  EXPECT_EQ((*list)->listSize(), 1u);
+  ASSERT_TRUE((*search)->setText("[a]"));
+  ASSERT_TRUE(pane->call("search", {}));
+  ASSERT_EQ((*list)->listSize(), 1u);
+  auto row = (*list)->itemAt(0);
+  EXPECT_EQ(row->data(), Json(resource));
+  auto label = row->fetchChild<TextBoxWidget>("songName");
+  ASSERT_TRUE(label) << label.error().what();
+  EXPECT_EQ((*label)->getText(), String("^#bbb;zzsongbook^#7f7;[A]^#bbb;.Café^#7f7;[A]^#bbb;"));
+  ASSERT_TRUE((*list)->setSelected(0));
+  ASSERT_TRUE((*group)->setText("Band Ω"));
+  ASSERT_TRUE(pane->call("btnPlay", {}));
+  EXPECT_TRUE(pane->isDismissed());
+  EXPECT_TRUE((*domain)->active());
+  EXPECT_EQ((*domain)->song(), (Json(JsonObject{{"resource", resource}, {"abc", abc}})));
+  EXPECT_EQ((*domain)->timeSource(), std::optional<String>("Band Ω"));
+  ASSERT_TRUE(panes.dismissPane(pane));
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Window, pane, {}));
+  EXPECT_EQ((*search)->getText(), String("[a]"));
+  EXPECT_EQ((*group)->getText(), String("Band Ω"));
+  EXPECT_EQ((*list)->selectedWidget(), row);
+  auto closed = pane->sendEvent(KeyDownEvent{Key::Escape, KeyMod::NoMod});
+  ASSERT_TRUE(closed) << closed.error().what();
+  EXPECT_TRUE(*closed);
+  EXPECT_TRUE(pane->isDismissed());
+  EXPECT_TRUE((*domain)->active());
+  ASSERT_TRUE(panes.dismissPane(pane));
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Window, pane, {}));
+  ASSERT_TRUE((*search)->setText("zzsongbook"));
+  ASSERT_TRUE(pane->call("search", {}));
+  ASSERT_TRUE(File::writeFile(String("X:5\nK:C\nF|\n"), File::relativeTo(overlay, "songs/zzsongbookNew.abc")));
+  ASSERT_TRUE(root.reload());
+  ASSERT_TRUE(pane->call("update", {}));
+  visibleResources.clear();
+  for (std::size_t index = 0; index < (*list)->listSize(); ++index) {
+    auto path = (*list)->itemAt(index)->data().toString();
+    ASSERT_TRUE(path) << path.error().what();
+    visibleResources.append(std::move(*path));
+  }
+  EXPECT_EQ(visibleResources, (StringList{"/songs/Nested/zzsongbookB.abc", resource,
+      "/songs/zzsongbookNew.abc", "/songs/zzsongbookZ.abc"}));
+  EXPECT_FALSE((*list)->selectedWidget());
+  EXPECT_EQ((*domain)->song(), (Json(JsonObject{{"resource", resource}, {"abc", abc}})));
+  EXPECT_EQ((*domain)->timeSource(), std::optional<String>("Band Ω"));
+  ASSERT_TRUE(panes.dismissAllPanes());
+});
+
+const GameTestRegistration uiRetainedWindow("LuaUiManager", "RetainedDismissalReopensNativeStateButPlayerExpiryAndShutdownDestroy", [](GameTest& fixture) {
+  auto context = textEditorContext(fixture);
+  ASSERT_TRUE(context) << context.error().what();
+  auto luaRoot = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto script = (*luaRoot)->createContext("/interface/opensb/ui/manager.lua");
+  ASSERT_TRUE(script) << script.error().what();
+  auto rootCallbacks = LuaBindings::makeRootCallbacks(fixture.root());
+  ASSERT_TRUE(rootCallbacks) << rootCallbacks.error().what();
+  ASSERT_TRUE(script->setCallbacks("root", *rootCallbacks));
+  PaneManager panes(**context);
+  std::shared_ptr<ScriptTestPane> instance;
+  LuaCallbacks callbacks;
+  ASSERT_TRUE(callbacks.registerCallback("paneIdAvailable", &MainInterface::paneIdAvailable));
+  ASSERT_TRUE(callbacks.registerCallback("bindRegisteredPane", [&](String const&) -> std::expected<std::optional<LuaCallbacks>, StarException> {
+    if (!instance) return std::optional<LuaCallbacks>{};
+    auto bound = instance->makePaneCallbacks();
+    if (!bound) return std::unexpected(std::move(bound.error()));
+    return std::optional<LuaCallbacks>(std::move(*bound));
+  }));
+  ASSERT_TRUE(callbacks.registerCallback("displayRegisteredPane", [&](String const&) -> std::expected<void, StarException> {
+    if (!instance) return std::unexpected(GuiException("Missing retained pane"));
+    return panes.displayPane(PaneLayer::Window, instance, {});
+  }));
+  ASSERT_TRUE(callbacks.registerCallback("destroyPane", [&](String const&) -> std::expected<void, StarException> {
+    if (!instance) return {};
+    if (panes.isDisplayed(instance)) {
+      if (auto dismissed = panes.dismissPane(instance); !dismissed)
+        return std::unexpected(std::move(dismissed.error()));
+    }
+    instance.reset();
+    return {};
+  }));
+  ASSERT_TRUE(script->setCallbacks("interface", callbacks));
+  auto created = ScriptTestPane::create(**context);
+  ASSERT_TRUE(created) << created.error().what();
+  instance = std::move(*created);
+  instance->setAnchor(PaneAnchor::BottomLeft);
+  ASSERT_TRUE(instance->setLuaRoot(*luaRoot));
+  auto textbox = textEditor(**context, "Retained band Ω");
+  ASSERT_TRUE(textbox) << textbox.error().what();
+  ASSERT_TRUE(instance->addChild("band", *textbox));
+  std::weak_ptr<Pane> released = instance;
+  auto opened = script->eval<bool>(R"LUA(
+    local definition = root.assetJson("/interface.config:panes.songbook")
+    checkpoint = {}
+    definitions = {songbook = definition}
+    session = {hasPlayer = true, inWorld = true, playerGeneration = 1, worldGeneration = 1}
+    manager = UiManager.new(checkpoint, definitions, session)
+    return manager:open("songbook")
+  )LUA");
+  ASSERT_TRUE(opened) << opened.error().what();
+  EXPECT_TRUE(*opened);
+  ASSERT_TRUE(panes.dismissPane(instance));
+  ASSERT_TRUE(script->eval<LuaValue>("manager:update()"));
+  EXPECT_FALSE(released.expired());
+  EXPECT_FALSE(panes.topPane());
+  auto reopened = script->eval<bool>(R"LUA(
+    manager = UiManager.new(checkpoint, definitions,
+      {hasPlayer = true, inWorld = true, playerGeneration = 1, worldGeneration = 2})
+    manager:restore()
+    assert(not checkpoint.open.songbook)
+    return manager:open("songbook")
+  )LUA");
+  ASSERT_TRUE(reopened) << reopened.error().what();
+  EXPECT_TRUE(*reopened);
+  EXPECT_EQ((*textbox)->getText(), String("Retained band Ω"));
+  EXPECT_EQ(panes.topPane(), instance);
+  ASSERT_TRUE(panes.dismissPane(instance));
+  ASSERT_TRUE(script->eval<LuaValue>("manager:update()"));
+  auto expired = script->eval<bool>(R"LUA(
+    manager:enqueue("$ui", "open", {id = "songbook"})
+    manager:suspend({hasPlayer = true, inWorld = true, playerGeneration = 2, worldGeneration = 2})
+    return checkpoint.open.songbook == nil and #checkpoint.queue == 0
+  )LUA");
+  ASSERT_TRUE(expired) << expired.error().what();
+  EXPECT_TRUE(*expired);
+  EXPECT_TRUE(released.expired());
+  for (auto const& operation : {String("manager:close('songbook')"), String("manager:shutdown()"),
+      String("manager:register('songbook', definitions.songbook)")}) {
+    auto replacement = ScriptTestPane::create(**context);
+    ASSERT_TRUE(replacement) << replacement.error().what();
+    instance = std::move(*replacement);
+    ASSERT_TRUE(instance->setLuaRoot(*luaRoot));
+    released = instance;
+    // This is an allocated but normally dismissed retained instance.
+    ASSERT_TRUE(script->eval<LuaValue>("checkpoint.open.songbook = false"));
+    ASSERT_TRUE(script->eval<LuaValue>(operation));
+    EXPECT_TRUE(released.expired());
+  }
+});
+
+class CallbackScopeTestScript : public LuaBaseComponent {
+public:
+  explicit CallbackScopeTestScript(Root& root) : LuaBaseComponent(root) {}
+  std::expected<void, StarException> retireWithError() { return setError("scope regression"); }
+};
+
+const GameTestRegistration songbookCallbackScope("LuaSongbook", "EscapedNativeDomainAndLiveCallbacksRetireWithoutRevivingOnRebind", [](GameTest& fixture) {
+  auto luaRoot = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto first = Songbook::create(fixture.root(), "human");
+  auto second = Songbook::create(fixture.root(), "human");
+  ASSERT_TRUE(first) << first.error().what();
+  ASSERT_TRUE(second) << second.error().what();
+  auto firstCallbacks = LuaBindings::makeSongbookCallbacks(**first);
+  auto secondCallbacks = LuaBindings::makeSongbookCallbacks(**second);
+  ASSERT_TRUE(firstCallbacks) << firstCallbacks.error().what();
+  ASSERT_TRUE(secondCallbacks) << secondCallbacks.error().what();
+  (*luaRoot)->addCallbacks("inheritedSongbook", *firstCallbacks);
+  Json song = JsonObject{{"resource", "/songs/scope.abc"}, {"abc", "X:1\nK:C\nC|\n"}};
+  CallbackScopeTestScript component(fixture.root());
+  ASSERT_TRUE(component.setLuaRoot(*luaRoot));
+  ASSERT_TRUE(component.addCallbacks("songbook", *firstCallbacks));
+  ASSERT_TRUE(component.init());
+  auto oldPlay = component.context()->getPath<LuaFunction>("songbook.play");
+  auto inheritedPlay = component.context()->getPath<LuaFunction>("inheritedSongbook.play");
+  ASSERT_TRUE(oldPlay) << oldPlay.error().what();
+  ASSERT_TRUE(inheritedPlay) << inheritedPlay.error().what();
+  ASSERT_TRUE(component.addCallbacks("liveSongbook", *firstCallbacks));
+  auto livePlay = component.context()->getPath<LuaFunction>("liveSongbook.play");
+  ASSERT_TRUE(livePlay) << livePlay.error().what();
+  ASSERT_TRUE(component.eval<LuaValue>(R"LUA(
+    function uninit()
+      songbook.play({resource = "/songs/uninit.abc", abc = "X:2\nK:C\nD|\n"}, "uninit band")
+    end
+  )LUA"));
+  ASSERT_TRUE(component.uninit());
+  EXPECT_EQ((*first)->timeSource(), std::optional<String>("uninit band"));
+  EXPECT_TRUE((*first)->active()); // Shutdown hooks run before scope retirement.
+  EXPECT_FALSE(oldPlay->invoke<LuaValue>(song, "retired"));
+  EXPECT_FALSE(livePlay->invoke<LuaValue>(song, "retired live"));
+  EXPECT_EQ((*first)->timeSource(), std::optional<String>("uninit band"));
+  ASSERT_TRUE(inheritedPlay->invoke<LuaValue>(song, "inherited"));
+  EXPECT_EQ((*first)->timeSource(), std::optional<String>("inherited"));
+  ASSERT_TRUE(component.removeCallbacks("songbook"));
+  ASSERT_TRUE(component.removeCallbacks("liveSongbook"));
+  ASSERT_TRUE(component.addCallbacks("songbook", *secondCallbacks));
+  ASSERT_TRUE(component.init());
+  auto newPlay = component.context()->getPath<LuaFunction>("songbook.play");
+  ASSERT_TRUE(newPlay) << newPlay.error().what();
+  ASSERT_TRUE(newPlay->invoke<LuaValue>(song, "current"));
+  EXPECT_EQ((*second)->song(), song);
+  EXPECT_EQ((*second)->timeSource(), std::optional<String>("current"));
+  EXPECT_FALSE(oldPlay->invoke<LuaValue>(song, "revived"));
+  EXPECT_EQ((*first)->timeSource(), std::optional<String>("inherited"));
+  ASSERT_TRUE(component.retireWithError());
+  EXPECT_FALSE(newPlay->invoke<LuaValue>(song, "error revived"));
+  EXPECT_EQ((*second)->timeSource(), std::optional<String>("current"));
+  ASSERT_TRUE(component.init());
+  auto reinitializedPlay = component.context()->getPath<LuaFunction>("songbook.play");
+  ASSERT_TRUE(reinitializedPlay) << reinitializedPlay.error().what();
+  ASSERT_TRUE(component.init()); // Explicit reinit also retires escaped values.
+  EXPECT_FALSE(reinitializedPlay->invoke<LuaValue>(song, "reinit revived"));
+  ASSERT_TRUE(component.uninit());
+  std::optional<LuaFunction> destroyedPlay;
+  {
+    LuaBaseComponent temporary(fixture.root());
+    ASSERT_TRUE(temporary.setLuaRoot(*luaRoot));
+    ASSERT_TRUE(temporary.addCallbacks("songbook", *secondCallbacks));
+    ASSERT_TRUE(temporary.init());
+    auto escaped = temporary.context()->getPath<LuaFunction>("songbook.play");
+    ASSERT_TRUE(escaped) << escaped.error().what();
+    destroyedPlay = std::move(*escaped);
+  }
+  EXPECT_FALSE(destroyedPlay->invoke<LuaValue>(song, "destroyed revived"));
+  EXPECT_EQ((*second)->timeSource(), std::optional<String>("current"));
+  LuaUpdateScript updating(fixture.root());
+  ASSERT_TRUE(updating.setLuaRoot(*luaRoot));
+  ASSERT_TRUE(updating.init());
+  auto oldScript = updating.context()->getPath<LuaFunction>("script.setUpdateDelta");
+  ASSERT_TRUE(oldScript) << oldScript.error().what();
+  ASSERT_TRUE(updating.uninit());
+  EXPECT_FALSE(oldScript->invoke<LuaValue>(99));
+  ASSERT_TRUE(updating.init());
+  auto currentScript = updating.context()->getPath<LuaFunction>("script.setUpdateDelta");
+  ASSERT_TRUE(currentScript) << currentScript.error().what();
+  ASSERT_TRUE(currentScript->invoke<LuaValue>(7));
+  EXPECT_EQ(updating.updateDelta(), 7u);
+  EXPECT_FALSE(oldScript->invoke<LuaValue>(99));
+  EXPECT_EQ(updating.updateDelta(), 7u);
+  ASSERT_TRUE(updating.uninit());
+});
+
+const GameTestRegistration scriptReloadDuringEditorCallback("ScriptPane", "ReloadDuringNativeTextChangeDefersRetirementUntilOuterScriptReturns", [](GameTest& fixture) {
+  auto context = textEditorContext(fixture);
+  ASSERT_TRUE(context) << context.error().what();
+  auto luaRoot = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto created = ScriptTestPane::create(**context);
+  ASSERT_TRUE(created) << created.error().what();
+  auto pane = std::move(*created);
+  pane->setAnchor(PaneAnchor::BottomLeft);
+  ASSERT_TRUE(pane->setLuaRoot(*luaRoot));
+  std::optional<LuaFunction> escapedGetText;
+  LuaCallbacks host;
+  ASSERT_TRUE(host.registerCallback("reload", [&]() { return fixture.root().reload(); }));
+  ASSERT_TRUE(host.registerCallback("retain", [&](LuaFunction function) {
+    escapedGetText = std::move(function);
+  }));
+  ASSERT_TRUE(pane->addCallbacks("host", std::move(host)));
+  auto editor = TextBoxWidget::create(**context, "before", "",
+      [&pane](Widget&) -> std::expected<void, StarException> {
+    // The same synchronous native callback boundary used by GuiReader's
+    // scriptWidgetCallbacks: setText reenters the active pane's Lua component.
+    auto changed = pane->call("inputChanged", {});
+    if (!changed) return std::unexpected(std::move(changed.error()));
+    return {};
+  });
+  ASSERT_TRUE(editor) << editor.error().what();
+  (*editor)->setMaxWidth(-1);
+  ASSERT_TRUE(pane->addChild("input", *editor));
+  PaneManager panes(**context);
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Window, pane, {}));
+  ASSERT_TRUE(pane->evaluate(R"LUA(
+    storage.changes = 0
+    function inputChanged()
+      storage.changes = storage.changes + 1
+      storage.nestedRead = widget.getText("input")
+    end
+    function submit()
+      host.retain(widget.getText)
+      host.reload()
+      widget.setText("input", "after reload")
+      storage.completed = widget.getText("input")
+      return storage.completed
+    end
+  )LUA"));
+  // Chat command submission reloads assets, then clears its real editor, whose
+  // callback reenters Lua. The outer frame must finish using its valid lease.
+  auto submitted = pane->call("submit", {});
+  ASSERT_TRUE(submitted) << submitted.error().what();
+  ASSERT_TRUE(*submitted);
+  EXPECT_EQ(**submitted, Json("after reload"));
+  ASSERT_TRUE(escapedGetText);
+  EXPECT_EQ(escapedGetText->invoke<String>("input"), String("after reload"));
+  // The next top-level entry consumes the pending reload. Checkpoint extraction
+  // must see the completed outer operation, not an intermediate callback state.
+  auto restored = pane->evaluate("return {storage.changes, storage.nestedRead, storage.completed}");
+  ASSERT_TRUE(restored) << restored.error().what();
+  ASSERT_TRUE(*restored);
+  EXPECT_EQ(**restored, (Json(JsonArray{1, "after reload", "after reload"})));
+  EXPECT_FALSE(escapedGetText->invoke<String>("input"));
+  EXPECT_EQ((*editor)->getText(), String("after reload"));
   ASSERT_TRUE(panes.dismissAllPanes());
 });
 

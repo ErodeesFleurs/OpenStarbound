@@ -197,6 +197,20 @@ std::expected<void, StarException> LuaCallbacks::merge(LuaCallbacks const& callb
   return {};
 }
 
+LuaCallbacks LuaCallbacks::withLifetime(std::stop_token lifetime) const {
+  LuaCallbacks guarded;
+  for (auto const& entry : m_callbacks) {
+    guarded.m_callbacks.set(entry.first,
+        [callback = entry.second, lifetime](LuaEngine& engine, std::span<LuaValue> args)
+            -> std::expected<LuaDetail::LuaFunctionReturn, StarException> {
+      if (lifetime.stop_requested())
+        return std::unexpected(LuaException("Lua callback scope is retired"));
+      return callback(engine, args);
+    });
+  }
+  return guarded;
+}
+
 StringMap<LuaDetail::LuaWrappedFunction> const& LuaCallbacks::callbacks() const {
   return m_callbacks;
 }

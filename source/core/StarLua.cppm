@@ -323,6 +323,10 @@ public:
 
   [[nodiscard]] std::expected<void, StarException> merge(LuaCallbacks const& callbacks);
 
+  // Borrowed callbacks installed by an owner may outlive its Lua context.
+  // Retired scopes reject even saved Lua function values before dereferencing.
+  LuaCallbacks withLifetime(std::stop_token lifetime) const;
+
   StringMap<LuaDetail::LuaWrappedFunction> const& callbacks() const;
 
 private:

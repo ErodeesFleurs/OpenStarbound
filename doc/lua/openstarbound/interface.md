@@ -23,14 +23,13 @@ Returns the HUD's visibility.
 ---
 
 #### `PaneId` interface.bindRegisteredPane(`String` paneName)
-Binds a native registered pane or a dynamically created string-ID pane to its pane/widget callbacks. Returns `nil` if no instance exists. Native identifiers are listed below; the bundled Lua panes use the dynamic identifiers `"chat"` and `"status"`.
+Binds a native registered pane or a dynamically created string-ID pane to its pane/widget callbacks. Returns `nil` if no instance exists. Native identifiers are listed below; bundled Lua registrations use their configured string identifiers, such as `"chat"` and `"songbook"`.
 <details><summary><b>Panes</b></summary>
 EscapeDialog<br>
 Inventory<br>
 Codex<br>
 Cockpit<br>
 Tech<br>
-Songbook<br>
 Ai<br>
 Confirmation<br>
 JoinRequest<br>
@@ -165,6 +164,29 @@ uses normal window stacking. World transitions retain the popup, while player
 changes and interface teardown discard it.
 
 This registration does not handle confirmation, join requests or HTTP trust.
+
+### Bundled songbook
+
+The `"songbook"` registration loads
+`/interface/opensb/songbook/songbook.config` on the `"Window"` layer with
+`"player"` scope and `"retain": true`. Native instrument interactions open it
+through the generic interface bridge. It reuses the original songbook widget
+layout; no native songbook window class is involved.
+
+Lua owns the `/songs/` ABC catalog, ASCII-case-insensitive sorting, literal
+search and highlighting of every match. Rows carry original resource paths,
+not filtered indices. Play submits `{resource, abc}` with the original asset
+bytes and the entered band to the current player's `songbook.play`; no selection
+leaves the window open. Closing the window never stops playback.
+
+Ordinary dismissal retains the actual widgets, including search, band and
+selection. Live reload rescans and clears selection without replaying a song.
+World transitions retain the instance; player changes and interface shutdown
+release it. Instrument keepalive, ABC playback, audio and network synchronization
+remain native services.
+
+Native `/swap` may reuse the current Songbook and continue its playback;
+discarding player-scoped UI does not add an implicit `songbook.stop()`.
 
 ### Low-level instance bridge
 

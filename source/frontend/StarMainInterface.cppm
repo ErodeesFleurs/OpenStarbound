@@ -110,7 +110,7 @@ class ContainerPane;
 class CraftingPane;
 class MerchantPane;
 class CodexInterface;
-class SongbookInterface;
+class Songbook;
 class QuestLogInterface;
 class AiInterface;
 class ConfirmationDialog;
@@ -305,6 +305,7 @@ private:
   Map<String, LuaCallbacks> m_uiCapabilities;
   std::shared_ptr<Player> m_uiPlayer;
   std::optional<Uuid> m_uiPlayerUuid;
+  std::shared_ptr<Songbook> m_uiSongbook;
   std::shared_ptr<WorldClient> m_uiWorld;
   std::shared_ptr<TeamClient> m_uiTeam;
   std::shared_ptr<LuaRoot> m_uiRoot;
@@ -373,7 +374,7 @@ export namespace Star {
   using ::Star::CraftingPane;
   using ::Star::MerchantPane;
   using ::Star::CodexInterface;
-  using ::Star::SongbookInterface;
+  using ::Star::Songbook;
   using ::Star::QuestLogInterface;
   using ::Star::AiInterface;
   using ::Star::ConfirmationDialog;

@@ -196,7 +196,7 @@ import star.codex_interface;
 
 
 
-import star.songbook_interface;
+import star.songbook;
 
 
 
@@ -386,6 +386,7 @@ import star.player_lua_bindings;
 import star.status_controller_lua_bindings;
 import star.celestial_lua_bindings;
 import star.team_client_lua_bindings;
+import star.songbook_lua_bindings;
 
 namespace Star {
 
@@ -518,11 +519,6 @@ std::expected<void, StarException> MainInterface::initMainBarPanes() {
   if (!escape)
     return std::unexpected(std::move(escape.error()));
   if (auto result = m_paneManager.registerPane(MainInterfacePanes::EscapeDialog, PaneLayer::ModalWindow, *escape); !result)
-    return std::unexpected(std::move(result.error()));
-  auto songbook = SongbookInterface::create(context(), m_client->mainPlayer());
-  if (!songbook)
-    return std::unexpected(std::move(songbook.error()));
-  if (auto result = m_paneManager.registerPane(MainInterfacePanes::Songbook, PaneLayer::Window, *songbook); !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = installPane(m_paneManager, MainInterfacePanes::QuestLog, PaneLayer::Window,
                                 QuestLogInterface::create(context(), m_client->questManager(), m_client->mainPlayer(),
@@ -755,6 +751,7 @@ std::expected<void, StarException> MainInterface::initUiController() {
 std::expected<void, StarException> MainInterface::synchronizeUiSession() {
   if (!m_uiController) return {};
   auto player = m_client->mainPlayer();
+  auto songbook = player ? player->songbook() : std::shared_ptr<Songbook>{};
   auto world = m_client->worldClient();
   auto team = m_client->teamClient();
   auto luaRoot = m_client->luaRoot();
@@ -770,7 +767,7 @@ std::expected<void, StarException> MainInterface::synchronizeUiSession() {
     playerUuid = *uuid;
   }
   bool playerChanged = player != m_uiPlayer || playerUuid != m_uiPlayerUuid;
-  if (!playerChanged && world == m_uiWorld && team == m_uiTeam && luaRoot == m_uiRoot
+  if (!playerChanged && songbook == m_uiSongbook && world == m_uiWorld && team == m_uiTeam && luaRoot == m_uiRoot
       && generation == m_uiRootGeneration && worldId == m_uiWorldId && inWorld == m_uiInWorld)
     return {};
 
@@ -796,6 +793,9 @@ std::expected<void, StarException> MainInterface::synchronizeUiSession() {
   m_uiCapabilities.clear();
   m_uiPlayer = std::move(player);
   m_uiPlayerUuid = std::move(playerUuid);
+  // Player::diskLoad can replace this object in-place. Keep the old service
+  // alive until every borrowing context above has retired its callback scope.
+  m_uiSongbook = std::move(songbook);
   m_uiWorld = std::move(world);
   m_uiTeam = std::move(team);
   m_uiRoot = std::move(luaRoot);
@@ -812,6 +812,7 @@ std::expected<void, StarException> MainInterface::synchronizeUiSession() {
   m_uiCapabilities.set("status", LuaCallbacks{});
   m_uiCapabilities.set("world", LuaCallbacks{});
   m_uiCapabilities.set("team", LuaCallbacks{});
+  m_uiCapabilities.set("songbook", LuaCallbacks{});
   if (m_uiPlayer) {
     auto callbacks = LuaBindings::makePlayerCallbacks(context().root(), *m_uiPlayer);
     if (!callbacks) return std::unexpected(std::move(callbacks.error()));
@@ -819,6 +820,11 @@ std::expected<void, StarException> MainInterface::synchronizeUiSession() {
     auto status = LuaBindings::makeStatusControllerCallbacks(m_uiPlayer->statusController());
     if (!status) return std::unexpected(std::move(status.error()));
     m_uiCapabilities.set("status", std::move(*status));
+  }
+  if (m_uiSongbook) {
+    auto callbacks = LuaBindings::makeSongbookCallbacks(*m_uiSongbook);
+    if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+    m_uiCapabilities.set("songbook", std::move(*callbacks));
   }
   if (m_uiInWorld) {
     auto callbacks = LuaBindings::makeWorldCallbacks(context().root(), *m_uiWorld);
@@ -1404,9 +1410,7 @@ std::expected<void, StarException> MainInterface::handleInteractAction(InteractA
       return {};
     return openCraftingWindow(interactAction.data, interactAction.entityId);
   } else if (interactAction.type == InteractActionType::OpenSongbookInterface) {
-    auto displayed = m_paneManager.displayRegisteredPane(MainInterfacePanes::Songbook);
-    if (!displayed)
-      return std::unexpected(std::move(displayed.error()));
+    return sendPaneEvent("$ui", "open", JsonObject{{"id", "songbook"}});
   } else if (interactAction.type == InteractActionType::OpenMerchantInterface) {
     if (interactAction.entityId != NullEntityId && !world->entity(interactAction.entityId))
       return {};

@@ -4,17 +4,18 @@
 ---@class songbook
 songbook = {}
 
---- Returns a string containing the instrumentalist's current band. Defaults to `""`. ---
+--- Returns the native playback time-source identifier; empty before playback. ---
 ---@return string
 function songbook.band() end
 
---- Returns the notes of the song currently being played. ---
+--- Returns the submitted song JSON, normally {resource, abc}, or null after stop. ---
 ---@return Json
 function songbook.song() end
 
---- TODO: Add description for songbook.keepAlive ---
----@param duration Float
-function songbook.keepAlive(duration) end
+--- Updates instrument kind/position and refreshes native playback keepalive. Instrument scripts normally maintain this. ---
+---@param instrument string
+---@param position Vec2F
+function songbook.keepAlive(instrument, position) end
 
 --- Causes the instrumentalist to stop playing. ---
 function songbook.stop() end
@@ -27,9 +28,10 @@ function songbook.active() end
 ---@return boolean
 function songbook.instrumentPlaying() end
 
---- TODO: Add description for songbook.play ---
+--- Starts native playback of song JSON, normally {resource, abc}. A nonempty band uses a shared time source; "" selects a local one. ---
 ---@param song Json
-function songbook.play(song) end
+---@param band string
+function songbook.play(song, band) end
 
 --- Returns the type of instrument last played, as determined by the instrument's `kind` value. Defaults to `""`.
 ---@return string

@@ -72,7 +72,6 @@ extern std::expected<EnumMap<MainInterfacePanes>, StarException> const MainInter
   {MainInterfacePanes::Codex, "Codex"},
   {MainInterfacePanes::Cockpit, "Cockpit"},
   {MainInterfacePanes::Tech, "Tech"},
-  {MainInterfacePanes::Songbook, "Songbook"},
   {MainInterfacePanes::Ai, "Ai"},
   {MainInterfacePanes::Confirmation, "Confirmation"},
   {MainInterfacePanes::HttpTrustDialog, "HttpTrustDialog"},

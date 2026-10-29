@@ -47,6 +47,14 @@
       "open" : false,
       "order" : 50,
       "events" : {"show" : "showPopup"}
+    },
+    "songbook" : {
+      "config" : "/interface/opensb/songbook/songbook.config",
+      "layer" : "Window",
+      "scope" : "player",
+      "retain" : true,
+      "open" : false,
+      "order" : 60
     }
   },
   "font" : {

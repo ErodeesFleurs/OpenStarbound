@@ -22,7 +22,6 @@ target_sources (star_frontend_module_interfaces PUBLIC FILE_SET CXX_MODULES FILE
     StarCharSelection.cppm
     StarCodexInterface.cppm
     StarQuestInterface.cppm
-    StarSongbookInterface.cppm
     StarAiInterface.cppm
     StarActionBar.cppm
     StarBaseScriptPane.cppm
@@ -82,7 +81,6 @@ add_library (star_frontend_modules STATIC
     StarCharSelection.cpp
     StarCodexInterface.cpp
     StarQuestInterface.cpp
-    StarSongbookInterface.cpp
     StarAiInterface.cpp
     StarActionBar.cpp
     StarBaseScriptPane.cpp

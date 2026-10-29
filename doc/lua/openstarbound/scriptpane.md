@@ -203,16 +203,22 @@ Component-owned callback group names take precedence over inherited LuaRoot
 tables, including on reinitialization and when added to a live context. Scripts
 must not define replacement tables under those reserved group names. An explicit
 empty callback group shadows an inherited service without exposing its old
-functions; groups not owned by the component remain inherited. Replacing a
-table does not revive old callback references: their original lifetime guards
-continue to reject calls after their targets detach.
+functions; groups not owned by the component remain inherited. Every
+component-owned callback installed in a context carries that context's lifetime
+lease, including callbacks added while it is live. Shutdown hooks run before
+the lease retires; error cleanup also retires it. Escaped functions from an old
+context remain rejected after reinitialization or rebinding, even if the old
+service target is still alive. Service owners must keep borrowed targets alive
+through shutdown.
 
 `removeCallbacks(name)` removes a service table. To rebind services, centrally
 stop the instance, replace callback groups/root, then display it again.
 `LuaRoot::generation()` identifies successful engine replacements even when the
 root pointer is unchanged. `LuaBaseComponent` handles generation and asset reload
-before invoking script entry points; panes do not maintain a second reload
-protocol.
+at top-level script entry boundaries. Synchronous native callbacks may reenter
+the same component; automatic reload stays pending until the active Lua call
+returns, rather than retiring its callbacks mid-execution. Panes do not maintain
+a second reload protocol.
 
 `call(method, JsonArray)` spreads JSON arguments positionally and returns
 `expected<optional<Json>, StarException>`; missing methods and uninitialized
@@ -257,6 +263,12 @@ order; native layers, capture, modal barriers and current stacking determine
 input priority. A normal window uses the same runtime with `"layer": "Window"`.
 Use existing `gui.panefeature` anchor/offset declarations so initial native
 placement is correct before script `init`.
+
+`retain: true` keeps an ordinarily dismissed instance for later reopening,
+preserving its native widgets and script storage. This is Lua manager policy,
+not a native pane flag. Explicit `ui.close`, registration replacement, scope
+expiry and interface shutdown destroy the instance, including one that is
+currently closed but retained.
 
 Action mappings call `onAction(name, pressed, event)` and consume input only
 when the handler returns true. The manager preserves press/release pairing
