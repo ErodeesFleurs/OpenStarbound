@@ -339,7 +339,7 @@ std::expected<void, StarException> TeamClient::pullFullUpdate() {
       auto leader = Uuid::create(*leaderText);
       if (!leader) return std::unexpected(std::move(leader.error()));
       self.m_teamLeader = *leader;
-      self.m_members.clear();
+      auto previousMembers = take(self.m_members);
       auto entries = response.getArray("members");
       if (!entries) return std::unexpected(std::move(entries.error()));
       for (auto const& m : *entries) {
@@ -380,7 +380,16 @@ std::expected<void, StarException> TeamClient::pullFullUpdate() {
           if (!drawable) return std::unexpected(std::move(drawable.error()));
           portrait.append(std::move(*drawable));
         }
-        self.m_members.push_back(Member{std::move(*name), *uuid, static_cast<EntityId>(*entity), *health, *energy, std::move(*world), Vec2F(*x, *y), warp->get(), std::move(portrait)});
+        std::uint64_t portraitRevision = 0;
+        for (auto const& previous : previousMembers) {
+          if (previous.uuid == *uuid && previous.portrait == portrait) {
+            portraitRevision = previous.portraitRevision;
+            break;
+          }
+        }
+        if (!portraitRevision)
+          portraitRevision = ++self.m_nextPortraitRevision;
+        self.m_members.push_back(Member{std::move(*name), *uuid, static_cast<EntityId>(*entity), *health, *energy, std::move(*world), Vec2F(*x, *y), warp->get(), std::move(portrait), portraitRevision});
       }
       std::sort(self.m_members.begin(), self.m_members.end(), [](Member const& a, Member const& b) { return a.name < b.name; });
     } else {
@@ -409,8 +418,46 @@ std::expected<void, StarException> TeamClient::statusUpdate() {
     });
 }
 
-List<TeamClient::Member> TeamClient::members() {
+List<TeamClient::Member> const& TeamClient::members() const {
   return m_members;
+}
+
+JsonArray TeamClient::memberStatus() const {
+  JsonArray result;
+  result.reserve(m_members.size());
+  for (auto const& member : m_members) {
+    result.append(JsonObject{
+      {"uuid", member.uuid.hex()},
+      {"name", member.name},
+      {"entity", member.entity},
+      {"healthPercentage", member.healthPercentage},
+      {"energyPercentage", member.energyPercentage},
+      {"position", JsonArray{member.position[0], member.position[1]}},
+      {"onWorld", member.world == m_clientContext->playerWorldId()},
+      {"canTravel", member.warpMode != WarpMode::None},
+      {"leader", member.uuid == m_teamLeader},
+      {"self", member.uuid == m_clientContext->playerUuid()},
+      {"portraitRevision", member.portraitRevision}});
+  }
+  return result;
+}
+
+std::expected<std::optional<Json>, StarException> TeamClient::memberPortrait(Uuid const& uuid, std::optional<std::uint64_t> knownRevision) const {
+  for (auto const& member : m_members) {
+    if (member.uuid != uuid)
+      continue;
+    if (knownRevision && *knownRevision == member.portraitRevision)
+      return {};
+    JsonArray portrait;
+    portrait.reserve(member.portrait.size());
+    for (auto const& drawable : member.portrait) {
+      auto json = drawable.toJson();
+      if (!json) return std::unexpected(std::move(json.error()));
+      portrait.append(std::move(*json));
+    }
+    return JsonObject{{"revision", member.portraitRevision}, {"portrait", std::move(portrait)}};
+  }
+  return {};
 }
 
 void TeamClient::forceUpdate() {

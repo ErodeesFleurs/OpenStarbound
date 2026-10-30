@@ -77,12 +77,16 @@ public:
   // Call before drawing to clear old draw data.
   void clear();
 
+  // Clips use the same Canvas-local units and scaling as draw commands.
+  void pushClipRect(RectF const& rect);
+  [[nodiscard]] std::expected<void, StarException> popClipRect();
+
   void drawImage(String texName, Vec2F const& position, float scale = 1.0f, Vec4B const& color = Vec4B(255, 255, 255, 255));
   void drawImageRect(String texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color);
   void drawImageCentered(String texName, Vec2F const& position, float scale = 1.0f, Vec4B const& color = Vec4B(255, 255, 255, 255));
 
-  void drawDrawable(Drawable drawable, Vec2F const& screenPos);
-  void drawDrawables(List<Drawable> drawables, Vec2F const& screenPos);
+  void drawDrawable(Drawable drawable, Vec2F const& screenPos, float scale = 1, Vec2F const& translation = Vec2F(), float finalScale = 1);
+  void drawDrawables(List<Drawable> drawables, Vec2F const& screenPos, float scale = 1, Vec2F const& translation = Vec2F(), float finalScale = 1);
 
   // Draw an image whose texture is applied over the entire screen rect in a
   // tiled manner, so that it wraps in X and Y.
@@ -129,9 +133,15 @@ private:
   typedef std::tuple<PolyF, Vec4B, float> PolyOp;
   typedef std::tuple<List<std::tuple<Vec2F, Vec2F, Vec2F>>, Vec4B> TrianglesOp;
   typedef std::tuple<String, TextPositioning, TextStyle> TextOp;
+  struct PushClipOp {
+    RectF rect;
+    std::optional<std::size_t> parent;
+  };
+  struct PopClipOp { std::optional<RectF> rect; };
 
-  typedef std::variant<std::monostate, RectOp, ImageOp, ImageRectOp, DrawableOp, TiledImageOp, LineOp, PolyOp, TrianglesOp, TextOp> RenderOp;
+  typedef std::variant<std::monostate, RectOp, ImageOp, ImageRectOp, DrawableOp, TiledImageOp, LineOp, PolyOp, TrianglesOp, TextOp, PushClipOp, PopClipOp> RenderOp;
   List<RenderOp> m_renderOps;
+  std::optional<std::size_t> m_clipHead;
 };
 
 }

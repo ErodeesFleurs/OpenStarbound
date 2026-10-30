@@ -14,14 +14,12 @@ target_sources (star_frontend_module_interfaces PUBLIC FILE_SET CXX_MODULES FILE
     StarKeybindingsMenu.cppm
     StarModsMenu.cppm
     StarOptionsMenu.cppm
-    StarRadioMessagePopup.cppm
     StarShadersMenu.cppm
     StarTeleportDialog.cppm
     StarVoiceSettingsMenu.cppm
     StarCharCreation.cppm
     StarCharSelection.cppm
     StarAiInterface.cppm
-    StarActionBar.cppm
     StarBaseScriptPane.cppm
     StarChatBubbleSeparation.cppm
     StarChatBubbleManager.cppm
@@ -36,7 +34,6 @@ target_sources (star_frontend_module_interfaces PUBLIC FILE_SET CXX_MODULES FILE
     StarNameplatePainter.cppm
     StarQuestIndicatorPainter.cppm
     StarScriptPane.cppm
-    StarTeamBar.cppm
     StarWireInterface.cppm
     StarCinematic.cppm
     StarClientCommandProcessor.cppm
@@ -70,14 +67,12 @@ add_library (star_frontend_modules STATIC
     StarKeybindingsMenu.cpp
     StarModsMenu.cpp
     StarOptionsMenu.cpp
-    StarRadioMessagePopup.cpp
     StarShadersMenu.cpp
     StarTeleportDialog.cpp
     StarVoiceSettingsMenu.cpp
     StarCharCreation.cpp
     StarCharSelection.cpp
     StarAiInterface.cpp
-    StarActionBar.cpp
     StarBaseScriptPane.cpp
     StarChatBubbleSeparation.cpp
     StarChatBubbleManager.cpp
@@ -92,7 +87,6 @@ add_library (star_frontend_modules STATIC
     StarNameplatePainter.cpp
     StarQuestIndicatorPainter.cpp
     StarScriptPane.cpp
-    StarTeamBar.cpp
     StarWireInterface.cpp
     StarCinematic.cpp
     StarClientCommandProcessor.cpp

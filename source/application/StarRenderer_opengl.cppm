@@ -59,6 +59,7 @@ public:
   [[nodiscard]] std::expected<void, StarException> setEffectTexture(String const& textureName, ImageView const& image) override;
 
   [[nodiscard]] std::expected<void, StarException> setScissorRect(std::optional<RectI> const& scissorRect) override;
+  std::optional<RectI> scissorRect() const override;
 
   [[nodiscard]] std::expected<bool, StarException> switchEffectConfig(String const& name) override;
 

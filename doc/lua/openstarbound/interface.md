@@ -32,10 +32,7 @@ Ai<br>
 Confirmation<br>
 JoinRequest<br>
 Options<br>
-ActionBar<br>
-TeamBar<br>
 WireInterface<br>
-RadioMessagePopup<br>
 CraftingPlain<br>
 MmUpgrade<br>
 Collections<br>
@@ -55,6 +52,57 @@ Queries an existing native or Lua-managed instance without opening it or
 constructing its pane/widget callback table. Returns `false` without an
 instance. This is lifecycle display state, not visibility or focus: a hidden
 pane that has not been dismissed still reports `true`.
+
+#### `bool` interface.paneVisible(`String` paneName)
+
+Returns whether an existing instance is both displayed and drawing-visible.
+Returns false without an instance; does not open it or allocate widget callbacks.
+
+#### `void` interface.togglePane(`String` paneName)
+
+Toggles a native registered pane through its native path (including plain
+crafting), or a Lua registration through the manager. Lua ordinary dismissal
+honors `retain`; this is not explicit instance destruction.
+
+#### `Json` interface.travelState()
+
+Returns `{beamUp, beamDown, deploy, teamShip}` booleans from the current native
+travel eligibility checks. Native errors propagate.
+
+#### `bool` interface.travel(`String` operation, [`String` memberUuid])
+
+Operations are `"beamUp"`, `"beamDown"`, `"deploy"` and `"teamShip"`.
+Rechecks current native eligibility, then uses the normal native warp path,
+including teleport hooks and cinematic/world-transition handling. Returns false
+when disallowed, true when submitted; this is not an arrival acknowledgment.
+`teamShip` additionally requires the selected current member to have a
+non-None warp mode and a supplied UUID string. Invalid UUIDs and unknown
+operations raise errors. UI visibility cannot grant travel permissions.
+
+#### `NativePortraitHandle` interface.portraitEntity([`EntityId` entityId])
+
+Returns an opaque owning PortraitEntity userdata, or nil for a missing/nonportrait
+entity. With no ID, uses the actual local Player, including while detached from
+the world. Pass it to `widget.setPortraitEntity`; it is not drawable JSON and
+cannot be serialized into `storage`.
+
+#### `Json` interface.cursorView()
+
+Returns `{position, roundedPosition, size, scale}` for the native cursor.
+Positions are physical window pixels; `position` is the current native
+mouse-move position and `roundedPosition` its integer counterpart. `size` is
+the cursor image size before scaling and `scale` its effective native scale.
+Do not replace a click event's actual position with this cached hover position.
+
+#### `Vec2F` interface.cursorWorldPosition()
+
+Converts the native cached mouse-move cursor through the real world camera.
+This is not an alias for the player's aim position or a fresh button-event position.
+
+#### `bool` interface.inventoryChanged()
+
+Reads the existing Inventory pane's ItemGrid new-item markers. This does not
+acknowledge or clear them and is not a second PlayerInventory change flag.
 
 ---
 
@@ -129,6 +177,105 @@ World-scoped events and instances are discarded at world or player changes.
 Player-scoped instances survive world changes but are discarded when their
 player changes or becomes unavailable; session instances retain standard
 `storage` through capability rebinding.
+
+### Bundled notifications, combat bars and main bar
+
+The canonical session registrations `"Notifications"`, `"TargetHealth"`,
+`"SpecialHealth"` and `"MainBar"` open on `"Background"` in that drawing order,
+after the breath HUD and before later debug/named-canvas/Hud/window drawing.
+Their assets live under `/interface/opensb/notifications/`, `targethealth/`,
+`specialhealth/` and `mainbar/`. Lua owns their presentation state; native
+world entities, damage, inventory, travel and the renderer remain native.
+
+Notifications receives `message` events with `{text, cooldown?, spring?}` and
+`pickup` events with `{descriptor, name, count}`. The native pickup path resolves
+the actual item; Lua merges matching descriptors, formats counts, manages
+overflow/expiry and advances the configured spring when rendering. Session
+storage retains pending messages across script reload and player/world changes.
+`interface.queueMessage` feeds this same registration.
+
+TargetHealth owns sticky target selection/countdown, last-damage fallback,
+portrait fitting/clipping and bar layout. Domain views remain live, including
+animated portraits. SpecialHealth owns discovery selection, interpolation and
+spacing. Its live bars deliberately use stable first-admission order: surviving
+identities retain order and new identities append. It does not reproduce the
+old unordered native container's incidental hash-bucket order.
+
+MainBar owns the configured button images, physical-pixel polygons, hover
+priority, new-item glow, travel selection and pane toggles. It uses actual
+`onInput.physicalPosition` for clicks without an interface-pixel round trip.
+The separate automatically opened session `"MainBarTooltip"` registration
+renders the cursor text on `"Tooltip"` from Lua, retaining physical cursor
+geometry and legacy integer-scalar truncation. These are not native main-bar
+buttons or a native cursor-tooltip presentation updater.
+
+### Bundled action bar, team bar and radio
+
+`"ActionBar"`, `"TeamBar"` and `"RadioMessagePopup"` are canonical, automatically
+opened session `"Hud"` Lua registrations, not native pane identifiers or aliases.
+Assets live in `/interface/opensb/actionbar/`, `team/` and `radio/`. The retained
+instances and original named children support cached pane/widget handles across
+reload and player/world service rebinding; interface teardown ends them.
+
+ActionBar owns selection/hover, top/bottom layout, wheel/key/click policy and
+slot display. It uses actual opaque Item handles, so item counts, durability,
+link relocation and player-aware tooltips retain native item/inventory ownership.
+Its `tooltipItem` hook walks the intended slot geometry even under overlays.
+Native keyboard/modal/widget capture priority still applies.
+
+TeamBar owns local health/energy/food display, member rows, directions and
+invitation/menu scheduling. `"TeamInvite"`, `"TeamInvitation"` and
+`"TeamMemberMenu"` are session, retained `"Window"` registrations (not modal).
+Incoming invitation data is consumed only on opening its dialog, retained
+through reload, and submitted once on acceptance. Decline, Escape and actual
+external dismissal discard the local payload without a decline RPC; a next
+pending native invitation is not consumed while this dialog is displayed.
+Member controls reflect current membership/leader/self/travel eligibility;
+native client/server domain checks remain authoritative.
+
+RadioMessagePopup owns portrait/text animation, stage timers, chat-height
+placement and chatter scheduling. Hidden displayed instances keep ticking.
+Lua is the sole destructive consumer of the native Player radio queue and
+interrupt flag; cinematic gating delays consumption, not animation of the
+current message. One dequeue produces one local chat record with origin 0.
+Unique-message accounting happens at native dequeue, not visual completion;
+there is no completion acknowledgment or replay on reload. Native resolution,
+filtering/delay/deduplication, audio instances/mixing and queue ownership remain
+native. Current presentation/timers/sound survive session rebind and reload.
+
+### Team domain service
+
+The centrally rebound `team` service exposes the real native TeamClient.
+It is available to managed client UI instances with a team capability; it is not
+window-owned, and network/RPC membership and permission decisions remain native.
+
+* `team.isMemberOfTeam()` returns a boolean.
+* `team.currentTeam()` returns the current team UUID string or nil.
+* `team.isTeamLeader(playerUuid?)` checks the supplied UUID or the local player.
+* `team.members()` returns an ordered array of
+  `{uuid, name, entity, healthPercentage, energyPercentage, position, onWorld,
+  canTravel, leader, self, portraitRevision}`. `position` is the native reported
+  world position; `canTravel` means the member's warp mode is not None, not a
+  guarantee that local travel is currently allowed. Portraits are not included.
+* `team.memberPortrait(uuid, knownRevision?)` returns `{revision, portrait}`
+  with native serialized Drawable definitions, or nil for an unknown member
+  **or** unchanged revision. Omit the token for the full current portrait;
+  an empty portrait array explicitly clears it. Use `members()` to distinguish
+  membership disappearance. Tokens are process-local, not save data.
+* `team.hasInvitationPending()` is a nondestructive boolean query.
+* `team.pullInvitation()` consumes the pending flag and returns `{uuid, name}`
+  for the inviter, or nil when none is pending. It does not accept or decline.
+* `team.acceptInvitation(inviterUuid)` submits the native acceptance RPC; it
+  does not consume another pending invitation or synchronously confirm membership.
+* `team.invitePlayer(name)` submits the native invitation operation.
+* `team.makeLeader(uuid)` requires the local player to be leader.
+* `team.removeFromTeam(uuid)` requires leader status or removal of self.
+
+UUID arguments are strings parsed by the native UUID parser; malformed values
+raise errors. Leader/removal operations are no-ops without the applicable local
+team permission and use the native RPC path when allowed. Return from a command
+does not prove remote completion.
+
 
 ### Bundled status-effect HUD
 

@@ -1588,8 +1588,6 @@ std::expected<void, StarException> ClientApplication::prepareSessionInterface() 
         return std::unexpected(std::move(displayed.error()));
       return manager.displayRegisteredPane(MainInterfacePanes::HttpTrustDialog).transform([](bool) {});
     });
-  if (auto displayed = m_mainInterface->displayDefaultPanes(); !displayed)
-    return displayed;
   if (auto started = m_universeClient->startLuaScripts(); !started)
     return started;
   m_mainMixer->setWorldPainter(optionalRef(m_worldPainter));

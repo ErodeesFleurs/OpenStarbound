@@ -44,6 +44,7 @@ public:
     Vec2F position;
     WarpMode warpMode;
     List<Drawable> portrait;
+    std::uint64_t portraitRevision = 0;
   };
 
   TeamClient(Root& root, std::shared_ptr<Player> mainPlayer, std::shared_ptr<ClientContext> clientContext);
@@ -71,7 +72,9 @@ public:
 
   void forceUpdate();
 
-  List<Member> members();
+  List<Member> const& members() const;
+  JsonArray memberStatus() const;
+  [[nodiscard]] std::expected<std::optional<Json>, StarException> memberPortrait(Uuid const& uuid, std::optional<std::uint64_t> knownRevision) const;
 
 private:
   typedef std::pair<RpcPromise<Json>, std::function<std::expected<void, StarException>(Json const&)>> RpcResponseHandler;
@@ -91,6 +94,7 @@ private:
   Uuid m_teamLeader;
 
   List<Member> m_members;
+  std::uint64_t m_nextPortraitRevision = 0;
 
   bool m_hasPendingInvitation;
   std::pair<Uuid, String> m_pendingInvitation;

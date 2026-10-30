@@ -296,6 +296,9 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeUtilityCallbacks(Ran
   if (auto result = callbacks.registerCallback("monotonicMilliseconds",
       []() { return Time::monotonicMilliseconds(); }); !result)
     return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("monotonicTime",
+      []() { return Time::monotonicTime(); }); !result)
+    return std::unexpected(std::move(result.error()));
 
   if (auto result = callbacks.registerCallback("makePromise",
       []() -> std::pair<RpcPromise<Json>, std::shared_ptr<AutoFailRpcPromiseKeeper<Json>>> {

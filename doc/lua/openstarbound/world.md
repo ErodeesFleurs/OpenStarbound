@@ -24,6 +24,37 @@ empty name, for example an instance without a display name. This is not a
 celestial-coordinate approximation or an arbitrary world property.
 
 ---
+#### `JsonArray` world.damageBarEntities([`RectF` region], [`String` typeName])
+
+Returns an unsorted compact array of `{id, type, position, team}` for actual
+DamageBarEntity instances. Optional type names are `Default`, `Special`, `None`;
+invalid names raise errors. A region uses the native fuzzy meta-bound-box query.
+Without a region, traverses known world entities (the client interest set on a
+client), not every server entity. No health/portrait serialization, visibility,
+light, hostility, distance or ordering policy is hidden in this discovery API.
+
+#### `Maybe<Json>` world.entityDamageBar(`EntityId` id)
+
+Returns nil for a missing/non-DamageBarEntity; otherwise
+`{id, type, health, maxHealth, name, position, team}`. Native name/max-health
+domain errors propagate.
+
+#### `Maybe<LuaTable>` world.entityPortraitView(`EntityId` id, `String` mode, [`uint64` knownRevision])
+
+Returns nil for a missing/nonportrait entity. Otherwise always returns
+`{revision}` and, when the supplied token differs or is omitted, also returns
+`drawables` and cropped `bounds` (`RectF`). Thus unchanged means a revision-only
+table, **not nil**; empty drawable arrays explicitly clear the portrait.
+Mode uses actual native PortraitMode names, including `Full`.
+
+Each request obtains the real current animated portrait. A bounded single-entry
+cache compares the exact entity allocation, mode and Drawable list; unchanged
+geometry does not cross Lua or recompute cropped bounds. Tokens belong to this
+world callback group: reset a cached known token on script init/service rebind.
+The service does not choose fitting, translation, clipping or health-bar state.
+
+---
+
 
 #### `void` world.wire(`Vec2I` outputPosition, `int` outputIndex, `Vec2I` inputPosition, `int` inputIndex)
 

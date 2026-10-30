@@ -333,6 +333,13 @@ Sets the progress overlay on the item slot to the specified value (between 0 and
 
 Binds the canvas widget with the specified name as userdata for easy access. The `CanvasWidget` has the following methods:
 
+With `ignoreInterfaceScale`, drawing and clip coordinates are physical pixels,
+but rendering still adds the raw, **unscaled** Widget screen position. Widget
+layout, hit testing and ancestor clipping retain their interface-coordinate
+semantics. For a canvas at pane-local `{0, 0}` drawing absolute window-pixel
+geometry, subtract `pane.getScreenPosition()` directly; do not multiply that
+offset by `interface.scale()`.
+
 ##### `Vec2I` size()
 
 Returns the size of the canvas.
@@ -340,6 +347,34 @@ Returns the size of the canvas.
 ##### `void` clear()
 
 Clears the canvas.
+
+##### `void` pushClipRect(`RectF` rect)
+##### `void` popClipRect()
+
+Queues a Canvas-local clip rectangle, intersecting any current Canvas clip.
+Pop restores the preceding clip; popping an empty stack raises an error.
+Ancestor/native clipping still applies and is restored after Canvas rendering.
+Clips use normal Canvas units (physical pixels with `ignoreInterfaceScale`).
+`clear()` clears queued drawing and the clip stack. These are drawing commands,
+not changes to widget geometry or input hit testing.
+
+##### `void` drawDrawable(`Drawable` drawable, [`Vec2F` position], [`float` scale], [`Vec2F` translation], [`float` finalScale])
+##### `void` drawDrawables(`List<Drawable>` drawables, [`Vec2F` position], [`float` scale], [`Vec2F` translation], [`float` finalScale])
+
+Queues native Drawable geometry at Canvas-local `position` (default `{0, 0}`).
+Geometry is transformed in order: **translate by `translation`, scale by
+`scale`, then scale by `finalScale`**. Defaults are zero translation and unit
+scales. The two native float scaling steps are separate; do not combine them
+when exact float operation boundaries matter. Position is the final drawing
+origin, not the pre-scale translation.
+
+##### `void` drawJsonDrawable(`Json` drawable, [`Vec2F` position])
+##### `void` drawJsonDrawables(`JsonArray` drawables, [`Vec2F` position])
+
+Parses native Drawable JSON definitions and queues them at the optional
+Canvas-local position. These JSON variants do not accept the extra transform
+arguments above; asset/Drawable parsing errors propagate.
+
 
 ##### `Vec2I` mousePosition()
 

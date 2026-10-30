@@ -105,6 +105,8 @@ import star.button_group;
 import star.button_widget;
 import star.text_box_widget;
 import star.progress_widget;
+import star.portrait_entity;
+import star.portrait_widget;
 import star.image_widget;
 import star.slider_bar;
 import star.animation;
@@ -163,13 +165,20 @@ std::expected<LuaMethods<std::shared_ptr<CanvasWidget>>, StarException> LuaUserD
     return std::unexpected(std::move(registered.error()));
   if (auto registered = methods.registerMethod("clear", [](std::shared_ptr<CanvasWidget> canvas) { canvas->clear(); }); !registered)
     return std::unexpected(std::move(registered.error()));
-  if (auto registered = methods.registerMethod("drawDrawable", [](std::shared_ptr<CanvasWidget> canvas, Drawable drawable, std::optional<Vec2F> position) {
-    canvas->drawDrawable(std::move(drawable), position.value_or(Vec2F()));
+  if (auto registered = methods.registerMethod("pushClipRect", [](std::shared_ptr<CanvasWidget> canvas, RectF const& rect) {
+    canvas->pushClipRect(rect);
   }); !registered)
     return std::unexpected(std::move(registered.error()));
-  if (auto registered = methods.registerMethod("drawDrawables", [](std::shared_ptr<CanvasWidget> canvas, List<Drawable> drawables, std::optional<Vec2F> position) {
-    for (auto& drawable : drawables)
-      canvas->drawDrawable(std::move(drawable), position.value_or(Vec2F()));
+  if (auto registered = methods.registerMethod("popClipRect", [](std::shared_ptr<CanvasWidget> canvas) {
+    return canvas->popClipRect();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawDrawable", [](std::shared_ptr<CanvasWidget> canvas, Drawable drawable, std::optional<Vec2F> position, std::optional<float> scale, std::optional<Vec2F> translation, std::optional<float> finalScale) {
+    canvas->drawDrawable(std::move(drawable), position.value_or(Vec2F()), scale.value_or(1), translation.value_or(Vec2F()), finalScale.value_or(1));
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawDrawables", [](std::shared_ptr<CanvasWidget> canvas, List<Drawable> drawables, std::optional<Vec2F> position, std::optional<float> scale, std::optional<Vec2F> translation, std::optional<float> finalScale) {
+    canvas->drawDrawables(std::move(drawables), position.value_or(Vec2F()), scale.value_or(1), translation.value_or(Vec2F()), finalScale.value_or(1));
   }); !registered)
     return std::unexpected(std::move(registered.error()));
   if (auto registered = methods.registerMethod("drawJsonDrawable", [](std::shared_ptr<CanvasWidget> canvas, Json config, std::optional<Vec2F> position) -> std::expected<void, StarException> {
@@ -513,6 +522,38 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
     });
   }); !registered)
     return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setTextCharLimit", [parentWidget](String const& name, std::optional<unsigned> limit) -> std::expected<void, StarException> {
+    return withWidget<LabelWidget>(parentWidget, name, [&](std::shared_ptr<LabelWidget> label) {
+      return label->setTextCharLimit(limit);
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setProgressColor", [parentWidget](String const& name, Color color, std::optional<Color> mix, std::optional<float> amount) -> std::expected<void, StarException> {
+    return withWidget<ProgressWidget>(parentWidget, name, [&](std::shared_ptr<ProgressWidget> progress) -> std::expected<void, StarException> {
+      progress->setColor(mix ? color.mix(*mix, amount.value_or(0)) : color);
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setProgressOverlay", [parentWidget](String const& name, String const& image) -> std::expected<void, StarException> {
+    return withWidget<ProgressWidget>(parentWidget, name, [&](std::shared_ptr<ProgressWidget> progress) -> std::expected<void, StarException> {
+      progress->setOverlay(image);
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setPortraitEntity", [parentWidget](String const& name, std::optional<LuaUserData> const& handle) -> std::expected<void, StarException> {
+    return withWidget<PortraitWidget>(parentWidget, name, [&](std::shared_ptr<PortraitWidget> portrait) -> std::expected<void, StarException> {
+      std::shared_ptr<PortraitEntity> entity;
+      if (handle) {
+        auto value = handle->get<std::shared_ptr<PortraitEntity>>();
+        if (!value) return std::unexpected(std::move(value.error()));
+        entity = value->get();
+      }
+      return portrait->setEntity(std::move(entity));
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
   if (auto registered = callbacks.registerCallback("setFontColor", [parentWidget](String const& widgetName, Color color, std::optional<float> alpha) -> std::expected<void, StarException> {
     if (alpha)
       color.setAlphaF(*alpha);
@@ -775,6 +816,45 @@ std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& conte
     return withWidget<ItemSlotWidget>(parentWidget, widgetName, [&](std::shared_ptr<ItemSlotWidget> widget) -> std::expected<std::optional<Json>, StarException> {
       if (auto item = widget->item())
         return item->descriptor().toJson();
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setItemSlotHandle", [parentWidget](String const& name, std::optional<LuaUserData> const& handle) -> std::expected<void, StarException> {
+    return withWidget<ItemSlotWidget>(parentWidget, name, [&](std::shared_ptr<ItemSlotWidget> slot) -> std::expected<void, StarException> {
+      std::shared_ptr<Item> item;
+      if (handle) {
+        auto value = handle->get<std::shared_ptr<Item>>();
+        if (!value) return std::unexpected(std::move(value.error()));
+        item = value->get();
+      }
+      slot->setItem(item);
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setItemSlotDisplay", [parentWidget](String const& name, Json const& display) -> std::expected<void, StarException> {
+    return withWidget<ItemSlotWidget>(parentWidget, name, [&](std::shared_ptr<ItemSlotWidget> slot) -> std::expected<void, StarException> {
+      static auto const fields = std::array{std::pair{String("durability"), &ItemSlotWidget::showDurability},
+          std::pair{String("count"), &ItemSlotWidget::showCount}, std::pair{String("secondaryIcon"), &ItemSlotWidget::showSecondaryIcon},
+          std::pair{String("highlight"), &ItemSlotWidget::setHighlightEnabled}};
+      for (auto const& [field, setter] : fields) {
+        auto found = display.contains(field);
+        if (!found) return std::unexpected(std::move(found.error()));
+        if (!*found) continue;
+        auto enabled = display.getBool(field);
+        if (!enabled) return std::unexpected(std::move(enabled.error()));
+        std::invoke(setter, *slot, *enabled);
+      }
+      auto hasCountPosition = display.contains("countPosition");
+      if (!hasCountPosition) return std::unexpected(std::move(hasCountPosition.error()));
+      if (*hasCountPosition) {
+        auto config = display.get("countPosition");
+        if (!config) return std::unexpected(std::move(config.error()));
+        auto position = TextPositioning::create(*config);
+        if (!position) return std::unexpected(std::move(position.error()));
+        slot->setCountPosition(*position);
+      }
       return {};
     });
   }); !registered)

@@ -176,6 +176,7 @@ public:
   // Any further rendering will be scissored based on this rect, specified in
   // pixels
   [[nodiscard]] virtual std::expected<void, StarException> setScissorRect(std::optional<RectI> const& scissorRect) = 0;
+  virtual std::optional<RectI> scissorRect() const = 0;
 
   [[nodiscard]] virtual std::expected<TexturePtr, StarException> createTexture(Image const& texture,
       TextureAddressing addressing = TextureAddressing::Clamp,

@@ -161,6 +161,12 @@ public:
   [[nodiscard]] std::expected<void, StarException> setCustomBarPrimarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
   [[nodiscard]] std::expected<void, StarException> setCustomBarSecondarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
 
+  // Link the cursor's real item and return it to inventory as one operation.
+  // A two-handed cursor item always occupies the primary link.
+  [[nodiscard]] std::expected<void, StarException> linkCustomBarSwap(CustomBarIndex index, bool primary);
+  // Clearing the displayed secondary half of a two-handed item clears primary.
+  [[nodiscard]] std::expected<void, StarException> clearCustomBarLink(CustomBarIndex index, bool primary);
+
   // Add the given slot to a free place in the custom bar if one is available.
   [[nodiscard]] std::expected<void, StarException> addToCustomBar(InventorySlot slot);
 

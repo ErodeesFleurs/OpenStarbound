@@ -16,9 +16,10 @@ function chat.send(message, modeName, speak, data) end
 ---@return string[]
 function chat.command(command) end
 
---- Adds the specified message to the chat log. The following keys are available in the `config` JSON object: - `String` __mode__ - The mode of the message. Can be one of the followgin: - `"Broadcast"` - `"Local"` - `"Party"` - `"Whisper"` - `"CommandResult"` - `"RadioMessage"` - `"World"` - `String` __channelName__ - The name of the channel to send the message to. - `String` __fromNick__ - The name of the sender of the message. - `String` __portrait__ - message portrait. - `bool` __showPane__ - If false, the chat pane will not be triggered. ---
+--- Adds a local display/log message, never sends a packet or authenticates the sender.
+--- fromConnection overrides local origin metadata (default client ID; 0 for local radio server-origin records).
 ---@param text string
----@param config? Json
+---@param config? {mode?:string, channelName?:string, fromNick?:string, portrait?:string, showPane?:boolean, fromConnection?:integer}
 function chat.addMessage(text, config) end
 
 --- Returns the current chat input text. ---

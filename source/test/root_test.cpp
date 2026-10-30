@@ -47,6 +47,20 @@ import star.networked_animator;
 import star.networked_animator_lua_bindings;
 import star.scripted_animator_lua_bindings;
 import star.drawable;
+import star.item;
+import star.item_bag;
+import star.item_database;
+import star.inventory_types;
+import star.player_inventory;
+import star.player;
+import star.player_factory;
+import star.player_log;
+import star.radio_message_database;
+import star.npc;
+import star.npc_database;
+import star.status_controller;
+import star.world_lua_bindings;
+import star.lua_game_converters;
 
 #include "gtest/gtest.h"
 
@@ -606,6 +620,288 @@ const GameTestRegistration animatorPartDrawableFirstAdd("AnimatorTest", "PartDra
       }
     }
   }
+});
+
+// Use authored items with actual handedness instead of test-only overrides.
+std::expected<std::shared_ptr<Item>, StarException> hudAuthoredItem(
+    ItemDatabase const& database, ItemType requiredType, bool twoHanded) {
+  auto names = database.allItems();
+  names.sort();
+  for (auto const& name : names) {
+    auto type = database.itemType(name);
+    if (!type) return std::unexpected(std::move(type.error()));
+    if (*type != requiredType)
+      continue;
+    auto item = database.fromJson(name);
+    if (!item) return std::unexpected(std::move(item.error()));
+    if (*item && (*item)->twoHanded() == twoHanded)
+      return *item;
+  }
+  return std::unexpected(ItemException("HUD inventory regression requires an authored item with the requested type and handedness"));
+}
+
+std::expected<BagSlot, StarException> hudItemBagSlot(Root& root, PlayerInventory const& inventory,
+    std::shared_ptr<Item> const& item) {
+  auto assets = root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/player.config:inventory.itemBags");
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto bags = config->toObject();
+  if (!bags) return std::unexpected(std::move(bags.error()));
+  auto names = bags->keys();
+  names.sort();
+  for (auto const& name : names) {
+    auto bag = inventory.bagContents(name);
+    if (!bag || bag->size() < 2)
+      continue;
+    auto allowed = inventory.itemAllowedInBag(item, name);
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    if (*allowed)
+      // An empty earlier slot must not steal the cursor's native return slot.
+      return BagSlot(name, static_cast<std::uint8_t>(bag->size() - 1));
+  }
+  return std::unexpected(ItemException("HUD inventory regression requires a configured accepting bag"));
+}
+
+const GameTestRegistration hudInventoryLinks("HudDomainTest", "InventoryLinksPreserveCursorOwnership", [](GameTest& fixture) {
+  auto& root = fixture.root();
+  auto database = root.itemDatabase();
+  ASSERT_TRUE(database) << database.error().what();
+  auto created = PlayerInventory::create(root);
+  ASSERT_TRUE(created) << created.error().what();
+  auto& inventory = **created;
+  ASSERT_GE(inventory.customBarIndexes(), 2);
+  auto expectSlot = [](std::expected<std::optional<InventorySlot>, StarException> const& actual,
+      std::optional<InventorySlot> const& expected) {
+    ASSERT_TRUE(actual) << actual.error().what();
+    EXPECT_TRUE(*actual == expected);
+  };
+  auto expectItem = [](std::expected<std::shared_ptr<Item>, StarException> const& actual, Json const& descriptor) {
+    ASSERT_TRUE(actual) << actual.error().what();
+    if (descriptor.isNull()) {
+      EXPECT_FALSE(*actual);
+      return;
+    }
+    ASSERT_TRUE(*actual);
+    EXPECT_EQ((*actual)->descriptor().toJson(), descriptor);
+  };
+  auto oneHanded = hudAuthoredItem(**database, ItemType::Consumable, false);
+  ASSERT_TRUE(oneHanded) << oneHanded.error().what();
+  auto twoHanded = hudAuthoredItem(**database, ItemType::MiningTool, true);
+  ASSERT_TRUE(twoHanded) << twoHanded.error().what();
+  Json const oneDescriptor = (*oneHanded)->descriptor().toJson();
+  Json const twoDescriptor = (*twoHanded)->descriptor().toJson();
+  auto oneSlot = hudItemBagSlot(root, inventory, *oneHanded);
+  auto twoSlot = hudItemBagSlot(root, inventory, *twoHanded);
+  ASSERT_TRUE(oneSlot) << oneSlot.error().what();
+  ASSERT_TRUE(twoSlot) << twoSlot.error().what();
+  if (*oneSlot == *twoSlot)
+    --twoSlot->second;
+  ASSERT_EQ(inventory.setItem(*oneSlot, *oneHanded), true);
+  ASSERT_EQ(inventory.setItem(*twoSlot, *twoHanded), true);
+  ASSERT_TRUE(inventory.setCustomBarSecondarySlot(1, InventorySlot(*oneSlot)));
+  ASSERT_TRUE(inventory.shiftSwap(*oneSlot));
+  expectSlot(inventory.customBarSecondarySlot(1),
+      std::optional<InventorySlot>(InventorySlot(SwapSlot())));
+  ASSERT_TRUE(inventory.linkCustomBarSwap(0, false));
+  EXPECT_FALSE(inventory.swapSlotItem());
+  expectItem(inventory.itemsAt(*oneSlot), oneDescriptor);
+  expectSlot(inventory.customBarSecondarySlot(0), std::optional<InventorySlot>(InventorySlot(*oneSlot)));
+  expectSlot(inventory.customBarSecondarySlot(1), std::optional<InventorySlot>(InventorySlot(*oneSlot)));
+
+  ASSERT_TRUE(inventory.setCustomBarPrimarySlot(1, InventorySlot(*twoSlot)));
+  ASSERT_TRUE(inventory.shiftSwap(*twoSlot));
+  auto beforeInvalid = inventory.store();
+  ASSERT_TRUE(beforeInvalid) << beforeInvalid.error().what();
+  for (bool primary : {false, true}) {
+    EXPECT_FALSE(inventory.linkCustomBarSwap(inventory.customBarIndexes(), primary));
+    EXPECT_FALSE(inventory.clearCustomBarLink(inventory.customBarIndexes(), primary));
+    auto afterInvalid = inventory.store();
+    ASSERT_TRUE(afterInvalid) << afterInvalid.error().what();
+    EXPECT_EQ(*afterInvalid, *beforeInvalid);
+  }
+  // Dropping onto the right half redirects a two-handed tool to primary,
+  // returns it to its exact bag slot, and retargets all existing cursor links.
+  ASSERT_TRUE(inventory.linkCustomBarSwap(0, false));
+  EXPECT_FALSE(inventory.swapSlotItem());
+  expectItem(inventory.itemsAt(*twoSlot), twoDescriptor);
+  expectSlot(inventory.customBarPrimarySlot(0), std::optional<InventorySlot>(InventorySlot(*twoSlot)));
+  expectSlot(inventory.customBarPrimarySlot(1), std::optional<InventorySlot>(InventorySlot(*twoSlot)));
+  expectSlot(inventory.customBarSecondarySlot(0), std::optional<InventorySlot>(InventorySlot(*oneSlot)));
+  inventory.selectActionBarLocation(CustomBarIndex(0));
+  expectItem(inventory.primaryHeldItem(), twoDescriptor);
+  expectItem(inventory.secondaryHeldItem(), {});
+  ASSERT_TRUE(inventory.clearCustomBarLink(0, false));
+  expectSlot(inventory.customBarPrimarySlot(0), std::optional<InventorySlot>{});
+  expectItem(inventory.secondaryHeldItem(), oneDescriptor);
+  expectItem(inventory.itemsAt(*twoSlot), twoDescriptor);
+  expectSlot(inventory.customBarPrimarySlot(1), std::optional<InventorySlot>(InventorySlot(*twoSlot)));
+  ASSERT_TRUE(inventory.clearCustomBarLink(0, false));
+  expectSlot(inventory.customBarSecondarySlot(0), std::optional<InventorySlot>{});
+  expectItem(inventory.itemsAt(*oneSlot), oneDescriptor);
+  expectSlot(inventory.customBarSecondarySlot(1), std::optional<InventorySlot>(InventorySlot(*oneSlot)));
+  auto items = inventory.allItems();
+  ASSERT_TRUE(items) << items.error().what();
+  EXPECT_EQ(items->size(), 2u);
+  // Empty-cursor clicks select a valid cell, but cannot install an invalid
+  // selection that would make subsequent held-item queries fail.
+  ASSERT_TRUE(inventory.linkCustomBarSwap(1, false));
+  EXPECT_TRUE(inventory.selectedActionBarLocation() == SelectedActionBarLocation(CustomBarIndex(1)));
+  auto beforeEmptyInvalid = inventory.store();
+  ASSERT_TRUE(beforeEmptyInvalid) << beforeEmptyInvalid.error().what();
+  for (bool primary : {false, true}) {
+    EXPECT_FALSE(inventory.linkCustomBarSwap(inventory.customBarIndexes(), primary));
+    EXPECT_FALSE(inventory.clearCustomBarLink(inventory.customBarIndexes(), primary));
+    auto afterEmptyInvalid = inventory.store();
+    ASSERT_TRUE(afterEmptyInvalid) << afterEmptyInvalid.error().what();
+    EXPECT_EQ(*afterEmptyInvalid, *beforeEmptyInvalid);
+  }
+});
+
+const GameTestRegistration hudRadioDequeue("HudDomainTest", "RadioUniqueAccountingOccursAtDequeue", [](GameTest& fixture) {
+  auto factory = fixture.root().playerFactory();
+  ASSERT_TRUE(factory) << factory.error().what();
+  auto created = (*factory)->create();
+  ASSERT_TRUE(created) << created.error().what();
+  auto& player = **created;
+  auto message = [](String const& id, bool unique, bool important = false) {
+    return Json(JsonObject{{"messageId", id}, {"type", "generic"}, {"unique", unique},
+        {"important", important}, {"text", id}, {"portraitImage", ""}});
+  };
+  auto unique = message("hud-domain-unique", true);
+  ASSERT_TRUE(player.queueRadioMessage(unique));
+  ASSERT_TRUE(player.queueRadioMessage(unique));
+  EXPECT_FALSE(player.log()->radioMessages().contains("hud-domain-unique"));
+  ASSERT_TRUE(player.queueRadioMessage(message("hud-domain-normal", false)));
+  ASSERT_TRUE(player.queueRadioMessage(message("hud-domain-important-a", true, true)));
+  ASSERT_TRUE(player.queueRadioMessage(message("hud-domain-important-b", true, true)));
+  EXPECT_TRUE(player.interruptRadioMessage());
+  EXPECT_FALSE(player.interruptRadioMessage());
+  for (auto const& id : {String("hud-domain-important-b"), String("hud-domain-important-a"),
+      String("hud-domain-unique"), String("hud-domain-normal")}) {
+    EXPECT_FALSE(player.log()->radioMessages().contains(id));
+    auto next = player.pullPendingRadioMessage();
+    ASSERT_TRUE(next) << next.error().what();
+    ASSERT_TRUE(*next);
+    EXPECT_EQ((**next).messageId, id);
+    EXPECT_EQ(player.log()->radioMessages().contains(id), id != "hud-domain-normal");
+  }
+  auto empty = player.pullPendingRadioMessage();
+  ASSERT_TRUE(empty);
+  EXPECT_FALSE(*empty); // The duplicate pending unique message was not replayed.
+  ASSERT_TRUE(player.queueRadioMessage(unique));
+  empty = player.pullPendingRadioMessage();
+  ASSERT_TRUE(empty);
+  EXPECT_FALSE(*empty); // Dequeue, not UI completion, suppresses later resends.
+  for (int replay = 0; replay != 2; ++replay) {
+    ASSERT_TRUE(player.queueRadioMessage(message("hud-domain-normal", false)));
+    auto next = player.pullPendingRadioMessage();
+    ASSERT_TRUE(next && *next);
+    EXPECT_EQ((**next).messageId, String("hud-domain-normal"));
+    EXPECT_FALSE(player.log()->radioMessages().contains("hud-domain-normal"));
+  }
+  // The consumed unique set is player-owned, not a shared queue/database cache.
+  auto other = (*factory)->create();
+  ASSERT_TRUE(other) << other.error().what();
+  ASSERT_TRUE((*other)->queueRadioMessage(unique));
+  auto next = (*other)->pullPendingRadioMessage();
+  ASSERT_TRUE(next && *next);
+  EXPECT_EQ((**next).messageId, String("hud-domain-unique"));
+});
+
+const GameTestRegistration hudWorldViews("HudDomainTest", "WorldPortraitDeltasFollowNativeEntityIdentity", [](GameTest& fixture) {
+  auto& root = fixture.root();
+  auto storage = File::ephemeralFile(root.random());
+  ASSERT_TRUE(storage) << storage.error().what();
+  auto world = WorldServer::create(root, Vec2U(2048, 2048), *storage);
+  ASSERT_TRUE(world) << world.error().what();
+  auto close = finally([&] { EXPECT_TRUE((*world)->close()); });
+  auto database = root.npcDatabase();
+  ASSERT_TRUE(database) << database.error().what();
+  auto variant = (*database)->generateNpcVariant("human", "villager", 1.0f, 1234, JsonObject());
+  ASSERT_TRUE(variant) << variant.error().what();
+  auto first = (*database)->createNpc(*variant);
+  auto second = (*database)->createNpc(*variant);
+  ASSERT_TRUE(first) << first.error().what();
+  ASSERT_TRUE(second) << second.error().what();
+  (*first)->setPosition(Vec2F(2046, 1024));
+  (*second)->setPosition(Vec2F(100, 1024));
+  ASSERT_TRUE((*world)->addEntity(*first));
+  ASSERT_TRUE((*world)->addEntity(*second));
+  auto luaRoot = LuaRoot::create(root);
+  ASSERT_TRUE(luaRoot) << luaRoot.error().what();
+  auto context = (*luaRoot)->createContext(StringList{});
+  ASSERT_TRUE(context) << context.error().what();
+  auto callbacks = LuaBindings::makeWorldCallbacks(root, **world);
+  ASSERT_TRUE(callbacks) << callbacks.error().what();
+  ASSERT_TRUE(context->setCallbacks("world", *callbacks));
+  ASSERT_TRUE(context->set("firstId", (*first)->entityId()));
+  ASSERT_TRUE(context->set("secondId", (*second)->entityId()));
+  auto discovery = context->eval<bool>(R"LUA(
+    local all = world.damageBarEntities()
+    local ids = {}
+    for _, entry in ipairs(all) do ids[entry.id] = true end
+    assert(ids[firstId] and ids[secondId])
+    local wrapped = world.damageBarEntities({-4, 1000, 4, 1048}, "Default")
+    assert(#wrapped == 1 and wrapped[1].id == firstId)
+    assert(#world.damageBarEntities(nil, "Special") == 0)
+    assert(#world.damageBarEntities({500, 1000, 510, 1048}) == 0)
+    return true
+  )LUA");
+  ASSERT_TRUE(discovery) << discovery.error().what();
+  EXPECT_TRUE(*discovery);
+  auto initial = context->eval<bool>(R"LUA(
+    initial = world.entityPortraitView(firstId, "full")
+    assert(initial and #initial.drawables > 0 and initial.bounds)
+    local delta = world.entityPortraitView(firstId, "full", initial.revision)
+    return delta.revision == initial.revision and delta.drawables == nil and delta.bounds == nil
+  )LUA");
+  ASSERT_TRUE(initial) << initial.error().what();
+  EXPECT_TRUE(*initial);
+  ASSERT_TRUE((*first)->statusController().setResourcePercentage("health", 0.25f));
+  auto health = context->eval<bool>(R"LUA(
+    local bar = world.entityDamageBar(firstId)
+    assert(bar.maxHealth > 0 and math.abs(bar.health / bar.maxHealth - 0.25) < 0.00001)
+    local delta = world.entityPortraitView(firstId, "full", initial.revision)
+    return delta.revision == initial.revision and delta.drawables == nil
+  )LUA");
+  ASSERT_TRUE(health) << health.error().what();
+  EXPECT_TRUE(*health);
+  ASSERT_TRUE((*first)->setBodyDirectives("?multiply=ff0000"));
+  auto changed = context->eval<bool>(R"LUA(
+    changed = world.entityPortraitView(firstId, "full", initial.revision)
+    assert(changed.revision ~= initial.revision and changed.drawables and changed.bounds)
+    local stable = world.entityPortraitView(firstId, "full", changed.revision)
+    assert(stable.revision == changed.revision and stable.drawables == nil)
+    local head = world.entityPortraitView(firstId, "head", changed.revision)
+    assert(head.revision ~= changed.revision and head.drawables and head.bounds)
+    local full = world.entityPortraitView(firstId, "full", head.revision)
+    assert(full.revision ~= head.revision and full.drawables)
+    other = world.entityPortraitView(secondId, "full", full.revision)
+    return other.revision ~= full.revision and other.drawables ~= nil
+  )LUA");
+  ASSERT_TRUE(changed) << changed.error().what();
+  EXPECT_TRUE(*changed);
+  auto firstId = (*first)->entityId();
+  ASSERT_TRUE((*world)->removeEntity(firstId, false));
+  auto missing = context->eval<bool>(
+      "return world.entityDamageBar(firstId) == nil and world.entityPortraitView(firstId, 'full') == nil");
+  ASSERT_TRUE(missing) << missing.error().what();
+  EXPECT_TRUE(*missing);
+  auto replacement = (*database)->createNpc(*variant);
+  ASSERT_TRUE(replacement) << replacement.error().what();
+  (*replacement)->setPosition(Vec2F(2046, 1024));
+  ASSERT_TRUE((*world)->addEntity(*replacement, firstId));
+  // The two allocations have identical authored portraits; switching providers
+  // must still invalidate the token, including a reused entity ID.
+  auto replaced = context->eval<bool>(R"LUA(
+    local view = world.entityPortraitView(firstId, "full", other.revision)
+    assert(view.revision ~= other.revision and view.drawables and view.bounds)
+    local stable = world.entityPortraitView(firstId, "full", view.revision)
+    return stable.revision == view.revision and stable.drawables == nil and stable.bounds == nil
+  )LUA");
+  ASSERT_TRUE(replaced) << replaced.error().what();
+  EXPECT_TRUE(*replaced);
 });
 
 }

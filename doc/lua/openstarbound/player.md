@@ -325,9 +325,9 @@ Sets whether the player's armor in the specified slot is visible.
 
 ---
 
-#### `unsigned` player.actionBarGroup()
+#### `unsigned, unsigned` player.actionBarGroup()
 
-Returns the player's active action bar.
+Returns the active action-bar group (1-based) and the total number of groups.
 
 ---
 
@@ -337,17 +337,88 @@ Sets the player's active action bar.
 
 ---
 
-#### `Variant<unsigned, EssentialItem>` player.selectedActionBarSlot()
+#### `Maybe<Variant<unsigned, EssentialItem>>` player.selectedActionBarSlot()
 
-Returns the player's selected action bar slot.
+Returns a 1-based custom slot index, an essential tool name
+(`beamaxe`, `wiretool`, `painttool`, `inspectiontool`), or nil for empty hands.
+
+---
+
+#### `void` player.setSelectedActionBarSlot([`Variant<unsigned, EssentialItem>` slot])
+
+Selects a custom slot or essential tool; nil selects empty hands.
+
+---
+#### `Maybe<LuaTable>` player.actionBarView([`uint64` knownRevision])
+
+Returns nil only when the supplied revision is unchanged. Otherwise returns
+`{revision, indexes, groups, group, selected?, items}`. Group and custom
+selection indices are 1-based; absent `selected` means empty hands. Essential
+selection uses the names documented above. Revision tokens are process-unique
+across callback rebinding, not persistent save data.
+
+`items` is dense: primary/secondary for each custom index, then the four
+essential tools in the order above, then the swap-slot item. Each entry has
+`twoHanded` and `secondaryDrawables` booleans, even when empty. Occupied entries
+also have an opaque owning Item userdata `handle` and a snapshot-local
+`identity`: the first 1-based entry sharing the same native item pointer.
+These handles are not item descriptors or JSON and cannot enter `storage`.
+Pass them directly to `widget.setItemSlotHandle` or return them from
+`tooltipItem`. Count/durability remain live on the native item and need not
+invalidate this link/selection/flag snapshot.
+
+#### `void` player.linkActionBarSwap(`unsigned` index, `bool` primary)
+
+Uses a 1-based custom index and actual native swap item. With a swap item,
+links it and performs native clear/return-to-inventory processing; a two-handed
+item redirects to primary. With no swap item, selects that custom index.
+Inventory-full clear failure does not promise an empty cursor or rollback.
+Out-of-range indices raise errors.
+
+#### `void` player.clearActionBarLink(`unsigned` index, `bool` primary)
+
+Clears the native link for a 1-based custom index; the displayed secondary
+half of a two-handed primary clears primary. Out-of-range indices raise errors.
+This domain operation has no Inventory-window gate; the bundled UI applies it.
+
+#### `bool` player.hungerEnabled()
+
+Returns hunger enablement from the player's loaded game-mode configuration.
+
+#### `Vec2F` player.position()
+
+Returns the actual Player position, including while detached from the world.
+
+#### `Maybe<EntityId>` player.lastDamagedTarget()
+
+Returns the native last-damaged target ID, or nil for no target. A returned ID
+does not guarantee the entity still exists.
+
+#### `float` player.timeSinceLastGaveDamage()
+
+Returns the player's native elapsed damage timer in seconds.
+
+#### `bool` player.interruptRadioMessage()
+
+Destructively polls and clears the native radio-interrupt flag. This does not
+request interruption. The bundled radio instance is the sole intended consumer.
+
+#### `Maybe<Json>` player.pullPendingRadioMessage()
+
+Destructively dequeues the next resolved native radio message, or returns nil
+when empty. Returns `{messageId, text, senderName, portraitImage, portraitFrames,
+portraitSpeed, textSpeed, persistTime, chatterSound}`. The portrait image may
+contain `<frame>`; frame count is an integer, speeds/timing are native numeric
+presentation values. Tutorial/species/AI resolution, delayed queue insertion,
+unique filtering and important-message prepend/interrupt ordering remain native.
+
+Unique messages are marked played **at dequeue**, even if subsequently
+interrupted or the interface closes. There is no completion acknowledgment.
+Do not install a competing consumer or drain into a second queue; existing
+`player.radioMessage(message, delay?)` remains the producer.
 
 ---
 
-#### `void` player.setSelectedActionBarSlot(`Variant<unsigned, EssentialItem>` slot)
-
-Sets the player's selected action bar slot.
-
----
 
 #### `void` player.setDamageTeam(`DamageTeam` team)
 

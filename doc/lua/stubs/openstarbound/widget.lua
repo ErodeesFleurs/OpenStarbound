@@ -28,6 +28,38 @@ function widget.setImageDrawables(widgetName, drawables, scale) end
 ---@param capacity? integer Defaults to visible slot count, not an implicit larger bag.
 function widget.setItemGridItems(widgetName, items, capacity) end
 
+--- Shares the actual native Item with an ItemSlotWidget; nil clears, no inventory move or JSON reconstruction.
+---@param widgetName string
+---@param item? NativeItemHandle
+function widget.setItemSlotHandle(widgetName, item) end
+
+--- Updates supplied display fields only; unspecified settings stay unchanged.
+---@param widgetName string
+---@param display {durability?:boolean, count?:boolean, secondaryIcon?:boolean, highlight?:boolean, countPosition?:Json}
+function widget.setItemSlotDisplay(widgetName, display) end
+
+--- Shares actual native PortraitEntity for live animation; nil clears.
+---@param widgetName string
+---@param entity? NativePortraitHandle
+function widget.setPortraitEntity(widgetName, entity) end
+
+--- Native Color mixing/rounding; amount defaults to 0 when mix is supplied.
+---@param widgetName string
+---@param color Color
+---@param mix? Color
+---@param amount? number
+function widget.setProgressColor(widgetName, color, mix, amount) end
+
+--- Sets ProgressWidget overlay image; empty string clears.
+---@param widgetName string
+---@param image string
+function widget.setProgressOverlay(widgetName, image) end
+
+--- Label rendered Unicode-codepoint limit, excluding escape commands; nil removes, stored text unchanged.
+---@param widgetName string
+---@param limit? integer
+function widget.setTextCharLimit(widgetName, limit) end
+
 --- Gets the hint text of a TextBoxWidget. ---
 ---@param widgetName string
 ---@return string

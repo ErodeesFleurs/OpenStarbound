@@ -935,6 +935,33 @@ bool PlayerInventory::consumeCurrency(String const& currencyType, std::uint64_t 
   return {};
 }
 
+std::expected<void, StarException> PlayerInventory::linkCustomBarSwap(CustomBarIndex index, bool primary) {
+  if (auto item = swapSlotItem()) {
+    auto linked = primary || item->twoHanded()
+      ? setCustomBarPrimarySlot(index, InventorySlot(SwapSlot()))
+      : setCustomBarSecondarySlot(index, InventorySlot(SwapSlot()));
+    if (!linked) return std::unexpected(std::move(linked.error()));
+    return clearSwap().transform([](bool) {});
+  }
+  auto slot = m_customBar.at(m_customBarGroup, index);
+  if (!slot) return std::unexpected(std::move(slot.error()));
+  selectActionBarLocation(index);
+  return {};
+}
+
+std::expected<void, StarException> PlayerInventory::clearCustomBarLink(CustomBarIndex index, bool primary) {
+  auto primarySlot = customBarPrimarySlot(index);
+  if (!primarySlot) return std::unexpected(std::move(primarySlot.error()));
+  auto secondarySlot = customBarSecondarySlot(index);
+  if (!secondarySlot) return std::unexpected(std::move(secondarySlot.error()));
+  if (!primary && *primarySlot) {
+    auto item = itemsAt(**primarySlot);
+    if (!item) return std::unexpected(std::move(item.error()));
+    primary = itemSafeTwoHanded(*item);
+  }
+  return primary ? setCustomBarPrimarySlot(index, {}) : setCustomBarSecondarySlot(index, {});
+}
+
 [[nodiscard]] std::expected<void, StarException> PlayerInventory::addToCustomBar(InventorySlot slot) {
   for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
     auto result = m_customBar.at(m_customBarGroup, j);

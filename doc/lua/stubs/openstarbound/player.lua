@@ -217,21 +217,87 @@ function player.armorVisible(slotName) end
 ---@param visible boolean
 function player.setArmorVisible(slotName, visible) end
 
---- Returns the player's active action bar. ---
----@return unsigned
+--- Active 1-based group and total groups.
+---@return unsigned group
+---@return unsigned groups
 function player.actionBarGroup() end
 
 --- Sets the player's active action bar. ---
 ---@param barId unsigned
 function player.setActionBarGroup(barId) end
 
---- Returns the player's selected action bar slot. ---
----@return (unsigned|EssentialItem)
+--- 1-based custom index, essential tool name, or nil for empty hands.
+---@return (unsigned|EssentialItem)?
 function player.selectedActionBarSlot() end
 
 --- Sets the player's selected action bar slot. ---
 ---@param slot? integer|string
 function player.setSelectedActionBarSlot(slot) end
+
+---@class ActionBarItemView
+---@field handle? NativeItemHandle Opaque actual shared native Item; never persist in JSON/storage.
+---@field identity? integer First 1-based snapshot entry sharing this native item pointer.
+---@field twoHanded boolean
+---@field secondaryDrawables boolean
+
+---@class ActionBarView
+---@field revision integer Process-unique across callback rebinding.
+---@field indexes integer
+---@field groups integer
+---@field group integer 1-based.
+---@field selected? integer|string 1-based custom slot or essential name; absent for empty hands.
+---@field items ActionBarItemView[] Primary/secondary pairs, four essentials, swap; empty slots still have entries.
+
+--- Nil only for unchanged supplied revision. Live native item counts/durability need not invalidate it.
+---@param knownRevision? integer
+---@return ActionBarView?
+function player.actionBarView(knownRevision) end
+
+--- Native swap link/return operation; empty swap selects index, two-handed redirects primary.
+--- Does not promise cursor empty/rollback on inventory-full clear failure.
+---@param index integer 1-based custom slot, validated.
+---@param primary boolean
+function player.linkActionBarSwap(index, primary) end
+
+--- Native link clear; secondary half of two-handed primary clears primary. No UI visibility gate.
+---@param index integer 1-based custom slot, validated.
+---@param primary boolean
+function player.clearActionBarLink(index, primary) end
+
+--- Loaded game-mode hunger setting.
+---@return boolean
+function player.hungerEnabled() end
+
+--- Actual Player position even while detached.
+---@return Vec2F
+function player.position() end
+
+---@return EntityId?
+function player.lastDamagedTarget() end
+
+--- Native elapsed damage timer, in seconds.
+---@return number
+function player.timeSinceLastGaveDamage() end
+
+--- Destructive flag poll, not an interruption request; bundled radio is sole intended consumer.
+---@return boolean
+function player.interruptRadioMessage() end
+
+---@class RadioMessageView
+---@field messageId string
+---@field text string
+---@field senderName string
+---@field portraitImage string
+---@field portraitFrames integer
+---@field portraitSpeed number
+---@field textSpeed number
+---@field persistTime number
+---@field chatterSound string
+
+--- Destructive resolved native dequeue; nil when empty. Unique accounting commits here, no completion ack.
+--- Do not compete with bundled radio or drain into a second queue.
+---@return RadioMessageView?
+function player.pullPendingRadioMessage() end
 
 --- Sets the player's damage team. This must be called every frame to override the current damage team that the server has given the player (normally controlled by /pvp) ---
 ---@param team DamageTeam

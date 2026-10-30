@@ -186,12 +186,21 @@
 ---@field directives? string
 ---@field backDirectives? string
 
+--- Engine-produced owning userdata; not JSON/descriptors and must not be persisted in storage.
+---@class NativeItemHandle: userdata
+---@class NativePortraitHandle: userdata
+---@class NativePaneHandle: userdata
+
 ---@class CanvasWidget
 ---@field size fun(self:CanvasWidget):Vec2I
 ---@field mousePosition fun(self:CanvasWidget):Vec2I
 ---@field clear fun(self:CanvasWidget)
----@field drawDrawable fun(self:CanvasWidget, drawable:Drawable, position?:Vec2F)
----@field drawDrawables fun(self:CanvasWidget, drawables:Drawable[], position?:Vec2F)
+--- Clips nest by intersection in Canvas units; pop restores and errors on empty stack; clear resets the stack.
+---@field pushClipRect fun(self:CanvasWidget, rect:RectF)
+---@field popClipRect fun(self:CanvasWidget)
+--- Drawable geometry: translation, scale, finalScale (separate float steps), then position origin.
+---@field drawDrawable fun(self:CanvasWidget, drawable:Drawable, position?:Vec2F, scale?:number, translation?:Vec2F, finalScale?:number)
+---@field drawDrawables fun(self:CanvasWidget, drawables:Drawable[], position?:Vec2F, scale?:number, translation?:Vec2F, finalScale?:number)
 ---@field drawJsonDrawable fun(self:CanvasWidget, drawable:Json, position?:Vec2F)
 ---@field drawJsonDrawables fun(self:CanvasWidget, drawables:JsonArray, position?:Vec2F)
 ---@field drawImage fun(self:CanvasWidget, image:string, position:Vec2F, scale?:number, color?:Color, centered?:boolean)

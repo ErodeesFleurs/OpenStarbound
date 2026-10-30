@@ -54,10 +54,7 @@ enum class MainInterfacePanes {
   HttpTrustDialog, // sorry i need it here
   JoinRequest,
   Options,
-  ActionBar,
-  TeamBar,
   WireInterface,
-  RadioMessagePopup,
   CraftingPlain,
   MmUpgrade,
   Collections,
@@ -73,92 +70,10 @@ struct MainInterfaceConfig {
 
   TextStyle textStyle;
 
-  String inventoryImage;
-  String inventoryImageHover;
-  String inventoryImageGlow;
-  String inventoryImageGlowHover;
-  String inventoryImageOpen;
-  String inventoryImageOpenHover;
-
-  String beamDownImage;
-  String beamDownImageHover;
-
-  String deployImage;
-  String deployImageHover;
-  String deployImageDisabled;
-  String beamUpImage;
-  String beamUpImageHover;
-
-  String craftImage;
-  String craftImageHover;
-  String craftImageOpen;
-  String craftImageOpenHover;
-
-  String codexImage;
-  String codexImageHover;
-  String codexImageOpen;
-  String codexImageHoverOpen;
-
-  String questLogImage;
-  String questLogImageHover;
-  String questLogImageOpen;
-  String questLogImageHoverOpen;
-
-  String mmUpgradeImage;
-  String mmUpgradeImageHover;
-  String mmUpgradeImageOpen;
-  String mmUpgradeImageHoverOpen;
-  String mmUpgradeImageDisabled;
-
-  String collectionsImage;
-  String collectionsImageHover;
-  String collectionsImageOpen;
-  String collectionsImageHoverOpen;
-  String collectionsImageDisabled;
-
-  Vec2I mainBarInventoryButtonOffset;
-  Vec2I mainBarCraftButtonOffset;
-  Vec2I mainBarCodexButtonOffset;
-  Vec2I mainBarBeamButtonOffset;
-  Vec2I mainBarDeployButtonOffset;
-  Vec2I mainBarQuestLogButtonOffset;
-  Vec2I mainBarMmUpgradeButtonOffset;
-  Vec2I mainBarCollectionsButtonOffset;
-
-  PolyI mainBarInventoryButtonPoly;
-  PolyI mainBarCraftButtonPoly;
-  PolyI mainBarCodexButtonPoly;
-  PolyI mainBarBeamButtonPoly;
-  PolyI mainBarDeployButtonPoly;
-  PolyI mainBarQuestLogButtonPoly;
-  PolyI mainBarMmUpgradeButtonPoly;
-  PolyI mainBarCollectionsButtonPoly;
-
-  PolyI mainBarPoly;
-  Vec2I mainBarSize;
 
   Vec2I itemCountRightAnchor;
   Vec2I inventoryItemMouseOffset;
 
-  unsigned maxMessageCount;
-  String overflowMessageText;
-
-  Vec2I messageBarPos;
-  Vec2I messageItemOffset;
-
-  String messageTextContainer;
-  Vec2I messageTextContainerOffset;
-  Vec2I messageTextOffset;
-
-  float messageTime;
-  float messageHideTime;
-  Vec2I messageActiveOffset;
-  Vec2I messageHiddenOffset;
-  Vec2I messageHiddenOffsetBar;
-  float messageWindowSpring;
-  float monsterHealthBarTime;
-
-  String hungerIcon;
 
   bool renderVirtualCursor;
   Json cursorItemSlot;

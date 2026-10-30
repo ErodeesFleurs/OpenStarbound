@@ -64,6 +64,11 @@ import star.world_template;
 import star.world_lua_bindings;
 import star.celestial_parameters;
 import star.celestial_coordinate;
+import star.canvas_widget;
+import star.camera_lua_bindings;
+import star.world_camera;
+import star.poly;
+import star.json_extra;
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
@@ -3797,6 +3802,140 @@ const GameTestRegistration planetTextPresentation("LuaPlanetText", "NativeTimerD
       step(dt);
   }
   ASSERT_TRUE(panes.dismissAllPanes());
+});
+
+const GameTestRegistration notificationPresentation("LuaNotifications", "OverflowEvictsOldestAndPickupIdentitySurvivesReload", [](GameTest& fixture) {
+  auto context = textEditorContext(fixture);
+  ASSERT_TRUE(context);
+  auto assets = fixture.root().assets();
+  ASSERT_TRUE(assets);
+  auto config = (*assets)->json("/interface/opensb/notifications/notifications.config");
+  ASSERT_TRUE(config);
+  auto luaRoot = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(luaRoot);
+  auto created = ScriptTestPane::create(**context, *config);
+  ASSERT_TRUE(created);
+  auto pane = *created;
+  ASSERT_TRUE(pane->setLuaRoot(*luaRoot));
+  auto rootCallbacks = LuaBindings::makeRootCallbacks(fixture.root());
+  ASSERT_TRUE(rootCallbacks);
+  ASSERT_TRUE(pane->addCallbacks("root", *rootCallbacks));
+  WorldCamera camera;
+  camera.setScreenSize({800, 600});
+  auto cameraCallbacks = LuaBindings::makeCameraCallbacks(fixture.root(), camera);
+  ASSERT_TRUE(cameraCallbacks);
+  ASSERT_TRUE(pane->addCallbacks("camera", *cameraCallbacks));
+  // Queue/storage behavior only: real Canvas commands, no renderer or drawing claims.
+  LuaCallbacks interface;
+  ASSERT_TRUE(interface.registerCallback("scale", [] { return 1.25f; }));
+  ASSERT_TRUE(pane->addCallbacks("interface", interface));
+  PaneManager panes(**context);
+  ASSERT_TRUE(panes.displayPane(PaneLayer::Background, pane, {}));
+
+  ASSERT_TRUE(pane->call("push", {JsonObject{{"text", "expires"}, {"cooldown", 0.5}}}));
+  ASSERT_TRUE(pane->tick(0.5f));
+  auto zero = pane->evaluate("return {#storage.messages, storage.messages[1].cooldown}");
+  ASSERT_TRUE(zero && *zero);
+  EXPECT_EQ(**zero, (JsonArray{1, 0}));
+  ASSERT_TRUE(pane->tick(0.125f));
+  auto expired = pane->evaluate("return #storage.messages");
+  ASSERT_TRUE(expired && *expired);
+  EXPECT_EQ(**expired, Json(0));
+
+  auto maximum = (*assets)->json("/interface.config:maxMessageCount");
+  ASSERT_TRUE(maximum);
+  auto capacity = maximum->toUInt();
+  ASSERT_TRUE(capacity);
+  ASSERT_TRUE(pane->evaluate(strf(
+      "for index=1,{} do push({{text=tostring(index),cooldown=100}}) end", *capacity + 3)));
+  for (unsigned i = 0; i < 3; ++i)
+    ASSERT_TRUE(pane->tick(0.125f));
+  auto overflow = pane->evaluate(R"LUA(
+    local remaining = jarray()
+    for _, message in ipairs(storage.messages) do
+      if not message.overflow then remaining[#remaining + 1] = message.text end
+    end
+    return {#storage.messages, storage.overflowCount, remaining}
+  )LUA");
+  ASSERT_TRUE(overflow && *overflow);
+  JsonArray remaining;
+  for (unsigned i = 4; i <= *capacity + 3; ++i)
+    remaining.append(strf("{}", i));
+  EXPECT_EQ(**overflow, (JsonArray{*capacity + 1, 3, remaining}));
+  ASSERT_TRUE(fixture.root().reload());
+  ASSERT_TRUE(pane->tick(0));
+  auto restored = pane->evaluate("return {#storage.messages, storage.overflowCount, storage.messages[1].overflow}");
+  ASSERT_TRUE(restored && *restored);
+  EXPECT_EQ(**restored, (JsonArray{*capacity + 1, 3, true}));
+  ASSERT_TRUE(pane->tick(1000));
+  ASSERT_TRUE(pane->tick(0));
+
+  auto pickup = [&](int variant, int count) {
+    return pane->call("pickup", {JsonObject{{"name", "石块"},
+        {"count", count}, {"descriptor", JsonObject{{"name", "cobblestonematerial"},
+            {"count", 1}, {"parameters", JsonObject{{"variant", variant}}}}}}});
+  };
+  ASSERT_TRUE(pickup(1, 2));
+  ASSERT_TRUE(pickup(1, 3));
+  ASSERT_TRUE(pickup(2, 7));
+  auto merged = pane->evaluate("return {#storage.messages,storage.messages[1].count,storage.messages[2].count}");
+  ASSERT_TRUE(merged && *merged);
+  EXPECT_EQ(**merged, (JsonArray{2, 5, 7}));
+  ASSERT_TRUE(pane->tick(1000));
+  ASSERT_TRUE(pickup(1, 2));
+  auto renewed = pane->evaluate("return {#storage.messages,storage.messages[1].count}");
+  ASSERT_TRUE(renewed && *renewed);
+  EXPECT_EQ(**renewed, (JsonArray{1, 2}));
+  ASSERT_TRUE(panes.dismissAllPanes());
+});
+
+const GameTestRegistration mainbarGeometry("LuaMainBar", "PhysicalPolygonTransformsPreserveNativeBoundaryRules", [](GameTest& fixture) {
+  auto assets = fixture.root().assets();
+  ASSERT_TRUE(assets);
+  auto config = (*assets)->json("/interface.config:mainBar");
+  ASSERT_TRUE(config);
+  auto sizeJson = config->get("size");
+  ASSERT_TRUE(sizeJson);
+  auto barSize = jsonToVec2I(*sizeJson);
+  ASSERT_TRUE(barSize);
+  auto luaRoot = LuaRoot::create(fixture.root());
+  ASSERT_TRUE(luaRoot);
+  auto script = (*luaRoot)->createContext("/interface/opensb/mainbar/geometry.lua");
+  ASSERT_TRUE(script);
+  auto callbacks = LuaBindings::makeRootCallbacks(fixture.root());
+  ASSERT_TRUE(callbacks);
+  ASSERT_TRUE(script->setCallbacks("root", *callbacks));
+  for (Vec2U screen : {Vec2U{800, 600}, Vec2U{801, 601}}) {
+    for (float scale : {1.0f, 1.25f, 3.0f}) {
+      auto layout = script->eval<Json>(strf(
+          "layout=mainbarPresentation.layout(root.assetJson('/interface.config:mainBar'), {{{},{}}}, {}); return layout",
+          screen[0], screen[1], scale));
+      ASSERT_TRUE(layout) << layout.error().what();
+      Vec2F origin = Vec2F(screen) - Vec2F(*barSize) * scale;
+      for (String const& name : StringList{"inventory", "craft", "codex", "deploy", "beam", "questLog", "mmUpgrade", "collections"}) {
+        SCOPED_TRACE(strf("{} {}x{} scale{}", name, screen[0], screen[1], scale));
+        auto button = config->get(name);
+        ASSERT_TRUE(button);
+        auto polygonJson = button->get("poly");
+        ASSERT_TRUE(polygonJson);
+        auto original = jsonToPolyI(*polygonJson);
+        ASSERT_TRUE(original);
+        PolyF polygon(*original);
+        polygon.translate(origin);
+        polygon.scale(scale, origin);
+        auto bounds = polygon.boundBox();
+        for (Vec2F point : {bounds.center(), bounds.min(), bounds.max(),
+            Vec2F{bounds.xMin(), bounds.center().y()}, Vec2F{bounds.xMax(), bounds.center().y()},
+            Vec2F{bounds.center().x(), bounds.yMin()}, Vec2F{bounds.center().x(), bounds.yMax()},
+            Vec2F{bounds.xMin() - 0.25f, bounds.center().y()}, Vec2F{bounds.xMax() + 0.25f, bounds.center().y()}}) {
+          auto hit = script->eval<bool>(strf(
+              "return mainbarPresentation.contains(layout.polygons.{}, {{{},{}}})", name, point[0], point[1]));
+          ASSERT_TRUE(hit) << hit.error().what();
+          EXPECT_EQ(*hit, polygon.contains(point));
+        }
+      }
+    }
+  }
 });
 
 }

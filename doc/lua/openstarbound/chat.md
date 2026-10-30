@@ -39,6 +39,10 @@ Adds the specified message to the chat log. The following keys are available in 
 - `String` __fromNick__ - The name of the sender of the message.
 - `String` __portrait__ - message portrait.
 - `bool` __showPane__ - If false, the chat pane will not be triggered.
+- `unsigned` __fromConnection__ - Optional local origin metadata; defaults to
+  the client's connection ID. `0` represents the server origin in local radio
+  records. This function only adds a local display/log message: it does not
+  send a packet, authorize a command or authenticate the claimed sender.
 
 ---
 

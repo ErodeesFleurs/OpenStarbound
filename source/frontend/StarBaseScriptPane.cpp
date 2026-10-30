@@ -302,7 +302,20 @@ std::expected<std::shared_ptr<Pane>, StarException> BaseScriptPane::createToolti
     return std::move(*tooltip);
   }
   std::shared_ptr<Item> item;
-  if (auto child = getChildAt(screenPosition)) {
+  auto authoredItem = m_script.invoke<LuaValue>("tooltipItem", screenPosition);
+  if (!authoredItem)
+    return std::unexpected(std::move(authoredItem.error()));
+  if (*authoredItem) {
+    if (**authoredItem == LuaNil)
+      return std::shared_ptr<Pane>{};
+    auto handle = std::get_if<LuaUserData>(&**authoredItem);
+    if (!handle)
+      return std::unexpected(GuiException("tooltipItem must return an Item handle or nil"));
+    auto value = handle->get<std::shared_ptr<Item>>();
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    item = value->get();
+  } else if (auto child = getChildAt(screenPosition)) {
     if (auto itemSlot = as<ItemSlotWidget>(child))
       item = itemSlot->item();
     if (auto itemGrid = as<ItemGridWidget>(child)) {
@@ -497,6 +510,12 @@ std::expected<Json, StarException> BaseScriptPane::inputJson(InputEvent const& e
     result.set("position", jsonFromVec2I(position - screenPosition()));
     result.set("screenPosition", jsonFromVec2I(position));
   }
+  if (auto move = std::get_if<MouseMoveEvent>(&event))
+    result.set("physicalPosition", jsonFromVec2F(move->mousePosition));
+  else if (auto down = std::get_if<MouseButtonDownEvent>(&event))
+    result.set("physicalPosition", jsonFromVec2F(down->mousePosition));
+  else if (auto up = std::get_if<MouseButtonUpEvent>(&event))
+    result.set("physicalPosition", jsonFromVec2F(up->mousePosition));
   if (auto down = std::get_if<KeyDownEvent>(&event)) {
     auto name = enumName<KeyNames>(down->key);
     if (!name)

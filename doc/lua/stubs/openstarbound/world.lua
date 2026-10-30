@@ -14,6 +14,40 @@ function world.isClient() end
 ---@return string?
 function world.name() end
 
+---@class DamageBarDiscovery
+---@field id EntityId
+---@field type string
+---@field position Vec2F
+---@field team DamageTeam
+
+---@class DamageBarView: DamageBarDiscovery
+---@field health number
+---@field maxHealth number
+---@field name string
+
+--- Unsorted native fuzzy-region query or complete known interest set; no UI filtering/ordering policy.
+---@param region? RectF
+---@param typeName? "Default"|"Special"|"None"
+---@return DamageBarDiscovery[]
+function world.damageBarEntities(region, typeName) end
+
+--- Nil for absent/non-DamageBarEntity; domain errors propagate.
+---@param id EntityId
+---@return DamageBarView?
+function world.entityDamageBar(id) end
+
+---@class EntityPortraitView
+---@field revision integer Callback-local; reset known token on init/rebind.
+---@field drawables? Drawable[] Omitted when unchanged; empty array explicitly clears.
+---@field bounds? RectF Cropped native bounds, omitted when unchanged.
+
+--- Nil only if missing/nonportrait; unchanged returns revision-only table, with live native animation.
+---@param id EntityId
+---@param mode string
+---@param knownRevision? integer
+---@return EntityPortraitView?
+function world.entityPortraitView(id, mode, knownRevision) end
+
 --- Attempts a wire connection between the two objects positioned at `outputPosition` and `inputPosition`. The `outputIndex` and `inputIndex` parameters specify which output and input nodes to connect. --- The following additional world bindings are available only for scripts running on the client. ---
 ---@param outputPosition Vec2I
 ---@param outputIndex number

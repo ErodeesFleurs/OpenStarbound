@@ -510,6 +510,23 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makePlayerCallbacks(Root
     return value->get();
   }); !registered)
     return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("hungerEnabled", [&player]() {
+    return player.modeConfig().hunger;
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("lastDamagedTarget", [&player]() -> std::optional<EntityId> {
+    auto id = player.lastDamagedTarget();
+    return id == NullEntityId ? std::nullopt : std::optional<EntityId>(id);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("timeSinceLastGaveDamage", [&player]() {
+    return player.timeSinceLastGaveDamage();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("position", [&player]() {
+    return player.position();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
   if (auto registered = callbacks.registerCallback("setMode", [&player](String const& modeName) -> std::expected<void, StarException> {
     if (!PlayerModeNames) return std::unexpected(PlayerModeNames.error());
     auto value = PlayerModeNames->getLeft(modeName);
@@ -601,6 +618,102 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makePlayerCallbacks(Root
     if (handName == "primary") return inventory->setCustomBarPrimarySlot(wrapped, inventorySlot);
     if (handName == "alt") return inventory->setCustomBarSecondarySlot(wrapped, inventorySlot);
     return std::unexpected(StarException::format("Unknown tool hand {}", handName));
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
+  struct ActionBarViewCache {
+    PlayerInventory const* inventory = nullptr;
+    List<std::shared_ptr<Item>> items;
+    List<unsigned> flags;
+    SelectedActionBarLocation selection;
+    unsigned group = 0;
+    std::uint64_t revision = 0;
+  };
+  if (auto registered = callbacks.registerCallback("actionBarView",
+      [&player, cache = ActionBarViewCache{}](LuaEngine& engine, std::optional<std::uint64_t> knownRevision) mutable -> std::expected<std::optional<LuaTable>, StarException> {
+    auto inventory = player.inventory();
+    auto indexes = inventory->customBarIndexes();
+    std::size_t size = indexes * 2 + EssentialItemCount + 1;
+    bool changed = cache.inventory != inventory.get() || cache.items.size() != size
+      || cache.selection != inventory->selectedActionBarLocation() || cache.group != inventory->customBarGroup();
+    cache.inventory = inventory.get();
+    cache.items.resize(size);
+    cache.flags.resize(size);
+    auto remember = [&](std::size_t i, std::shared_ptr<Item> item) {
+      unsigned flags = item ? (item->twoHanded() ? 1u : 0u) | (item->hasSecondaryDrawables() ? 2u : 0u) : 0u;
+      changed = changed || cache.items[i] != item || cache.flags[i] != flags;
+      cache.items[i] = std::move(item);
+      cache.flags[i] = flags;
+    };
+    for (CustomBarIndex i = 0; i < indexes; ++i) {
+      auto primary = inventory->customBarPrimarySlot(i);
+      if (!primary) return std::unexpected(std::move(primary.error()));
+      auto secondary = inventory->customBarSecondarySlot(i);
+      if (!secondary) return std::unexpected(std::move(secondary.error()));
+      auto first = *primary ? inventory->itemsAt(**primary) : std::expected<std::shared_ptr<Item>, StarException>(std::shared_ptr<Item>{});
+      if (!first) return std::unexpected(std::move(first.error()));
+      auto second = *secondary ? inventory->itemsAt(**secondary) : std::expected<std::shared_ptr<Item>, StarException>(std::shared_ptr<Item>{});
+      if (!second) return std::unexpected(std::move(second.error()));
+      remember(i * 2, std::move(*first));
+      remember(i * 2 + 1, std::move(*second));
+    }
+    for (unsigned i = 0; i < EssentialItemCount; ++i)
+      remember(indexes * 2 + i, inventory->essentialItem(static_cast<EssentialItem>(i)));
+    remember(size - 1, inventory->swapSlotItem());
+    cache.selection = inventory->selectedActionBarLocation();
+    cache.group = inventory->customBarGroup();
+    // Context rebinding must not reuse a token still held by a session pane.
+    static std::atomic<std::uint64_t> nextRevision{0};
+    if (changed || !cache.revision) cache.revision = nextRevision.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (knownRevision && *knownRevision == cache.revision) return {};
+    auto view = engine.createTable(0, 7);
+    if (!view) return std::unexpected(std::move(view.error()));
+    auto put = [&](std::string_view name, auto value) { return view->set(name, std::move(value)); };
+    if (auto r = put("revision", cache.revision); !r) return std::unexpected(std::move(r.error()));
+    if (auto r = put("indexes", indexes); !r) return std::unexpected(std::move(r.error()));
+    if (auto r = put("groups", inventory->customBarGroups()); !r) return std::unexpected(std::move(r.error()));
+    if (auto r = put("group", cache.group + 1); !r) return std::unexpected(std::move(r.error()));
+    if (auto index = std::get_if<CustomBarIndex>(&cache.selection)) {
+      if (auto r = put("selected", *index + 1); !r) return std::unexpected(std::move(r.error()));
+    } else if (auto essential = std::get_if<EssentialItem>(&cache.selection)) {
+      if (!EssentialItemNames) return std::unexpected(EssentialItemNames.error());
+      auto name = EssentialItemNames->getRight(*essential);
+      if (!name) return std::unexpected(std::move(name.error()));
+      if (auto r = put("selected", name->get()); !r) return std::unexpected(std::move(r.error()));
+    }
+    auto items = engine.createTable(static_cast<int>(size), 0);
+    if (!items) return std::unexpected(std::move(items.error()));
+    for (std::size_t i = 0; i < size; ++i) {
+      auto entry = engine.createTable(0, 4);
+      if (!entry) return std::unexpected(std::move(entry.error()));
+      if (auto const& item = cache.items[i]) {
+        auto handle = engine.createUserData(item);
+        if (!handle) return std::unexpected(std::move(handle.error()));
+        if (auto r = entry->set("handle", std::move(*handle)); !r) return std::unexpected(std::move(r.error()));
+        std::size_t identity = 0;
+        while (cache.items[identity] != item) ++identity;
+        if (auto r = entry->set("identity", identity + 1); !r) return std::unexpected(std::move(r.error()));
+      }
+      if (auto r = entry->set("twoHanded", (cache.flags[i] & 1) != 0); !r) return std::unexpected(std::move(r.error()));
+      if (auto r = entry->set("secondaryDrawables", (cache.flags[i] & 2) != 0); !r) return std::unexpected(std::move(r.error()));
+      if (auto r = items->set(i + 1, std::move(*entry)); !r) return std::unexpected(std::move(r.error()));
+    }
+    if (auto r = put("items", std::move(*items)); !r) return std::unexpected(std::move(r.error()));
+    return std::optional<LuaTable>(std::move(*view));
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
+  if (auto registered = callbacks.registerCallback("linkActionBarSwap", [&player](unsigned slot, bool primary) -> std::expected<void, StarException> {
+    if (!slot || slot > player.inventory()->customBarIndexes())
+      return std::unexpected(StarException("Action bar slot out of range"));
+    return player.inventory()->linkCustomBarSwap(static_cast<CustomBarIndex>(slot - 1), primary);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+
+  if (auto registered = callbacks.registerCallback("clearActionBarLink", [&player](unsigned slot, bool primary) -> std::expected<void, StarException> {
+    if (!slot || slot > player.inventory()->customBarIndexes())
+      return std::unexpected(StarException("Action bar slot out of range"));
+    return player.inventory()->clearCustomBarLink(static_cast<CustomBarIndex>(slot - 1), primary);
   }); !registered)
     return std::unexpected(std::move(registered.error()));
 
@@ -1399,6 +1512,23 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makePlayerCallbacks(Root
 
   if (auto registered = callbacks.registerCallback("radioMessage", [&player](Json const& messageConfig, std::optional<float> const& delay) -> std::expected<void, StarException> {
     return player.queueRadioMessage(messageConfig, delay.value_or(0));
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("interruptRadioMessage", [&player]() {
+    return player.interruptRadioMessage();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("pullPendingRadioMessage", [&player]() -> std::expected<std::optional<Json>, StarException> {
+    auto pending = player.pullPendingRadioMessage();
+    if (!pending) return std::unexpected(std::move(pending.error()));
+    if (!*pending) return std::optional<Json>{};
+    auto const& message = **pending;
+    return std::optional<Json>{JsonObject{
+        {"messageId", message.messageId}, {"text", message.text},
+        {"senderName", message.senderName}, {"portraitImage", message.portraitImage},
+        {"portraitFrames", message.portraitFrames}, {"portraitSpeed", message.portraitSpeed},
+        {"textSpeed", message.textSpeed}, {"persistTime", message.persistTime},
+        {"chatterSound", message.chatterSound}}};
   }); !registered)
     return std::unexpected(std::move(registered.error()));
 

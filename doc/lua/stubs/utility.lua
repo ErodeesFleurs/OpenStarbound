@@ -152,6 +152,10 @@ function sb.millisecondsSinceEpoch() end
 ---@return integer
 function sb.monotonicMilliseconds() end
 
+--- Precise native monotonic seconds (not rounded milliseconds or wall-clock time); compare only within this run.
+---@return number
+function sb.monotonicTime() end
+
 --- A promise fulfiller returned by sb.makePromise.
 ---@class RpcPromiseKeeper<T>
 ---@field chain fun(self: RpcPromiseKeeper<T>, promise: RpcPromise<T>)

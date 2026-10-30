@@ -1,5 +1,6 @@
 import star.json_extra;
 import std;
+import star.team_client;
 import star.optional;
 import star.json;
 import star.xx_hash;
@@ -238,7 +239,6 @@ import star.inventory_types;
 
 
 
-import star.action_bar;
 
 import star.world_geometry;
 import star.wiring;
@@ -253,7 +253,6 @@ import star.progress_widget;
 import star.label_widget;
 
 
-import star.team_bar;
 
 
 
@@ -275,7 +274,6 @@ import star.lounging_entities;
 import star.chatty_entity;
 import star.emote_entity;
 import star.portrait_entity;
-import star.damage_bar_entity;
 import star.nametag_entity;
 import star.movement_controller;
 import star.platformer_astar_types;
@@ -341,7 +339,6 @@ import star.radio_message_database;
 
 
 
-import star.radio_message_popup;
 
 
 
@@ -415,10 +412,6 @@ std::expected<void, StarException> bindUiCapabilities(ScriptHost& host, std::sha
 
 }// namespace
 
-GuiMessage::GuiMessage() : message(), cooldown(), springState() {}
-
-GuiMessage::GuiMessage(String const& message, float cooldown, float spring)
-  : message(message), cooldown(cooldown), springState(spring) {}
 
 MainInterface::MainInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, WorldPainter& painter, std::shared_ptr<Cinematic> cinematicOverlay)
   : m_guiContext(guiContext)
@@ -459,7 +452,6 @@ std::expected<void, StarException> MainInterface::initialize(std::shared_ptr<Wor
 
   m_debugSpatialClearTimer = GameTimer(m_config->debugSpatialClearTime);
   m_debugMapClearTimer = GameTimer(m_config->debugMapClearTime);
-  m_stickyTargetingTimer = GameTimer(m_config->monsterHealthBarTime);
 
   if (auto initialized = initMainBarPanes(); !initialized)
     return std::unexpected(std::move(initialized.error()));
@@ -527,10 +519,6 @@ std::expected<void, StarException> MainInterface::initMainBarPanes() {
                                 JoinRequestDialog::create(context()), m_joinRequestDialog);
       !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = installPane(m_paneManager, MainInterfacePanes::ActionBar, PaneLayer::Hud,
-                                ActionBar::create(context(), m_paneManager, m_client->mainPlayer()), m_actionBar);
-      !result)
-    return std::unexpected(std::move(result.error()));
   return {};
 }
 
@@ -561,10 +549,6 @@ std::expected<void, StarException> MainInterface::initScriptAndHudPanes(std::sha
   m_clientCommandProcessor = std::make_shared<ClientCommandProcessor>(context(), m_client, m_cinematicOverlay, m_paneManager, m_config->macroCommands);
   if (auto result = initUiController(); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = installPane(m_paneManager, MainInterfacePanes::RadioMessagePopup, PaneLayer::Hud,
-                                RadioMessagePopup::create(context()), m_radioMessagePopup);
-      !result)
-    return std::unexpected(std::move(result.error()));
   if (auto result =
         installPane(m_paneManager, MainInterfacePanes::WireInterface, PaneLayer::World,
                     WirePane::create(context(), m_client->worldClient(), m_client->mainPlayer(), std::move(painter)),
@@ -573,12 +557,6 @@ std::expected<void, StarException> MainInterface::initScriptAndHudPanes(std::sha
     return std::unexpected(std::move(result.error()));
   m_client->mainPlayer()->setWireConnector(std::ref(*m_wireInterface));
 
-  auto team = TeamBar::create(context(), *this, m_client);
-  if (!team)
-    return std::unexpected(std::move(team.error()));
-  m_teamBar = *team;
-  if (auto result = m_paneManager.registerPane(MainInterfacePanes::TeamBar, PaneLayer::Hud, *team); !result)
-    return std::unexpected(std::move(result.error()));
   return {};
 }
 
@@ -923,6 +901,21 @@ std::expected<void, StarException> MainInterface::displayRegisteredPane(String c
   return {};
 }
 
+std::expected<void, StarException> MainInterface::togglePane(String const& id) {
+  if (!MainInterfacePanesNames) return std::unexpected(MainInterfacePanesNames.error());
+  auto type = MainInterfacePanesNames->getLeft(id);
+  if (type) {
+    if (type->get() == MainInterfacePanes::CraftingPlain)
+      return togglePlainCraftingWindow();
+    auto toggled = m_paneManager.toggleRegisteredPane(type->get());
+    if (!toggled) return std::unexpected(std::move(toggled.error()));
+  } else {
+    auto toggled = m_uiController->invoke<Json>("toggle", id);
+    if (!toggled) return std::unexpected(std::move(toggled.error()));
+  }
+  return {};
+}
+
 std::expected<std::optional<Json>, StarException> MainInterface::callPane(String const& id, String const& method, JsonArray const& arguments) {
   auto pane = findRegisteredPane(id);
   if (!pane) return std::unexpected(std::move(pane.error()));
@@ -974,12 +967,8 @@ std::expected<void, StarException> MainInterface::close() {
     player->setWireConnector(std::nullopt);
   if (m_inventoryWindow)
     m_inventoryWindow->detachInterface();
-  if (m_actionBar)
-    m_actionBar->detachInterface();
   if (m_optionsMenu)
     m_optionsMenu->detachInterface();
-  if (auto team = m_teamBar.lock())
-    team->detachInterface();
   for (auto const& weakDialog : m_teleportDialogs)
     if (auto dialog = weakDialog.lock())
       dialog->detachInterface();
@@ -1014,6 +1003,62 @@ std::expected<bool, StarException> MainInterface::pauseRequested() const {
   if (!paused)
     return std::unexpected(std::move(paused.error()));
   return paused->value_or(false);
+}
+
+std::expected<Json, StarException> MainInterface::travelState() const {
+  auto up = m_client->canBeamUp();
+  if (!up) return std::unexpected(std::move(up.error()));
+  auto down = m_client->canBeamDown();
+  if (!down) return std::unexpected(std::move(down.error()));
+  auto deploy = m_client->canBeamDown(true);
+  if (!deploy) return std::unexpected(std::move(deploy.error()));
+  auto teamShip = m_client->canBeamToTeamShip();
+  if (!teamShip) return std::unexpected(std::move(teamShip.error()));
+  return JsonObject{{"beamUp", *up}, {"beamDown", *down}, {"deploy", *deploy}, {"teamShip", *teamShip}};
+}
+
+std::expected<bool, StarException> MainInterface::travel(String const& operation, std::optional<Uuid> const& member) {
+  if (operation == "teamShip") {
+    if (!member) return false;
+    auto allowed = m_client->canBeamToTeamShip();
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    if (!*allowed) return false;
+    bool reachable = false;
+    for (auto const& entry : m_client->teamClient()->members())
+      if (entry.uuid == *member && entry.warpMode != WarpMode::None) {
+        reachable = true;
+        break;
+      }
+    if (!reachable) return false;
+    auto warped = warpTo(WarpToWorld{ClientShipWorldId(*member), {}});
+    if (!warped) return std::unexpected(std::move(warped.error()));
+    return true;
+  }
+  if (operation != "beamUp" && operation != "beamDown" && operation != "deploy")
+    return std::unexpected(GuiException(strf("Unknown travel operation '{}'", operation)));
+  auto allowed = operation == "beamUp" ? m_client->canBeamUp() : m_client->canBeamDown(operation == "deploy");
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return false;
+  auto warped = operation == "beamUp" ? warpToOwnShip() : warpToOrbitedWorld(operation == "deploy");
+  if (!warped) return std::unexpected(std::move(warped.error()));
+  return true;
+}
+
+std::shared_ptr<PortraitEntity> MainInterface::portraitEntity(std::optional<EntityId> id) const {
+  std::shared_ptr<Entity> entity;
+  if (id) entity = m_client->worldClient()->entity(*id);
+  else entity = m_client->mainPlayer();
+  return as<PortraitEntity>(entity);
+}
+
+Json MainInterface::cursorView() const {
+  return JsonObject{{"position", jsonFromVec2F(m_cursorScreenPos)},
+      {"roundedPosition", jsonFromVec2I(m_cursorScreenIPos)},
+      {"size", jsonFromVec2I(m_cursor->size())}, {"scale", m_cursor->scale(interfaceScale())}};
+}
+
+bool MainInterface::inventoryChanged() const {
+  return m_inventoryWindow->containsNewItems();
 }
 
 std::expected<void, StarException> MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntityId) {
@@ -1266,13 +1311,6 @@ std::expected<bool, StarException> MainInterface::handleInputEvent(InputEvent co
   } else if (std::holds_alternative<MouseButtonDownEvent>(event)) {
     auto const& mouseDown = std::get<MouseButtonDownEvent>(event);
     auto button = mouseDown.mouseButton;
-    if (button >= MouseButton::Left && button <= MouseButton::Right) {
-      auto overlay = overlayClick(mouseDown.mousePosition, button);
-      if (!overlay)
-        return std::unexpected(std::move(overlay.error()));
-      if (*overlay)
-        return true;
-    }
     if (button == MouseButton::Left)
       player->beginPrimaryFire();
     if (button == MouseButton::Right)
@@ -1532,6 +1570,16 @@ std::expected<void, StarException> MainInterface::update(float dt) {
   if (auto synchronized = synchronizeUiSession(); !synchronized)
     return std::unexpected(std::move(synchronized.error()));
 
+  for (auto const& message : m_client->mainPlayer()->pullQueuedMessages()) {
+    auto queued = queueMessage(message);
+    if (!queued)
+      return std::unexpected(std::move(queued.error()));
+  }
+  for (auto const& drop : m_client->mainPlayer()->pullQueuedItemDrops()) {
+    auto queued = queueItemPickupText(drop);
+    if (!queued)
+      return std::unexpected(std::move(queued.error()));
+  }
   auto controlled = m_uiController->update<Json>(dt);
   if (!controlled) return std::unexpected(std::move(controlled.error()));
   auto panesUpdated = m_paneManager.update(dt);
@@ -1543,7 +1591,6 @@ std::expected<void, StarException> MainInterface::update(float dt) {
 
 
   auto player = m_client->mainPlayer();
-  auto cursorWorldPos = cursorWorldPosition();
   if (player->wireToolInUse()) {
     auto displayed = m_paneManager.displayRegisteredPane(MainInterfacePanes::WireInterface);
     if (!displayed)
@@ -1560,158 +1607,9 @@ std::expected<void, StarException> MainInterface::update(float dt) {
   if (!inventoryUpdated)
     return std::unexpected(std::move(inventoryUpdated.error()));
 
-  // update mouseover target
-  EntityId newMouseOverTarget = NullEntityId;
-  m_stickyTargetingTimer.tick(dt);
-  auto mouseoverEntities = m_client->worldClient()->query<DamageBarEntity>(RectF::withCenter(cursorWorldPos, Vec2F(1, 1)), [=, this](std::shared_ptr<DamageBarEntity> const& entity) -> std::expected<bool, StarException> {
-      if (entity == player
-          || entity->damageBar() != DamageBarType::Default
-          || (entity->getTeam().type != TeamType::Enemy && entity->getTeam().type != TeamType::PVP))
-        return false;
-      auto light = m_client->worldClient()->lightLevel(entity->position());
-      if (!light)
-        return std::unexpected(std::move(light.error()));
-      return *light > 0;
-    });
-  if (!mouseoverEntities)
-    return std::unexpected(std::move(mouseoverEntities.error()));
-  sortByComputedValue(*mouseoverEntities, [&](std::shared_ptr<DamageBarEntity> const& a) {
-      return m_client->worldClient()->geometry().diff(a->position(), cursorWorldPos).magnitude();
-    });
-  if (!mouseoverEntities->empty()) {
-    newMouseOverTarget = (*mouseoverEntities)[0]->entityId();
-  } else if (m_lastMouseoverTarget == NullEntityId && player->lastDamagedTarget() != NullEntityId && player->timeSinceLastGaveDamage() < m_stickyTargetingTimer.time / 2) {
-    if (auto targetEntity = as<DamageBarEntity>(m_client->worldClient()->entity(player->lastDamagedTarget()))) {
-      if (targetEntity->damageBar() == DamageBarType::Default && (targetEntity->getTeam().type == TeamType::Enemy || targetEntity->getTeam().type == TeamType::PVP)) {
-        newMouseOverTarget = targetEntity->entityId();
-      }
-    }
-  }
-  if (newMouseOverTarget != NullEntityId && newMouseOverTarget != m_lastMouseoverTarget) {
-    m_lastMouseoverTarget = newMouseOverTarget;
-    m_portraitScale = 0;
-    m_stickyTargetingTimer.reset();
-  }
 
-  if (m_stickyTargetingTimer.ready())
-    m_lastMouseoverTarget = NullEntityId;
 
-  // special damage bar entities
-  auto assets = context().root().assets();
-  if (!assets)
-    return std::unexpected(std::move(assets.error()));
-  auto barConfig = (*assets)->json("/interface.config:specialDamageBar");
-  if (!barConfig)
-    return std::unexpected(std::move(barConfig.error()));
-  auto maxBars = barConfig->getUInt("maxCount", 10);
-  if (!maxBars)
-    return std::unexpected(std::move(maxBars.error()));
-
-  for (auto it = m_specialDamageBars.begin(); it != m_specialDamageBars.end();) {
-    auto& bar = *it;
-    auto damageBarEntity = as<DamageBarEntity>(m_client->worldClient()->entity(bar.first));
-    if (damageBarEntity && damageBarEntity->damageBar() == DamageBarType::Special) {
-      auto maxHealth = damageBarEntity->maxHealth();
-      if (!maxHealth)
-        return std::unexpected(std::move(maxHealth.error()));
-      float targetHealth = damageBarEntity->health() / *maxHealth;
-      auto fillTime = barConfig->getFloat("fillTime");
-      if (!fillTime)
-        return std::unexpected(std::move(fillTime.error()));
-      float fillSpeed = 1.0f / *fillTime;
-      if (std::abs(targetHealth - bar.second) < fillSpeed * dt)
-        bar.second = targetHealth;
-      else
-        bar.second += std::copysign(1.0f, targetHealth - bar.second) * fillSpeed * dt;
-
-      it++;
-    } else {
-      it = m_specialDamageBars.erase(it);
-    }
-  }
-
-  if (m_specialDamageBars.size() < *maxBars && m_client->mainPlayer()->inWorld()) {
-    List<std::shared_ptr<DamageBarEntity>> specialDamageTargets;
-    auto collected = m_client->worldClient()->forAllEntities([&specialDamageTargets](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
-        if (auto damageBarEntity = as<DamageBarEntity>(entity))
-          if (damageBarEntity->damageBar() == DamageBarType::Special)
-            specialDamageTargets.append(damageBarEntity);
-        return {};
-      });
-    if (!collected)
-      return std::unexpected(std::move(collected.error()));
-    sortByComputedValue(specialDamageTargets, [&](std::shared_ptr<DamageBarEntity> entity) {
-        return m_client->worldClient()->geometry().diff(entity->position(), m_client->mainPlayer()->position());
-      });
-
-    for (std::size_t i = 0; i < specialDamageTargets.size(); i++) {
-      auto id = specialDamageTargets[i]->entityId();
-      if (!m_specialDamageBars.contains(id)) {
-        auto added = m_specialDamageBars.add(id, 0);
-        if (!added)
-          return std::unexpected(std::move(added.error()));
-        if (m_specialDamageBars.size() >= *maxBars)
-          break;
-      }
-    }
-  }
-
-  for (auto const& message : m_client->mainPlayer()->pullQueuedMessages()) {
-    auto queued = queueMessage(message);
-    if (!queued)
-      return std::unexpected(std::move(queued.error()));
-  }
-
-  int chatHeight = 0;
-  auto chat = findRegisteredPane("chat");
-  if (!chat) return std::unexpected(std::move(chat.error()));
-  if (*chat && m_paneManager.isDisplayed(*chat) && (*chat)->visibility()) {
-    auto obstruction = callPane("chat", "layoutHeight", {});
-    if (!obstruction) return std::unexpected(std::move(obstruction.error()));
-    if (*obstruction) {
-      auto height = (**obstruction).toInt();
-      if (!height) return std::unexpected(std::move(height.error()));
-      chatHeight = *height;
-    }
-  }
-  m_radioMessagePopup->setChatHeight(chatHeight);
   if (!m_cinematicOverlay || m_cinematicOverlay->completed()) {
-    if (m_client->mainPlayer()->interruptRadioMessage()) {
-      auto interrupted = m_radioMessagePopup->interrupt();
-      if (!interrupted)
-        return std::unexpected(std::move(interrupted.error()));
-    }
-    if (!m_radioMessagePopup->messageActive()) {
-      auto pendingRadioMessage = m_client->mainPlayer()->pullPendingRadioMessage();
-      if (!pendingRadioMessage)
-        return std::unexpected(std::move(pendingRadioMessage.error()));
-      if (auto& radioMessage = *pendingRadioMessage) {
-        auto shown = m_radioMessagePopup->setMessage(*radioMessage);
-        if (!shown)
-          return std::unexpected(std::move(shown.error()));
-        auto displayed = m_paneManager.displayRegisteredPane(MainInterfacePanes::RadioMessagePopup);
-        if (!displayed)
-          return std::unexpected(std::move(displayed.error()));
-        auto portrait = radioMessage->portraitImage.replace("<frame>", "0");
-        if (!portrait)
-          return std::unexpected(std::move(portrait.error()));
-        ChatReceivedMessage message = {
-          {MessageContext::RadioMessage},
-          ServerConnectionId,
-          radioMessage->senderName,
-          radioMessage->text,
-          Text::stripEscapeCodes(*portrait)
-        };
-        auto added = addChatMessages({message}, false);
-        if (!added)
-          return std::unexpected(std::move(added.error()));
-      } else {
-        auto dismissed = m_paneManager.dismissRegisteredPane(MainInterfacePanes::RadioMessagePopup);
-        if (!dismissed)
-          return std::unexpected(std::move(dismissed.error()));
-      }
-    }
-
     auto cinematicState = m_client->mainPlayer()->setInCinematic(false);
     if (!cinematicState)
       return std::unexpected(std::move(cinematicState.error()));
@@ -1721,11 +1619,6 @@ std::expected<void, StarException> MainInterface::update(float dt) {
       return std::unexpected(std::move(cinematicState.error()));
   }
 
-  for (auto const& drop : m_client->mainPlayer()->pullQueuedItemDrops()) {
-    auto queued = queueItemPickupText(drop);
-    if (!queued)
-      return std::unexpected(std::move(queued.error()));
-  }
 
   auto chatAdded = addChatMessages(m_client->pullChatMessages(), true);
   if (!chatAdded)
@@ -1746,6 +1639,9 @@ std::expected<void, StarException> MainInterface::update(float dt) {
         return std::unexpected(std::move(pendingCinematic.error()));
       if (auto& cinematic = *pendingCinematic) {
         if (*cinematic) {
+          auto assets = context().root().assets();
+          if (!assets)
+            return std::unexpected(std::move(assets.error()));
           Json definition;
           auto fetched = (*assets)->fetchJson(std::move(*cinematic));
           if (!fetched) {
@@ -1818,43 +1714,6 @@ std::expected<void, StarException> MainInterface::update(float dt) {
       m_interactionScriptPanes.remove(id);
   }
 
-  if (!m_messages.contains(m_overflowMessage))
-    m_messageOverflow = 0;
-  unsigned maxMessages = m_messageOverflow == 0 ? m_config->maxMessageCount : m_config->maxMessageCount + 1; // exclude overflow message
-  if (m_messages.size() > maxMessages) {
-    if (m_messageOverflow == 0) {
-      m_messages.prepend(m_overflowMessage);
-    }
-
-    m_messageOverflow++;
-    auto overflowText = m_config->overflowMessageText.replace("<count>", toString(m_messageOverflow));
-    if (!overflowText)
-      return std::unexpected(std::move(overflowText.error()));
-    m_overflowMessage->message = std::move(*overflowText);
-    m_overflowMessage->cooldown = m_config->messageTime;
-    if (auto oldest = std::ranges::min_element(m_messages, {}, &GuiMessage::cooldown); oldest != m_messages.end())
-      m_overflowMessage->cooldown = (*oldest)->cooldown;
-
-    if (auto bottom = std::ranges::find_if(m_messages, [this](auto const& m) { return m != m_overflowMessage; }); bottom != m_messages.end())
-      (*bottom)->cooldown = 0;
-  }
-
-  for (auto it = m_messages.begin(); it != m_messages.end();) {
-    auto& message = *it;
-    message->cooldown -= dt;
-    if (message->cooldown < 0)
-      it = m_messages.erase(it);
-    else
-      it++;
-  }
-
-  for (auto it = m_itemDropMessages.begin(); it != m_itemDropMessages.end();) {
-    auto& message = *it;
-    if (message.second.second->cooldown < 0)
-      it = m_itemDropMessages.erase(it);
-    else
-      it++;
-  }
 
 
   auto containerResults = m_containerInteractor->pullContainerResults();
@@ -2007,14 +1866,6 @@ std::expected<void, StarException> MainInterface::render() {
     return std::unexpected(std::move(cleared.error()));
   if (auto result = m_paneManager.renderLayers(PaneLayer::Background, PaneLayer::Background); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = renderMessages(); !result)
-    return std::unexpected(std::move(result.error()));
-  if (auto result = renderMonsterHealthBar(); !result)
-    return std::unexpected(std::move(result.error()));
-  if (auto result = renderSpecialDamageBar(); !result)
-    return std::unexpected(std::move(result.error()));
-  if (auto result = renderMainBar(); !result)
-    return std::unexpected(std::move(result.error()));
   if (auto result = renderDebug(); !result)
     return std::unexpected(std::move(result.error()));
   auto size = context().windowSize();
@@ -2051,12 +1902,14 @@ std::expected<StringList, StarException> MainInterface::executeClientCommand(Str
 }
 
 std::expected<void, StarException> MainInterface::queueMessage(String const& message, std::optional<float> cooldown, float spring) {
-  m_messages.append(std::make_shared<GuiMessage>(message, cooldown.value_or(m_config->messageTime), spring));
-  return {};
+  JsonObject payload{{"text", message}, {"spring", spring}};
+  if (cooldown)
+    payload["cooldown"] = *cooldown;
+  return sendPaneEvent("Notifications", "message", std::move(payload));
 }
 
 std::expected<void, StarException> MainInterface::queueMessage(String const& message) {
-  return queueMessage(message, m_config->messageTime, 0.0f);
+  return queueMessage(message, {}, 0.0f);
 }
 
 std::expected<void, StarException> MainInterface::queueJoinRequest(std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>> request) {
@@ -2065,19 +1918,9 @@ std::expected<void, StarException> MainInterface::queueJoinRequest(std::pair<Str
 }
 
 std::expected<void, StarException> MainInterface::queueItemPickupText(std::shared_ptr<Item> const& item) {
-  auto descriptor = item->descriptor();
-  if (auto existing = m_itemDropMessages.maybeRef(descriptor.singular())) {
-    auto newCount = item->count() + existing->get().first;
-    auto message = existing->get().second;
-    message->message = strf("{} - {}", item->friendlyName(), newCount);
-    message->cooldown = m_config->messageTime;
-    existing->get() = {newCount, std::move(message)};
-  } else {
-    auto message = std::make_shared<GuiMessage>(strf("{} - {}", item->friendlyName(), item->count()), m_config->messageTime, 0);
-    m_messages.append(message);
-    m_itemDropMessages[descriptor.singular()] = {item->count(), std::move(message)};
-  }
-  return {};
+  return sendPaneEvent("Notifications", "pickup", JsonObject{
+      {"descriptor", item->descriptor().singular().toJson()},
+      {"name", item->friendlyName()}, {"count", item->count()}});
 }
 
 bool MainInterface::fixedCamera() const {
@@ -2207,14 +2050,6 @@ std::expected<void, StarException> MainInterface::reviveScriptPanes(List<ScriptP
   return {};
 }
 
-std::expected<void, StarException> MainInterface::displayDefaultPanes() {
-  for (auto pane : {MainInterfacePanes::ActionBar, MainInterfacePanes::TeamBar}) {
-    auto displayed = m_paneManager.displayRegisteredPane(pane);
-    if (!displayed)
-      return std::unexpected(std::move(displayed.error()));
-  }
-  return {};
-}
 
 float MainInterface::interfaceScale() const {
   return context().interfaceScale();
@@ -2228,410 +2063,6 @@ std::expected<unsigned, StarException> MainInterface::windowWidth() const {
   return context().windowWidth();
 }
 
-std::expected<Vec2F, StarException> MainInterface::mainBarPosition() const {
-  auto width = windowWidth();
-  if (!width)
-    return std::unexpected(std::move(width.error()));
-  auto height = windowHeight();
-  if (!height)
-    return std::unexpected(std::move(height.error()));
-  return Vec2F(*width, *height) - Vec2F(m_config->mainBarSize) * interfaceScale();
-}
-
-std::expected<void, StarException> MainInterface::renderMessages() {
-  if (m_messages.empty())
-    return {};
-
-  Vec2F totalOffset = {};
-  auto imgMetadata = context().root().imageMetadataDatabase();
-  if (!imgMetadata) return std::unexpected(std::move(imgMetadata.error()));
-  auto configuration = context().root().configuration();
-  if (!configuration) return std::unexpected(std::move(configuration.error()));
-  auto bottomJson = (*configuration)->getPath("inventory.bottomActionBar");
-  if (!bottomJson) return std::unexpected(std::move(bottomJson.error()));
-  auto bottom = bottomJson->optBool();
-  if (!bottom) return std::unexpected(std::move(bottom.error()));
-  unsigned bottomOffset = bottom->value_or(false) ? 32 : 0;
-  auto width = windowWidth();
-  if (!width) return std::unexpected(std::move(width.error()));
-  for (auto& message : m_messages) {
-    Vec2F hiddenOffset = Vec2F(m_config->messageHiddenOffset);
-    Vec2F activeOffset = Vec2F(m_config->messageActiveOffset);
-    if (bottomOffset) {
-      activeOffset[1] += bottomOffset;
-      bottomOffset = 0;
-    }
-    Vec2F messageOffset = lerp(message->springState, Vec2F(), activeOffset - hiddenOffset);
-    totalOffset += messageOffset;
-    messageOffset = totalOffset + hiddenOffset;
-
-    Vec2F backgroundCenterPos = Vec2F(*width * 0.5f + messageOffset[0] * interfaceScale(), messageOffset[1] * interfaceScale());
-
-    Vec2F backgroundTextCenterPos = backgroundCenterPos + Vec2F(m_config->messageTextContainerOffset) * interfaceScale();
-    Vec2F messageTextOffset = backgroundTextCenterPos + Vec2F(m_config->messageTextOffset) * interfaceScale();
-
-    if (message->cooldown > m_config->messageHideTime)
-      message->springState = (message->springState * m_config->messageWindowSpring + 1.0f) / (m_config->messageWindowSpring + 1.0f);
-    else
-      message->springState = (message->springState * m_config->messageWindowSpring) / (m_config->messageWindowSpring + 1.0f);
-
-    auto size = (*imgMetadata)->imageSize(m_config->messageTextContainer);
-    if (!size) return std::unexpected(std::move(size.error()));
-    if (auto r = context().drawQuad(m_config->messageTextContainer,
-        RectF::withCenter(backgroundTextCenterPos, Vec2F(*size) * interfaceScale())); !r)
-      return std::unexpected(std::move(r.error()));
-    if (auto r = context().setTextStyle(m_config->textStyle); !r) return std::unexpected(std::move(r.error()));
-    if (auto r = context().renderText(message->message, {messageTextOffset, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor}); !r)
-      return std::unexpected(std::move(r.error()));
-  }
-  return {};
-}
-
-std::expected<void, StarException> MainInterface::renderMonsterHealthBar() {
-  auto assets = context().root().assets();
-  if (!assets) return std::unexpected(std::move(assets.error()));
-  auto imgMetadata = context().root().imageMetadataDatabase();
-  if (!imgMetadata) return std::unexpected(std::move(imgMetadata.error()));
-  if (m_lastMouseoverTarget != NullEntityId && !m_stickyTargetingTimer.ready()) {
-    auto showDamageEntity = as<DamageBarEntity>(m_client->worldClient()->entity(m_lastMouseoverTarget));
-    if (!showDamageEntity) {
-      m_lastMouseoverTarget = NullEntityId;
-      return {};
-    }
-    auto width = windowWidth();
-    if (!width) return std::unexpected(std::move(width.error()));
-    auto height = windowHeight();
-    if (!height) return std::unexpected(std::move(height.error()));
-    Vec2F backgroundCenterPos(*width / 2.0f, *height);
-    auto vectorAt = [&](std::string_view path) -> std::expected<Vec2F, StarException> {
-      auto json = (*assets)->json(path);
-      if (!json) return std::unexpected(std::move(json.error()));
-      auto vector = jsonToVec2F(*json);
-      if (!vector) return std::unexpected(std::move(vector.error()));
-      return *vector * interfaceScale();
-    };
-    auto stringAt = [&](std::string_view path) -> std::expected<String, StarException> {
-      auto json = (*assets)->json(path);
-      if (!json) return std::unexpected(std::move(json.error()));
-      return json->toString();
-    };
-    auto container = stringAt("/interface.config:monsterHealth.container");
-    if (!container) return std::unexpected(std::move(container.error()));
-    auto offset = vectorAt("/interface.config:monsterHealth.offset");
-    if (!offset) return std::unexpected(std::move(offset.error()));
-    auto containerSize = (*imgMetadata)->imageSize(*container);
-    if (!containerSize) return std::unexpected(std::move(containerSize.error()));
-    if (auto r = context().drawQuad(*container, RectF::withCenter(backgroundCenterPos + *offset, Vec2F(*containerSize * interfaceScale()))); !r)
-      return std::unexpected(std::move(r.error()));
-    auto nameOffset = vectorAt("/interface.config:monsterHealth.nameTextOffset");
-    if (!nameOffset) return std::unexpected(std::move(nameOffset.error()));
-    if (auto r = context().setTextStyle(m_config->textStyle); !r) return std::unexpected(std::move(r.error()));
-    auto name = showDamageEntity->name();
-    if (!name) return std::unexpected(std::move(name.error()));
-    if (auto r = context().renderText(*name, backgroundCenterPos + *nameOffset); !r)
-      return std::unexpected(std::move(r.error()));
-    auto empty = stringAt("/interface.config:monsterHealth.progressEmpty");
-    if (!empty) return std::unexpected(std::move(empty.error()));
-    auto filled = stringAt("/interface.config:monsterHealth.progressFilled");
-    if (!filled) return std::unexpected(std::move(filled.error()));
-    auto progressOffset = vectorAt("/interface.config:monsterHealth.progressBarOffset");
-    if (!progressOffset) return std::unexpected(std::move(progressOffset.error()));
-    auto chunksJson = (*assets)->json("/interface.config:monsterHealth.progressChunks");
-    if (!chunksJson) return std::unexpected(std::move(chunksJson.error()));
-    auto chunks = chunksJson->toInt();
-    if (!chunks) return std::unexpected(std::move(chunks.error()));
-    auto maxHealth = showDamageEntity->maxHealth();
-    if (!maxHealth) return std::unexpected(std::move(maxHealth.error()));
-    int blocks = std::round(showDamageEntity->health() / *maxHealth * *chunks);
-    Vec2F barPos = backgroundCenterPos + *progressOffset;
-    auto filledSize = (*imgMetadata)->imageSize(*filled);
-    if (!filledSize) return std::unexpected(std::move(filledSize.error()));
-    Vec2F barItemOffset = Vec2F(*filledSize) * interfaceScale();
-    barItemOffset[1] = 0;
-    auto emptySize = (*imgMetadata)->imageSize(*empty);
-    if (!emptySize) return std::unexpected(std::move(emptySize.error()));
-    if (auto r = context().drawQuad(*empty, RectF::withSize(backgroundCenterPos + barPos, Vec2F(*emptySize) * interfaceScale())); !r)
-      return std::unexpected(std::move(r.error()));
-    for (int i = 0; i < blocks; ++i) {
-      if (auto r = context().drawQuad(*filled, barPos + barItemOffset * i, interfaceScale()); !r)
-        return std::unexpected(std::move(r.error()));
-    }
-    auto portraitOffset = vectorAt("/interface.config:monsterHealth.portraitOffset");
-    if (!portraitOffset) return std::unexpected(std::move(portraitOffset.error()));
-    auto scaleJson = (*assets)->json("/interface.config:monsterHealth.portraitScale");
-    if (!scaleJson) return std::unexpected(std::move(scaleJson.error()));
-    auto scale = scaleJson->toFloat();
-    if (!scale) return std::unexpected(std::move(scale.error()));
-    float portraitScale = *scale * interfaceScale();
-    auto scissorJson = (*assets)->json("/interface.config:monsterHealth.portraitScissorRect");
-    if (!scissorJson) return std::unexpected(std::move(scissorJson.error()));
-    auto scissor = jsonToRectF(*scissorJson);
-    if (!scissor) return std::unexpected(std::move(scissor.error()));
-    auto rect = scissor->scaled(interfaceScale()).translated(backgroundCenterPos + *portraitOffset);
-    auto drawPortrait = [&]() -> std::expected<void, StarException> {
-      if (auto r = context().setInterfaceScissorRect(RectI(rect.scaled(1.0f / interfaceScale()))); !r)
-        return std::unexpected(std::move(r.error()));
-      auto maxSizeJson = (*assets)->json("/interface.config:monsterHealth.portraitMaxSize");
-      if (!maxSizeJson) return std::unexpected(std::move(maxSizeJson.error()));
-      auto maxSize = jsonToVec2I(*maxSizeJson);
-      if (!maxSize) return std::unexpected(std::move(maxSize.error()));
-      auto portrait = showDamageEntity->portrait(PortraitMode::Full);
-      if (!portrait) return std::unexpected(std::move(portrait.error()));
-      auto bounds = Drawable::boundBoxAll(**imgMetadata, *portrait, true);
-      if (!bounds) return std::unexpected(std::move(bounds.error()));
-      if (m_portraitScale == 0)
-        m_portraitScale = std::max<int>(1, std::ceil(std::max(bounds->size().x() / maxSize->x(), bounds->size().y() / maxSize->y())));
-      Drawable::translateAll(*portrait, {-bounds->xMin() - bounds->width() * 0.5f, -bounds->yMin()});
-      Drawable::scaleAll(*portrait, 1.0f / m_portraitScale);
-      for (auto drawable : *portrait) {
-        if (auto r = context().drawDrawable(std::move(drawable), backgroundCenterPos + *portraitOffset, portraitScale); !r)
-          return std::unexpected(std::move(r.error()));
-      }
-      return {};
-    };
-    auto drawn = drawPortrait();
-    auto reset = context().resetInterfaceScissorRect();
-    if (!drawn && !reset)
-      return std::unexpected(drawn.error().withContext(strf("Portrait scissor cleanup failed: {}", printException(ExceptionDiagnostic(reset.error()), true))));
-    if (!drawn) return std::unexpected(std::move(drawn.error()));
-    if (!reset) return std::unexpected(std::move(reset.error()));
-  }
-  return {};
-}
-
-std::expected<void, StarException> MainInterface::renderSpecialDamageBar() {
-  // Count every entry to preserve spacing until removed entities leave the list.
-  std::size_t num = m_specialDamageBars.size();
-  if (num == 0) return {};
-  auto assets = context().root().assets();
-  if (!assets) return std::unexpected(std::move(assets.error()));
-  auto imgMetadata = context().root().imageMetadataDatabase();
-  if (!imgMetadata) return std::unexpected(std::move(imgMetadata.error()));
-  auto barConfig = (*assets)->json("/interface.config:specialDamageBar");
-  if (!barConfig) return std::unexpected(std::move(barConfig.error()));
-  auto vectorAt = [&](std::string_view key) -> std::expected<Vec2F, StarException> {
-    auto json = barConfig->get(key);
-    if (!json) return std::unexpected(std::move(json.error()));
-    return jsonToVec2F(*json);
-  };
-  auto backgroundOffsetValue = vectorAt("backgroundOffset");
-  if (!backgroundOffsetValue) return std::unexpected(std::move(backgroundOffsetValue.error()));
-  auto spacing = barConfig->getFloat("multibarSpacing", backgroundOffsetValue->x() * -2.0f);
-  if (!spacing) return std::unexpected(std::move(spacing.error()));
-  float hSpacing = *spacing * interfaceScale();
-  auto width = windowWidth();
-  if (!width) return std::unexpected(std::move(width.error()));
-  auto edgeOffset = barConfig->getFloat("multibarScreenEdgeOffset", 20.0f);
-  if (!edgeOffset) return std::unexpected(std::move(edgeOffset.error()));
-  float totalWidth = hSpacing * num;
-  float maxWidth = std::min(totalWidth, *width - *edgeOffset * interfaceScale());
-  float hScale = maxWidth / totalWidth;
-  float allOffset = -hSpacing * 0.5f * (num - 1);
-  float center = *width / 2.0f;
-  auto background = barConfig->getString("background");
-  if (!background) return std::unexpected(std::move(background.error()));
-  Vec2F backgroundOffset = *backgroundOffsetValue * interfaceScale();
-  backgroundOffset.setX(backgroundOffset.x() * hScale);
-  auto backgroundSize = (*imgMetadata)->imageSize(*background);
-  if (!backgroundSize) return std::unexpected(std::move(backgroundSize.error()));
-  Vec2F backgroundImageSize = Vec2F(*backgroundSize) * interfaceScale();
-  backgroundImageSize.setX(backgroundImageSize.x() * hScale);
-  auto fill = barConfig->getString("fill");
-  if (!fill) return std::unexpected(std::move(fill.error()));
-  auto fillOffsetValue = vectorAt("fillOffset");
-  if (!fillOffsetValue) return std::unexpected(std::move(fillOffsetValue.error()));
-  Vec2F fillOffset = *fillOffsetValue * interfaceScale();
-  fillOffset.setX(fillOffset.x() * hScale);
-  auto nameOffsetValue = vectorAt("nameOffset");
-  if (!nameOffsetValue) return std::unexpected(std::move(nameOffsetValue.error()));
-  Vec2F nameOffset = *nameOffsetValue * interfaceScale();
-  nameOffset.setX(nameOffset.x() * hScale);
-  std::size_t i = 0;
-  for (auto& bar : m_specialDamageBars) {
-    if (auto target = as<DamageBarEntity>(m_client->worldClient()->entity(bar.first))) {
-      Vec2F bottomCenter(center + (allOffset + hSpacing * i) * hScale, 0);
-      if (auto r = context().drawQuad(*background, RectF::withSize(bottomCenter + backgroundOffset, backgroundImageSize)); !r)
-        return std::unexpected(std::move(r.error()));
-      auto fillWidth = barConfig->getInt("fillWidth");
-      if (!fillWidth) return std::unexpected(std::move(fillWidth.error()));
-      auto fillSize = (*imgMetadata)->imageSize(*fill);
-      if (!fillSize) return std::unexpected(std::move(fillSize.error()));
-      Vec2F size(*fillWidth * bar.second, fillSize->y());
-      size.setX(size.x() * hScale);
-      if (auto r = context().drawQuad(*fill, RectF::withSize(bottomCenter + fillOffset, size * interfaceScale())); !r)
-        return std::unexpected(std::move(r.error()));
-      auto drawName = [&]() -> std::expected<void, StarException> {
-        auto colorJson = barConfig->get("nameColor");
-        if (!colorJson) return std::unexpected(std::move(colorJson.error()));
-        auto color = jsonToColor(*colorJson);
-        if (!color) return std::unexpected(std::move(color.error()));
-        if (auto r = context().setFontColor(color->toRgba()); !r) return std::unexpected(std::move(r.error()));
-        auto nameSize = barConfig->getUInt("nameSize");
-        if (!nameSize) return std::unexpected(std::move(nameSize.error()));
-        if (auto r = context().setFontSize(*nameSize); !r) return std::unexpected(std::move(r.error()));
-        auto styleJson = barConfig->get("nameStyle");
-        if (!styleJson) return std::unexpected(std::move(styleJson.error()));
-        if (*styleJson) {
-          auto style = TextStyle::create(*styleJson);
-          if (!style) return std::unexpected(std::move(style.error()));
-          if (auto r = context().setTextStyle(*style); !r) return std::unexpected(std::move(r.error()));
-        }
-        auto name = target->name();
-        if (!name) return std::unexpected(std::move(name.error()));
-        auto text = context().renderText(*name, TextPositioning(bottomCenter + nameOffset, HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor));
-        if (!text) return std::unexpected(std::move(text.error()));
-        return {};
-      };
-      auto drawn = drawName();
-      auto cleared = context().clearTextStyle();
-      if (!drawn && !cleared)
-        return std::unexpected(drawn.error().withContext(strf("Damage bar text cleanup failed: {}", printException(ExceptionDiagnostic(cleared.error()), true))));
-      if (!drawn) return std::unexpected(std::move(drawn.error()));
-      if (!cleared) return std::unexpected(std::move(cleared.error()));
-    }
-    ++i;
-  }
-  return {};
-}
-
-std::expected<void, StarException> MainInterface::renderMainBar() {
-  auto barPosition = mainBarPosition();
-  if (!barPosition) return std::unexpected(std::move(barPosition.error()));
-  Vec2F barPos = *barPosition;
-  m_cursorTooltip = {};
-  auto assets = context().root().assets();
-  if (!assets) return std::unexpected(std::move(assets.error()));
-  auto tooltipAt = [&](std::string_view path) -> std::expected<String, StarException> {
-    auto json = (*assets)->json(path);
-    if (!json) return std::unexpected(std::move(json.error()));
-    return json->toString();
-  };
-  Vec2F inventoryButtonPos = barPos + Vec2F(m_config->mainBarInventoryButtonOffset) * interfaceScale();
-  auto inventoryDisplayed = m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory);
-  if (!inventoryDisplayed) return std::unexpected(std::move(inventoryDisplayed.error()));
-  auto inventoryHovered = overButton(m_config->mainBarInventoryButtonPoly, m_cursorScreenPos);
-  if (!inventoryHovered) return std::unexpected(std::move(inventoryHovered.error()));
-  String const& inventoryImage = *inventoryDisplayed
-      ? (*inventoryHovered ? m_config->inventoryImageOpenHover : m_config->inventoryImageOpen)
-      : *inventoryHovered
-          ? (m_inventoryWindow->containsNewItems() ? m_config->inventoryImageGlowHover : m_config->inventoryImageHover)
-          : (m_inventoryWindow->containsNewItems() ? m_config->inventoryImageGlow : m_config->inventoryImage);
-  if (auto r = context().drawQuad(inventoryImage, inventoryButtonPos, interfaceScale()); !r)
-    return std::unexpected(std::move(r.error()));
-  if (*inventoryHovered) {
-    auto tooltip = tooltipAt("/interface.config:cursorTooltip.inventoryText");
-    if (!tooltip) return std::unexpected(std::move(tooltip.error()));
-    m_cursorTooltip = std::move(*tooltip);
-  }
-  auto drawStateButton = [this, &tooltipAt](auto const& paneType, Vec2F pos, PolyI const& poly,
-      String const& image, String const& hoverImage, String const& openImage, String const& hoverOpenImage,
-      std::string_view tooltipPath) -> std::expected<void, StarException> {
-    auto tooltip = tooltipAt(tooltipPath);
-    if (!tooltip) return std::unexpected(std::move(tooltip.error()));
-    auto displayed = [&]() -> std::expected<bool, StarException> {
-      if constexpr (std::is_same_v<std::decay_t<decltype(paneType)>, String>) {
-        auto pane = findRegisteredPane(paneType);
-        if (!pane) return std::unexpected(std::move(pane.error()));
-        return *pane && m_paneManager.isDisplayed(*pane);
-      } else {
-        return m_paneManager.registeredPaneIsDisplayed(paneType);
-      }
-    }();
-    if (!displayed) return std::unexpected(std::move(displayed.error()));
-    auto hovered = overButton(poly, m_cursorScreenPos);
-    if (!hovered) return std::unexpected(std::move(hovered.error()));
-    auto const& selected = *displayed ? (*hovered ? hoverOpenImage : openImage) : (*hovered ? hoverImage : image);
-    if (auto r = context().drawQuad(selected, pos, interfaceScale()); !r) return std::unexpected(std::move(r.error()));
-    if (*hovered) m_cursorTooltip = std::move(*tooltip);
-    return {};
-  };
-
-  Vec2F craftButtonPos = barPos + Vec2F(m_config->mainBarCraftButtonOffset) * interfaceScale();
-  if (auto r = drawStateButton(MainInterfacePanes::CraftingPlain,
-      craftButtonPos, m_config->mainBarCraftButtonPoly, m_config->craftImage,
-      m_config->craftImageHover, m_config->craftImageOpen, m_config->craftImageOpenHover,
-      "/interface.config:cursorTooltip.craftingText"); !r) return std::unexpected(std::move(r.error()));
-
-  Vec2F codexButtonPos = barPos + Vec2F(m_config->mainBarCodexButtonOffset) * interfaceScale();
-  static String const codexPaneId = "codex";
-  if (auto r = drawStateButton(codexPaneId,
-      codexButtonPos, m_config->mainBarCodexButtonPoly, m_config->codexImage,
-      m_config->codexImageHover, m_config->codexImageOpen, m_config->codexImageHoverOpen,
-      "/interface.config:cursorTooltip.codexText"); !r) return std::unexpected(std::move(r.error()));
-
-  Vec2F mmUpgradeButtonPos = barPos + Vec2F(m_config->mainBarMmUpgradeButtonOffset) * interfaceScale();
-  if (m_client->mainPlayer()->inventory()->essentialItem(EssentialItem::BeamAxe)) {
-    if (auto r = drawStateButton(MainInterfacePanes::MmUpgrade,
-        mmUpgradeButtonPos, m_config->mainBarMmUpgradeButtonPoly, m_config->mmUpgradeImage,
-        m_config->mmUpgradeImageHover, m_config->mmUpgradeImageOpen, m_config->mmUpgradeImageHoverOpen,
-        "/interface.config:cursorTooltip.mmUpgradeText"); !r) return std::unexpected(std::move(r.error()));
-  } else {
-    if (auto r = drawStateButton(MainInterfacePanes::MmUpgrade,
-        mmUpgradeButtonPos, m_config->mainBarMmUpgradeButtonPoly, m_config->mmUpgradeImageDisabled,
-        m_config->mmUpgradeImageDisabled, m_config->mmUpgradeImageDisabled, m_config->mmUpgradeImageDisabled,
-        "/interface.config:cursorTooltip.disabledText"); !r) return std::unexpected(std::move(r.error()));
-  }
-
-  Vec2F collectionsButtonPos = barPos + Vec2F(m_config->mainBarCollectionsButtonOffset) * interfaceScale();
-  if (auto r = drawStateButton(MainInterfacePanes::Collections,
-      collectionsButtonPos, m_config->mainBarCollectionsButtonPoly, m_config->collectionsImage,
-      m_config->collectionsImageHover, m_config->collectionsImageOpen, m_config->collectionsImageHoverOpen,
-      "/interface.config:cursorTooltip.collectionsText"); !r) return std::unexpected(std::move(r.error()));
-
-  // when the player can't deploy or beam, show the deploy button disabled
-  // when the player can beam up they can't deploy down, show beaming up button in deploy button's place
-  // when the player can only deploy, only show deploy button
-  // when the player can deploy or beam down, show both buttons
-
-  Vec2F deployButtonPos(Vec2F(barPos) + Vec2F(m_config->mainBarDeployButtonOffset) * interfaceScale());
-  auto beamUpResult = m_client->canBeamUp();
-  if (!beamUpResult) return std::unexpected(std::move(beamUpResult.error()));
-  bool beamUp = *beamUpResult;
-  bool canDeploy = false;
-  if (!beamUp) {
-    auto deploy = m_client->canBeamDown(true);
-    if (!deploy) return std::unexpected(std::move(deploy.error()));
-    canDeploy = *deploy;
-  }
-  if (beamUp || canDeploy) {
-    auto hovered = overButton(m_config->mainBarDeployButtonPoly, m_cursorScreenPos);
-    if (!hovered) return std::unexpected(std::move(hovered.error()));
-    auto const& image = beamUp ? (*hovered ? m_config->beamUpImageHover : m_config->beamUpImage)
-        : (*hovered ? m_config->deployImageHover : m_config->deployImage);
-    if (auto r = context().drawQuad(image, deployButtonPos, interfaceScale()); !r)
-      return std::unexpected(std::move(r.error()));
-    if (*hovered) {
-      auto tooltip = tooltipAt(beamUp ? "/interface.config:cursorTooltip.beamUpText" : "/interface.config:cursorTooltip.deployText");
-      if (!tooltip) return std::unexpected(std::move(tooltip.error()));
-      m_cursorTooltip = std::move(*tooltip);
-    }
-  } else {
-    if (auto r = context().drawQuad(m_config->deployImageDisabled, deployButtonPos, interfaceScale()); !r)
-      return std::unexpected(std::move(r.error()));
-  }
-  Vec2F beamButtonPos(barPos + Vec2F(m_config->mainBarBeamButtonOffset) * interfaceScale());
-  auto beamDown = m_client->canBeamDown();
-  if (!beamDown) return std::unexpected(std::move(beamDown.error()));
-  if (*beamDown) {
-    auto hovered = overButton(m_config->mainBarBeamButtonPoly, m_cursorScreenPos);
-    if (!hovered) return std::unexpected(std::move(hovered.error()));
-    if (auto r = context().drawQuad(*hovered ? m_config->beamDownImageHover : m_config->beamDownImage, beamButtonPos, interfaceScale()); !r)
-      return std::unexpected(std::move(r.error()));
-    if (*hovered) {
-      auto tooltip = tooltipAt("/interface.config:cursorTooltip.beamDownText");
-      if (!tooltip) return std::unexpected(std::move(tooltip.error()));
-      m_cursorTooltip = std::move(*tooltip);
-    }
-  }
-
-  Vec2F questLogButtonPos = barPos + Vec2F(m_config->mainBarQuestLogButtonOffset) * interfaceScale();
-  static String const questLogPaneId = "QuestLog";
-  if (auto r = drawStateButton(questLogPaneId,
-      questLogButtonPos, m_config->mainBarQuestLogButtonPoly, m_config->questLogImage,
-      m_config->questLogImageHover, m_config->questLogImageOpen, m_config->questLogImageHoverOpen,
-      "/interface.config:cursorTooltip.questsText"); !r) return std::unexpected(std::move(r.error()));
-  return {};
-}
 
 std::expected<void, StarException> MainInterface::renderWindows() {
   return m_paneManager.renderLayers(PaneLayer::Tooltip, PaneLayer::World);
@@ -2722,9 +2153,9 @@ std::expected<void, StarException> MainInterface::renderDebug() {
 }
 
 std::expected<void, StarException> MainInterface::updateCursor() {
-  auto actionOverride = m_actionBar->cursorOverride(m_cursorScreenIPos);
+  auto actionOverride = m_uiController->invoke<std::optional<String>>("cursorOverride", m_cursorScreenIPos / interfaceScale());
   if (!actionOverride) return std::unexpected(std::move(actionOverride.error()));
-  std::optional<String> cursorOverride = std::move(*actionOverride);
+  std::optional<String> cursorOverride = actionOverride->value_or(std::optional<String>{});
 
   if (!cursorOverride) {
     if (auto pane = m_paneManager.getPaneAt(m_cursorScreenIPos / interfaceScale())) {
@@ -2781,53 +2212,6 @@ std::expected<void, StarException> MainInterface::renderCursor() {
     if (auto r = context().drawDrawable(*cursorDrawable, Vec2F(cursorPos), cursorScale); !r)
       return std::unexpected(std::move(r.error()));
   }
-  if (m_cursorTooltip) {
-    auto drawTooltip = [&]() -> std::expected<void, StarException> {
-      auto assets = context().root().assets();
-      if (!assets) return std::unexpected(std::move(assets.error()));
-      auto imgDb = context().root().imageMetadataDatabase();
-      if (!imgDb) return std::unexpected(std::move(imgDb.error()));
-      auto config = (*assets)->json("/interface.config:cursorTooltip");
-      if (!config) return std::unexpected(std::move(config.error()));
-      auto backgroundImage = config->getString("background");
-      if (!backgroundImage) return std::unexpected(std::move(backgroundImage.error()));
-      auto offsetJson = config->get("offset");
-      if (!offsetJson) return std::unexpected(std::move(offsetJson.error()));
-      auto rawOffset = jsonToVec2I(*offsetJson);
-      if (!rawOffset) return std::unexpected(std::move(rawOffset.error()));
-      auto backgroundSize = (*imgDb)->imageSize(*backgroundImage);
-      if (!backgroundSize) return std::unexpected(std::move(backgroundSize.error()));
-      Vec2I tooltipSize = Vec2I(*backgroundSize) * interfaceScale();
-      Vec2I offset = (Vec2I{0, -cursorSize.y()} + *rawOffset) * cursorScale;
-      Vec2I tooltipOffset = m_cursorScreenIPos + offset;
-      auto styleJson = config->get("textStyle");
-      if (!styleJson) return std::unexpected(std::move(styleJson.error()));
-      auto textStyle = TextStyle::create(*styleJson);
-      if (!textStyle) return std::unexpected(std::move(textStyle.error()));
-      auto fontSize = config->getUInt("fontSize");
-      if (!fontSize) return std::unexpected(std::move(fontSize.error()));
-      auto colorJson = config->get("color");
-      if (!colorJson) return std::unexpected(std::move(colorJson.error()));
-      auto color = jsonToColor(*colorJson);
-      if (!color) return std::unexpected(std::move(color.error()));
-      if (auto r = context().drawQuad(*backgroundImage, Vec2F(tooltipOffset) + Vec2F(-tooltipSize.x(), 0), interfaceScale()); !r)
-        return std::unexpected(std::move(r.error()));
-      if (auto r = context().setTextStyle(*textStyle); !r) return std::unexpected(std::move(r.error()));
-      if (auto r = context().setFontSize(*fontSize); !r) return std::unexpected(std::move(r.error()));
-      if (auto r = context().setFontColor(color->toRgba()); !r) return std::unexpected(std::move(r.error()));
-      auto text = context().renderText(*m_cursorTooltip,
-          TextPositioning(Vec2F(tooltipOffset) + Vec2F(-tooltipSize.x(), tooltipSize.y()) / 2,
-              HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor));
-      if (!text) return std::unexpected(std::move(text.error()));
-      return {};
-    };
-    auto drawn = drawTooltip();
-    auto cleared = context().clearTextStyle();
-    if (!drawn && !cleared)
-      return std::unexpected(drawn.error().withContext(strf("Cursor text cleanup failed: {}", printException(ExceptionDiagnostic(cleared.error()), true))));
-    if (!drawn) return std::unexpected(std::move(drawn.error()));
-    if (!cleared) return std::unexpected(std::move(cleared.error()));
-  }
   m_cursorItem->setPosition(Vec2I::round(m_cursorScreenPos / interfaceScale() + Vec2F(m_config->inventoryItemMouseOffset)));
   m_cursorItem->setItem(m_client->mainPlayer()->inventory()->swapSlotItem());
   auto drawItem = [&]() -> std::expected<void, StarException> {
@@ -2845,84 +2229,6 @@ std::expected<void, StarException> MainInterface::renderCursor() {
   return reset;
 }
 
-std::expected<bool, StarException> MainInterface::overButton(PolyI const& buttonPoly, Vec2F const& mousePos) const {
-  auto barPos = mainBarPosition();
-  if (!barPos) return std::unexpected(std::move(barPos.error()));
-  PolyF poly(buttonPoly);
-  poly.translate(*barPos);
-  poly.scale(interfaceScale(), *barPos);
-  return poly.contains(mousePos);
-}
-
-std::expected<bool, StarException> MainInterface::overlayClick(Vec2F const& mousePos, MouseButton) {
-  auto inventory = overButton(m_config->mainBarInventoryButtonPoly, mousePos);
-  if (!inventory) return std::unexpected(std::move(inventory.error()));
-  if (*inventory) {
-    if (auto r = m_paneManager.toggleRegisteredPane(MainInterfacePanes::Inventory); !r) return std::unexpected(std::move(r.error()));
-    return true;
-  }
-  auto crafting = overButton(m_config->mainBarCraftButtonPoly, mousePos);
-  if (!crafting) return std::unexpected(std::move(crafting.error()));
-  if (*crafting) {
-    if (auto r = togglePlainCraftingWindow(); !r) return std::unexpected(std::move(r.error()));
-    return true;
-  }
-  auto codex = overButton(m_config->mainBarCodexButtonPoly, mousePos);
-  if (!codex) return std::unexpected(std::move(codex.error()));
-  if (*codex) {
-    auto toggled = m_uiController->invoke<Json>("toggle", "codex");
-    if (!toggled) return std::unexpected(std::move(toggled.error()));
-    return true;
-  }
-  auto deploy = overButton(m_config->mainBarDeployButtonPoly, mousePos);
-  if (!deploy) return std::unexpected(std::move(deploy.error()));
-  if (*deploy) {
-    auto canDeploy = m_client->canBeamDown(true);
-    if (!canDeploy) return std::unexpected(std::move(canDeploy.error()));
-    if (*canDeploy) {
-      if (auto r = warpToOrbitedWorld(true); !r) return std::unexpected(std::move(r.error()));
-    } else {
-      auto canBeamUp = m_client->canBeamUp();
-      if (!canBeamUp) return std::unexpected(std::move(canBeamUp.error()));
-      if (*canBeamUp) {
-        if (auto r = warpToOwnShip(); !r) return std::unexpected(std::move(r.error()));
-      }
-    }
-    return true;
-  }
-  auto beam = overButton(m_config->mainBarBeamButtonPoly, mousePos);
-  if (!beam) return std::unexpected(std::move(beam.error()));
-  if (*beam) {
-    auto canBeamDown = m_client->canBeamDown();
-    if (!canBeamDown) return std::unexpected(std::move(canBeamDown.error()));
-    if (*canBeamDown) {
-      if (auto r = warpToOrbitedWorld(false); !r) return std::unexpected(std::move(r.error()));
-    }
-    return true;
-  }
-  auto questLog = overButton(m_config->mainBarQuestLogButtonPoly, mousePos);
-  if (!questLog) return std::unexpected(std::move(questLog.error()));
-  if (*questLog) {
-    auto toggled = m_uiController->invoke<Json>("toggle", "QuestLog");
-    if (!toggled) return std::unexpected(std::move(toggled.error()));
-    return true;
-  }
-  auto mmUpgrade = overButton(m_config->mainBarMmUpgradeButtonPoly, mousePos);
-  if (!mmUpgrade) return std::unexpected(std::move(mmUpgrade.error()));
-  if (*mmUpgrade) {
-    if (m_client->mainPlayer()->inventory()->essentialItem(EssentialItem::BeamAxe)) {
-      if (auto r = m_paneManager.toggleRegisteredPane(MainInterfacePanes::MmUpgrade); !r) return std::unexpected(std::move(r.error()));
-    }
-    return true;
-  }
-  auto collections = overButton(m_config->mainBarCollectionsButtonPoly, mousePos);
-  if (!collections) return std::unexpected(std::move(collections.error()));
-  if (*collections) {
-    if (auto r = m_paneManager.toggleRegisteredPane(MainInterfacePanes::Collections); !r) return std::unexpected(std::move(r.error()));
-    return true;
-  }
-  return false;
-}
 
 std::expected<void, StarException> MainInterface::initHttpTrustDialog() {
   auto dialog = HttpTrustDialog::create(context());

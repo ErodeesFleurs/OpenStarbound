@@ -641,6 +641,11 @@ std::expected<LuaCallbacks, StarException> Pane::makePaneCallbacks() {
   });
   if (!setSizeCallback)
     return std::unexpected(std::move(setSizeCallback.error()));
+  auto setBackground = registerPaneCallback("setBackground", [](Pane& pane, String const& header, std::optional<String> const& body, std::optional<String> const& footer) {
+    return pane.setBG(header, body.value_or(""), footer.value_or(""));
+  });
+  if (!setBackground)
+    return std::unexpected(std::move(setBackground.error()));
   auto setScissoring = registerPaneCallback("setScissoringEnabled", [](Pane& pane, bool enabled) -> std::expected<void, StarException> {
     if (enabled)
       pane.enableScissoring();

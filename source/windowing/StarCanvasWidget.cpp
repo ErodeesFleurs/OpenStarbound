@@ -86,6 +86,29 @@ bool CanvasWidget::ignoreInterfaceScale() const {
 
 void CanvasWidget::clear() {
   m_renderOps.clear();
+  m_clipHead.reset();
+}
+
+void CanvasWidget::pushClipRect(RectF const& rect) {
+  auto clipped = rect;
+  if (m_clipHead)
+    clipped.limit(std::get<PushClipOp>(m_renderOps[*m_clipHead]).rect);
+  clipped = RectF(clipped.min(), clipped.max().piecewiseMax(clipped.min()));
+  auto index = m_renderOps.size();
+  m_renderOps.append(PushClipOp{clipped, m_clipHead});
+  m_clipHead = index;
+}
+
+std::expected<void, StarException> CanvasWidget::popClipRect() {
+  if (!m_clipHead)
+    return std::unexpected(GuiException("Canvas clip stack is empty"));
+  auto parent = std::get<PushClipOp>(m_renderOps[*m_clipHead]).parent;
+  std::optional<RectF> restored;
+  if (parent)
+    restored = std::get<PushClipOp>(m_renderOps[*parent]).rect;
+  m_renderOps.append(PopClipOp{restored});
+  m_clipHead = parent;
+  return {};
 }
 
 void CanvasWidget::drawImage(String texName, Vec2F const& position, float scale, Vec4B const& color) {
@@ -100,13 +123,19 @@ void CanvasWidget::drawImageRect(String texName, RectF const& texCoords, RectF c
   m_renderOps.append(std::make_tuple(std::move(texName), texCoords, screenCoords, color));
 }
 
-void CanvasWidget::drawDrawable(Drawable drawable, Vec2F const& screenPos) {
+void CanvasWidget::drawDrawable(Drawable drawable, Vec2F const& screenPos, float scale, Vec2F const& translation, float finalScale) {
+  if (translation != Vec2F())
+    drawable.translate(translation);
+  if (scale != 1)
+    drawable.scale(scale);
+  if (finalScale != 1)
+    drawable.scale(finalScale);
   m_renderOps.append(std::make_tuple(std::move(drawable), screenPos));
 }
 
-void CanvasWidget::drawDrawables(List<Drawable> drawables, Vec2F const& screenPos) {
+void CanvasWidget::drawDrawables(List<Drawable> drawables, Vec2F const& screenPos, float scale, Vec2F const& translation, float finalScale) {
   for (auto& drawable : drawables)
-    drawDrawable(std::move(drawable), screenPos);
+    drawDrawable(std::move(drawable), screenPos, scale, translation, finalScale);
 }
 
 void CanvasWidget::drawTiledImage(String texName, float textureScale, Vec2D const& offset, RectF const& screenCoords, Vec4B const& color) {
@@ -217,6 +246,27 @@ std::expected<KeyboardCaptureMode, StarException> CanvasWidget::keyboardCaptureM
 
 std::expected<void, StarException> CanvasWidget::renderImpl() {
   auto offset = Vec2F(screenPosition());
+  auto renderer = context().renderer();
+  if (!renderer)
+    return std::unexpected(std::move(renderer.error()));
+  auto& target = renderer->get();
+  auto priorClip = target.scissorRect();
+  bool changedClip = false;
+  auto setClip = [&](std::optional<RectF> const& local) -> std::expected<void, StarException> {
+    auto clip = priorClip;
+    if (local) {
+      auto physical = local->translated(offset);
+      if (!m_ignoreInterfaceScale)
+        physical.scale(context().interfaceScale());
+      RectI pixels(physical);
+      if (priorClip)
+        pixels.limit(*priorClip);
+      clip = RectI(pixels.min(), pixels.max().piecewiseMax(pixels.min()));
+    }
+    changedClip = true;
+    return target.setScissorRect(clip);
+  };
+  std::expected<void, StarException> rendered;
   for (auto const& op : m_renderOps) {
     auto result = std::visit([&](auto const& args) -> std::expected<void, StarException> {
       using T = std::remove_cvref_t<decltype(args)>;
@@ -238,12 +288,27 @@ std::expected<void, StarException> CanvasWidget::renderImpl() {
         return std::apply(std::bind_front(&CanvasWidget::renderTriangles, this, offset), args);
       else if constexpr (std::is_same_v<T, TextOp>)
         return std::apply(std::bind_front(&CanvasWidget::renderText, this, offset), args);
+      else if constexpr (std::is_same_v<T, PushClipOp>)
+        return setClip(args.rect);
+      else if constexpr (std::is_same_v<T, PopClipOp>)
+        return setClip(args.rect);
       else
         return {};
     }, op);
-    if (!result) return std::unexpected(std::move(result.error()));
+    if (!result) {
+      rendered = std::unexpected(std::move(result.error()));
+      break;
+    }
   }
-  return {};
+  if (changedClip) {
+    auto restored = target.setScissorRect(priorClip);
+    if (!restored) {
+      if (!rendered)
+        return std::unexpected(rendered.error().withContext(strf("Restoring Canvas clipping also failed: {}", outputException(restored.error(), true))));
+      return std::unexpected(std::move(restored.error()));
+    }
+  }
+  return rendered;
 }
 
 std::expected<void, StarException> CanvasWidget::renderImage(Vec2F const& renderingOffset, String const& texName, Vec2F const& position, float scale, Vec4B const& color, bool centered) {

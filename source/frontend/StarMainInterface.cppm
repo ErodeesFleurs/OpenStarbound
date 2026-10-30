@@ -97,6 +97,7 @@ namespace Star {
 class UniverseClient;
 class WorldPainter;
 class Item;
+class PortraitEntity;
 class BaseScriptPane;
 class LuaRoot;
 class WorldClient;
@@ -104,8 +105,6 @@ class TeamClient;
 class ClientCommandProcessor;
 class OptionsMenu;
 class WirePane;
-class ActionBar;
-class TeamBar;
 class ContainerPane;
 class CraftingPane;
 class MerchantPane;
@@ -118,20 +117,11 @@ class LabelWidget;
 class Cinematic;
 class NameplatePainter;
 class QuestIndicatorPainter;
-class RadioMessagePopup;
 class ContainerInteractor;
 class ScriptPane;
 class ChatBubbleManager;
 class CanvasWidget;
 
-struct GuiMessage {
-  GuiMessage();
-  GuiMessage(String const& message, float cooldown, float spring = 0);
-
-  String message;
-  float cooldown;
-  float springState;
-};
 
 class MainInterface {
 public:
@@ -153,6 +143,11 @@ public:
   [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> itemTooltip(std::shared_ptr<Item> const& item);
   [[nodiscard]] std::expected<void, StarException> playCinematic(Json const& config);
   bool cinematicActive() const;
+  [[nodiscard]] std::expected<Json, StarException> travelState() const;
+  [[nodiscard]] std::expected<bool, StarException> travel(String const& operation, std::optional<Uuid> const& member);
+  std::shared_ptr<PortraitEntity> portraitEntity(std::optional<EntityId> id) const;
+  Json cursorView() const;
+  bool inventoryChanged() const;
   // Escaped callbacks borrow this interface only until terminal close.
   std::stop_token callbackStopToken() const;
 
@@ -201,6 +196,7 @@ public:
   [[nodiscard]] std::expected<bool, StarException> paneLayerOccupied(String const& layer) const;
   [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> findRegisteredPane(String const& id);
   [[nodiscard]] std::expected<void, StarException> displayRegisteredPane(String const& id);
+  [[nodiscard]] std::expected<void, StarException> togglePane(String const& id);
 
   [[nodiscard]] std::expected<void, StarException> queueMessage(String const& message, std::optional<float> cooldown, float spring);
   [[nodiscard]] std::expected<void, StarException> queueMessage(String const& message);
@@ -230,7 +226,6 @@ public:
 
   [[nodiscard]] std::expected<void, StarException> takeScriptPanes(List<ScriptPaneInfo>& out);
   [[nodiscard]] std::expected<void, StarException> reviveScriptPanes(List<ScriptPaneInfo>& panes);
-  [[nodiscard]] std::expected<void, StarException> displayDefaultPanes();
 private:
   MainInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, WorldPainter& painter, std::shared_ptr<Cinematic> cinematicOverlay);
   [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<WorldPainter> painter);
@@ -246,21 +241,12 @@ private:
   float interfaceScale() const;
   [[nodiscard]] std::expected<unsigned, StarException> windowHeight() const;
   [[nodiscard]] std::expected<unsigned, StarException> windowWidth() const;
-  [[nodiscard]] std::expected<Vec2F, StarException> mainBarPosition() const;
-
-  [[nodiscard]] std::expected<void, StarException> renderMessages();
-  [[nodiscard]] std::expected<void, StarException> renderMonsterHealthBar();
-  [[nodiscard]] std::expected<void, StarException> renderSpecialDamageBar();
-  [[nodiscard]] std::expected<void, StarException> renderMainBar();
   [[nodiscard]] std::expected<void, StarException> renderWindows();
   [[nodiscard]] std::expected<void, StarException> renderDebug();
 
   [[nodiscard]] std::expected<void, StarException> updateCursor();
   [[nodiscard]] std::expected<void, StarException> renderCursor();
 
-  [[nodiscard]] std::expected<bool, StarException> overButton(PolyI const& buttonPoly, Vec2F const& mousePos) const;
-
-  [[nodiscard]] std::expected<bool, StarException> overlayClick(Vec2F const& mousePos, MouseButton mouseButton);
 
   [[nodiscard]] std::expected<void, StarException> displayScriptPane(std::shared_ptr<ScriptPane>& scriptPane, EntityId sourceEntity);
 
@@ -277,7 +263,6 @@ private:
 
   MainInterfacePaneManager m_paneManager;
   std::stop_source m_callbackStopSource;
-  std::weak_ptr<TeamBar> m_teamBar;
   std::vector<std::weak_ptr<TeleportDialog>> m_teleportDialogs;
 
 
@@ -311,14 +296,11 @@ private:
   std::uint64_t m_uiPlayerGeneration = 0;
   bool m_uiInWorld = false;
   std::shared_ptr<ClientCommandProcessor> m_clientCommandProcessor;
-  std::shared_ptr<RadioMessagePopup> m_radioMessagePopup;
   std::shared_ptr<WirePane> m_wireInterface;
 
-  std::shared_ptr<ActionBar> m_actionBar;
   Vec2F m_cursorScreenPos{};
   Vec2I m_cursorScreenIPos{};
   std::shared_ptr<ItemSlotWidget> m_cursorItem;
-  std::optional<String> m_cursorTooltip;
 
   GameTimer m_debugSpatialClearTimer;
   GameTimer m_debugMapClearTimer;
@@ -333,18 +315,9 @@ private:
   String m_lastCommand;
   bool m_commandInput = false;
 
-  LinkedList<std::shared_ptr<GuiMessage>> m_messages;
-  HashMap<ItemDescriptor, std::pair<std::size_t, std::shared_ptr<GuiMessage>>> m_itemDropMessages;
-  unsigned m_messageOverflow{};
-  std::shared_ptr<GuiMessage> m_overflowMessage;
 
   List<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> m_queuedJoinRequests;
 
-  EntityId m_lastMouseoverTarget{NullEntityId};
-  GameTimer m_stickyTargetingTimer;
-  int m_portraitScale{};
-
-  HashMap<EntityId, float> m_specialDamageBars;
 
   std::shared_ptr<ContainerInteractor> m_containerInteractor;
 };
@@ -361,8 +334,6 @@ export namespace Star {
   using ::Star::ClientCommandProcessor;
   using ::Star::OptionsMenu;
   using ::Star::WirePane;
-  using ::Star::ActionBar;
-  using ::Star::TeamBar;
   using ::Star::ContainerPane;
   using ::Star::CraftingPane;
   using ::Star::MerchantPane;
@@ -375,11 +346,9 @@ export namespace Star {
   using ::Star::Cinematic;
   using ::Star::NameplatePainter;
   using ::Star::QuestIndicatorPainter;
-  using ::Star::RadioMessagePopup;
   using ::Star::ContainerInteractor;
   using ::Star::ScriptPane;
   using ::Star::ChatBubbleManager;
   using ::Star::CanvasWidget;
-  using ::Star::GuiMessage;
   using ::Star::MainInterface;
 }

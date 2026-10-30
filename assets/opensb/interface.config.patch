@@ -88,6 +88,72 @@
       "open" : true,
       "order" : 90
     },
+    "Notifications" : {
+      "config" : "/interface/opensb/notifications/notifications.config",
+      "layer" : "Background",
+      "scope" : "session",
+      "open" : true,
+      "order" : 110,
+      "events" : {"message" : "push", "pickup" : "pickup"}
+    },
+    "TargetHealth" : {
+      "config" : "/interface/opensb/targethealth/targethealth.config",
+      "layer" : "Background",
+      "scope" : "session",
+      "open" : true,
+      "order" : 120
+    },
+    "SpecialHealth" : {
+      "config" : "/interface/opensb/specialhealth/specialhealth.config",
+      "layer" : "Background",
+      "scope" : "session",
+      "open" : true,
+      "order" : 130
+    },
+    "MainBar" : {
+      "config" : "/interface/opensb/mainbar/mainbar.config",
+      "layer" : "Background",
+      "scope" : "session",
+      "open" : true,
+      "order" : 140
+    },
+    "MainBarTooltip" : {
+      "config" : "/interface/opensb/mainbar/tooltip.config",
+      "layer" : "Tooltip",
+      "scope" : "session",
+      "open" : true,
+      "order" : 141
+    },
+    "ActionBar" : {
+      "config" : "/interface/opensb/actionbar/actionbar.config",
+      "layer" : "Hud",
+      "scope" : "session",
+      "open" : true,
+      "order" : 150
+    },
+    "TeamBar" : {
+      "config" : "/interface/opensb/team/teambar.config",
+      "layer" : "Hud", "scope" : "session", "open" : true, "order" : 160
+    },
+    "TeamInvite" : {
+      "config" : "/interface/opensb/team/teaminvite.config",
+      "layer" : "Window", "scope" : "session", "open" : false, "retain" : true, "order" : 161
+    },
+    "TeamInvitation" : {
+      "config" : "/interface/opensb/team/teaminvitation.config",
+      "layer" : "Window", "scope" : "session", "open" : false, "retain" : true, "order" : 162
+    },
+    "TeamMemberMenu" : {
+      "config" : "/interface/opensb/team/teammembermenu.config",
+      "layer" : "Window", "scope" : "session", "open" : false, "retain" : true, "order" : 163
+    },
+    "RadioMessagePopup" : {
+      "config" : "/interface/opensb/radio/radio.config",
+      "layer" : "Hud",
+      "scope" : "session",
+      "open" : true,
+      "order" : 170
+    },
     "EscapeDialog" : {
       "config" : "/interface/opensb/escapemenu/escapemenu.config",
       "layer" : "ModalWindow",

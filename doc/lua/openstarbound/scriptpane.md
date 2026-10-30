@@ -42,6 +42,13 @@ Enables or disables clipping to the pane's own bounds. Ancestor/window clipping 
 
 ---
 
+#### `void` pane.setBackground(`String` header, [`String` body], [`String` footer])
+
+Replaces the native pane background images. Omitted body/footer default to
+empty strings; empty strings clear those pieces. Root size becomes the maximum
+piece width and sum of piece heights, using actual image sizes. Child geometry,
+anchors and offsets are not rewritten; native image-load errors propagate.
+
 #### `float` pane.scale()
 
 Returns the interface scale currently applied to the pane. This mirrors `interface.scale()` but is available directly on the pane
@@ -170,11 +177,18 @@ pixels, not physical window pixels. Subtract `pane.getScreenPosition()` before
 comparing it with Canvas-local geometry. The hook does not accept opaque
 native pane userdata.
 
-Without a custom result, native ItemGrid/ItemSlot children retain automatic
-item tooltips. Client UI panes consult the centralized `interface.itemTooltip`
-service, which uses the current UI player for armor and other previewable
-items. Standalone panes without that service keep the native no-viewer
-fallback. The host stores no window-specific player or tooltip factory.
+A non-nil custom `createTooltip` result has priority. Otherwise the optional
+`tooltipItem(screenPosition)` hook can return an engine-produced opaque Item
+userdata for the native tooltip builder. Its position is in interface pixels,
+like `createTooltip`. A **defined hook returning nil suppresses** automatic
+ItemGrid/ItemSlot lookup; a missing hook preserves that fallback. Descriptors,
+arbitrary userdata and opaque native Pane handles are not valid Item results.
+
+Client UI panes consult the centralized `interface.itemTooltip` service, which
+uses the current UI player for armor and other previewable items. Standalone
+panes without that service keep the native no-viewer fallback. Both hooks use
+the normal guarded script lifecycle; the host stores no window-specific player
+or tooltip factory.
 
 ### Consuming input
 
@@ -197,6 +211,10 @@ press's action names in Lua. Input events contain:
 * `key` for key events, numeric `mods` for key presses, and `text` for committed
   text.
 * Pane-local `position` and interface-pixel `screenPosition` for pointer events.
+* `physicalPosition` for `move`, `buttonDown` and `buttonUp`: the actual raw
+  event's floating-point physical window-pixel coordinates. It is not rebuilt
+  from the rounded/scaled interface coordinates. Wheel/nonpointer events do
+  not have this field; existing `position`/`screenPosition` semantics are unchanged.
 * Zero-based `button` for mouse-button events or `direction` (`1` up, `-1` down)
   for wheel events.
 

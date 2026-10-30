@@ -840,6 +840,10 @@ std::expected<void, StarException> OpenGlRenderer::setScissorRect(std::optional<
   return {};
 }
 
+std::optional<RectI> OpenGlRenderer::scissorRect() const {
+  return m_scissorRect;
+}
+
 std::expected<TexturePtr, StarException> OpenGlRenderer::createTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering) {
   auto created = createGlTexture(texture, addressing, filtering);
   if (!created) return std::unexpected(std::move(created.error()));

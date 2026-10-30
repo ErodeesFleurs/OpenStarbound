@@ -1130,6 +1130,113 @@ namespace LuaBindings {
   }
 
   std::expected<void, StarException> addWorldEntityCallbacks(LuaCallbacks& callbacks, World& world) {
+    // Compact, unsorted domain views. Selection, ordering, timers and bar
+    // interpolation belong to the caller, not to the world service.
+    auto damageBarView = [](DamageBarEntity const& entity, bool details) -> std::expected<Json, StarException> {
+      if (!DamageBarTypeNames) return std::unexpected(DamageBarTypeNames.error());
+      auto type = DamageBarTypeNames->getRight(entity.damageBar());
+      if (!type) return std::unexpected(std::move(type.error()));
+      JsonObject view;
+      view.reserve(details ? 7 : 4);
+      view.set("id", entity.entityId());
+      view.set("type", type->get());
+      view.set("position", jsonFromVec2F(entity.position()));
+      auto team = entity.getTeam().toJson();
+      if (!team) return std::unexpected(std::move(team.error()));
+      view.set("team", std::move(*team));
+      if (details) {
+        auto maximum = entity.maxHealth();
+        if (!maximum) return std::unexpected(std::move(maximum.error()));
+        auto name = entity.name();
+        if (!name) return std::unexpected(std::move(name.error()));
+        view.set("health", entity.health());
+        view.set("maxHealth", *maximum);
+        view.set("name", std::move(*name));
+      }
+      return view;
+    };
+    if (auto result = callbacks.registerCallback("entityDamageBar", [&world, damageBarView](EntityId id) -> std::expected<Json, StarException> {
+      if (auto entity = world.get<DamageBarEntity>(id))
+        return damageBarView(*entity, true);
+      return Json();
+    }); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = callbacks.registerCallback("damageBarEntities",
+        [&world, damageBarView](std::optional<RectF> region, std::optional<String> typeName) -> std::expected<Json, StarException> {
+      std::optional<DamageBarType> type;
+      if (typeName) {
+        if (!DamageBarTypeNames) return std::unexpected(DamageBarTypeNames.error());
+        auto parsed = DamageBarTypeNames->getLeft(*typeName);
+        if (!parsed) return std::unexpected(std::move(parsed.error()));
+        type = parsed->get();
+      }
+      JsonArray views;
+      auto append = [&](std::shared_ptr<Entity> const& value) -> std::expected<void, StarException> {
+        if (auto entity = as<DamageBarEntity>(value); entity && (!type || entity->damageBar() == *type)) {
+          auto view = damageBarView(*entity, false);
+          if (!view) return std::unexpected(std::move(view.error()));
+          views.emplace_back(std::move(*view));
+        }
+        return {};
+      };
+      if (region) {
+        auto entities = world.query<DamageBarEntity>(*region);
+        if (!entities) return std::unexpected(std::move(entities.error()));
+        views.reserve(entities->size());
+        for (auto const& entity : *entities)
+          if (auto added = append(entity); !added) return std::unexpected(std::move(added.error()));
+      } else {
+        auto collected = world.forAllEntities(append);
+        if (!collected) return std::unexpected(std::move(collected.error()));
+      }
+      return views;
+    }); !result)
+      return std::unexpected(std::move(result.error()));
+
+    // A one-entry cache bounds memory independently of the number of queried
+    // entities. Animation still comes from the real portrait provider each
+    // call; unchanged drawables do not cross Lua or repeat cropped-bound work.
+    struct PortraitViewCache {
+      std::weak_ptr<PortraitEntity> entity;
+      String mode;
+      List<Drawable> drawables;
+      RectF bounds;
+      std::uint64_t revision{};
+    };
+    auto portraitCache = std::make_shared<PortraitViewCache>();
+    if (auto result = callbacks.registerCallback("entityPortraitView",
+        [&world, portraitCache](LuaEngine& engine, EntityId id, String const& modeName,
+            std::optional<std::uint64_t> knownRevision) -> std::expected<std::optional<LuaTable>, StarException> {
+      auto entity = world.get<PortraitEntity>(id);
+      if (!entity) return {};
+      if (!PortraitModeNames) return std::unexpected(PortraitModeNames.error());
+      auto mode = PortraitModeNames->getLeft(modeName);
+      if (!mode) return std::unexpected(std::move(mode.error()));
+      auto portrait = entity->portrait(mode->get());
+      if (!portrait) return std::unexpected(std::move(portrait.error()));
+      auto& cache = *portraitCache;
+      if (cache.entity.lock() != entity || cache.mode != modeName || cache.drawables != *portrait) {
+        auto metadata = world.root().imageMetadataDatabase();
+        if (!metadata) return std::unexpected(std::move(metadata.error()));
+        auto bounds = Drawable::boundBoxAll(**metadata, *portrait, true);
+        if (!bounds) return std::unexpected(std::move(bounds.error()));
+        cache.entity = entity;
+        cache.mode = modeName;
+        cache.drawables = std::move(*portrait);
+        cache.bounds = *bounds;
+        ++cache.revision;
+      }
+      auto view = engine.createTable(0, 3);
+      if (!view) return std::unexpected(std::move(view.error()));
+      if (auto set = view->set("revision", cache.revision); !set) return std::unexpected(std::move(set.error()));
+      if (!knownRevision || *knownRevision != cache.revision) {
+        if (auto set = view->set("drawables", cache.drawables); !set) return std::unexpected(std::move(set.error()));
+        if (auto set = view->set("bounds", cache.bounds); !set) return std::unexpected(std::move(set.error()));
+      }
+      return std::move(*view);
+    }); !result)
+      return std::unexpected(std::move(result.error()));
+
     if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("entityQuery", std::bind(WorldEntityCallbacks::entityQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)
       return std::unexpected(std::move(result.error()));
     if (auto result = callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("monsterQuery", std::bind(WorldEntityCallbacks::monsterQuery, std::ref(world), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !result)

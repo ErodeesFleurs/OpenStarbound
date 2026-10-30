@@ -26,6 +26,12 @@ function pane.setSize(size) end
 ---@param enabled boolean
 function pane.setScissoringEnabled(enabled) end
 
+--- Native background replacement; root size is max width/summed heights. Empty strings clear.
+---@param header string
+---@param body? string
+---@param footer? string
+function pane.setBackground(header, body, footer) end
+
 --- Returns the interface scale currently applied to the pane. This mirrors `interface.scale()` but is available directly on the pane object. ---
 ---@return number
 function pane.scale() end
@@ -81,3 +87,31 @@ function pane.addWidget(config, widgetName) end
 ---@param widgetName string
 ---@return boolean
 function pane.removeWidget(widgetName) end
+
+---@class ScriptPaneInputEvent
+---@field type string keyDown/keyUp/textInput/move/buttonDown/buttonUp/wheel/controller.
+---@field actions string[]
+---@field position? Vec2I Pane-local interface pixels for pointer events.
+---@field screenPosition? Vec2I Screen interface pixels for pointer events.
+---@field physicalPosition? Vec2F Actual raw physical pixels for move/buttonDown/buttonUp only.
+---@field button? integer Zero-based mouse button.
+---@field direction? integer Wheel: 1 up, -1 down.
+---@field key? string
+---@field mods? integer
+---@field text? string
+
+--- Optional script hook; true consumes before normal native input routing.
+---@param event ScriptPaneInputEvent
+---@return boolean
+function onInput(event) end
+
+--- Optional custom tooltip hook; non-nil string/GUI JSON takes priority over tooltipItem/native fallback.
+---@param screenPosition Vec2I Interface pixels, not physical pixels.
+---@return string|Json?
+function createTooltip(screenPosition) end
+
+--- Optional Item tooltip hook: missing preserves native ItemGrid/Slot lookup; defined nil suppresses it.
+--- Actual opaque Item only, never descriptor JSON or Pane userdata. Uses current UI player preview service.
+---@param screenPosition Vec2I Interface pixels.
+---@return NativeItemHandle?
+function tooltipItem(screenPosition) end

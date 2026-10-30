@@ -67,6 +67,15 @@ Returns monotonic milliseconds for elapsed-time animations. Unlike
 not be stored as a portable date or compared across application runs.
 
 ---
+#### `double` sb.monotonicTime()
+
+Returns precise native steady-clock time in **seconds**, without the
+millisecond rounding of `sb.monotonicMilliseconds()`. Use differences for
+elapsed-time animation. It is not wall-clock time or a portable timestamp;
+do not persist it for comparisons across application runs.
+
+---
+
 
 #### `pair<RpcPromise<Json>,RpcPromiseKeeper<Json>>` sb.makePromise()
 

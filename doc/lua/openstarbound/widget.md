@@ -28,6 +28,47 @@ For pointer geometry, reuse the existing `widget.inMember(widgetName, screenPosi
 
 These callbacks only work for some widget types.
 
+### Live native display handles
+
+#### `void` widget.setItemSlotHandle(`String` widgetName, [`NativeItemHandle` item])
+
+Assigns the actual engine-produced opaque Item userdata to an ItemSlotWidget;
+nil clears it. The widget shares native ownership, without descriptor
+serialization/reconstruction. It does not move inventory items. Handles cannot
+be stored in JSON or `storage`; count/durability continue reading the live item.
+
+#### `void` widget.setItemSlotDisplay(`String` widgetName, `Json` display)
+
+Updates only supplied fields: `durability`, `count`, `secondaryIcon` and
+`highlight` are booleans; `countPosition` is native TextPositioning JSON
+(for example `{position = {10, -6}, horizontalAnchor = "mid"}`).
+Unspecified fields retain their previous settings. This changes display only.
+
+#### `void` widget.setPortraitEntity(`String` widgetName, [`NativePortraitHandle` entity])
+
+Assigns the actual opaque PortraitEntity userdata from
+`interface.portraitEntity` to a PortraitWidget, or nil to clear. This retains
+native live portrait generation/animation, not reconstructed drawable JSON.
+
+### ProgressWidget helpers
+
+#### `void` widget.setProgressColor(`String` widgetName, `Color` color, [`Color` mix], [`float` amount])
+
+Sets native progress color. If `mix` is present, uses native `Color::mix` with
+`amount` (default 0), retaining native color parsing and rounding.
+
+#### `void` widget.setProgressOverlay(`String` widgetName, `String` image)
+
+Replaces the native progress overlay image; an empty string clears it.
+
+### LabelWidget helpers
+
+#### `void` widget.setTextCharLimit(`String` widgetName, [`unsigned` limit])
+
+Sets a Label's rendered Unicode-codepoint limit, excluding rich-text escape
+commands; nil removes the limit. This does not truncate the stored text.
+
+
 ### Layout helpers
 
 #### `void` widget.refreshLayout(`String` widgetName)
